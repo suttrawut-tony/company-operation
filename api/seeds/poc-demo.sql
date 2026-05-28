@@ -1,0 +1,38 @@
+-- ═══════════════════════════════════════════════════════════
+-- POC demo seed — auto-loaded by api/migrate.js on a fresh DB
+-- ═══════════════════════════════════════════════════════════
+-- This file currently has no data — only this comment block —
+-- so the seed step is skipped.
+--
+-- To populate it with REAL data from your local Postgres:
+--
+-- 1. On the machine that has the local working DB (เครื่องเพื่อน), run:
+--
+--    pg_dump --data-only --no-owner --no-privileges --column-inserts \
+--      --exclude-table=users \
+--      --exclude-table=password_reset_tokens \
+--      --exclude-table=auth_audit_log \
+--      --exclude-table=_migrations \
+--      "postgresql://user@localhost:5432/sda_operation" \
+--      > api/seeds/poc-demo.sql
+--
+--    (The excludes keep user passwords + reset tokens + audit logs
+--     OUT of the repo. The static-login admin@local on Railway gives
+--     access to the seeded data instead.)
+--
+-- 2. Open the file and append this line at the very top if your dump
+--    references the seed company id explicitly:
+--
+--      -- depends on companies.slug = 'sda-group' from migration 002
+--
+-- 3. Commit + push. On Railway, migrate.js will:
+--      a. Run schema migrations 001–014 on the empty Postgres
+--      b. Detect projects table is empty
+--      c. Load this seed file → demo data appears
+--
+--    (If projects is already populated, this seed is skipped — won't
+--     clobber real data.)
+--
+-- 4. Customer opens login page → uses static-login admin@local /
+--    admin1234 → dashboard shows your seeded projects / PRs / POs.
+-- ═══════════════════════════════════════════════════════════

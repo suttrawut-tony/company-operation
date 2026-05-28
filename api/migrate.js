@@ -17,6 +17,8 @@ const path = require('path');
 const db = require('./db');
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
+const SEEDS_DIR      = path.join(__dirname, 'seeds');
+const POC_SEED_FILE  = path.join(SEEDS_DIR, 'poc-demo.sql');
 const LEGACY_BASELINE_MAX = 12; // 001..012 were applied via database.sql before this runner existed
 
 function listMigrationFiles() {
@@ -77,6 +79,38 @@ async function applyMigration(client, name) {
 }
 
 /**
+ * Load api/seeds/poc-demo.sql into the DB if:
+ *  - the file exists AND is not empty / comment-only
+ *  - the projects table exists (schema is set up)
+ *  - the projects table is empty (DB is fresh — don't clobber real data)
+ *
+ * Returns { loaded: bool, reason: string }
+ */
+async function maybeSeedPocDemo(client) {
+  if (!fs.existsSync(POC_SEED_FILE)) {
+    return { loaded: false, reason: 'no seed file' };
+  }
+  const sql = fs.readFileSync(POC_SEED_FILE, 'utf8');
+  // Skip if file is just comments / whitespace
+  const meaningful = sql.split('\n').filter(l => l.trim() && !l.trim().startsWith('--')).join('\n').trim();
+  if (!meaningful) {
+    return { loaded: false, reason: 'seed file is empty / comment-only' };
+  }
+  if (!(await tableExists(client, 'projects'))) {
+    return { loaded: false, reason: 'projects table not set up yet' };
+  }
+  const { rows } = await client.query('SELECT COUNT(*)::int AS c FROM projects');
+  if (rows[0].c > 0) {
+    return { loaded: false, reason: `projects table already has ${rows[0].c} row(s) — not reseeding` };
+  }
+  console.log(`[migrate] loading POC demo data from seeds/poc-demo.sql (${sql.length} bytes)...`);
+  await client.query(sql);
+  const { rows: r2 } = await client.query('SELECT COUNT(*)::int AS c FROM projects');
+  console.log(`[migrate] ✓ POC demo data loaded — ${r2[0].c} project(s) now present`);
+  return { loaded: true, reason: 'fresh DB seeded' };
+}
+
+/**
  * Runs pending migrations. Returns a summary.
  * Throws nothing — caller decides what to do if migrations failed.
  */
@@ -125,7 +159,20 @@ async function runAll() {
         break;
       }
     }
-    return { ran, failed, skipped: 0, error: firstError };
+
+    // After successful migrations, try to seed POC demo data (best-effort)
+    let seeded = false;
+    if (failed === 0) {
+      try {
+        const r = await maybeSeedPocDemo(client);
+        seeded = r.loaded;
+        if (!r.loaded) console.log(`[migrate] seed skipped: ${r.reason}`);
+      } catch (err) {
+        console.error(`[migrate] seed failed: ${err.message}`);
+      }
+    }
+
+    return { ran, failed, skipped: 0, seeded, error: firstError };
   } finally {
     client.release();
   }
