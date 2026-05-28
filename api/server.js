@@ -115,39 +115,43 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'poc', 'login.html'));
 });
 
-// Run pending DB migrations BEFORE accepting traffic.
-// Never blocks startup — if migrations fail or DB is down, the server still
-// listens (auth endpoints will return clear errors), so a single bad
-// migration won't take prod completely offline.
+// ─── Boot sequence ───
+// Try to run migrations FIRST so endpoints don't hit a half-migrated schema
+// on the first request after deploy. Migration runner never throws; if it
+// fails (DB unreachable, bad SQL) we log clearly and start the server anyway
+// so a single migration bug can't take prod completely offline.
 const { runAll: runMigrations } = require('./migrate');
-runMigrations()
-  .then(r => {
+
+(async () => {
+  try {
+    const r = await runMigrations();
     if (r.error) console.error(`[boot] migration error: ${r.error}`);
     else if (r.ran > 0) console.log(`[boot] applied ${r.ran} migration(s)`);
-  })
-  .catch(err => console.error('[boot] migration runner crashed:', err));
+  } catch (err) {
+    console.error('[boot] migration runner crashed:', err.message || err);
+  }
 
-const server = app.listen(PORT, () => {
-  console.log(`SDA Operation API running on http://localhost:${PORT}`);
-});
-
-// ═══ WebSocket for real-time updates ═══
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ server });
-
-const wsClients = new Set();
-
-wss.on('connection', (ws) => {
-  wsClients.add(ws);
-  ws.on('close', () => wsClients.delete(ws));
-  ws.on('error', () => wsClients.delete(ws));
-});
-
-function broadcast(type, data) {
-  const msg = JSON.stringify({ type, data, timestamp: Date.now() });
-  wsClients.forEach(ws => {
-    if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+  const server = app.listen(PORT, () => {
+    console.log(`SDA Operation API running on http://localhost:${PORT}`);
   });
-}
 
-app.set('broadcast', broadcast);
+  // ═══ WebSocket for real-time updates ═══
+  const WebSocket = require('ws');
+  const wss = new WebSocket.Server({ server });
+  const wsClients = new Set();
+
+  wss.on('connection', (ws) => {
+    wsClients.add(ws);
+    ws.on('close', () => wsClients.delete(ws));
+    ws.on('error', () => wsClients.delete(ws));
+  });
+
+  function broadcast(type, data) {
+    const msg = JSON.stringify({ type, data, timestamp: Date.now() });
+    wsClients.forEach(ws => {
+      if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+    });
+  }
+
+  app.set('broadcast', broadcast);
+})();
