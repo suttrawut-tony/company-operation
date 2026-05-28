@@ -13,6 +13,18 @@ async function authenticate(req, res, next) {
   try {
     const token = header.split(' ')[1];
     const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Static token (issued by the no-DB login path) — never hit the DB
+    if (payload.static === true) {
+      const staticUser = require('../lib/static-user');
+      req.user = staticUser.buildStaticUser();
+      // Honor any payload overrides (in case env changed after token was issued)
+      req.user.id = payload.userId || req.user.id;
+      req.user.company_id = payload.companyId || req.user.company_id;
+      req.user.role = payload.role || req.user.role;
+      return next();
+    }
+
     const { rows } = await db.query('SELECT * FROM users WHERE id = $1 AND is_active = true', [payload.userId]);
     if (!rows[0]) return res.status(401).json({ error: 'User not found or inactive' });
     req.user = rows[0];

