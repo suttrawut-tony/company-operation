@@ -78,11 +78,24 @@ async function applyMigration(client, name) {
   await client.query('INSERT INTO _migrations (name) VALUES ($1)', [name]);
 }
 
+// Marker stored in _migrations once the POC seed has been applied. Lets
+// us re-run migrate.js without re-truncating + reseeding the DB.
+const POC_SEED_MARKER = '__poc_seed_loaded';
+
+const STATIC_ADMIN_USER_ID = '00000000-0000-0000-0000-000000000001';
+const SEED_COMPANY_ID      = '11111111-1111-1111-1111-111111111111';
+
 /**
- * Load api/seeds/poc-demo.sql into the DB if:
- *  - the file exists AND is not empty / comment-only
- *  - the projects table exists (schema is set up)
- *  - the projects table is empty (DB is fresh — don't clobber real data)
+ * Load api/seeds/poc-demo.sql into the DB if it has real SQL in it AND
+ * we haven't already loaded it on this DB.
+ *
+ * Handles the quirks of a pg_dump 17 --data-only export:
+ *  - Strips \restrict / \unrestrict psql meta-commands (node-postgres can't parse them)
+ *  - TRUNCATE companies CASCADE first so sample data inserted by the schema
+ *    migrations (002, 003, 004, 005, 006, 009, 012) doesn't duplicate / conflict
+ *    with the dump
+ *  - After loading, ensures the static-login admin user exists in `users` so
+ *    writes that reference its UUID don't fail FK constraints
  *
  * Returns { loaded: bool, reason: string }
  */
@@ -90,24 +103,64 @@ async function maybeSeedPocDemo(client) {
   if (!fs.existsSync(POC_SEED_FILE)) {
     return { loaded: false, reason: 'no seed file' };
   }
-  const sql = fs.readFileSync(POC_SEED_FILE, 'utf8');
-  // Skip if file is just comments / whitespace
-  const meaningful = sql.split('\n').filter(l => l.trim() && !l.trim().startsWith('--')).join('\n').trim();
+  const rawSql = fs.readFileSync(POC_SEED_FILE, 'utf8');
+  const meaningful = rawSql
+    .split('\n')
+    .filter(l => l.trim() && !l.trim().startsWith('--'))
+    .join('\n')
+    .trim();
   if (!meaningful) {
     return { loaded: false, reason: 'seed file is empty / comment-only' };
   }
   if (!(await tableExists(client, 'projects'))) {
     return { loaded: false, reason: 'projects table not set up yet' };
   }
-  const { rows } = await client.query('SELECT COUNT(*)::int AS c FROM projects');
-  if (rows[0].c > 0) {
-    return { loaded: false, reason: `projects table already has ${rows[0].c} row(s) — not reseeding` };
+
+  // Idempotency — once loaded, never re-truncate
+  const { rows: marker } = await client.query(
+    'SELECT 1 FROM _migrations WHERE name = $1',
+    [POC_SEED_MARKER]
+  );
+  if (marker.length > 0) {
+    return { loaded: false, reason: 'POC seed already applied (marker present)' };
   }
-  console.log(`[migrate] loading POC demo data from seeds/poc-demo.sql (${sql.length} bytes)...`);
-  await client.query(sql);
+
+  console.log('[migrate] preparing POC seed — wiping data inserted by schema migrations...');
+  await client.query('TRUNCATE companies CASCADE');
+
+  // Strip pg_dump 17 psql meta-commands the node-postgres parser rejects
+  const cleanSql = rawSql
+    .replace(/^\\restrict.*$/gm,   '-- stripped psql \\restrict')
+    .replace(/^\\unrestrict.*$/gm, '-- stripped psql \\unrestrict');
+
+  console.log(`[migrate] loading POC demo data (${(rawSql.length / 1024).toFixed(0)} KB)...`);
+  await client.query(cleanSql);
+
+  // The static-login admin user (admin@local) needs to exist in the users
+  // table so write operations referencing its UUID pass FK checks.
+  // Static login itself bypasses DB entirely — this is purely for writes.
+  await client.query(
+    `INSERT INTO users (id, company_id, email, password_hash,
+                        first_name, last_name, first_name_th, last_name_th,
+                        role, position, department, is_active, created_at)
+     VALUES ($1, $2, $3, '',
+             $4, $5, $6, $7,
+             'executive', 'System Administrator', 'IT', true, NOW())
+     ON CONFLICT (id) DO NOTHING`,
+    [
+      STATIC_ADMIN_USER_ID, SEED_COMPANY_ID, 'admin@local',
+      'Admin', 'Local', 'แอดมิน', 'ระบบ',
+    ]
+  );
+
+  await client.query(
+    'INSERT INTO _migrations (name) VALUES ($1) ON CONFLICT DO NOTHING',
+    [POC_SEED_MARKER]
+  );
+
   const { rows: r2 } = await client.query('SELECT COUNT(*)::int AS c FROM projects');
-  console.log(`[migrate] ✓ POC demo data loaded — ${r2[0].c} project(s) now present`);
-  return { loaded: true, reason: 'fresh DB seeded' };
+  console.log(`[migrate] ✓ POC demo loaded — ${r2[0].c} project(s) now present`);
+  return { loaded: true, reason: 'fresh DB seeded with POC data' };
 }
 
 /**
