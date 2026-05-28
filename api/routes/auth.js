@@ -410,6 +410,31 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
+// GET /api/auth/admins?slug=sda-group
+// Public-ish: returns admin contacts for the given company so the
+// register page can show "who will approve you". No password / role
+// permissions / sensitive fields are exposed.
+// ═══════════════════════════════════════════════════════════
+router.get('/admins', async (req, res) => {
+  try {
+    const slug = (req.query.slug || 'sda-group').toString().trim();
+    const { rows } = await db.query(
+      `SELECT u.email, u.first_name, u.last_name, u.first_name_th, u.last_name_th, u.role
+         FROM users u JOIN companies c ON u.company_id = c.id
+        WHERE c.slug = $1 AND c.is_active = true
+          AND u.is_active = true
+          AND u.role IN ('executive','admin')
+        ORDER BY u.role, u.first_name`,
+      [slug]
+    );
+    res.json({ admins: rows });
+  } catch (err) {
+    console.error('[auth/admins]', err);
+    res.status(500).json({ error: 'Could not list admins' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
 // GET /api/auth/users
 // ═══════════════════════════════════════════════════════════
 router.get('/users', authenticate, async (req, res) => {

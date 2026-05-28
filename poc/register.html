@@ -145,8 +145,9 @@
 
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
+        const slug = document.getElementById('r-slug').value.trim() || 'sda-group';
         const r = await API.register({
-          slug: document.getElementById('r-slug').value.trim() || 'sda-group',
+          slug,
           email,
           password: pw1,
           first_name: fname,
@@ -157,8 +158,24 @@
           department: document.getElementById('r-dept').value.trim(),
           phone: document.getElementById('r-phone').value.trim(),
         });
+
+        // Fetch admin contacts so the user knows who they're waiting on
+        let adminsHtml = '';
+        try {
+          const a = await API.getAdmins(slug);
+          if (a.admins && a.admins.length) {
+            adminsHtml = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #d1fae5;"><b>ผู้ที่จะอนุมัติบัญชีของคุณ:</b><ul style="margin:6px 0 0 18px;padding:0;">' +
+              a.admins.map(u =>
+                '<li><a href="mailto:' + u.email + '" style="color:#047857;">' +
+                (u.first_name_th || u.first_name) + ' ' + (u.last_name_th || u.last_name || '') +
+                '</a> &lt;' + u.email + '&gt;</li>'
+              ).join('') + '</ul></div>';
+          }
+        } catch (_) { /* ignore — not critical */ }
+
         info.innerHTML = (r.message || 'Registration submitted.') +
-          '<br><br>กรุณารอแอดมินอนุมัติบัญชีของคุณ ระบบจะส่งอีเมลแจ้งเมื่อบัญชีพร้อมใช้งาน';
+          '<br><br>กรุณารอแอดมินอนุมัติบัญชีของคุณ ระบบจะส่งอีเมลแจ้งเมื่อบัญชีพร้อมใช้งาน' +
+          adminsHtml;
         info.style.display = 'block';
         document.querySelector('form').style.display = 'none';
       } catch (e) {

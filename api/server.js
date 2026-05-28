@@ -115,6 +115,18 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'poc', 'login.html'));
 });
 
+// Run pending DB migrations BEFORE accepting traffic.
+// Never blocks startup — if migrations fail or DB is down, the server still
+// listens (auth endpoints will return clear errors), so a single bad
+// migration won't take prod completely offline.
+const { runAll: runMigrations } = require('./migrate');
+runMigrations()
+  .then(r => {
+    if (r.error) console.error(`[boot] migration error: ${r.error}`);
+    else if (r.ran > 0) console.log(`[boot] applied ${r.ran} migration(s)`);
+  })
+  .catch(err => console.error('[boot] migration runner crashed:', err));
+
 const server = app.listen(PORT, () => {
   console.log(`SDA Operation API running on http://localhost:${PORT}`);
 });

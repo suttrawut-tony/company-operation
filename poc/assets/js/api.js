@@ -119,6 +119,9 @@ const API = {
   async approveUser(id, body = {}) {
     return this.post(`/auth/users/${id}/approve`, body);
   },
+  async getAdmins(slug = 'sda-group') {
+    return this.get(`/auth/admins?slug=${encodeURIComponent(slug)}`);
+  },
 
   // ─── Dashboard ───
   async getDashboard() { return this.get('/dashboard'); },
