@@ -16,6 +16,15 @@ async function authenticate(req, res, next) {
     const { rows } = await db.query('SELECT * FROM users WHERE id = $1 AND is_active = true', [payload.userId]);
     if (!rows[0]) return res.status(401).json({ error: 'User not found or inactive' });
     req.user = rows[0];
+    // Block all non-auth API calls when password change is required, so users
+    // can't keep using stale credentials after admin reset.
+    if (rows[0].must_change_password && !req.path.startsWith('/change-password') && !req.path.startsWith('/me')) {
+      // /api/auth/me + /api/auth/change-password remain available
+      const reqPath = req.originalUrl || '';
+      if (!reqPath.startsWith('/api/auth/me') && !reqPath.startsWith('/api/auth/change-password')) {
+        return res.status(403).json({ error: 'Password change required', code: 'MUST_CHANGE_PASSWORD' });
+      }
+    }
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid token' });

@@ -146,44 +146,6 @@
       box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
     }
 
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 20px 0;
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .btn-google {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--bg-white);
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      font-family: var(--font);
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.15s;
-    }
-    .btn-google:hover {
-      background: var(--bg-hover);
-      border-color: var(--text-muted);
-    }
-    .btn-google svg { width: 18px; height: 18px; }
-
     .login-submit {
       width: 100%;
       padding: 11px;
@@ -199,6 +161,7 @@
       margin-top: 8px;
     }
     .login-submit:hover { background: var(--primary-hover); }
+    .login-submit:disabled { opacity: 0.6; cursor: wait; }
 
     .form-footer {
       text-align: center;
@@ -209,6 +172,7 @@
     .form-footer a {
       color: var(--primary);
       font-weight: 500;
+      cursor: pointer;
     }
     .form-footer a:hover { text-decoration: underline; }
 
@@ -226,20 +190,26 @@
       color: var(--text-secondary);
       cursor: pointer;
     }
-    .remember-row a { color: var(--primary); font-weight: 500; }
-
-    .lang-toggle {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.7);
+    .remember-row a {
+      color: var(--primary);
+      font-weight: 500;
       cursor: pointer;
-      background: rgba(255,255,255,0.15);
-      padding: 4px 12px;
-      border-radius: var(--radius-full);
-      border: none;
     }
+
+    #login-error, #login-info {
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+    #login-error { background: #fef2f2; color: #ef4444; }
+    #login-info  { background: #ecfdf5; color: #047857; }
+
+    /* Forgot password panel */
+    .forgot-panel { display: none; }
+    .forgot-panel.active { display: block; }
+    .login-panel.hidden { display: none; }
 
     @media (max-width: 768px) {
       .login-container { flex-direction: column; }
@@ -254,7 +224,6 @@
 
     <!-- Left: Branding -->
     <div class="login-brand">
-      <button class="lang-toggle" onclick="toggleLang()">TH / EN</button>
       <h1>SDA Operation</h1>
       <div class="tagline">
         ระบบบริหารโปรเจกต์และงบประมาณ<br>
@@ -284,48 +253,67 @@
       </div>
     </div>
 
-    <!-- Right: Login Form -->
+    <!-- Right: Form -->
     <div class="login-form-panel">
-      <h2>Welcome back</h2>
-      <div class="subtitle">เข้าสู่ระบบด้วยบัญชีของคุณ</div>
 
-      <!-- Company Slug -->
-      <div class="form-group">
-        <label class="form-label">Company</label>
-        <div class="company-slug-row">
-          <span class="slug-prefix">app.sda-operation.com/</span>
-          <input type="text" class="slug-input" value="sda-group" placeholder="company-slug">
+      <!-- ── Login panel ── -->
+      <div class="login-panel" id="loginPanel">
+        <h2>Welcome back</h2>
+        <div class="subtitle">เข้าสู่ระบบด้วยบัญชีของคุณ</div>
+
+        <div class="form-group">
+          <label class="form-label">Company</label>
+          <div class="company-slug-row">
+            <span class="slug-prefix">app.sda-operation.com/</span>
+            <input type="text" class="slug-input" value="sda-group" placeholder="company-slug" id="login-slug">
+          </div>
+        </div>
+
+        <form onsubmit="event.preventDefault(); handleLogin();">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" placeholder="name@sda-group.com" id="login-email" autocomplete="email" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" placeholder="Enter your password" id="login-password" autocomplete="current-password" required>
+          </div>
+          <div class="remember-row">
+            <label><input type="checkbox" id="login-remember"> Remember me for 30 days</label>
+            <a id="show-forgot">Forgot password?</a>
+          </div>
+          <button type="submit" class="login-submit" id="login-submit">Sign In</button>
+        </form>
+
+        <div id="login-error"></div>
+        <div id="login-info"></div>
+
+        <div class="form-footer">
+          ยังไม่มีบัญชี? ติดต่อผู้ดูแลระบบ (admin@sala-daeng.com)
         </div>
       </div>
 
-      <!-- Google Sign In -->
-      <button class="btn-google" onclick="alert('Google Sign In is not configured. Please use email/password.')">
-        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Sign in with Google
-      </button>
+      <!-- ── Forgot password panel ── -->
+      <div class="forgot-panel" id="forgotPanel">
+        <h2>Reset password</h2>
+        <div class="subtitle">ใส่อีเมลที่ลงทะเบียนไว้ ระบบจะส่งลิงก์รีเซ็ตให้</div>
 
-      <div class="divider">or continue with email</div>
+        <form onsubmit="event.preventDefault(); handleForgot();">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" placeholder="name@sda-group.com" id="forgot-email" autocomplete="email" required>
+          </div>
+          <button type="submit" class="login-submit" id="forgot-submit">Send reset link</button>
+        </form>
 
-      <!-- Email/Password -->
-      <form onsubmit="event.preventDefault(); handleLogin();">
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-input" placeholder="name@sda-group.com" id="login-email">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" class="form-input" placeholder="Enter your password" id="login-password">
-        </div>
-        <div class="remember-row">
-          <label><input type="checkbox" checked> Remember me</label>
-          <a href="#">Forgot password?</a>
-        </div>
-        <button type="submit" class="login-submit">Sign In</button>
-      </form>
+        <div id="forgot-info" style="background:#ecfdf5;color:#047857;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none;"></div>
+        <div id="forgot-error" style="background:#fef2f2;color:#ef4444;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none;"></div>
 
-      <div class="form-footer">
-        Don't have an account? <a href="#">Contact Admin</a>
+        <div class="form-footer">
+          <a id="back-to-login">← Back to sign in</a>
+        </div>
       </div>
+
     </div>
 
   </div>
@@ -335,22 +323,47 @@
     // If already logged in, go to dashboard
     if (API.isLoggedIn()) window.location.href = 'dashboard.html';
 
-    async function handleLogin() {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      const slug = document.querySelector('.slug-input').value || 'sda-group';
-      const btn = document.querySelector('.login-submit');
-      const errEl = document.getElementById('login-error');
+    const loginPanel  = document.getElementById('loginPanel');
+    const forgotPanel = document.getElementById('forgotPanel');
 
+    document.getElementById('show-forgot').addEventListener('click', (e) => {
+      e.preventDefault();
+      loginPanel.classList.add('hidden');
+      forgotPanel.classList.add('active');
+      const e2 = document.getElementById('login-email').value;
+      if (e2) document.getElementById('forgot-email').value = e2;
+    });
+    document.getElementById('back-to-login').addEventListener('click', (e) => {
+      e.preventDefault();
+      forgotPanel.classList.remove('active');
+      loginPanel.classList.remove('hidden');
+    });
+
+    // Surface reset-success message coming back from reset-password.html
+    if (location.search.includes('reset=ok')) {
+      showInfo('Password reset successful. Please sign in with your new password.');
+    }
+
+    async function handleLogin() {
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const slug     = document.getElementById('login-slug').value.trim() || 'sda-group';
+      const remember = document.getElementById('login-remember').checked;
+      const btn      = document.getElementById('login-submit');
+
+      hideError(); hideInfo();
       if (!email || !password) { showError('Please enter email and password'); return; }
 
       btn.disabled = true;
       btn.textContent = 'Signing in...';
-      if (errEl) errEl.style.display = 'none';
-
       try {
-        await API.login(email, password, slug);
-        window.location.href = 'dashboard.html';
+        await API.login(email, password, slug, remember);
+        const me = API.getUser();
+        if (me && me.mustChangePassword) {
+          window.location.href = 'change-password.html?first=1';
+        } else {
+          window.location.href = 'dashboard.html';
+        }
       } catch (err) {
         showError(err.message || 'Login failed');
         btn.disabled = false;
@@ -358,19 +371,45 @@
       }
     }
 
-    function showError(msg) {
-      let el = document.getElementById('login-error');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = 'login-error';
-        el.style.cssText = 'background:#fef2f2;color:#ef4444;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none;';
-        document.querySelector('.login-submit').after(el);
+    async function handleForgot() {
+      const email = document.getElementById('forgot-email').value.trim();
+      const btn   = document.getElementById('forgot-submit');
+      const info  = document.getElementById('forgot-info');
+      const err   = document.getElementById('forgot-error');
+      info.style.display = 'none'; err.style.display = 'none';
+      if (!email) { err.textContent = 'Please enter your email'; err.style.display = 'block'; return; }
+
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        const r = await API.forgotPassword(email);
+        info.textContent = r.message || 'If that email is registered, a reset link has been sent.';
+        info.style.display = 'block';
+      } catch (e) {
+        err.textContent = e.message || 'Could not send reset link';
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Send reset link';
       }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('login-error');
       el.textContent = msg;
       el.style.display = 'block';
     }
-
-    function toggleLang() { alert('Language switch (Phase 2)'); }
+    function hideError() {
+      const el = document.getElementById('login-error');
+      el.style.display = 'none';
+    }
+    function showInfo(msg) {
+      const el = document.getElementById('login-info');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+    function hideInfo() {
+      const el = document.getElementById('login-info');
+      el.style.display = 'none';
+    }
   </script>
   <script src="assets/js/icons.js"></script>
 </body>

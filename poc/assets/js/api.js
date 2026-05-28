@@ -50,16 +50,44 @@ const API = {
     const opts = { method, headers };
     if (body) opts.body = JSON.stringify(body);
 
-    const res = await fetch(`${this.baseUrl}${path}`, opts);
-
-    if (res.status === 401) {
-      this.logout();
-      throw new Error('Session expired');
+    let res;
+    try {
+      res = await fetch(`${this.baseUrl}${path}`, opts);
+    } catch (netErr) {
+      throw new Error('Cannot reach server. Check your connection.');
     }
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API Error');
-    return data;
+    // Auth-related side effects
+    if (res.status === 401) {
+      // Allow callers to handle their own 401 (e.g. login screen)
+      if (path !== '/auth/login' && path !== '/auth/forgot-password' && path !== '/auth/reset-password') {
+        this.logout();
+        throw new Error('Session expired');
+      }
+    }
+
+    // Safely parse a response that may not be JSON (proxy error pages, etc.)
+    const ct = res.headers.get('content-type') || '';
+    let data = null;
+    if (ct.includes('application/json')) {
+      try { data = await res.json(); }
+      catch (_) { data = null; }
+    } else {
+      const text = await res.text().catch(() => '');
+      data = text ? { error: `Server error (${res.status})` } : null;
+    }
+
+    if (res.status === 403 && data && data.code === 'MUST_CHANGE_PASSWORD') {
+      if (!location.pathname.endsWith('change-password.html')) {
+        window.location.href = 'change-password.html';
+      }
+      throw new Error('Password change required');
+    }
+
+    if (!res.ok) {
+      throw new Error((data && data.error) || `Request failed (${res.status})`);
+    }
+    return data || {};
   },
 
   get(path) { return this.request('GET', path); },
@@ -68,14 +96,23 @@ const API = {
   del(path) { return this.request('DELETE', path); },
 
   // ─── Auth ───
-  async login(email, password, slug = 'sda-group') {
-    const data = await this.post('/auth/login', { email, password, slug });
+  async login(email, password, slug = 'sda-group', remember = false) {
+    const data = await this.post('/auth/login', { email, password, slug, remember });
     this.setToken(data.token);
     this.setUser(data.user);
     return data;
   },
 
   async getMe() { return this.get('/auth/me'); },
+  async changePassword(currentPassword, newPassword) {
+    return this.post('/auth/change-password', { currentPassword, newPassword });
+  },
+  async forgotPassword(email) {
+    return this.post('/auth/forgot-password', { email });
+  },
+  async resetPassword(token, newPassword) {
+    return this.post('/auth/reset-password', { token, newPassword });
+  },
 
   // ─── Dashboard ───
   async getDashboard() { return this.get('/dashboard'); },

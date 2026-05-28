@@ -3,6 +3,8 @@
 -- Idempotent & self-healing. Run anytime to restore the admin login:
 --   psql sda_operation < api/ensure-admin.sql
 -- Requires: pgcrypto extension + company 'sda-group' to exist.
+-- NOTE: The seed admin is flagged with must_change_password = true,
+--       so the first successful login forces a password change.
 -- ═══════════════════════════════════════════════════════════
 INSERT INTO users (
   company_id, email, password_hash,
@@ -18,3 +20,8 @@ ON CONFLICT (email) DO UPDATE SET
   password_hash = crypt('111111', gen_salt('bf')),
   is_active     = true,
   role          = 'executive';
+
+-- Force password change on first successful login (idempotent)
+UPDATE users SET must_change_password = true
+WHERE email = 'admin@sala-daeng.com'
+  AND (password_changed_at IS NULL OR password_hash = crypt('111111', password_hash));
