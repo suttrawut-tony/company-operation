@@ -119,7 +119,7 @@ function renderSidebar() {
     <div class="sidebar-header">
       <a href="dashboard.html" class="sidebar-logo">
         ${icon('<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>', 24)}
-        <span class="sidebar-logo-text">SDA Operation</span>
+        <span class="sidebar-logo-text">Company Operation</span>
       </a>
       <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
         ${collapsed ? ICONS.chevronRight : ICONS.chevronLeft}

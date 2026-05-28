@@ -32,15 +32,29 @@
     .settle-line { display:grid; grid-template-columns:1fr 100px 80px 60px; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid var(--border-light); font-size:12px; }
     .settle-line:last-child { border-bottom:none; }
 
-    .flow-steps { display:flex; align-items:center; gap:4px; margin-bottom:20px; padding:12px 16px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow-x:auto; }
-    .flow-step { padding:6px 14px; border-radius:var(--radius-full); font-size:11px; font-weight:600; white-space:nowrap; }
-    .flow-step.done { background:var(--success-bg); color:var(--success); }
-    .flow-step.current { background:var(--primary-light); color:var(--primary); border:2px solid var(--primary); }
-    .flow-step.pending { background:var(--bg-hover); color:var(--text-muted); }
-    .flow-arrow { color:var(--text-muted); font-size:14px; }
+    .flow-bar-horizontal { display:flex; align-items:center; gap:4px; margin-bottom:20px; padding:12px 16px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow-x:auto; }
+    .flow-bar-horizontal .flow-step { padding:6px 14px; border-radius:var(--radius-full); font-size:11px; font-weight:600; white-space:nowrap; }
+    .flow-bar-horizontal .flow-step.done { background:var(--success-bg); color:var(--success); }
+    .flow-bar-horizontal .flow-step.current { background:var(--primary-light); color:var(--primary); border:2px solid var(--primary); }
+    .flow-bar-horizontal .flow-step.pending { background:var(--bg-hover); color:var(--text-muted); }
+    .flow-bar-horizontal .flow-arrow { color:var(--text-muted); font-size:14px; }
+    .flow-steps { display:flex; flex-direction:column; gap:0; margin-bottom:0; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .flow-step-row { display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:12px; font-weight:600; border-bottom:1px solid var(--border-light); }
+    .flow-step-row:last-child { border-bottom:none; }
+    .flow-step-row .step-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+    .flow-step-row.done .step-dot { background:var(--success); color:#fff; }
+    .flow-step-row.current .step-dot { background:var(--primary); color:#fff; }
+    .flow-step-row.pending .step-dot { background:var(--bg-hover); color:var(--text-muted); }
+    .flow-step-row.done { color:var(--success); }
+    .flow-step-row.current { color:var(--primary); background:var(--primary-light); }
+    .flow-step-row.pending { color:var(--text-muted); }
+    .flow-step-row .step-label { flex:1; }
+    .flow-step-row .step-toggle { font-size:9px; color:var(--text-muted); cursor:pointer; padding:4px 8px; }
+    .flow-detail { padding:0 16px 12px 46px; border-bottom:1px solid var(--border-light); display:none; }
 
     .filter-bar { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
 
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     .modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
     .modal-overlay.show { display:flex; }
     .modal-box { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:560px; max-width:95vw; max-height:90vh; overflow-y:auto; }
@@ -70,7 +84,7 @@
     </div>
 
     <!-- Flow -->
-    <div class="flow-steps" id="flow-bar">
+    <div class="flow-bar-horizontal" id="flow-bar">
       <div class="flow-step current">1. Request</div>
       <div class="flow-arrow">&rarr;</div>
       <div class="flow-step pending">2. Approve</div>
@@ -80,6 +94,8 @@
       <div class="flow-step pending">4. Clear</div>
       <div class="flow-arrow">&rarr;</div>
       <div class="flow-step pending">5. Closed</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step pending">6. Employee Received</div>
     </div>
 
     <!-- Tabs -->
@@ -181,9 +197,14 @@
           <div class="form-group"><label class="form-label">Company Bank Account</label><select class="form-input" id="p-bank"><option value="">Select bank account</option></select></div>
           <div class="form-group"><label class="form-label">Reference</label><input type="text" class="form-input" id="p-ref" placeholder="Transfer ref / Cheque no."></div>
           <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="p-remarks"></div>
+          <div class="form-group">
+            <label class="form-label">Attachment (Slip / Receipt)</label>
+            <input type="file" class="form-input" id="p-attachment" accept="image/*,.pdf" style="padding:6px;">
+            <div id="p-attachment-preview" style="margin-top:6px;"></div>
+          </div>
           <div style="margin-top:12px;padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;">
             <div style="font-weight:600;margin-bottom:4px;">GL Journal Entry (auto)</div>
-            <div style="color:var(--primary);">Dr. 113103 Employee Receivable</div>
+            <div style="color:var(--primary);">Dr. 113103 Employee Receivable (Advance)</div>
             <div style="color:var(--success);">Cr. <span id="p-gl-bank">111201 Bank Account</span></div>
           </div>
         </div>
@@ -215,6 +236,11 @@
           <div class="form-group">
             <label class="form-label">Remarks</label>
             <input type="text" class="form-input" id="r-remarks">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Attachment (Slip / Receipt)</label>
+            <input type="file" class="form-input" id="r-attachment" accept="image/*,.pdf" style="padding:6px;">
+            <div id="r-attachment-preview" style="margin-top:6px;"></div>
           </div>
           <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;" id="r-gl-preview"></div>
         </div>
@@ -299,14 +325,31 @@
       return list;
     }
 
-    function getFlowSteps(status) {
-      const steps = ['draft','pending','approved','paid','settling','settled'];
-      const labels = ['Request','Approve','Approved','Payment','Clear','Closed'];
-      const idx = status.includes('pending') ? 1 : steps.indexOf(status);
-      return labels.map((l, i) => {
+    function getFlowSteps(status, advId, employeeConfirmed, isReimburse) {
+      const steps = isReimburse
+        ? ['draft','pending','approved','paid','settling','settled','confirmed']
+        : ['draft','pending','approved','paid','settling','settled'];
+      const labels = isReimburse
+        ? ['Request','Approve','Approved','Payment','Clear','Closed','Employee Received']
+        : ['Request','Approve','Approved','Payment','Clear','Closed'];
+      let idx = status.includes('pending') ? 1 : steps.indexOf(status);
+      if (employeeConfirmed && isReimburse) idx = 6;
+      return '<div class="flow-steps">' + labels.map((l, i) => {
         const cls = i < idx ? 'done' : i === idx ? 'current' : 'pending';
-        return `<div class="flow-step ${cls}">${i+1}. ${l}</div>`;
-      }).join('<div class="flow-arrow">&rarr;</div>');
+        const dot = i < idx ? '&#10003;' : (i+1);
+        const hasDropdown = (i === 3 || i === 4); // Payment=3, Clear=4 (not 6=Employee Received)
+        const dropId = i === 3 ? 'flow-payment-'+advId : 'flow-clear-'+advId;
+        const toggleAttr = hasDropdown && cls !== 'pending' ? `onclick="event.stopPropagation();toggleFlowDetail('${dropId}')" style="cursor:pointer;"` : '';
+        let html = `<div class="flow-step-row ${cls}" ${toggleAttr}>
+          <div class="step-dot">${dot}</div>
+          <span class="step-label">${l}</span>
+          ${hasDropdown && cls !== 'pending' ? '<span class="step-toggle">&#9660;</span>' : ''}
+        </div>`;
+        if (hasDropdown) {
+          html += `<div class="flow-detail" id="${dropId}"></div>`;
+        }
+        return html;
+      }).join('') + '</div>';
     }
 
     function renderList() {
@@ -334,6 +377,10 @@
         if (a.status === 'settling' && clearApproved && balance < 0 && ['finance','executive'].includes(userRole)) {
           actions += ' <button class="btn btn-sm" style="background:var(--warning);color:#fff;" onclick="event.stopPropagation();openReimburseModal(\''+a.id+'\','+Math.abs(balance)+')">Pay Reimburse ฿'+fmtNum(Math.abs(balance))+'</button>';
         }
+        // Employee confirms received after settled — only for reimburse (company paid employee)
+        if (a.status === 'settled' && !a.employee_confirmed && balance < 0) {
+          actions += ' <button class="btn btn-sm" style="background:var(--info);color:#fff;" onclick="event.stopPropagation();confirmReceived(\''+a.id+'\')">✓ Confirm Received</button>';
+        }
 
         return `
         <div class="adv-card">
@@ -353,7 +400,7 @@
               ${paidAmt > 0 ? '<div style="font-size:10px;color:var(--text-muted);">Paid: ฿'+fmtNum(paidAmt)+'</div>' : ''}
               ${balance > 0 ? '<div style="font-size:11px;font-weight:600;color:var(--danger);">Balance: ฿'+fmtNum(balance)+'</div>' : ''}
               ${balance < 0 ? '<div style="font-size:11px;font-weight:600;color:var(--warning);">Reimburse: ฿'+fmtNum(Math.abs(balance))+'</div>' : ''}
-              ${a.status === 'settled' && balance === 0 ? '<div style="font-size:11px;font-weight:600;color:var(--success);">Cleared</div>' : ''}
+              ${a.employee_confirmed && balance < 0 ? '<div style="font-size:11px;font-weight:600;color:var(--success);">✓ พนักงานได้รับเงินแล้ว</div>' : (a.status === 'settled' ? '<div style="font-size:11px;font-weight:600;color:var(--success);">Cleared</div>' : '')}
             </div>
             <div style="display:flex;gap:4px;align-items:center;">
               ${statusBadge(a.status)}
@@ -361,7 +408,7 @@
             </div>
           </div>
           <div class="adv-card-expand" id="expand-${a.id}">
-            <div style="margin-top:12px;">${getFlowSteps(a.status)}</div>
+            <div style="margin-top:12px;">${getFlowSteps(a.status, a.id, a.employee_confirmed, balance < 0)}</div>
             <div id="detail-${a.id}" style="margin-top:12px;color:var(--text-muted);font-size:12px;">Click to load details...</div>
           </div>
         </div>`;
@@ -377,65 +424,129 @@
       if (isOpen) return;
       el.classList.add('show');
 
-      // Load detail
+      // Load detail into flow dropdowns
       const detailEl = document.getElementById('detail-' + id);
-      detailEl.innerHTML = '<div style="color:var(--text-muted);">Loading...</div>';
+      detailEl.innerHTML = '';
       try {
         const data = await API.get('/advance/' + id);
-        let html = '';
 
-        // Payments
-        if (data.payments && data.payments.length) {
-          html += '<div style="font-size:13px;font-weight:700;margin-bottom:8px;">Payments</div>';
-          data.payments.forEach(p => {
-            html += `<div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:8px;font-size:12px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-weight:600;">${new Date(p.payment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</span>
-                <strong style="color:var(--primary);font-size:14px;">฿${fmtNum(parseFloat(p.amount))}</strong>
-              </div>
-              <div style="color:var(--text-secondary);">${p.payment_method} ${p.reference ? '| Ref: '+p.reference : ''} ${p.paid_by_name ? '| '+p.paid_by_name : ''}</div>
-              ${p.journal_id ? '<div style="margin-top:6px;" id="journal-pay-'+p.id+'"><a href="#" onclick="event.preventDefault();loadJournal(\''+p.journal_id+'\',\'journal-pay-'+p.id+'\')" style="font-size:11px;color:var(--primary);">View GL Journal</a></div>' : ''}
-            </div>`;
-          });
+        // Split payments: advance payments vs reimburse/return
+        const advPayments = (data.payments || []).filter(p => p.payment_method !== 'reimburse' && p.payment_method !== 'return');
+        const settlePayments = (data.payments || []).filter(p => p.payment_method === 'reimburse' || p.payment_method === 'return');
+
+        // Payment dropdown content (advance payments only)
+        const payEl = document.getElementById('flow-payment-' + id);
+        if (payEl) {
+          if (advPayments.length) {
+            let payHtml = '';
+            advPayments.forEach(p => {
+              payHtml += `<div style="padding:8px;background:var(--bg-white);border-radius:var(--radius);margin-bottom:6px;border:1px solid var(--border-light);">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span style="font-weight:600;">${new Date(p.payment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</span>
+                  <strong style="color:var(--primary);font-size:14px;">฿${fmtNum(parseFloat(p.amount))}</strong>
+                </div>
+                <div style="color:var(--text-secondary);font-size:11px;">${p.payment_method} ${p.reference ? '| Ref: '+p.reference : ''} ${p.paid_by_name ? '| '+p.paid_by_name : ''}</div>
+                ${p.journal_id ? '<div style="margin-top:6px;" id="journal-pay-'+p.id+'"><a href="#" onclick="event.preventDefault();event.stopPropagation();loadJournal(\''+p.journal_id+'\',\'journal-pay-'+p.id+'\')" style="font-size:11px;color:var(--primary);">View GL Journal</a></div>' : ''}
+              </div>`;
+            });
+            payEl.innerHTML = payHtml;
+          } else {
+            payEl.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">No payments yet</div>';
+          }
         }
 
-        // Clears
-        if (data.settlements && data.settlements.length) {
-          html += '<div style="font-size:13px;font-weight:700;margin-top:14px;margin-bottom:8px;">Clears</div>';
-          data.settlements.forEach(s => {
-            const diffColor = parseFloat(s.difference) > 0 ? 'var(--danger)' : parseFloat(s.difference) < 0 ? 'var(--success)' : 'var(--text-primary)';
-            const diffLabel = s.settlement_type === 'reimburse' ? 'Company owes employee' : s.settlement_type === 'return' ? 'Employee returns' : 'Exact match';
-            html += `<div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:8px;">
-              <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:8px;">
-                <span>${s.doc_number} ${statusBadge(s.status)} ${s.status==='pending_finance'&&['finance','executive'].includes(userRole)?'<button class="btn btn-success btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();approveClear(\''+s.id+'\')">Approve Clear</button>':''}</span>
-                <span>Total: ฿${fmtNum(parseFloat(s.total_expense))}</span>
-              </div>
-              <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead><tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:4px 0;font-size:10px;color:var(--text-muted);">Description</th><th style="text-align:right;padding:4px;font-size:10px;color:var(--text-muted);">Amount</th><th style="text-align:left;padding:4px;font-size:10px;color:var(--text-muted);">Category</th><th style="font-size:10px;color:var(--text-muted);">Receipt</th></tr></thead>
-                <tbody>`;
-            if (s.lines && s.lines.length) {
-              s.lines.forEach(l => {
-                html += `<tr style="border-bottom:1px solid var(--border-light);">
-                  <td style="padding:6px 0;">${l.description}</td>
-                  <td style="text-align:right;padding:6px 4px;font-weight:600;">฿${fmtNum(parseFloat(l.amount))}</td>
-                  <td style="padding:6px 4px;"><span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--bg-hover);">${l.category||'misc'}</span></td>
-                  <td style="text-align:center;font-size:10px;color:${l.has_receipt?'var(--success)':'var(--text-muted)'};">${l.has_receipt?'Yes':'-'}</td>
-                </tr>`;
+        // Clear dropdown content
+        const clearEl = document.getElementById('flow-clear-' + id);
+        if (clearEl) {
+          if (data.settlements && data.settlements.length) {
+            let clrHtml = '';
+            data.settlements.forEach(s => {
+              const diffColor = parseFloat(s.difference) > 0 ? 'var(--danger)' : parseFloat(s.difference) < 0 ? 'var(--success)' : 'var(--text-primary)';
+              const diffLabel = s.settlement_type === 'reimburse' ? 'Company owes employee' : s.settlement_type === 'return' ? 'Employee returns' : 'Exact match';
+              clrHtml += `<div style="padding:8px;background:var(--bg-white);border-radius:var(--radius);margin-bottom:6px;border:1px solid var(--border-light);">
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px;">
+                  <span>${s.doc_number} ${statusBadge(s.status)} ${s.status==='pending_finance'&&['finance','executive'].includes(userRole)?'<button class="btn btn-success btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();approveClear(\''+s.id+'\')">Approve Clear</button>':''}</span>
+                  <span>Total: ฿${fmtNum(parseFloat(s.total_expense))}</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                  <thead><tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:3px 0;font-size:10px;color:var(--text-muted);">Description</th><th style="text-align:right;padding:3px 4px;font-size:10px;color:var(--text-muted);">Amount</th><th style="text-align:left;padding:3px 4px;font-size:10px;color:var(--text-muted);">Category</th><th style="font-size:10px;color:var(--text-muted);">Receipt</th></tr></thead>
+                  <tbody>`;
+              if (s.lines && s.lines.length) {
+                s.lines.forEach(l => {
+                  clrHtml += `<tr style="border-bottom:1px solid var(--border-light);">
+                    <td style="padding:4px 0;">${l.description}</td>
+                    <td style="text-align:right;padding:4px;font-weight:600;">฿${fmtNum(parseFloat(l.amount))}</td>
+                    <td style="padding:4px;"><span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--bg-hover);">${l.category||'misc'}</span></td>
+                    <td style="text-align:center;font-size:10px;color:${l.has_receipt?'var(--success)':'var(--text-muted)'};">${l.has_receipt?'Yes':'-'}</td>
+                  </tr>`;
+                });
+              }
+              clrHtml += `</tbody></table>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">
+                  <span style="font-size:11px;font-weight:600;color:${diffColor};">${diffLabel}: ฿${fmtNum(Math.abs(parseFloat(s.difference)))}</span>
+                  ${s.journal_id ? '<a href="#" onclick="event.preventDefault();event.stopPropagation();loadJournal(\''+s.journal_id+'\',\'journal-settle-'+s.id+'\')" style="font-size:11px;color:var(--primary);">View GL Journal</a>' : ''}
+                </div>
+                ${s.journal_id ? '<div id="journal-settle-'+s.id+'" style="margin-top:6px;"></div>' : ''}
+              </div>`;
+            });
+            // Append reimburse/return payments to Clear section
+            if (settlePayments.length) {
+              clrHtml += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;font-weight:700;margin-bottom:6px;">Reimburse / Return</div>';
+              settlePayments.forEach(p => {
+                const typeLabel = p.payment_method === 'reimburse' ? 'Reimburse to Employee' : 'Return from Employee';
+                const typeColor = p.payment_method === 'reimburse' ? 'var(--warning)' : 'var(--success)';
+                clrHtml += `<div style="padding:8px;background:var(--bg-white);border-radius:var(--radius);margin-bottom:6px;border:1px solid var(--border-light);">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <span style="font-weight:600;">${new Date(p.payment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</span>
+                    <strong style="color:${typeColor};font-size:14px;">฿${fmtNum(parseFloat(p.amount))}</strong>
+                  </div>
+                  <div style="color:var(--text-secondary);font-size:11px;">${typeLabel} ${p.reference ? '| Ref: '+p.reference : ''} ${p.paid_by_name ? '| '+p.paid_by_name : ''}</div>
+                  ${p.journal_id ? '<div style="margin-top:6px;" id="journal-pay-'+p.id+'"><a href="#" onclick="event.preventDefault();event.stopPropagation();loadJournal(\''+p.journal_id+'\',\'journal-pay-'+p.id+'\')" style="font-size:11px;color:var(--primary);">View GL Journal</a></div>' : ''}
+                </div>`;
               });
             }
-            html += `</tbody></table>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-                <span style="font-size:12px;font-weight:600;color:${diffColor};">${diffLabel}: ฿${fmtNum(Math.abs(parseFloat(s.difference)))}</span>
-                ${s.journal_id ? '<a href="#" onclick="event.preventDefault();loadJournal(\''+s.journal_id+'\',\'journal-settle-'+s.id+'\')" style="font-size:11px;color:var(--primary);">View GL Journal</a>' : ''}
-              </div>
-              ${s.journal_id ? '<div id="journal-settle-'+s.id+'" style="margin-top:6px;"></div>' : ''}
-            </div>`;
-          });
+            clearEl.innerHTML = clrHtml;
+          } else {
+            clearEl.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">No clears yet</div>';
+          }
         }
 
-        if (!html) html = '<div style="color:var(--text-muted);font-size:12px;">No payments or settlements yet</div>';
-        detailEl.innerHTML = html;
       } catch(e) { detailEl.innerHTML = '<div style="color:var(--danger);">Error: '+e.message+'</div>'; }
+    }
+
+    // Attachment preview
+    document.addEventListener('change', function(e) {
+      if (e.target.id === 'p-attachment' || e.target.id === 'r-attachment') {
+        const previewId = e.target.id === 'p-attachment' ? 'p-attachment-preview' : 'r-attachment-preview';
+        const preview = document.getElementById(previewId);
+        const file = e.target.files[0];
+        if (!file) { preview.innerHTML = ''; return; }
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            preview.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:150px;border-radius:var(--radius);border:1px solid var(--border);">
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${file.name} (${(file.size/1024).toFixed(1)} KB)</div>`;
+          };
+          reader.readAsDataURL(file);
+        } else {
+          preview.innerHTML = `<div style="padding:8px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;">
+            <span style="font-weight:600;">${file.name}</span> (${(file.size/1024).toFixed(1)} KB)
+          </div>`;
+        }
+      }
+    });
+
+    function toggleFlowDetail(dropId) {
+      const el = document.getElementById(dropId);
+      if (!el) return;
+      const isOpen = el.style.display === 'block';
+      el.style.display = isOpen ? 'none' : 'block';
+      // Toggle arrow direction
+      const row = el.previousElementSibling;
+      if (row) {
+        const arrow = row.querySelector('.step-toggle');
+        if (arrow) arrow.innerHTML = isOpen ? '&#9660;' : '&#9650;';
+      }
     }
 
     // ═══ Actions ═══
@@ -444,6 +555,13 @@
     }
     async function approveAdv(id) {
       try { await API.post('/advance/'+id+'/approve'); await loadData(); } catch(e) { alert('Error: '+e.message); }
+    }
+    async function confirmReceived(id) {
+      if (!confirm('ยืนยันว่าได้รับเงินแล้ว?')) return;
+      try {
+        await API.post('/advance/'+id+'/confirm-received');
+        await loadData();
+      } catch(e) { alert('Error: '+e.message); }
     }
 
     // Approve clearing
@@ -506,9 +624,10 @@
     function closePayModal() { document.getElementById('pay-modal').classList.remove('show'); }
     async function savePayment() {
       const id = document.getElementById('p-adv-id').value;
+      const amount = parseFloat(document.getElementById('p-amount').value);
       try {
         await API.post('/advance/'+id+'/pay', {
-          amount: parseFloat(document.getElementById('p-amount').value),
+          amount,
           payment_method: document.getElementById('p-method').value,
           bank_account_id: document.getElementById('p-bank').value || null,
           reference: document.getElementById('p-ref').value,
@@ -516,6 +635,11 @@
         });
         closePayModal(); await loadData();
       } catch(e) { alert('Error: '+e.message); }
+    }
+
+    function closePayAndReload() {
+      document.getElementById('pay-modal').classList.remove('show');
+      setTimeout(() => location.reload(), 100);
     }
 
     // ═══ Clear Modal ═══
@@ -572,13 +696,6 @@
         }
       });
       glHtml += '<tr><td style="color:var(--success);padding:2px 0;">Cr. 113103 Employee Receivable</td><td></td><td style="text-align:right;">'+fmtMoney(total)+'</td></tr>';
-      if (diff < 0) {
-        glHtml += '<tr style="border-top:1px solid var(--border);"><td style="color:var(--primary);padding:2px 0;">Dr. 111201 Bank (Return)</td><td style="text-align:right;">'+fmtMoney(Math.abs(diff))+'</td><td></td></tr>';
-        glHtml += '<tr><td style="color:var(--success);padding:2px 0;">Cr. 113103 Employee Receivable</td><td></td><td style="text-align:right;">'+fmtMoney(Math.abs(diff))+'</td></tr>';
-      } else if (diff > 0) {
-        glHtml += '<tr style="border-top:1px solid var(--border);"><td style="color:var(--primary);padding:2px 0;">Dr. 113103 Employee Receivable</td><td style="text-align:right;">'+fmtMoney(diff)+'</td><td></td></tr>';
-        glHtml += '<tr><td style="color:var(--success);padding:2px 0;">Cr. 111201 Bank (Reimburse)</td><td></td><td style="text-align:right;">'+fmtMoney(diff)+'</td></tr>';
-      }
       glHtml += '</table>';
       document.getElementById('s-gl-preview').innerHTML = glHtml;
     }
@@ -651,6 +768,19 @@
         closeReturnModal();
         await loadData();
       } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function confirmReceivedFromModal(id) {
+      try {
+        await API.post('/advance/'+id+'/confirm-received');
+        closeReturnAndReload();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    function closeReturnAndReload() {
+      document.getElementById('return-modal').classList.remove('show');
+      // Restore modal content on next open
+      setTimeout(() => location.reload(), 100);
     }
 
     async function loadJournal(journalId, containerId) {
