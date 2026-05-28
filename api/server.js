@@ -103,6 +103,8 @@ app.get('/api/health', async (req, res) => {
       database_url_set: !!process.env.DATABASE_URL,
       require_register_approval: /^(true|1|yes)$/i.test(process.env.REQUIRE_REGISTER_APPROVAL || ''),
       register_allowed_domains: process.env.REGISTER_ALLOWED_DOMAINS || '(any)',
+      register_default_role: process.env.REGISTER_DEFAULT_ROLE || 'staff (default)',
+      static_login_enabled: !!(process.env.STATIC_LOGIN_EMAIL && process.env.STATIC_LOGIN_PASSWORD),
     },
   });
 });
