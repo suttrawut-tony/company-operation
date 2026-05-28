@@ -67,6 +67,26 @@ async function tryDB(sql, params, label = 'tryDB') {
   }
 }
 
+/**
+ * Extract a human-readable description from any thrown value.
+ * Handles AggregateError (pg connection errors) whose .message is empty.
+ */
+function formatErr(err) {
+  if (!err) return 'unknown error';
+  if (typeof err === 'string') return err;
+  const parts = [];
+  if (err.code) parts.push(err.code);
+  if (err.message) parts.push(err.message);
+  if (err.errors && err.errors[0]) {
+    const inner = err.errors[0];
+    if (inner.code && !parts.includes(inner.code)) parts.push(inner.code);
+    if (inner.message) parts.push(inner.message);
+  }
+  if (err.detail) parts.push(err.detail);
+  if (err.hint) parts.push(`hint: ${err.hint}`);
+  return parts.filter(Boolean).join(' — ') || err.name || 'unknown error';
+}
+
 // ─── Rate limiters ───
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, max: 20,
@@ -122,7 +142,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.json({ token: signToken(user, !!remember), user: publicUser(user) });
   } catch (err) {
     console.error('[auth/login]', err);
-    res.status(500).json({ error: 'Login failed: ' + (err.message || 'unknown error') });
+    res.status(500).json({ error: 'Login failed: ' + formatErr(err) });
   }
 });
 
@@ -325,7 +345,7 @@ ${isActive ? 'View users at: ' : 'Approve at: '}${appUrl}/user-permissions.html`
     });
   } catch (err) {
     console.error('[auth/register]', err);
-    res.status(500).json({ error: 'Register failed: ' + (err.message || 'unknown error') });
+    res.status(500).json({ error: 'Register failed: ' + formatErr(err) });
   }
 });
 
