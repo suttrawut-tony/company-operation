@@ -60,6 +60,26 @@ async function maybeResetSchema(client) {
   return true;
 }
 
+/**
+ * Postgres 15+ stopped granting CREATE / USAGE on schema public to the
+ * `public` role by default. After a DROP+CREATE SCHEMA, even the schema's
+ * owner sometimes needs the grants re-applied so subsequent CREATE EXTENSION
+ * / CREATE TYPE / CREATE TABLE don't fail with 42501 "permission denied
+ * for schema public". Best-effort: if we don't own the schema, this no-ops.
+ */
+async function ensureSchemaPermissions(client) {
+  try {
+    await client.query('GRANT ALL ON SCHEMA public TO CURRENT_USER');
+  } catch (err) {
+    console.warn(`[migrate] grant CURRENT_USER on schema public failed: ${err.message}`);
+  }
+  try {
+    await client.query('GRANT ALL ON SCHEMA public TO public');
+  } catch (err) {
+    console.warn(`[migrate] grant public on schema public failed: ${err.message}`);
+  }
+}
+
 async function tableExists(client, name) {
   const { rows } = await client.query(
     `SELECT 1 FROM information_schema.tables
@@ -203,6 +223,7 @@ async function runAll() {
 
   try {
     await maybeResetSchema(client);
+    await ensureSchemaPermissions(client);
     await ensureMigrationsTable(client);
     await backfillLegacyIfNeeded(client, allFiles);
 
