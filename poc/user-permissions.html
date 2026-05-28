@@ -411,8 +411,16 @@
       if (currentFilter !== 'all') list = list.filter(u => u.role === currentFilter);
       document.getElementById('user-grid').innerHTML = list.map(u => {
         const limitText = u.can_approve ? (u.approval_limit >= 999999999 ? 'Unlimited' : '฿' + Number(u.approval_limit).toLocaleString()) : '-';
+        const pending = !!u.registered_self && !u.approved_at;
+        const pendingBanner = pending ? `
+          <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span><b>Pending approval</b> — สมัครเอง ยังไม่ได้รับการอนุมัติ</span>
+            ${canManageUsers ? `<button onclick="event.stopPropagation(); approveUser('${u.id}')" style="background:#16a34a;color:white;border:none;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Approve</button>` : ''}
+          </div>` : '';
+        const cardStyle = pending ? 'cursor:pointer;border:1px solid #fed7aa;' : (canManageUsers?'cursor:pointer;':'');
         return `
-        <div class="user-card" style="${canManageUsers?'cursor:pointer;':''}" onclick="${canManageUsers?'openEditUser(\''+u.id+'\')':''}">
+        <div class="user-card" style="${cardStyle}" onclick="${canManageUsers?'openEditUser(\''+u.id+'\')':''}">
+          ${pendingBanner}
           <div class="user-card-header">
             <div class="user-avatar-lg" style="background:var(--c-${u.role});">${(u.first_name||'?')[0]}</div>
             <div>
@@ -626,6 +634,14 @@
       try {
         await API.del('/auth/users/' + id);
         closeUserModal();
+        await loadData();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function approveUser(id) {
+      if (!confirm('อนุมัติให้ user คนนี้เข้าใช้งานระบบ?')) return;
+      try {
+        await API.approveUser(id);
         await loadData();
       } catch(e) { alert('Error: ' + e.message); }
     }

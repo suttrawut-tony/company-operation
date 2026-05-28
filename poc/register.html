@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Sign Up</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    body { background: var(--bg-body); display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 24px 0; }
+    .card {
+      background: var(--bg-white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);
+      padding: 40px; width: 520px; max-width: 95vw;
+    }
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+    .row-2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .submit {
+      width: 100%; padding: 11px; border: none; border-radius: var(--radius);
+      background: var(--primary); color: white; font-size: 14px; font-weight: 600;
+      cursor: pointer; margin-top: 8px;
+    }
+    .submit:hover { background: var(--primary-hover); }
+    .submit:disabled { opacity: 0.6; cursor: wait; }
+    .hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    #msg-error { background:#fef2f2; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:13px; margin-top:12px; display:none; }
+    #msg-info  { background:#ecfdf5; color:#047857; padding:12px 14px; border-radius:8px; font-size:13px; margin-top:12px; display:none; }
+    .footer { text-align:center; margin-top: 18px; font-size: 13px; }
+    .footer a { color: var(--primary); font-weight: 500; cursor: pointer; }
+    .company-slug-row { display: flex; align-items: center; }
+    .slug-prefix {
+      padding: 9px 12px; background: var(--bg-light); border: 1px solid var(--border); border-right: none;
+      border-radius: var(--radius) 0 0 var(--radius); font-size: 13px; color: var(--text-muted); white-space: nowrap;
+    }
+    .slug-input {
+      flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 0 var(--radius) var(--radius) 0;
+      font-size: 13px; font-weight: 600; color: var(--primary); outline: none; font-family: var(--font);
+    }
+  </style>
+</head>
+<body>
+  <div class="card fade-in">
+    <h2>Create your account</h2>
+    <div class="subtitle">สร้างบัญชีใหม่ — ต้องรอแอดมินอนุมัติก่อนใช้งาน</div>
+
+    <form onsubmit="event.preventDefault(); handleRegister();">
+
+      <div class="form-group">
+        <label class="form-label">Company</label>
+        <div class="company-slug-row">
+          <span class="slug-prefix">app.sda-operation.com/</span>
+          <input type="text" class="slug-input" value="sda-group" id="r-slug">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="r-email" placeholder="name@sda-group.com"
+               autocomplete="email" required oninput="this.value=this.value.toLowerCase()">
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label class="form-label">First name (EN)</label>
+          <input type="text" class="form-input" id="r-fname" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last name (EN)</label>
+          <input type="text" class="form-input" id="r-lname">
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label class="form-label">ชื่อ (TH)</label>
+          <input type="text" class="form-input" id="r-fname-th">
+        </div>
+        <div class="form-group">
+          <label class="form-label">นามสกุล (TH)</label>
+          <input type="text" class="form-input" id="r-lname-th">
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label class="form-label">Position</label>
+          <input type="text" class="form-input" id="r-position" placeholder="เช่น Engineer">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input type="text" class="form-input" id="r-dept" placeholder="เช่น IT">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="tel" class="form-input" id="r-phone">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="r-password" autocomplete="new-password" required>
+        <div class="hint">อย่างน้อย 8 ตัวอักษร, ต้องมีตัวอักษร และ ตัวเลข</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirm password</label>
+        <input type="password" class="form-input" id="r-password2" autocomplete="new-password" required>
+      </div>
+
+      <button type="submit" class="submit" id="r-submit">Create account</button>
+    </form>
+
+    <div id="msg-error"></div>
+    <div id="msg-info"></div>
+
+    <div class="footer">มีบัญชีอยู่แล้ว? <a href="login.html">Sign in</a></div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    if (API.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    async function handleRegister() {
+      const email = document.getElementById('r-email').value.trim().toLowerCase();
+      const pw1   = document.getElementById('r-password').value;
+      const pw2   = document.getElementById('r-password2').value;
+      const fname = document.getElementById('r-fname').value.trim();
+      const btn   = document.getElementById('r-submit');
+      const err   = document.getElementById('msg-error');
+      const info  = document.getElementById('msg-info');
+      err.style.display = 'none'; info.style.display = 'none';
+
+      if (!email || !fname || !pw1) {
+        err.textContent = 'Email, first name and password are required';
+        err.style.display = 'block'; return;
+      }
+      if (pw1 !== pw2) {
+        err.textContent = 'Passwords do not match';
+        err.style.display = 'block'; return;
+      }
+      if (pw1.length < 8 || !/[A-Za-z]/.test(pw1) || !/[0-9]/.test(pw1)) {
+        err.textContent = 'Password must be at least 8 characters and include both a letter and a number';
+        err.style.display = 'block'; return;
+      }
+
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        const r = await API.register({
+          slug: document.getElementById('r-slug').value.trim() || 'sda-group',
+          email,
+          password: pw1,
+          first_name: fname,
+          last_name: document.getElementById('r-lname').value.trim(),
+          first_name_th: document.getElementById('r-fname-th').value.trim(),
+          last_name_th: document.getElementById('r-lname-th').value.trim(),
+          position: document.getElementById('r-position').value.trim(),
+          department: document.getElementById('r-dept').value.trim(),
+          phone: document.getElementById('r-phone').value.trim(),
+        });
+        info.innerHTML = (r.message || 'Registration submitted.') +
+          '<br><br>กรุณารอแอดมินอนุมัติบัญชีของคุณ ระบบจะส่งอีเมลแจ้งเมื่อบัญชีพร้อมใช้งาน';
+        info.style.display = 'block';
+        document.querySelector('form').style.display = 'none';
+      } catch (e) {
+        err.textContent = e.message || 'Could not register';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Create account';
+      }
+    }
+  </script>
+</body>
+</html>

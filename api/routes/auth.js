@@ -28,6 +28,16 @@ function normalizeEmail(e) {
   return typeof e === 'string' ? e.trim().toLowerCase() : '';
 }
 
+function isEmailDomainAllowed(email) {
+  const allowed = (process.env.REGISTER_ALLOWED_DOMAINS || '').trim();
+  if (!allowed) return true;
+  const at = email.lastIndexOf('@');
+  if (at < 0) return false;
+  const domain = email.slice(at + 1).toLowerCase();
+  const list = allowed.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
+  return list.includes(domain);
+}
+
 function signToken(user, remember = false) {
   const expiresIn = remember
     ? (process.env.JWT_EXPIRES_REMEMBER || '30d')
@@ -67,6 +77,14 @@ const forgotLimiter = rateLimit({
   message: { error: 'Too many password reset requests. Please try again later.' },
 });
 
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,                              // 20 registrations / hour / IP (covers offices behind shared NAT)
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts. Please try again later.' },
+});
+
 // ═══════════════════════════════════════════════════════════
 // POST /api/auth/login
 // ═══════════════════════════════════════════════════════════
@@ -87,12 +105,23 @@ router.post('/login', loginLimiter, async (req, res) => {
     );
     const user = rows[0];
 
-    // Generic error covers: no user, wrong slug, inactive, wrong password
+    // Generic error covers: no user, wrong slug, wrong password
     if (!user) {
       await audit.record(req, { emailTried: email, event: 'login_fail', success: false, detail: { reason: 'not_found' } });
       return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
     }
     if (!user.is_active) {
+      // Self-registered + still pending: tell the user clearly so they don't keep retrying.
+      // Verifying the password first ensures we don't leak account existence to attackers
+      // who don't know the password.
+      const passwordOk = user.password_hash && await bcrypt.compare(password, user.password_hash);
+      if (passwordOk && user.registered_self && !user.approved_at) {
+        await audit.record(req, { userId: user.id, emailTried: email, event: 'login_fail', success: false, detail: { reason: 'pending_approval' } });
+        return res.status(403).json({
+          error: 'Your account is pending admin approval. You will be able to sign in after an admin activates it.',
+          code: 'PENDING_APPROVAL'
+        });
+      }
       await audit.record(req, { userId: user.id, emailTried: email, event: 'login_fail', success: false, detail: { reason: 'inactive' } });
       return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
     }
@@ -234,6 +263,94 @@ If you did not request this, you can ignore this email.`,
 });
 
 // ═══════════════════════════════════════════════════════════
+// POST /api/auth/register — public self-register (admin must approve)
+// ═══════════════════════════════════════════════════════════
+router.post('/register', registerLimiter, async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body.email);
+    const {
+      password, first_name, last_name, first_name_th, last_name_th,
+      position, department, phone, slug,
+    } = req.body;
+
+    if (!email || !password || !first_name) {
+      return res.status(400).json({ error: 'Required: email, password, first_name' });
+    }
+    const strength = validateStrength(password);
+    if (strength) return res.status(400).json({ error: strength });
+    if (!isEmailDomainAllowed(email)) {
+      return res.status(400).json({ error: 'This email domain is not allowed to register. Please contact your administrator.' });
+    }
+
+    const companySlug = (slug || 'sda-group').trim();
+    const { rows: companies } = await db.query(
+      'SELECT id FROM companies WHERE slug = $1 AND is_active = true',
+      [companySlug]
+    );
+    if (!companies[0]) {
+      return res.status(400).json({ error: 'Invalid company' });
+    }
+
+    const { rows: existing } = await db.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
+    if (existing.length) {
+      // Don't reveal whether the email was admin-created or self-registered; uniform message.
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+    const { rows } = await db.query(
+      `INSERT INTO users (company_id, email, password_hash,
+                          first_name, last_name, first_name_th, last_name_th,
+                          phone, role, position, department,
+                          can_approve, approval_limit,
+                          is_active, registered_self,
+                          password_changed_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'staff',$9,$10,false,0,false,true,NOW())
+       RETURNING id, email`,
+      [companies[0].id, email, password_hash,
+       first_name, last_name || '', first_name_th || '', last_name_th || '',
+       phone || null, position || '', department || '']
+    );
+
+    await audit.record(req, { userId: rows[0].id, emailTried: email, event: 'register', success: true });
+
+    // Notify admins (best-effort — log if SMTP not configured)
+    try {
+      const { rows: admins } = await db.query(
+        `SELECT email, first_name FROM users
+          WHERE company_id = $1 AND role IN ('executive','admin') AND is_active = true`,
+        [companies[0].id]
+      );
+      const appUrl = (process.env.APP_URL || '').replace(/\/$/, '') || 'http://localhost:4000';
+      await Promise.all(admins.map(a => sendMail({
+        to: a.email,
+        subject: 'SDA Operation — New account pending approval',
+        text: `Hi ${a.first_name},
+
+A new user has just registered and is waiting for your approval:
+
+  Email:      ${email}
+  Name:       ${first_name} ${last_name || ''}
+  Position:   ${position || '-'}
+  Department: ${department || '-'}
+
+Review and approve at: ${appUrl}/user-permissions.html`,
+      }).catch(e => console.error('[register] notify admin failed:', e.message))));
+    } catch (e) {
+      console.error('[register] admin notify error:', e.message);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration submitted. An admin will review and activate your account.',
+    });
+  } catch (err) {
+    console.error('[auth/register]', err);
+    res.status(500).json({ error: 'Could not complete registration. Please try again.' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
 // POST /api/auth/reset-password
 // ═══════════════════════════════════════════════════════════
 router.post('/reset-password', async (req, res) => {
@@ -300,8 +417,10 @@ router.get('/users', authenticate, async (req, res) => {
     const { rows } = await db.query(
       `SELECT id, email, first_name, first_name_th, last_name, last_name_th,
               role, position, department, sap_user_code, sap_license,
-              can_approve, approval_limit, is_active, must_change_password
-         FROM users WHERE company_id = $1 ORDER BY role, first_name`,
+              can_approve, approval_limit, is_active, must_change_password,
+              registered_self, approved_at, approved_by, created_at
+         FROM users WHERE company_id = $1
+         ORDER BY (registered_self AND approved_at IS NULL) DESC, role, first_name`,
       [req.user.company_id]
     );
     res.json(rows);
@@ -349,6 +468,56 @@ router.post('/users', authenticate, requireRole('executive', 'admin'), async (re
   } catch (err) {
     console.error('[auth/users:create]', err);
     res.status(500).json({ error: 'Could not create user' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// POST /api/auth/users/:id/approve — admin activates a self-registered account
+// ═══════════════════════════════════════════════════════════
+router.post('/users/:id/approve', authenticate, requireRole('executive', 'admin'), async (req, res) => {
+  try {
+    const { role, position, department, can_approve, approval_limit } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE users
+          SET is_active     = true,
+              approved_at   = NOW(),
+              approved_by   = $1,
+              role          = COALESCE($2, role),
+              position      = COALESCE($3, position),
+              department    = COALESCE($4, department),
+              can_approve   = COALESCE($5, can_approve),
+              approval_limit = COALESCE($6, approval_limit)
+        WHERE id = $7 AND company_id = $8
+        RETURNING id, email, first_name, last_name, role, position, department, is_active, approved_at`,
+      [req.user.id, role || null, position || null, department || null,
+       can_approve === undefined ? null : !!can_approve,
+       approval_limit === undefined ? null : approval_limit,
+       req.params.id, req.user.company_id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+
+    const approved = rows[0];
+    await audit.record(req, { userId: approved.id, emailTried: approved.email, event: 'user_approved', success: true, detail: { approver: req.user.id } });
+
+    // Notify the user (best-effort)
+    try {
+      const appUrl = (process.env.APP_URL || '').replace(/\/$/, '') || 'http://localhost:4000';
+      await sendMail({
+        to: approved.email,
+        subject: 'SDA Operation — Your account has been approved',
+        text: `Hi ${approved.first_name},
+
+Your account has been activated. You can now sign in:
+
+${appUrl}/login.html`,
+      });
+    } catch (e) { console.error('[approve] user notify error:', e.message); }
+
+    res.json(approved);
+  } catch (err) {
+    console.error('[auth/users:approve]', err);
+    res.status(500).json({ error: 'Could not approve user' });
   }
 });
 

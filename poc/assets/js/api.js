@@ -113,6 +113,12 @@ const API = {
   async resetPassword(token, newPassword) {
     return this.post('/auth/reset-password', { token, newPassword });
   },
+  async register(data) {
+    return this.post('/auth/register', data);
+  },
+  async approveUser(id, body = {}) {
+    return this.post(`/auth/users/${id}/approve`, body);
+  },
 
   // ─── Dashboard ───
   async getDashboard() { return this.get('/dashboard'); },
