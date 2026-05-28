@@ -37,6 +37,18 @@ function requireApproval() {
   return /^(true|1|yes)$/i.test(process.env.REQUIRE_REGISTER_APPROVAL || '');
 }
 
+/**
+ * Role assigned to users who sign up via /register. Default 'staff' for real
+ * production (least privilege). For a POC pitch, set REGISTER_DEFAULT_ROLE=
+ * executive on the server so demo accounts can see everything in the seeded
+ * data without needing to be made a project member first.
+ */
+function registerDefaultRole() {
+  const requested = (process.env.REGISTER_DEFAULT_ROLE || 'staff').toLowerCase().trim();
+  const valid = ['staff', 'pm', 'executive', 'finance', 'accounting', 'procurement', 'admin'];
+  return valid.includes(requested) ? requested : 'staff';
+}
+
 function signToken(user, remember = false) {
   const expiresIn = remember
     ? (process.env.JWT_EXPIRES_REMEMBER || '30d')
@@ -299,6 +311,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     if (existing.length) return res.status(400).json({ error: 'Email already registered. Try signing in instead.' });
 
     const isActive = !requireApproval();
+    const defaultRole = registerDefaultRole();
     const password_hash = await bcrypt.hash(password, 10);
 
     // ONLY use columns guaranteed to exist on the original schema
@@ -307,11 +320,11 @@ router.post('/register', registerLimiter, async (req, res) => {
                           first_name, last_name, first_name_th, last_name_th,
                           phone, role, position, department,
                           can_approve, approval_limit, is_active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'staff',$9,$10,false,0,$11)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,false,0,$12)
        RETURNING id, email`,
       [companies[0].id, email, password_hash,
        first_name, last_name || '', first_name_th || '', last_name_th || '',
-       phone || null, position || '', department || '', isActive]
+       phone || null, defaultRole, position || '', department || '', isActive]
     );
 
     // Best-effort: stamp self-register markers (columns may not exist yet)
