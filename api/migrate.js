@@ -42,6 +42,24 @@ async function ensureMigrationsTable(client) {
   `);
 }
 
+/**
+ * If RESET_DB=true is set, wipe the entire public schema before migrating.
+ * Useful when a previous migration attempt left orphaned objects (e.g. an
+ * ENUM type) that block re-running migration 001. Logs loudly so it isn't
+ * triggered accidentally.
+ */
+async function maybeResetSchema(client) {
+  if (process.env.RESET_DB !== 'true') return false;
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('[migrate] RESET_DB=true — wiping public schema (ALL DATA LOST)');
+  console.log('[migrate] If this is not intended, REMOVE the RESET_DB env var now');
+  console.log('═══════════════════════════════════════════════════════');
+  await client.query('DROP SCHEMA IF EXISTS public CASCADE');
+  await client.query('CREATE SCHEMA public');
+  console.log('[migrate] public schema reset complete — migrations will run from scratch');
+  return true;
+}
+
 async function tableExists(client, name) {
   const { rows } = await client.query(
     `SELECT 1 FROM information_schema.tables
@@ -184,6 +202,7 @@ async function runAll() {
   }
 
   try {
+    await maybeResetSchema(client);
     await ensureMigrationsTable(client);
     await backfillLegacyIfNeeded(client, allFiles);
 
