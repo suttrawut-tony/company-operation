@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Projects</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .project-filters {
+      display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 6px 16px; border: 1px solid var(--border); border-radius: var(--radius-full);
+      background: var(--bg-white); font-size: 12px; font-weight: 500; cursor: pointer;
+      color: var(--text-secondary); font-family: var(--font); transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+
+    .proj-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+      overflow: hidden; cursor: pointer; transition: all 0.2s;
+    }
+    .proj-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary); transform: translateY(-2px); }
+
+    .proj-card-body { padding: 20px; }
+    .proj-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .proj-code { font-size: 12px; font-weight: 600; color: var(--primary); }
+    .proj-name { font-size: 16px; font-weight: 700; margin-top: 4px; line-height: 1.3; }
+    .proj-desc { font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.5; }
+
+    .proj-progress { margin-top: 14px; }
+    .proj-progress-top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .proj-progress-pct { font-weight: 700; }
+
+    .proj-meta { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .proj-meta-item { font-size: 12px; }
+    .proj-meta-item .lbl { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .proj-meta-item .val { font-weight: 600; margin-top: 2px; }
+
+    .proj-card-footer {
+      padding: 12px 20px; border-top: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-light);
+    }
+    .proj-pm { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .proj-dates { font-size: 11px; color: var(--text-muted); }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Retention edit button */
+    .btn-ret-edit {
+      border: none; background: rgba(255,255,255,0.8); cursor: pointer;
+      padding: 3px 8px; border-radius: var(--radius); font-size: 11px;
+      color: var(--primary); font-weight: 600; font-family: var(--font);
+      transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn-ret-edit:hover { background: var(--primary); color: #fff; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000;
+      align-items: center; justify-content: center;
+      animation: fadeIn 0.15s;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 460px; max-width: 95vw;
+      animation: slideUp 0.2s;
+    }
+    .modal-header {
+      padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      border: none; background: none; font-size: 20px; cursor: pointer;
+      color: var(--text-muted); padding: 4px 8px; border-radius: var(--radius);
+    }
+    .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 16px 24px; border-top: 1px solid var(--border-light);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ret-preview {
+      margin-top: 16px; padding: 14px 16px; background: var(--bg-light);
+      border-radius: var(--radius); border: 1px solid var(--border-light);
+    }
+    .ret-preview .ret-calc {
+      font-size: 22px; font-weight: 800; color: var(--primary); margin: 4px 0;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+          Projects
+        </h1>
+        <div class="subtitle" id="proj-subtitle">Loading...</div>
+      </div>
+      <button class="btn btn-primary" onclick="openNewProject()">+ New Project</button>
+    </div>
+
+    <!-- Search + Filters -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="position:relative;flex:1;max-width:400px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="form-input" id="search-input" placeholder="Search project name, code, PM name..." oninput="renderProjects()" style="padding-left:36px;">
+      </div>
+      <div class="project-filters" style="margin-bottom:0;">
+        <button class="filter-btn active" onclick="filterProjects('all',this)">All</button>
+        <button class="filter-btn" onclick="filterProjects('active',this)">Active</button>
+        <button class="filter-btn" onclick="filterProjects('planning',this)">Planning</button>
+        <button class="filter-btn" onclick="filterProjects('completed',this)">Completed</button>
+        <button class="filter-btn" onclick="filterProjects('on_hold',this)">On Hold</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="proj-stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;"></div>
+
+    <!-- Project Grid -->
+    <div class="project-grid" id="project-grid">Loading...</div>
+
+    <!-- New Project Modal -->
+    <div class="modal-overlay" id="proj-modal" onclick="if(event.target===this)closeProjModal()">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>New Project</h3>
+          <button class="modal-close" onclick="closeProjModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Project Code</label>
+              <input type="text" class="form-input" id="np-code" placeholder="e.g. SDA-2026-013">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Project Name</label>
+              <input type="text" class="form-input" id="np-name" placeholder="e.g. Marine Nav System">
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-input" id="np-desc" placeholder="Project description">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Start Date</label>
+              <input type="date" class="form-input" id="np-start">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date</label>
+              <input type="date" class="form-input" id="np-end">
+            </div>
+            <div class="form-group">
+              <label class="form-label">TOR Amount</label>
+              <input type="number" class="form-input" id="np-tor" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">PM (User ID)</label>
+              <select class="form-input" id="np-pm">
+                <option value="">-- Select PM --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="closeProjModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveNewProject()">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retention Modal -->
+    <div class="modal-overlay" id="ret-modal" onclick="if(event.target===this)closeRetModal()">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="ret-modal-title">ประกันผลงาน</h3>
+          <button class="modal-close" onclick="closeRetModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="ret-project-id">
+          <div class="form-group">
+            <label class="form-label">Project</label>
+            <input type="text" class="form-input" id="ret-project-name" readonly style="background:var(--bg-light);font-weight:600;">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">อัตราหัก (%)</label>
+              <input type="number" class="form-input" id="ret-rate" value="5" min="0" max="100" step="0.5" oninput="calcRetention()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">สถานะ</label>
+              <select class="form-input" id="ret-status">
+                <option value="none">ยังไม่หัก</option>
+                <option value="holding">กำลังค้ำประกัน</option>
+                <option value="released">คืนแล้ว</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">วันครบกำหนดคืน</label>
+            <input type="date" class="form-input" id="ret-due-date">
+          </div>
+          <div class="ret-preview">
+            <div style="font-size:12px;color:var(--text-secondary);">จำนวนเงินประกันผลงาน (คำนวณจาก TOR)</div>
+            <div class="ret-calc" id="ret-calc-amount">฿0</div>
+            <div style="font-size:12px;color:var(--text-muted);" id="ret-calc-detail">TOR ฿0 x 0% = ฿0</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="closeRetModal()">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" id="ret-save-btn" onclick="saveRetention()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allProjects = [];
+    let currentFilter = 'all';
+
+    async function loadProjects() {
+      try {
+        allProjects = await API.getProjects();
+        renderStats();
+        renderProjects();
+        document.getElementById('proj-subtitle').textContent = `${allProjects.length} projects`;
+      } catch (e) {
+        document.getElementById('project-grid').innerHTML = '<div class="empty-state"><h3>Error loading projects</h3><p>'+e.message+'</p></div>';
+      }
+    }
+
+    function renderStats() {
+      const active = allProjects.filter(p => p.status === 'active').length;
+      const planning = allProjects.filter(p => p.status === 'planning').length;
+      const completed = allProjects.filter(p => p.status === 'completed').length;
+      const totalBudget = allProjects.reduce((s, p) => s + parseFloat(p.budget_amount || 0), 0);
+
+      document.getElementById('proj-stats').innerHTML = `
+        <div class="stat-card ${currentFilter==='all'?'active':''}" onclick="clickStat('all')" style="cursor:pointer;"><div class="stat-icon" style="background:var(--primary-light);color:var(--primary);width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        </div><div class="stat-value">${allProjects.length}</div><div class="stat-label">Total Projects</div></div>
+        <div class="stat-card ${currentFilter==='active'?'active':''}" onclick="clickStat('active')" style="cursor:pointer;"><div class="stat-value" style="color:var(--success);">${active}</div><div class="stat-label">Active</div></div>
+        <div class="stat-card ${currentFilter==='planning'?'active':''}" onclick="clickStat('planning')" style="cursor:pointer;"><div class="stat-value" style="color:var(--warning);">${planning}</div><div class="stat-label">Planning</div></div>
+        <div class="stat-card ${currentFilter==='completed'?'active':''}" onclick="clickStat('completed')" style="cursor:pointer;"><div class="stat-value" style="color:var(--primary);">${completed}</div><div class="stat-label">Completed</div></div>
+      `;
+    }
+
+    function clickStat(status) {
+      currentFilter = status;
+      // Sync filter buttons
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.textContent.trim().toLowerCase() === status || (status === 'all' && b.textContent.trim() === 'All'));
+      });
+      renderStats();
+      renderProjects();
+    }
+
+    function renderProjects() {
+      const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+      let list = currentFilter === 'all' ? allProjects : allProjects.filter(p => p.status === currentFilter);
+
+      if (searchVal) {
+        list = list.filter(p => {
+          const text = [p.code, p.name, p.description, p.pm_name, p.pm_name_th, p.status].join(' ').toLowerCase();
+          return text.includes(searchVal);
+        });
+      }
+
+      document.getElementById('project-grid').innerHTML = list.map(p => {
+        const pct = p.progress || 0;
+        const barColor = pct >= 80 ? 'green' : pct >= 50 ? 'yellow' : pct > 0 ? 'red' : 'blue';
+        const statusColor = p.status === 'active' ? 'var(--success)' : p.status === 'completed' ? 'var(--primary)' : p.status === 'planning' ? 'var(--warning)' : 'var(--text-muted)';
+        const statusLabel = p.status.charAt(0).toUpperCase() + p.status.slice(1);
+        const budget = parseFloat(p.budget_amount || 0);
+        const actual = parseFloat(p.actual_amount || 0);
+        const tor = parseFloat(p.tor_amount || 0);
+        const pm = p.pm_name || '-';
+
+        return `
+        <div class="proj-card" onclick="window.location='overview.html?id=${p.id}'">
+          <div class="proj-card-body">
+            <div class="proj-card-top">
+              <div>
+                <div class="proj-code">${p.code}</div>
+                <div class="proj-name">${p.name}</div>
+              </div>
+              <span class="badge badge-${p.status==='active'?'success':p.status==='completed'?'primary':p.status==='planning'?'warning':'gray'} badge-dot">${statusLabel}</span>
+            </div>
+
+            <div class="proj-progress">
+              <div class="proj-progress-top">
+                <span style="color:var(--text-secondary);">Progress</span>
+                <span class="proj-progress-pct" style="color:${statusColor};">${pct}%</span>
+              </div>
+              <div class="progress"><div class="progress-bar ${barColor}" style="width:${pct}%;"></div></div>
+            </div>
+
+            <div class="proj-meta">
+              <div class="proj-meta-item">
+                <div class="lbl">TOR</div>
+                <div class="val">฿${(tor/1000000).toFixed(1)}M</div>
+              </div>
+              <div class="proj-meta-item">
+                <div class="lbl">BUDGET</div>
+                <div class="val">฿${(budget/1000000).toFixed(1)}M</div>
+              </div>
+              <div class="proj-meta-item">
+                <div class="lbl">ACTUAL</div>
+                <div class="val" style="color:${actual>budget?'var(--danger)':'var(--success)'};">฿${(actual/1000000).toFixed(1)}M</div>
+              </div>
+              <div class="proj-meta-item">
+                <div class="lbl">BUDGET USED</div>
+                <div class="val">${budget > 0 ? Math.round(actual/budget*100) : 0}%</div>
+              </div>
+            </div>
+            ${(() => {
+              const retAmt = parseFloat(p.retention_amount || 0);
+              const retDue = p.retention_due_date ? new Date(p.retention_due_date) : null;
+              const retStatus = p.retention_status || 'none';
+              const daysLeft = retDue ? Math.ceil((retDue - Date.now()) / 86400000) : null;
+              const isOverdue = daysLeft !== null && daysLeft <= 0 && retStatus === 'holding';
+              const isNearDue = daysLeft !== null && daysLeft > 0 && daysLeft <= 30 && retStatus === 'holding';
+              const retColor = retStatus === 'released' ? 'var(--success)' : isOverdue ? 'var(--danger)' : isNearDue ? 'var(--warning)' : 'var(--info)';
+              const retBg = retStatus === 'released' ? 'var(--success-bg)' : isOverdue ? 'var(--danger-bg)' : isNearDue ? 'var(--warning-bg)' : 'var(--info-bg)';
+              const retLabel = retStatus === 'released' ? 'คืนแล้ว' : retStatus === 'holding' ? (isOverdue ? 'ครบกำหนด!' : 'ค้ำประกัน') : 'ยังไม่หัก';
+              if (retAmt > 0) {
+                return '<div style="margin-top:12px;padding:10px 12px;background:'+retBg+';border-radius:8px;display:flex;align-items:center;justify-content:space-between;font-size:12px;" onclick="event.stopPropagation();">' +
+                  '<div><span style="color:var(--text-secondary);">ประกันผลงาน '+p.retention_rate+'%</span> <strong style="color:'+retColor+';">฿'+Number(retAmt).toLocaleString('th-TH')+'</strong></div>' +
+                  '<div style="display:flex;align-items:center;gap:6px;">' +
+                    (retDue ? '<span style="color:var(--text-muted);">ครบ '+retDue.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})+'</span>' : '') +
+                    '<span class="badge badge-'+(retStatus==='released'?'success':isOverdue?'danger':isNearDue?'warning':'primary')+'" style="font-size:10px;">'+retLabel+'</span>' +
+                    '<button class="btn-ret-edit" onclick="openRetModal(\''+p.id+'\')">&#9998;</button>' +
+                  '</div></div>';
+              } else {
+                return '<div style="margin-top:12px;text-align:center;" onclick="event.stopPropagation();"><button class="btn-ret-edit" onclick="openRetModal(\''+p.id+'\')" style="padding:6px 14px;border:1px dashed var(--border);background:var(--bg-light);border-radius:8px;width:100%;">+ ตั้งค่าประกันผลงาน</button></div>';
+              }
+            })()}
+          </div>
+
+          <div class="proj-card-footer">
+            <div class="proj-pm">
+              <div class="avatar avatar-xs" style="background:var(--primary);">${(pm[0]||'?')}</div>
+              <span>PM: ${pm}</span>
+            </div>
+            <div class="proj-dates">${p.start_date ? new Date(p.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''} — ${p.end_date ? new Date(p.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
+          </div>
+        </div>`;
+      }).join('') || '<div class="empty-state"><h3>No projects found</h3></div>';
+    }
+
+    function filterProjects(status, btn) {
+      currentFilter = status;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderStats();
+      renderProjects();
+    }
+
+    // ═══ New Project Modal ═══
+    async function openNewProject() {
+      document.getElementById('np-code').value = 'SDA-' + new Date().getFullYear() + '-' + String(allProjects.length + 1).padStart(3, '0');
+      document.getElementById('np-name').value = '';
+      document.getElementById('np-desc').value = '';
+      document.getElementById('np-start').value = new Date().toISOString().split('T')[0];
+      document.getElementById('np-end').value = '';
+      document.getElementById('np-tor').value = '';
+      // Load users for PM dropdown
+      try {
+        const me = await API.getMe();
+        const sel = document.getElementById('np-pm');
+        sel.innerHTML = '<option value="">-- Select PM --</option>';
+        // Use current user as only option (full user list needs admin API)
+        sel.innerHTML += '<option value="' + me.id + '">' + (me.first_name||'') + ' ' + (me.last_name||'') + '</option>';
+      } catch(e) {}
+      document.getElementById('proj-modal').classList.add('show');
+    }
+    function closeProjModal() { document.getElementById('proj-modal').classList.remove('show'); }
+
+    async function saveNewProject() {
+      const code = document.getElementById('np-code').value.trim();
+      const name = document.getElementById('np-name').value.trim();
+      if (!code || !name) { alert('Please fill code and name'); return; }
+      try {
+        await API.createProject({
+          code, name,
+          description: document.getElementById('np-desc').value.trim(),
+          start_date: document.getElementById('np-start').value || null,
+          end_date: document.getElementById('np-end').value || null,
+          tor_amount: parseFloat(document.getElementById('np-tor').value) || 0,
+          pm_user_id: document.getElementById('np-pm').value || null,
+        });
+        closeProjModal();
+        await loadProjects();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ═══ Retention Modal ═══
+    let retCurrentProject = null;
+
+    function openRetModal(projectId) {
+      retCurrentProject = allProjects.find(p => p.id === projectId);
+      if (!retCurrentProject) return;
+
+      document.getElementById('ret-project-id').value = projectId;
+      document.getElementById('ret-project-name').value = retCurrentProject.code + ' — ' + retCurrentProject.name;
+      document.getElementById('ret-rate').value = retCurrentProject.retention_rate || 5;
+      document.getElementById('ret-status').value = retCurrentProject.retention_status || 'none';
+
+      // Format due date for input
+      if (retCurrentProject.retention_due_date) {
+        const d = new Date(retCurrentProject.retention_due_date);
+        document.getElementById('ret-due-date').value = d.toISOString().split('T')[0];
+      } else {
+        // Default: end_date + 1 year
+        if (retCurrentProject.end_date) {
+          const d = new Date(retCurrentProject.end_date);
+          d.setFullYear(d.getFullYear() + 1);
+          document.getElementById('ret-due-date').value = d.toISOString().split('T')[0];
+        } else {
+          document.getElementById('ret-due-date').value = '';
+        }
+      }
+
+      document.getElementById('ret-modal-title').textContent = 'ประกันผลงาน — ' + retCurrentProject.code;
+      calcRetention();
+      document.getElementById('ret-modal').classList.add('show');
+    }
+
+    function closeRetModal() {
+      document.getElementById('ret-modal').classList.remove('show');
+      retCurrentProject = null;
+    }
+
+    function calcRetention() {
+      if (!retCurrentProject) return;
+      const rate = parseFloat(document.getElementById('ret-rate').value) || 0;
+      const tor = parseFloat(retCurrentProject.tor_amount || 0);
+      const amount = Math.round(tor * rate / 100 * 100) / 100;
+
+      document.getElementById('ret-calc-amount').textContent = '฿' + Number(amount).toLocaleString('th-TH');
+      document.getElementById('ret-calc-detail').textContent =
+        'TOR ฿' + Number(tor).toLocaleString('th-TH') + ' x ' + rate + '% = ฿' + Number(amount).toLocaleString('th-TH');
+    }
+
+    async function saveRetention() {
+      if (!retCurrentProject) return;
+      const btn = document.getElementById('ret-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'กำลังบันทึก...';
+
+      try {
+        const projectId = document.getElementById('ret-project-id').value;
+        const rate = parseFloat(document.getElementById('ret-rate').value) || 5;
+        const status = document.getElementById('ret-status').value;
+        const dueDate = document.getElementById('ret-due-date').value || null;
+
+        await API.put('/projects/' + projectId, {
+          retention_rate: rate,
+          retention_status: status,
+          retention_due_date: dueDate
+        });
+
+        // Reload projects
+        closeRetModal();
+        await loadProjects();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'บันทึก';
+      }
+    }
+
+    // Close modal on ESC
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRetModal(); });
+
+    loadProjects();
+    API.onRealtime(msg => { if (msg.type.startsWith('project_')) loadProjects(); });
+  </script>
+</body>
+</html>

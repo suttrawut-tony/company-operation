@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Vehicle Bookings</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .vk-board { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; min-height:400px; }
+    .vk-col { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .vk-col-header { padding:12px 16px; font-size:13px; font-weight:700; border-bottom:2px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .vk-col-header .dot { width:8px; height:8px; border-radius:50%; }
+    .vk-col-body { padding:8px; min-height:200px; }
+    .vk-card { background:var(--bg-light); border:1px solid var(--border-light); border-radius:var(--radius); padding:12px; margin-bottom:8px; transition:all 0.15s; }
+    .vk-card:hover { border-color:var(--primary); box-shadow:var(--shadow-sm); }
+    .vk-card-title { font-size:13px; font-weight:600; margin-bottom:4px; }
+    .vk-card-plate { font-size:11px; color:var(--text-muted); }
+    .vk-card-meta { font-size:11px; color:var(--text-secondary); margin-top:6px; display:flex; flex-direction:column; gap:2px; }
+    .vk-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+    .vk-stat { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; text-align:center; }
+    .vk-stat .val { font-size:24px; font-weight:800; }
+    .vk-stat .lbl { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1 id="page-title">Vehicle Bookings</h1>
+      </div>
+      <a href="#" id="back-link" class="btn btn-secondary btn-sm">Back to Project</a>
+    </div>
+
+    <div class="vk-stats" id="stats"></div>
+    <div class="vk-board" id="board"></div>
+  </main>
+  </div>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get('project_id');
+
+    const columns = [
+      { key:'checked_out', label:'In Use', color:'var(--primary)', thLabel:'กำลังใช้' },
+      { key:'pending', label:'Pending', color:'var(--warning)', thLabel:'รออนุมัติ' },
+      { key:'approved', label:'Approved', color:'var(--info)', thLabel:'รอรับรถ' },
+      { key:'checked_in', label:'Returned', color:'var(--success)', thLabel:'คืนแล้ว' },
+    ];
+
+    async function loadData() {
+      if (!projectId) { document.getElementById('board').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--danger);">No project specified</div>'; return; }
+
+      try {
+        // Get project info
+        const proj = await API.getProject(projectId);
+        document.getElementById('page-title').textContent = 'Vehicle Bookings — ' + (proj.code || '');
+        document.getElementById('back-link').href = 'overview.html?id=' + projectId;
+
+        // Get bookings
+        const items = await API.get('/vehicle/bookings?project_id=' + projectId);
+
+        // Stats
+        const total = items.length;
+        const inUse = items.filter(b => b.status === 'checked_out').length;
+        const pending = items.filter(b => b.status === 'pending' || b.status === 'approved').length;
+        const returned = items.filter(b => b.status === 'checked_in').length;
+
+        document.getElementById('stats').innerHTML = `
+          <div class="vk-stat"><div class="val">${total}</div><div class="lbl">Total Bookings</div></div>
+          <div class="vk-stat"><div class="val" style="color:var(--primary);">${inUse}</div><div class="lbl">In Use</div></div>
+          <div class="vk-stat"><div class="val" style="color:var(--warning);">${pending}</div><div class="lbl">Pending/Approved</div></div>
+          <div class="vk-stat"><div class="val" style="color:var(--success);">${returned}</div><div class="lbl">Returned</div></div>
+        `;
+
+        // Kanban
+        document.getElementById('board').innerHTML = columns.map(col => {
+          const colItems = items.filter(b => b.status === col.key);
+          return `
+          <div class="vk-col">
+            <div class="vk-col-header">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="dot" style="background:${col.color};"></div>
+                ${col.thLabel}
+              </div>
+              <span style="font-size:12px;color:var(--text-muted);">${colItems.length}</span>
+            </div>
+            <div class="vk-col-body">
+              ${colItems.length ? colItems.map(b => `
+                <div class="vk-card" style="border-left:3px solid ${col.color};">
+                  <div class="vk-card-title">${b.vehicle_name || 'Vehicle'}</div>
+                  <div class="vk-card-plate">${b.plate_number || ''}</div>
+                  <div class="vk-card-meta">
+                    <span>${b.start_date ? new Date(b.start_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'}) : ''} - ${b.end_date ? new Date(b.end_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'}) : ''}</span>
+                    ${b.booked_by_name ? '<span>'+b.booked_by_name+'</span>' : ''}
+                    ${b.purpose ? '<span style="color:var(--text-muted);font-size:10px;">'+b.purpose+'</span>' : ''}
+                  </div>
+                </div>
+              `).join('') : '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">No items</div>'}
+            </div>
+          </div>`;
+        }).join('');
+
+      } catch(e) {
+        document.getElementById('board').innerHTML = '<div style="grid-column:1/-1;color:var(--danger);text-align:center;padding:40px;">Error: '+e.message+'</div>';
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

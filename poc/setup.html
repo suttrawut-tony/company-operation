@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Setup</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ─── Settings Layout ─── */
+    .settings-layout {
+      display: flex;
+      gap: 0;
+      min-height: calc(100vh - var(--topbar-height) - 48px);
+    }
+    .settings-nav {
+      width: 220px;
+      flex-shrink: 0;
+      position: sticky;
+      top: calc(var(--topbar-height) + 24px);
+      align-self: flex-start;
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xs);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .settings-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-radius: var(--radius);
+      font-size: var(--text-base);
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.12s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: var(--font);
+      white-space: nowrap;
+    }
+    .settings-nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .settings-nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .settings-nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .settings-content {
+      flex: 1;
+      min-width: 0;
+      padding-left: 24px;
+    }
+
+    /* ─── Section Cards ─── */
+    .setup-section {
+      display: none;
+    }
+    .setup-section.active {
+      display: block;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .section-header {
+      margin-bottom: 20px;
+    }
+    .section-header h2 {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-header h2 svg {
+      width: 20px;
+      height: 20px;
+    }
+    .section-header p {
+      font-size: var(--text-base);
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ─── Form Grid ─── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-grid .full-width {
+      grid-column: 1 / -1;
+    }
+    .form-hint {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ─── Logo Upload ─── */
+    .logo-upload-area {
+      width: 120px;
+      height: 120px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      transition: all 0.15s;
+      background: var(--bg-light);
+    }
+    .logo-upload-area:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-50);
+    }
+    .logo-upload-area svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* ─── Card Footer Actions ─── */
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+      margin-top: 20px;
+    }
+
+    /* ─── Code Cell (monospace) ─── */
+    .code-cell {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      background: var(--bg-light);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      letter-spacing: -0.3px;
+    }
+
+    /* ─── Connection Status ─── */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+    .status-indicator.connected {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    .status-indicator.disconnected {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+    .status-indicator::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ─── Checkbox Group ─── */
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--text-base);
+      cursor: pointer;
+      padding: 6px 0;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* ─── Editable Select (in-table) ─── */
+    .inline-select {
+      border: 1px solid var(--border-light);
+      background: var(--bg-white);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-family: var(--font);
+      color: var(--text-primary);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .inline-select:focus {
+      border-color: var(--border-focus);
+    }
+
+    /* ─── Editable Input (in-table) ─── */
+    .inline-input {
+      border: 1px solid var(--border-light);
+      background: var(--bg-white);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-family: var(--font);
+      color: var(--text-primary);
+      width: 80px;
+      outline: none;
+      transition: border-color 0.15s;
+      text-align: center;
+    }
+    .inline-input:focus {
+      border-color: var(--border-focus);
+    }
+
+    /* ─── Default Badge ─── */
+    .badge-default {
+      background: var(--success-light);
+      color: var(--success);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* ─── Synced Indicator ─── */
+    .synced-yes {
+      color: var(--success);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+    .synced-no {
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--text-sm);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 900px) {
+      .settings-layout {
+        flex-direction: column;
+      }
+      .settings-nav {
+        width: 100%;
+        position: static;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 4px;
+        padding: 6px;
+      }
+      .settings-content {
+        padding-left: 0;
+        padding-top: 16px;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<aside id="sidebar"></aside>
+<div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1>${ICONS_PLACEHOLDER_SETTINGS} Settings</h1>
+      </div>
+    </div>
+
+    <div class="settings-layout">
+      <!-- Left Nav -->
+      <div class="settings-nav" id="settingsNav"></div>
+
+      <!-- Right Content -->
+      <div class="settings-content" id="settingsContent"></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script src="assets/js/helpers.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/highlight.js"></script>
+<script src="assets/js/nav.js"></script>
+<script>
+// ─── Settings Sections Definition ───
+const SECTIONS = [
+  { id: 'company',        label: 'Company Profile',      icon: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>' },
+  { id: 'approval',       label: 'Approval Matrix',      icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+  { id: 'numbering',      label: 'Document Numbering',   icon: '<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>' },
+  { id: 'coa',            label: 'Chart of Accounts',    icon: '<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>' },
+  { id: 'sap',            label: 'SAP B1 Connection',    icon: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>' },
+  { id: 'tax',            label: 'Tax Codes',            icon: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h4"/>' },
+  { id: 'warehouse',      label: 'Warehouses',           icon: '<path d="m2 7 10-4 10 4-10 4Z"/><path d="m2 17 10 4 10-4"/><path d="m2 12 10 4 10-4"/>' },
+  { id: 'payment',        label: 'Payment Terms',        icon: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>' },
+  { id: 'ot-rate',        label: 'OT Rate Policy',       icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
+  { id: 'notifications',  label: 'Notifications',        icon: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>' },
+];
+
+let activeSection = 'company';
+
+function sIcon(path, size = 16) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+}
+
+// ─── Render Settings Nav ───
+function renderSettingsNav() {
+  const nav = document.getElementById('settingsNav');
+  nav.innerHTML = SECTIONS.map(s =>
+    `<button class="settings-nav-item${s.id === activeSection ? ' active' : ''}" onclick="switchSection('${s.id}')">
+      ${sIcon(s.icon)}
+      <span>${s.label}</span>
+    </button>`
+  ).join('');
+}
+
+// ─── Switch Section ───
+function switchSection(id) {
+  activeSection = id;
+  document.querySelectorAll('.settings-nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.settings-nav-item[onclick*="${id}"]`)?.classList.add('active');
+  document.querySelectorAll('.setup-section').forEach(el => el.classList.remove('active'));
+  document.getElementById(`section-${id}`)?.classList.add('active');
+}
+
+// ─── Build All Sections ───
+function renderSettingsContent() {
+  const container = document.getElementById('settingsContent');
+  container.innerHTML = `
+    ${renderCompanyProfile()}
+    ${renderApprovalMatrix()}
+    ${renderDocNumbering()}
+    ${renderCOA()}
+    ${renderSAPConnection()}
+    ${renderTaxCodes()}
+    ${renderWarehouses()}
+    ${renderPaymentTerms()}
+    ${renderOTRatePolicy()}
+    ${renderNotifications()}
+  `;
+}
+
+// ═══════════════════════════════════════
+// 1. Company Profile
+// ═══════════════════════════════════════
+function renderCompanyProfile() {
+  return `
+  <div class="setup-section active" id="section-company">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[0].icon, 20)} Company Profile</h2>
+      <p>General information about your organization</p>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;gap:24px;align-items:flex-start;margin-bottom:20px;">
+          <div class="logo-upload-area" onclick="document.getElementById('logoInput').click()">
+            ${sIcon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>', 28)}
+            <span>Upload Logo</span>
+            <input type="file" id="logoInput" accept="image/*" style="display:none">
+          </div>
+          <div style="flex:1;">
+            <div class="form-group">
+              <label class="form-label">Company Name</label>
+              <input class="form-input" value="บริษัท เอส.ดี.เอ. กรุ๊ป จำกัด">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Company Slug</label>
+              <input class="form-input" value="sda-group" style="font-family:var(--font-mono);font-size:var(--text-sm);">
+              <div class="form-hint">Used in URLs and API paths</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Tax ID</label>
+            <input class="form-input" value="0105529041298" style="font-family:var(--font-mono);">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-input" value="02-3195588">
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">Address</label>
+            <textarea class="form-textarea" rows="2">367/1 อาคารเดชะรินทร์ ซอยศูนย์วิจัย 4 ถนนพระรามที่ 9</textarea>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary" onclick="showToast('Company profile saved')">
+            ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 2. Approval Matrix
+// ═══════════════════════════════════════
+function renderApprovalMatrix() {
+  const docTypes = [
+    { code: 'PR', name: 'Purchase Request' },
+    { code: 'PO', name: 'Purchase Order' },
+    { code: 'EXP', name: 'Expense' },
+    { code: 'BUD', name: 'Budget' },
+    { code: 'TRV', name: 'Travel' },
+    { code: 'OT', name: 'Overtime' },
+  ];
+  const roles = ['Manager', 'Finance', 'Executive'];
+
+  const matrixRows = [
+    { range: '≤ ฿10,000',         steps: ['Manager', '-', '-'] },
+    { range: '฿10,001 - ฿100,000', steps: ['Manager', 'Finance', '-'] },
+    { range: '> ฿100,000',        steps: ['Manager', 'Finance', 'Executive'] },
+  ];
+
+  const selectOpts = roles.map(r => `<option>${r}</option>`).join('') + '<option>-</option>';
+
+  return `
+  <div class="setup-section" id="section-approval">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[1].icon, 20)} Approval Matrix</h2>
+      <p>Configure approval workflows by document type and amount range</p>
+    </div>
+    ${docTypes.map(dt => `
+    <div class="card mb-16">
+      <div class="card-header">
+        <h2><span class="code-cell">${dt.code}</span> ${dt.name}</h2>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Amount Range</th>
+                <th>Step 1</th>
+                <th>Step 2</th>
+                <th>Step 3</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${matrixRows.map(row => `
+              <tr>
+                <td style="font-weight:600;">${row.range}</td>
+                ${row.steps.map(s => `
+                <td>
+                  <select class="inline-select">
+                    ${['Manager','Finance','Executive','-'].map(opt => `<option${opt === s ? ' selected' : ''}>${opt}</option>`).join('')}
+                  </select>
+                </td>`).join('')}
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`).join('')}
+    <div class="card-actions" style="border:none;margin-top:0;padding-top:0;">
+      <button class="btn btn-primary" onclick="showToast('Approval matrix saved')">
+        ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save All Changes
+      </button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 3. Document Numbering
+// ═══════════════════════════════════════
+function renderDocNumbering() {
+  const series = [
+    { type: 'Purchase Request', prefix: 'PR',  format: 'PR-YYMM-####',  current: 'PR-2605-0047', synced: true },
+    { type: 'Purchase Order',   prefix: 'PO',  format: 'PO-YYMM-####',  current: 'PO-2605-0031', synced: true },
+    { type: 'Expense',          prefix: 'EXP', format: 'EXP-YYMM-####', current: 'EXP-2605-0018', synced: true },
+    { type: 'Budget',           prefix: 'BUD', format: 'BUD-YYMM-####', current: 'BUD-2605-0005', synced: false },
+    { type: 'Travel',           prefix: 'TRV', format: 'TRV-YYMM-####', current: 'TRV-2605-0012', synced: true },
+    { type: 'Overtime',         prefix: 'OT',  format: 'OT-YYMM-####',  current: 'OT-2605-0009', synced: false },
+    { type: 'Journal Entry',    prefix: 'JE',  format: 'JE-YYMM-####',  current: 'JE-2605-0003', synced: true },
+  ];
+
+  return `
+  <div class="setup-section" id="section-numbering">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[2].icon, 20)} Document Numbering</h2>
+      <p>Number series configuration for each document type</p>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Document Type</th>
+                <th>Prefix</th>
+                <th>Format</th>
+                <th>Current Number</th>
+                <th>SAP Synced</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${series.map(s => `
+              <tr>
+                <td style="font-weight:600;">${s.type}</td>
+                <td><span class="code-cell">${s.prefix}</span></td>
+                <td><span class="code-cell">${s.format}</span></td>
+                <td><span class="code-cell">${s.current}</span></td>
+                <td>${s.synced
+                  ? `<span class="synced-yes">${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Synced</span>`
+                  : `<span class="synced-no">${sIcon('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 14)} Not synced</span>`
+                }</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 4. Chart of Accounts
+// ═══════════════════════════════════════
+function renderCOA() {
+  const categories = [
+    { code: '1', name: 'Assets', color: 'var(--info)', accounts: [
+      { code: '114101', name: 'สินค้าคงเหลือ (Inventory)' },
+      { code: '115301', name: 'ภาษีซื้อ (Input VAT)' },
+      { code: '115302', name: 'ภาษีซื้อยังไม่ถึงกำหนด (Deferred Input VAT)' },
+      { code: '112101', name: 'ลูกหนี้การค้า (Accounts Receivable)' },
+      { code: '113101', name: 'เงินมัดจำจ่าย (Deposit Paid)' },
+    ]},
+    { code: '2', name: 'Liabilities', color: 'var(--danger)', accounts: [
+      { code: '211301', name: 'เจ้าหนี้การค้า (Accounts Payable)' },
+      { code: '215301', name: 'ภาษีขาย (Output VAT)' },
+      { code: '215302', name: 'ภาษีขายยังไม่ถึงกำหนด (Deferred Output VAT)' },
+      { code: '216101', name: 'ภาษีหัก ณ ที่จ่าย (WHT Payable)' },
+    ]},
+    { code: '3', name: 'Equity', color: 'var(--purple)', accounts: [
+      { code: '311101', name: 'ทุนจดทะเบียน (Registered Capital)' },
+      { code: '321101', name: 'กำไรสะสม (Retained Earnings)' },
+    ]},
+    { code: '4', name: 'Revenue', color: 'var(--success)', accounts: [
+      { code: '411101', name: 'รายได้จากการขาย (Sales Revenue)' },
+      { code: '421101', name: 'รายได้อื่น (Other Income)' },
+    ]},
+    { code: '5', name: 'Cost of Goods Sold', color: 'var(--warning)', accounts: [
+      { code: '511101', name: 'ต้นทุนขาย (COGS)' },
+    ]},
+    { code: '6', name: 'Expenses', color: 'var(--danger)', accounts: [
+      { code: '522101', name: 'ค่าเดินทาง (Travel Expense)' },
+      { code: '522201', name: 'ค่าที่พัก (Accommodation)' },
+      { code: '522301', name: 'ค่าน้ำมัน (Fuel)' },
+      { code: '523101', name: 'เงินเดือน (Salary)' },
+      { code: '524101', name: 'ค่าเช่าสำนักงาน (Office Rent)' },
+      { code: '525101', name: 'ค่าสาธารณูปโภค (Utilities)' },
+    ]},
+    { code: '9', name: 'Suspense', color: 'var(--text-muted)', accounts: [
+      { code: '911101', name: 'บัญชีพัก (Suspense Account)' },
+    ]},
+  ];
+
+  return `
+  <div class="setup-section" id="section-coa">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[3].icon, 20)} Chart of Accounts</h2>
+      <p>GL mapping reference from SAP Business One blueprint</p>
+    </div>
+    ${categories.map(cat => `
+    <div class="card mb-16">
+      <div class="card-header">
+        <h2><span class="code-cell" style="background:${cat.color};color:#fff;">${cat.code}</span> ${cat.name}</h2>
+        <span class="badge badge-gray">${cat.accounts.length} accounts</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:120px;">Account Code</th>
+                <th>Account Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cat.accounts.map(a => `
+              <tr>
+                <td><span class="code-cell">${a.code}</span></td>
+                <td>${a.name}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 5. SAP B1 Connection
+// ═══════════════════════════════════════
+function renderSAPConnection() {
+  return `
+  <div class="setup-section" id="section-sap">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[4].icon, 20)} SAP B1 Connection</h2>
+      <p>Service Layer integration settings</p>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <span class="status-indicator connected">Connected</span>
+          <button class="btn btn-secondary btn-sm" onclick="testSAPConnection()">
+            ${sIcon('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', 14)} Test Connection
+          </button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="form-label">Service Layer URL</label>
+            <input class="form-input" value="https://your-sap-server:50000/b1s/v1" style="font-family:var(--font-mono);font-size:var(--text-sm);">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company DB</label>
+            <input class="form-input" value="SDA_PROD" style="font-family:var(--font-mono);">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input class="form-input" value="manager" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" value="••••••••" autocomplete="off">
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary" onclick="showToast('SAP connection saved')">
+            ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 6. Tax Codes
+// ═══════════════════════════════════════
+function renderTaxCodes() {
+  const inputTax = [
+    { code: 'IG00', rate: '0%', desc: 'Input Tax - Goods 0%' },
+    { code: 'IG07', rate: '7%', desc: 'Input Tax - Goods 7%' },
+    { code: 'IS00', rate: '0%', desc: 'Input Tax - Services 0%' },
+    { code: 'IS07', rate: '7%', desc: 'Input Tax - Services 7%' },
+    { code: 'ID07', rate: '7%', desc: 'Input Tax - Deferred 7%' },
+  ];
+  const outputTax = [
+    { code: 'OG00', rate: '0%', desc: 'Output Tax - Goods 0%' },
+    { code: 'OG07', rate: '7%', desc: 'Output Tax - Goods 7%' },
+    { code: 'OS00', rate: '0%', desc: 'Output Tax - Services 0%' },
+    { code: 'OS07', rate: '7%', desc: 'Output Tax - Services 7%' },
+    { code: 'OD07', rate: '7%', desc: 'Output Tax - Deferred 7%' },
+  ];
+  const wht = [
+    { code: '5310', rate: '3%', desc: 'WHT - ค่าจ้างทำของ' },
+    { code: '5320', rate: '3%', desc: 'WHT - ค่าบริการ' },
+    { code: '5350', rate: '1%', desc: 'WHT - ค่าขนส่ง' },
+    { code: '5360', rate: '3%', desc: 'WHT - ค่าโฆษณา' },
+    { code: '5361', rate: '5%', desc: 'WHT - ค่าเช่า' },
+    { code: '5362', rate: '3%', desc: 'WHT - ค่าจ้างอื่น' },
+  ];
+
+  function taxTable(title, rows, color) {
+    return `
+    <div class="card mb-16">
+      <div class="card-header">
+        <h2>${title}</h2>
+        <span class="badge badge-${color}">${rows.length} codes</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Rate</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `
+              <tr>
+                <td><span class="code-cell">${r.code}</span></td>
+                <td style="font-weight:600;">${r.rate}</td>
+                <td>${r.desc}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return `
+  <div class="setup-section" id="section-tax">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[5].icon, 20)} Tax Codes</h2>
+      <p>VAT and withholding tax codes from SAP Blueprint</p>
+    </div>
+    ${taxTable('Input Tax (VAT)', inputTax, 'info')}
+    ${taxTable('Output Tax (VAT)', outputTax, 'success')}
+    ${taxTable('Withholding Tax (WHT)', wht, 'warning')}
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 7. Warehouses
+// ═══════════════════════════════════════
+function renderWarehouses() {
+  const warehouses = [
+    { code: 'HQ01', name: 'คลังสินค้า', isDefault: true },
+    { code: 'DS01', name: 'Dead Stock', isDefault: false },
+    { code: 'PJ01', name: 'คลังสินค้าคงเหลือจากโปรเจค', isDefault: false },
+    { code: 'PJ00', name: 'คลังโครงการ', isDefault: false },
+    { code: 'BR01', name: 'คลังยืม', isDefault: false },
+    { code: 'AS01', name: 'คลังประกอบ', isDefault: false },
+    { code: 'WS01', name: 'คลังของเสีย', isDefault: false },
+    { code: 'WS02', name: 'คลังชำรุด', isDefault: false },
+    { code: 'DL01', name: 'คลังสินค้าฝากขาย', isDefault: false },
+  ];
+
+  return `
+  <div class="setup-section" id="section-warehouse">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[6].icon, 20)} Warehouses</h2>
+      <p>Warehouse locations configured in SAP Business One</p>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Name</th><th>Default</th></tr>
+            </thead>
+            <tbody>
+              ${warehouses.map(w => `
+              <tr>
+                <td><span class="code-cell">${w.code}</span></td>
+                <td style="font-weight:500;">${w.name}</td>
+                <td>${w.isDefault ? '<span class="badge-default">Default</span>' : ''}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 8. Payment Terms
+// ═══════════════════════════════════════
+function renderPaymentTerms() {
+  const terms = [
+    { code: 'CASH', desc: 'เงินสด (Cash)', days: 0 },
+    { code: 'N07',  desc: '7 วัน', days: 7 },
+    { code: 'N15',  desc: '15 วัน', days: 15 },
+    { code: 'N30',  desc: '30 วัน', days: 30 },
+    { code: 'N60',  desc: '60 วัน', days: 60 },
+    { code: 'N90',  desc: '90 วัน', days: 90 },
+    { code: 'N120', desc: '120 วัน', days: 120 },
+    { code: 'N120+', desc: 'มากกว่า 120 วัน', days: 150 },
+  ];
+
+  return `
+  <div class="setup-section" id="section-payment">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[7].icon, 20)} Payment Terms</h2>
+      <p>Standard payment terms for vendor and customer transactions</p>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Description</th><th style="text-align:right;">Days</th></tr>
+            </thead>
+            <tbody>
+              ${terms.map(t => `
+              <tr>
+                <td><span class="code-cell">${t.code}</span></td>
+                <td>${t.desc}</td>
+                <td style="text-align:right;font-family:var(--font-mono);font-weight:600;">${t.days}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 9. OT Rate Policy
+// ═══════════════════════════════════════
+function renderOTRatePolicy() {
+  const rates = [
+    { type: 'Normal OT', desc: 'Weekday overtime', multiplier: '1.5', maxHours: '4' },
+    { type: 'Holiday OT', desc: 'Weekend / public holiday', multiplier: '2.0', maxHours: '8' },
+    { type: 'Special OT', desc: 'Emergency / special assignment', multiplier: '3.0', maxHours: '8' },
+  ];
+
+  return `
+  <div class="setup-section" id="section-ot-rate">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[8].icon, 20)} OT Rate Policy</h2>
+      <p>Overtime calculation multipliers and daily limits</p>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr><th>Type</th><th>Description</th><th style="text-align:center;">Multiplier</th><th style="text-align:center;">Max Hours/Day</th></tr>
+            </thead>
+            <tbody>
+              ${rates.map(r => `
+              <tr>
+                <td style="font-weight:600;">${r.type}</td>
+                <td class="text-muted">${r.desc}</td>
+                <td style="text-align:center;">
+                  <input class="inline-input" value="${r.multiplier}" style="width:60px;">
+                </td>
+                <td style="text-align:center;">
+                  <input class="inline-input" value="${r.maxHours}" style="width:60px;"> hrs
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer" style="display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="showToast('OT rate policy saved')">
+          ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// 10. Notifications
+// ═══════════════════════════════════════
+function renderNotifications() {
+  return `
+  <div class="setup-section" id="section-notifications">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[9].icon, 20)} Notifications</h2>
+      <p>Configure notification channels and integrations</p>
+    </div>
+
+    <!-- Channels -->
+    <div class="card mb-16">
+      <div class="card-header">
+        <h2>Notification Channels</h2>
+      </div>
+      <div class="card-body">
+        <label class="checkbox-row">
+          <input type="checkbox" checked> In-App Notifications
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" checked> Email Notifications
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" checked> Discord Notifications
+        </label>
+      </div>
+    </div>
+
+    <!-- Discord -->
+    <div class="card mb-16">
+      <div class="card-header">
+        <h2>Discord Integration</h2>
+        <button class="btn btn-secondary btn-sm" onclick="showToast('Test message sent to Discord')">
+          ${sIcon('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', 14)} Send Test
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Webhook URL</label>
+          <input class="form-input" placeholder="https://discord.com/api/webhooks/..." style="font-family:var(--font-mono);font-size:var(--text-sm);">
+        </div>
+      </div>
+    </div>
+
+    <!-- Email SMTP -->
+    <div class="card mb-16">
+      <div class="card-header">
+        <h2>Email SMTP</h2>
+        <button class="btn btn-secondary btn-sm" onclick="showToast('Test email sent')">
+          ${sIcon('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', 14)} Send Test
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">SMTP Host</label>
+            <input class="form-input" placeholder="smtp.gmail.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Port</label>
+            <input class="form-input" placeholder="587" style="font-family:var(--font-mono);">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input class="form-input" placeholder="noreply@sda-group.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="••••••••" autocomplete="off">
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">From Address</label>
+            <input class="form-input" placeholder="SDA Operation <noreply@sda-group.com>">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-actions" style="border:none;margin-top:0;padding-top:0;">
+      <button class="btn btn-primary" onclick="showToast('Notification settings saved')">
+        ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save All Changes
+      </button>
+    </div>
+  </div>`;
+}
+
+// ─── Toast Notification ───
+function showToast(message) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    Object.assign(toast.style, {
+      position: 'fixed', bottom: '24px', right: '24px',
+      background: 'var(--text-primary)', color: '#fff',
+      padding: '12px 20px', borderRadius: 'var(--radius-lg)',
+      fontSize: 'var(--text-base)', fontWeight: '500',
+      boxShadow: 'var(--shadow-lg)', zIndex: '999',
+      display: 'flex', alignItems: 'center', gap: '8px',
+      opacity: '0', transform: 'translateY(12px)',
+      transition: 'all 0.2s ease',
+      fontFamily: 'var(--font)',
+    });
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `${sIcon('<polyline points="20 6 9 17 4 12"/>', 16)} ${message}`;
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(12px)';
+  }, 2500);
+}
+
+// ─── SAP Test Connection (mock) ───
+function testSAPConnection() {
+  const statusEl = document.querySelector('.status-indicator');
+  if (!statusEl) return;
+  statusEl.className = 'status-indicator disconnected';
+  statusEl.textContent = 'Testing...';
+  setTimeout(() => {
+    statusEl.className = 'status-indicator connected';
+    statusEl.textContent = 'Connected';
+    showToast('SAP B1 connection successful');
+  }, 1200);
+}
+
+// ─── Fix Page Header Icon (replace placeholder after nav.js loads) ───
+document.addEventListener('DOMContentLoaded', () => {
+  const h1 = document.querySelector('.page-header h1');
+  if (h1 && typeof ICONS !== 'undefined') {
+    h1.innerHTML = ICONS.setup + ' Settings';
+  }
+  renderSettingsNav();
+  renderSettingsContent();
+});
+</script>
+</body>
+</html>

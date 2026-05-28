@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Document</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ── ERP Document Form ── */
+    .erp-toolbar {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 10px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-xs);
+    }
+    .erp-toolbar-left { display: flex; align-items: center; gap: 6px; }
+    .erp-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .erp-btn {
+      padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      font-family: var(--font); color: var(--text-secondary); display: flex;
+      align-items: center; gap: 5px; transition: all 0.15s;
+    }
+    .erp-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .erp-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .erp-btn.primary:hover { background: var(--primary-hover); }
+    .erp-btn.success { background: var(--success); color: white; border-color: var(--success); }
+    .erp-btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+    .erp-btn svg { width: 14px; height: 14px; }
+    .erp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .erp-nav { display: flex; align-items: center; gap: 4px; margin-left: 12px; }
+    .erp-nav button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-white); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: var(--text-md); }
+    .erp-nav button:hover { background: var(--bg-hover); }
+    .erp-nav span { font-size: var(--text-xs); color: var(--text-muted); min-width: 60px; text-align: center; }
+
+    /* Header Form */
+    .erp-header {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .erp-header-top {
+      padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 100%);
+    }
+    .erp-header-top .doc-type {
+      font-size: var(--text-2xs); font-weight: 700; color: var(--primary); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 2px;
+    }
+    .erp-header-top .doc-number {
+      font-size: var(--text-3xl); font-weight: 800; color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+    .erp-fields {
+      padding: 20px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .erp-field { position: relative; }
+    .erp-field label {
+      display: block; font-size: var(--text-2xs); font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+    }
+    .erp-field input, .erp-field select {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: var(--text-base); font-family: var(--font);
+      color: var(--text-primary); background: var(--bg-white); outline: none;
+      transition: all 0.15s;
+    }
+    .erp-field input:focus, .erp-field select:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+    .erp-field input[readonly] {
+      background: var(--bg-light); color: var(--text-secondary); border-color: transparent;
+    }
+    .erp-field .field-val {
+      font-size: var(--text-md); font-weight: 700; padding: 8px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .erp-field.span2 { grid-column: span 2; }
+    .erp-field.span4 { grid-column: span 4; }
+
+    /* Line Items Grid — Premium ERP Style */
+    .erp-grid-wrap {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .erp-grid-header {
+      padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: var(--bg-light);
+      font-size: var(--text-base); font-weight: 600; color: var(--text-primary);
+    }
+    .erp-grid { width: 100%; border-collapse: collapse; font-size: var(--text-base); }
+    .erp-grid thead th {
+      padding: 10px 16px; text-align: left; font-size: var(--text-2xs); font-weight: 700;
+      color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
+      background: #f8f9fb; border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    .erp-grid thead th.num { text-align: right; }
+    .erp-grid tbody tr { transition: background 0.1s; }
+    .erp-grid tbody tr:nth-child(even) { background: #fafbfc; }
+    .erp-grid tbody tr:hover { background: #f0f4ff; }
+    .erp-grid tbody td {
+      padding: 10px 16px; border-bottom: 1px solid var(--border-light);
+      vertical-align: middle; line-height: 1.5;
+    }
+    .erp-grid tbody td input, .erp-grid tbody td select {
+      width: 100%; padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: var(--text-base); font-family: var(--font);
+      background: var(--bg-white); transition: all 0.15s;
+      min-width: 0;
+    }
+    .erp-grid tbody td select { min-width: 80px; }
+    .erp-grid tbody td input:hover, .erp-grid tbody td select:hover {
+      border-color: var(--primary);
+    }
+    .erp-grid tbody td input:focus, .erp-grid tbody td select:focus {
+      border-color: var(--border-focus); background: var(--bg-white);
+      box-shadow: 0 0 0 3px rgba(79,110,247,0.08); outline: none;
+    }
+    .erp-grid tbody td.num {
+      text-align: right; font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono);
+      font-size: var(--text-base); letter-spacing: -0.3px;
+    }
+    .erp-grid tbody td.num input { text-align: right; font-family: inherit; }
+    .erp-grid tbody td.row-num {
+      text-align: center; color: var(--text-muted); font-weight: 600;
+      padding: 10px 8px; width: 40px; font-size: var(--text-sm); background: #f8f9fb;
+      border-right: 1px solid var(--border-light);
+    }
+    .erp-grid tbody td.row-action { width: 36px; text-align: center; }
+    .erp-grid tbody td.row-action button {
+      border: none; background: none; color: var(--text-muted);
+      cursor: pointer; font-size: var(--text-2xl); padding: 4px;
+      border-radius: var(--radius-sm); transition: all 0.15s;
+    }
+    .erp-grid tbody td.row-action button:hover { color: var(--danger); background: var(--danger-bg); }
+    .erp-grid .total-row td {
+      padding: 12px 16px; font-weight: 700; font-size: var(--text-base);
+      border-top: 2px solid var(--border); background: #f8f9fb;
+    }
+    .erp-grid .total-row td.num {
+      font-family: var(--font-mono);
+      font-size: var(--text-md);
+    }
+    .erp-grid .subtotal-row td {
+      padding: 8px 16px; font-size: var(--text-base); color: var(--text-secondary);
+      border-bottom: none; font-weight: 500; background: #f8f9fb;
+    }
+    .erp-grid .subtotal-row td.num {
+      font-family: var(--font-mono); font-weight: 600; color: var(--text-primary);
+    }
+    .erp-grid .grand-total td {
+      padding: 14px 16px; font-weight: 800; font-size: var(--text-md);
+      border-top: 2px solid var(--primary); background: var(--primary-50);
+      white-space: nowrap;
+    }
+    .erp-grid .grand-total td.num {
+      color: var(--primary); font-size: var(--text-xl);
+      font-family: var(--font-mono); font-weight: 800;
+    }
+
+    /* Bottom Tabs */
+    .erp-bottom-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      background: var(--bg-white); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+    }
+    .erp-btab {
+      padding: 10px 20px; font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      color: var(--text-secondary); border-bottom: 2px solid transparent;
+      transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .erp-btab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .erp-btab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .erp-btab svg { width: 14px; height: 14px; }
+    .erp-bottom-content {
+      background: var(--bg-white); border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg); box-shadow: var(--shadow-xs);
+      min-height: 200px;
+    }
+    .erp-tab-panel { display: none; padding: 16px 20px; }
+    .erp-tab-panel.active { display: block; }
+
+    /* Status bar */
+    .status-bar {
+      padding: 8px 20px; display: flex; align-items: center; justify-content: space-between;
+      font-size: var(--text-xs); color: var(--text-muted); border-top: 1px solid var(--border-light);
+    }
+
+    /* Approval timeline */
+    .atl-item { display: flex; gap: 12px; padding: 10px 0; position: relative; }
+    .atl-item::before { content:''; position: absolute; left: 15px; top: 42px; bottom: 0; width: 2px; background: var(--border-light); }
+    .atl-item:last-child::before { display: none; }
+    .atl-dot { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: var(--text-sm); z-index: 1; }
+    .atl-dot.done { background: var(--success-bg); color: var(--success); }
+    .atl-dot.current { background: var(--warning-bg); color: var(--warning); border: 2px solid var(--warning); }
+    .atl-dot.pending { background: var(--bg-hover); color: var(--text-muted); }
+    .atl-info h4 { font-size: var(--text-sm); font-weight: 600; }
+    .atl-info .sub { font-size: var(--text-xs); color: var(--text-muted); }
+
+    @media (max-width: 768px) {
+      .erp-fields { grid-template-columns: 1fr 1fr; }
+      .erp-field.span2 { grid-column: span 2; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <!-- ERP Toolbar -->
+    <div class="erp-toolbar" id="toolbar">
+      <div class="erp-toolbar-left">
+        <button class="erp-btn" onclick="history.back()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back
+        </button>
+        <div class="erp-nav">
+          <button onclick="navDoc(-1)" title="Previous">&#9664;</button>
+          <span id="nav-info">1 / 1</span>
+          <button onclick="navDoc(1)" title="Next">&#9654;</button>
+        </div>
+      </div>
+      <div class="erp-toolbar-right" id="action-buttons"></div>
+    </div>
+
+    <!-- Document Header Form -->
+    <div class="erp-header" id="erp-header">
+      <div class="erp-header-top">
+        <div>
+          <div class="doc-type" id="h-doc-type">Loading...</div>
+          <div class="doc-number" id="h-doc-number">---</div>
+        </div>
+        <div id="h-status"></div>
+      </div>
+      <div class="erp-fields" id="h-fields">Loading...</div>
+    </div>
+
+    <!-- Line Items Grid -->
+    <div class="erp-grid-wrap">
+      <div class="erp-grid-header">
+        <span>Line Items</span>
+        <button class="erp-btn" onclick="addLine()" id="btn-add-line">+ Add Row</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="erp-grid" id="lines-grid">
+          <thead id="lines-thead"></thead>
+          <tbody id="lines-body"></tbody>
+          <tfoot id="lines-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bottom Tabs -->
+    <div class="erp-bottom-tabs" id="bottom-tabs"></div>
+    <div class="erp-bottom-content" id="bottom-content"></div>
+
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    // Premium number formatter
+    function money(n) {
+      n = parseFloat(n) || 0;
+      return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function moneyBaht(n) { return '฿' + money(n); }
+
+    function calcDueDate(docDate, days) {
+      if (!docDate) return '';
+      const d = new Date(docDate);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const docType = params.get('type') || 'pr';
+    const docNum = params.get('doc') || '';
+    let doc = null;
+    let lines = [];
+    let allDocs = [];
+    let currentIdx = 0;
+    let isNew = params.get('mode') === 'new';
+    let isEditing = isNew;
+
+    async function loadDocument() {
+      try {
+        // Pre-load projects for dropdown
+        try { window._projectCache = await API.getProjects(); } catch(e) { window._projectCache = []; }
+
+        // Load all docs for navigation
+        if (docType === 'pr') allDocs = await API.getPRs();
+        else if (docType === 'po') allDocs = await API.getPOs();
+        else if (docType === 'expense') allDocs = await API.getExpenses();
+
+        if (isNew) {
+          // Get next number preview
+          let nextNum = 'New';
+          try {
+            const prefix = docType === 'expense' ? 'EXP' : docType === 'po' ? 'PO' : 'PR';
+            const next = await API.getNextNumber(prefix);
+            nextNum = next.preview || 'New';
+          } catch(e) {}
+          doc = {
+            doc_number: nextNum, status: 'draft',
+            doc_date: new Date().toISOString().split('T')[0],
+            vendor_code: '', vendor_name: '', remarks: '', description: '',
+            sap_account: '', tax_code: '', expense_type: 'reimbursement',
+            total_amount: 0, amount: 0
+          };
+          lines = [{ item_code:'', item_name:'', quantity:1, unit_price:0, uom:'EA', tax_code:'IG07', sap_account:'114101', total_price:0 }];
+
+          // If copying from PR, populate form data from sessionStorage
+          if (params.get('from_pr') === '1') {
+            try {
+              const prData = JSON.parse(sessionStorage.getItem('copyFromPR'));
+              if (prData) {
+                doc.project_id = prData.project_id;
+                doc.vendor_code = prData.vendor_code || '';
+                doc.vendor_name = prData.vendor_name || '';
+                doc.pr_id = prData.pr_id;
+                if (prData.lines && prData.lines.length) {
+                  lines = prData.lines.map(l => ({
+                    item_code: l.item_code || '', item_name: l.item_name || '',
+                    quantity: l.quantity || 1, unit_price: l.unit_price || 0,
+                    uom: l.uom || 'EA', tax_code: l.tax_code || 'IG07',
+                    sap_account: l.sap_account || '114101',
+                    total_price: l.total_price || (l.quantity * l.unit_price) || 0
+                  }));
+                  doc.total_amount = lines.reduce((s, l) => s + l.total_price, 0);
+                }
+                sessionStorage.removeItem('copyFromPR');
+              }
+            } catch(e) { /* ignore parse errors */ }
+          }
+        } else {
+          doc = docNum ? allDocs.find(d => d.doc_number === docNum) : allDocs[0];
+          if (!doc) { document.getElementById('h-doc-number').textContent = 'Not found'; return; }
+          currentIdx = allDocs.indexOf(doc);
+
+          // Load lines for PR
+          if (docType === 'pr' && doc) {
+            try { const detail = await API.getPR(doc.id); lines = detail.lines || []; doc.chain = detail.chain; } catch(e) { lines = []; }
+          }
+          // Load lines for PO
+          if (docType === 'po' && doc) {
+            try { const detail = await API.getPO(doc.id); lines = detail.lines || []; doc.chain = detail.chain; } catch(e) { lines = []; }
+          }
+        }
+
+        render();
+        renderDocFlowChain(doc, docType);
+      } catch(e) {
+        document.getElementById('h-doc-number').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    function render() {
+      document.title = `SDA — ${doc.doc_number}`;
+      const amount = parseFloat(doc.total_amount || doc.amount || 0);
+      const readonly = !isEditing;
+      const ro = readonly ? 'readonly' : '';
+      const dis = readonly ? 'disabled' : '';
+
+      // Header
+      document.getElementById('h-doc-type').textContent = docType === 'pr' ? 'Purchase Request' : docType === 'po' ? 'Purchase Order' : 'Expense / Reimbursement';
+      document.getElementById('h-doc-number').textContent = doc.doc_number;
+      document.getElementById('h-status').innerHTML = statusBadge(doc.status || 'draft');
+      document.getElementById('nav-info').textContent = `${currentIdx + 1} / ${allDocs.length}`;
+
+      // Action buttons
+      const isPending = (doc.status || '').includes('pending');
+      const isDraft = doc.status === 'draft';
+      document.getElementById('action-buttons').innerHTML = `
+        <button class="erp-btn primary" onclick="addNew()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Add</button>
+        ${!isEditing && !isNew ? `<button class="erp-btn" onclick="toggleEdit()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          Edit</button>` : ''}
+        ${isEditing ? '<button class="erp-btn primary" onclick="saveDoc()">Save</button>' : ''}
+        ${isEditing ? '<button class="erp-btn" onclick="cancelEdit()">Cancel</button>' : ''}
+        ${isDraft && !isEditing ? '<button class="erp-btn primary" onclick="submitDoc()">Submit</button>' : ''}
+        ${isPending ? '<button class="erp-btn success" onclick="approveDoc()">Approve</button>' : ''}
+        ${isPending ? '<button class="erp-btn danger" onclick="rejectDoc()">Reject</button>' : ''}
+        ${!isNew && docType==='pr' && (doc.status==='approved'||doc.status==='sent_to_sap') ? '<button class="erp-btn primary" onclick="copyToPO()">Copy To PO</button>' : ''}
+        ${!isNew ? '<button class="erp-btn" onclick="copyDoc()">Copy To</button>' : ''}
+        ${!isNew && isDraft ? '<button class="erp-btn danger" onclick="cancelDoc()">Cancel</button>' : ''}
+        ${!isNew ? '<button class="erp-btn" onclick="window.print()">Print</button>' : ''}
+      `;
+
+      // Header Fields
+      if (docType === 'expense') {
+        document.getElementById('h-fields').innerHTML = `
+          <div class="erp-field"><label>Document No.</label><input value="${doc.doc_number}" readonly></div>
+          <div class="erp-field"><label>Document Date</label><input type="date" value="${(doc.doc_date||'').split('T')[0]}" ${ro}></div>
+          <div class="erp-field"><label>Type</label><select ${dis}><option ${doc.expense_type==='reimbursement'?'selected':''}>Reimbursement</option><option ${doc.expense_type==='advance'?'selected':''}>Advance</option><option ${doc.expense_type==='advance_clear'?'selected':''}>Advance Clear</option></select></div>
+          <div class="erp-field"><label>Status</label><div class="field-val">${statusBadge(doc.status||'draft')}</div></div>
+          <div class="erp-field span2"><label>Description</label><input value="${doc.description||''}" ${ro} placeholder="รายละเอียดค่าใช้จ่าย..."></div>
+          <div class="erp-field"><label>Amount (฿)</label><input type="number" value="${amount}" ${ro} class="num" step="0.01"></div>
+          <div class="erp-field"><label>GL Account</label><select ${dis}><option value="">-- Select --</option><option ${doc.sap_account==='522501'?'selected':''}>522501 ค่าธรรมเนียม</option><option ${doc.sap_account==='522601'?'selected':''}>522601 ค่าเดินทาง</option><option ${doc.sap_account==='522602'?'selected':''}>522602 ค่าที่พัก</option><option ${doc.sap_account==='522603'?'selected':''}>522603 ค่าอาหาร</option><option ${doc.sap_account==='522701'?'selected':''}>522701 ค่าน้ำมัน</option><option ${doc.sap_account==='522709'?'selected':''}>522709 เบ็ดเตล็ด</option><option ${doc.sap_account==='511120'?'selected':''}>511120 วัสดุ</option><option ${doc.sap_account==='113103'?'selected':''}>113103 ลูกหนี้พนักงาน</option></select></div>
+          <div class="erp-field"><label>Tax Code</label><select ${dis}><option>No Tax</option><option ${(doc.tax_code||'').includes('IS07')?'selected':''}>IS07 (VAT 7%)</option><option ${(doc.tax_code||'').includes('IG07')?'selected':''}>IG07 (VAT 7%)</option></select></div>
+          <div class="erp-field"><label>Project</label><input value="${doc.project_code||''}" ${ro} placeholder="SDA-2026-XXX"></div>
+          <div class="erp-field"><label>Requester</label><input value="${doc.requester_name||''}" readonly></div>
+          <div class="erp-field"><label>Created</label><input value="${fmtDate(doc.created_at)}" readonly></div>
+          ${doc.sap_doc_num ? '<div class="erp-field"><label>SAP Reference</label><input value="'+doc.sap_object_type+' #'+doc.sap_doc_num+'" readonly style="color:var(--info);font-weight:600;"></div>' : ''}
+        `;
+      } else {
+        // Build project options from API cache
+        const projOpts = (window._projectCache||[]).map(p => `<option value="${p.id}" ${(doc.project_id===p.id || doc.project_code===p.code)?'selected':''}>${p.code} — ${p.name}</option>`).join('');
+
+        document.getElementById('h-fields').innerHTML = `
+          <div class="erp-field"><label>Document No.</label><input value="${doc.doc_number}" readonly></div>
+          <div class="erp-field"><label>Document Date</label><input type="date" value="${(doc.doc_date||'').split('T')[0]}" ${ro}></div>
+          <div class="erp-field"><label>Posting Date</label><input type="date" value="${(doc.doc_date||'').split('T')[0]}" ${ro}></div>
+          <div class="erp-field"><label>Due Date</label><input type="date" value="${calcDueDate(doc.doc_date, 30)}" ${ro}></div>
+          <div class="erp-field"><label>Status</label><div class="field-val">${statusBadge(doc.status||'draft')}</div></div>
+          <div class="erp-field"><label>Total Amount</label><div class="field-val" style="font-size:var(--text-xl);color:var(--primary);font-family:var(--font-mono);">${money(amount)}</div></div>
+          <div class="erp-field"><label>Currency</label><select ${dis}><option selected>THB — Thai Baht</option></select></div>
+          <div class="erp-field"><label>Discount %</label><input type="number" value="0" min="0" max="100" step="0.5" ${ro}></div>
+          <div class="erp-field"><label>Vendor Code</label><select ${dis}><option value="">-- Select Vendor --</option><option value="VD0001" ${doc.vendor_code==='VD0001'?'selected':''}>VD0001 — Marine Electronics (ในปท.)</option><option value="VD0002" ${doc.vendor_code==='VD0002'?'selected':''}>VD0002 — Navigation Systems (ในปท.)</option><option value="VF0001" ${doc.vendor_code==='VF0001'?'selected':''}>VF0001 — Furuno Japan (ต่างปท.)</option><option value="VF0002" ${doc.vendor_code==='VF0002'?'selected':''}>VF0002 — JRC Global (ต่างปท.)</option><option value="VO0001" ${doc.vendor_code==='VO0001'?'selected':''}>VO0001 — General Supplier</option></select></div>
+          <div class="erp-field"><label>Vendor Name</label><input value="${doc.vendor_name||''}" ${ro}></div>
+          <div class="erp-field"><label>Contact Person</label><input value="${doc.contact_person||''}" ${ro} placeholder="ชื่อผู้ติดต่อ"></div>
+          <div class="erp-field"><label>Phone</label><input value="${doc.vendor_phone||''}" ${ro} placeholder="เบอร์โทร"></div>
+          <div class="erp-field"><label>Payment Terms</label><select ${dis}><option value="cash">Cash</option><option value="7">Credit 7 วัน</option><option value="15">Credit 15 วัน</option><option value="30" selected>Credit 30 วัน</option><option value="60">Credit 60 วัน</option><option value="90">Credit 90 วัน</option></select></div>
+          <div class="erp-field"><label>Delivery Date</label><input type="date" ${ro} value="${calcDueDate(doc.doc_date, 14)}"></div>
+          <div class="erp-field"><label>Ship To (Warehouse)</label><select ${dis}><option value="HQ01">HQ01 — คลังสินค้า</option><option value="PJ00">PJ00 — คลังโครงการ</option><option value="PJ01">PJ01 — คลังสินค้าคงเหลือ</option><option value="BR01">BR01 — คลังยืม</option><option value="AS01">AS01 — คลังประกอบ</option></select></div>
+          <div class="erp-field"><label>Project</label><select ${dis}><option value="">-- Select Project --</option>${projOpts}</select></div>
+          <div class="erp-field"><label>WHT Code</label><select ${dis}><option value="">ไม่มี</option><option value="5360">5360 — ค่าบริการ 3%</option><option value="5362">5362 — ค่าจ้างเหมา 3%</option><option value="5350">5350 — ค่าขนส่ง 1%</option><option value="5361">5361 — ค่าเช่า 5%</option></select></div>
+          <div class="erp-field"><label>Requester</label><input value="${doc.requester_name||doc.creator_name||''}" readonly></div>
+          <div class="erp-field"><label>Created</label><input value="${fmtDate(doc.created_at)}" readonly></div>
+          ${doc.sap_doc_num ? '<div class="erp-field"><label>SAP Reference</label><input value="'+(doc.sap_object_type||'OPRQ')+' #'+doc.sap_doc_num+'" readonly style="color:var(--info);font-weight:600;font-family:var(--font-mono);"></div>' : ''}
+          <div class="erp-field span4"><label>Remarks</label><input value="${doc.remarks||''}" ${ro} placeholder="หมายเหตุ..."></div>
+        `;
+      }
+
+      // Lines Grid
+      renderLines();
+
+      // Bottom Tabs
+      renderBottomTabs();
+    }
+
+    function renderLines() {
+      const amount = parseFloat(doc.total_amount || doc.amount || 0);
+      const ro = !isEditing;
+
+      if (docType === 'expense') {
+        const taxRate = (doc.tax_code||'').includes('07') ? 0.07 : 0;
+        const base = taxRate > 0 ? Math.round(amount / (1+taxRate)*100)/100 : amount;
+        const tax = amount - base;
+        document.getElementById('lines-thead').innerHTML = '<tr><th style="width:40px;">#</th><th>Description</th><th style="width:100px;">GL Account</th><th style="width:90px;">Tax Code</th><th class="num" style="width:140px;">Amount</th></tr>';
+        document.getElementById('lines-body').innerHTML = `<tr><td class="row-num">1</td><td>${doc.description||'-'}</td><td style="font-family:var(--font-mono);font-weight:600;color:var(--primary);">${doc.sap_account||'-'}</td><td>${doc.tax_code||'-'}</td><td class="num" style="font-weight:700;">${money(amount)}</td></tr>`;
+        document.getElementById('lines-foot').innerHTML = `
+          <tr class="subtotal-row"><td colspan="4" style="text-align:right;padding-right:20px;">Subtotal</td><td class="num" style="text-align:right;">${money(base)}</td></tr>
+          ${taxRate>0?'<tr class="subtotal-row"><td colspan="4" style="text-align:right;padding-right:20px;">VAT 7%</td><td class="num" style="text-align:right;">'+money(tax)+'</td></tr>':''}
+          <tr class="grand-total"><td colspan="4" style="text-align:right;padding-right:20px;white-space:nowrap;">Grand Total</td><td class="num" style="text-align:right;">${money(amount)}</td></tr>`;
+        document.getElementById('btn-add-line').style.display = 'none';
+      } else {
+        const ew = isEditing ? 'min-' : '';
+        document.getElementById('lines-thead').innerHTML = `<tr><th style="width:40px;">#</th><th style="${ew}width:100px;">Item Code</th><th style="min-width:180px;">Description</th><th class="num" style="${ew}width:60px;">Qty</th><th style="${ew}width:70px;">UoM</th><th class="num" style="${ew}width:110px;">Unit Price</th><th class="num" style="width:50px;">Disc%</th><th style="${ew}width:85px;">Tax</th><th style="${ew}width:85px;">Account</th><th style="${ew}width:70px;">Whse</th><th class="num" style="${ew}width:120px;">Total</th>${isEditing?'<th style="width:36px;"></th>':''}</tr>`;
+
+        if (lines.length) {
+          let subtotal = 0;
+          let totalTax = 0;
+          document.getElementById('lines-body').innerHTML = lines.map((l, i) => {
+            const total = parseFloat(l.total_price || l.quantity * l.unit_price || 0);
+            const lineBase = (l.tax_code||'').includes('07') ? total / 1.07 : total;
+            const lineTax = total - lineBase;
+            subtotal += lineBase;
+            totalTax += lineTax;
+            if (ro) {
+              return `<tr>
+                <td class="row-num">${i+1}</td>
+                <td style="font-family:var(--font-mono);font-weight:600;color:var(--primary);">${l.item_code||'-'}</td>
+                <td>${l.item_name}</td>
+                <td class="num">${parseFloat(l.quantity).toLocaleString()}</td>
+                <td>${l.uom||'EA'}</td>
+                <td class="num">${money(l.unit_price)}</td>
+                <td class="num" style="color:var(--text-muted);">${l.discount||0}%</td>
+                <td>${l.tax_code||'-'}</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">${l.sap_account||'-'}</td>
+                <td style="font-size:var(--text-sm);">${l.warehouse||'HQ01'}</td>
+                <td class="num" style="font-weight:700;">${money(total)}</td>
+              </tr>`;
+            } else {
+              return `<tr>
+                <td class="row-num">${i+1}</td>
+                <td><input value="${l.item_code||''}" placeholder="SD-0001" style="font-family:var(--font-mono);min-width:80px;"></td>
+                <td><input value="${l.item_name||''}" placeholder="Item description..."></td>
+                <td class="num"><input type="number" value="${l.quantity||1}" min="1" style="min-width:50px;"></td>
+                <td><select style="min-width:65px;"><option value="EA" ${l.uom==='EA'?'selected':''}>EA</option><option value="Set" ${l.uom==='Set'?'selected':''}>Set</option><option value="Unit" ${l.uom==='Unit'?'selected':''}>Unit</option><option value="Job" ${l.uom==='Job'?'selected':''}>Job</option><option value="Month" ${l.uom==='Month'?'selected':''}>Month</option><option value="System" ${l.uom==='System'?'selected':''}>System</option></select></td>
+                <td class="num"><input type="number" value="${l.unit_price||0}" step="0.01" style="min-width:90px;" onchange="calcLines()"></td>
+                <td class="num"><input type="number" value="${l.discount||0}" min="0" max="100" step="0.5" style="min-width:45px;" onchange="calcLines()"></td>
+                <td><select style="min-width:75px;"><option value="IG07" ${(l.tax_code||'IG07')==='IG07'?'selected':''}>IG07</option><option value="IG00" ${l.tax_code==='IG00'?'selected':''}>IG00</option><option value="IS07" ${l.tax_code==='IS07'?'selected':''}>IS07</option><option value="IS00" ${l.tax_code==='IS00'?'selected':''}>IS00</option></select></td>
+                <td><select style="min-width:75px;"><option value="114101" ${(l.sap_account||'114101')==='114101'?'selected':''}>114101</option><option value="511102" ${l.sap_account==='511102'?'selected':''}>511102</option><option value="511120" ${l.sap_account==='511120'?'selected':''}>511120</option><option value="522709" ${l.sap_account==='522709'?'selected':''}>522709</option></select></td>
+                <td><select style="min-width:65px;"><option value="HQ01" ${(l.warehouse||'HQ01')==='HQ01'?'selected':''}>HQ01</option><option value="PJ00" ${l.warehouse==='PJ00'?'selected':''}>PJ00</option><option value="PJ01" ${l.warehouse==='PJ01'?'selected':''}>PJ01</option><option value="AS01" ${l.warehouse==='AS01'?'selected':''}>AS01</option></select></td>
+                <td class="num" style="font-weight:700;">${money(total)}</td>
+                <td class="row-action"><button onclick="removeLine(${i})">&times;</button></td>
+              </tr>`;
+            }
+          }).join('');
+          const grandTotal = subtotal + totalTax;
+          const cols = isEditing ? 10 : 10; // # + code + desc + qty + uom + price + disc + tax + acct + whse
+          const ec = isEditing ? '<td></td>' : '';
+          document.getElementById('lines-foot').innerHTML = `
+            <tr class="subtotal-row"><td colspan="${cols}" style="text-align:right;padding-right:20px;">Subtotal</td><td class="num" style="text-align:right;">${money(subtotal)}</td>${ec}</tr>
+            ${totalTax>0?'<tr class="subtotal-row"><td colspan="'+cols+'" style="text-align:right;padding-right:20px;">VAT 7%</td><td class="num" style="text-align:right;">'+money(totalTax)+'</td>'+ec+'</tr>':''}
+            <tr class="grand-total"><td colspan="${cols}" style="text-align:right;padding-right:20px;white-space:nowrap;">Grand Total</td><td class="num" style="text-align:right;">${money(grandTotal)}</td>${ec}</tr>`;
+        } else {
+          document.getElementById('lines-body').innerHTML = `<tr><td colspan="${isEditing?10:9}" style="text-align:center;color:var(--text-muted);padding:24px;">No line items</td></tr>`;
+          document.getElementById('lines-foot').innerHTML = '';
+        }
+        document.getElementById('btn-add-line').style.display = isEditing ? '' : 'none';
+      }
+    }
+
+    function renderBottomTabs() {
+      const amount = parseFloat(doc.total_amount || doc.amount || 0);
+      const taxRate = (doc.tax_code||'').includes('07') ? 0.07 : 0;
+      const base = taxRate > 0 ? Math.round(amount/(1+taxRate)*100)/100 : amount;
+      const tax = amount - base;
+
+      // Approval steps
+      const steps = buildApprovalSteps(doc, amount);
+
+      document.getElementById('bottom-tabs').innerHTML = `
+        <div class="erp-btab active" onclick="switchBTab('budget',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Budget Impact</div>
+        <div class="erp-btab" onclick="switchBTab('flow',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Document Flow</div>
+        <div class="erp-btab" onclick="switchBTab('approval',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg> Approval</div>
+        <div class="erp-btab" onclick="switchBTab('remarks',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/></svg> Remarks</div>
+        <div class="erp-btab" onclick="switchBTab('attach',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Attachments</div>
+      `;
+
+      document.getElementById('bottom-content').innerHTML = `
+        <!-- Budget Impact -->
+        <div class="erp-tab-panel active" id="btab-budget">
+          <div style="font-size:var(--text-base);font-weight:600;margin-bottom:12px;">Budget Impact Analysis</div>
+          <div id="budget-impact-content"><div style="text-align:center;color:var(--text-muted);padding:24px;">Loading budget data...</div></div>
+        </div>
+
+        <!-- Document Flow -->
+        <div class="erp-tab-panel" id="btab-flow">
+          <div style="font-size:var(--text-base);font-weight:600;margin-bottom:16px;">Document Flow Chain</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" id="doc-flow-chain"></div>
+          <div style="margin-top:16px;font-size:var(--text-xs);color:var(--text-muted);">
+            SAP Objects: PR (OPRQ) &rarr; PO (OPOR) &rarr; Sent to SAP
+          </div>
+        </div>
+
+        <!-- Approval -->
+        <div class="erp-tab-panel" id="btab-approval">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Amount ${fmtMoney(amount)} → ${amount<=10000?'Tier 1: Manager':amount<=100000?'Tier 2: Manager + Finance':'Tier 3: Manager + Finance + Executive'}</div>
+          ${steps.map(s => `<div class="atl-item"><div class="atl-dot ${s.st}">${s.st==='done'?'&#10003;':s.st==='current'?'&#9203;':'&bull;'}</div><div class="atl-info"><h4>${s.label}</h4><div class="sub">${s.sub||''}</div></div></div>`).join('')}
+        </div>
+
+        <!-- Remarks -->
+        <div class="erp-tab-panel" id="btab-remarks">
+          <textarea class="form-textarea" rows="4" ${!isEditing?'readonly':''} placeholder="หมายเหตุเพิ่มเติม...">${doc.remarks||doc.description||''}</textarea>
+        </div>
+
+        <!-- Attachments -->
+        <div class="erp-tab-panel" id="btab-attach">
+          <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;">
+            <div style="font-size:13px;font-weight:500;">Drop files here or click to upload</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">PDF, JPG, PNG, Excel (max 10MB)</div>
+          </div>
+        </div>
+      `;
+
+      // Load real budget data
+      loadBudgetImpact();
+    }
+
+    async function loadBudgetImpact() {
+      const amount = parseFloat(doc.total_amount || doc.amount || 0);
+      const el = document.getElementById('budget-impact-content');
+      if (!el) return;
+      let budget = 0, used = 0;
+      try {
+        const data = await API.get('/budget/check/' + doc.project_id);
+        budget = parseFloat(data.total_budget || data.budget || 0);
+        used = parseFloat(data.used || data.used_amount || 0);
+      } catch(e) {
+        // Fallback to 0 if API unavailable
+        budget = 0; used = 0;
+      }
+      const remaining = Math.max(0, budget - used - amount);
+      const usedPct = budget > 0 ? Math.round(used / budget * 100) : 0;
+      const docPct = budget > 0 ? Math.round(amount / budget * 100) : 0;
+      const totalPct = budget > 0 ? Math.round((used + amount) / budget * 100) : 0;
+      const isOver = (used + amount) > budget && budget > 0;
+      el.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+          <div style="background:var(--bg-light);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-size:var(--text-2xs);color:var(--text-muted);text-transform:uppercase;font-weight:600;">Project Budget</div>
+            <div style="font-size:var(--text-xl);font-weight:800;margin-top:4px;">${moneyBaht(budget)}</div>
+          </div>
+          <div style="background:var(--warning-bg);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-size:var(--text-2xs);color:var(--text-muted);text-transform:uppercase;font-weight:600;">Used Before</div>
+            <div style="font-size:var(--text-xl);font-weight:800;color:var(--warning);margin-top:4px;">${moneyBaht(used)}</div>
+          </div>
+          <div style="background:var(--danger-bg);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-size:var(--text-2xs);color:var(--text-muted);text-transform:uppercase;font-weight:600;">This Document</div>
+            <div style="font-size:var(--text-xl);font-weight:800;color:var(--danger);margin-top:4px;">${moneyBaht(amount)}</div>
+          </div>
+          <div style="background:var(--success-bg);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-size:var(--text-2xs);color:var(--text-muted);text-transform:uppercase;font-weight:600;">Remaining After</div>
+            <div style="font-size:var(--text-xl);font-weight:800;color:var(--success);margin-top:4px;">${moneyBaht(remaining)}</div>
+          </div>
+        </div>
+        <div class="progress" style="height:12px;border-radius:6px;">
+          <div class="progress-bar yellow" style="width:${usedPct}%;"></div>
+          <div class="progress-bar red" style="width:${docPct}%;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:var(--text-xs);color:var(--text-muted);">
+          <span>${usedPct}% used</span>
+          <span>+${docPct}% this doc</span>
+          <span>${totalPct}% total</span>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:${isOver?'var(--danger-bg)':'var(--success-bg)'};border-radius:var(--radius);font-size:var(--text-sm);font-weight:600;color:${isOver?'var(--danger)':'var(--success)'};">
+          ${isOver?'Over budget! เกินงบ ฿'+money((used+amount)-budget):'Within budget — เหลือ ฿'+money(remaining)}
+        </div>
+        <div id="budget-line-mapping" style="margin-top:16px;"><div style="color:var(--text-muted);font-size:12px;">Loading budget mapping...</div></div>
+      `;
+
+      // Load budget line mapping
+      if (doc.project_id) loadBudgetLineMapping();
+    }
+
+    async function loadBudgetLineMapping() {
+      const el = document.getElementById('budget-line-mapping');
+      if (!el) return;
+      try {
+        // Get approved budget for this project
+        const budgets = await API.getBudgets(doc.project_id);
+        const approved = (budgets || []).find(b => b.status === 'approved');
+        if (!approved) { el.innerHTML = ''; return; }
+
+        const detail = await API.getBudget(approved.id);
+        const budgetLines = detail.lines || [];
+        if (!budgetLines.length) { el.innerHTML = ''; return; }
+
+        // Map PR/PO line items to budget groups
+        let html = '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">Item to Budget Mapping</div>';
+        html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+        html += '<thead><tr style="background:var(--bg-light);">';
+        html += '<th style="text-align:left;padding:6px 10px;">Item</th>';
+        html += '<th style="text-align:right;padding:6px 10px;">Amount</th>';
+        html += '<th style="text-align:left;padding:6px 10px;">Budget Group</th>';
+        html += '<th style="text-align:right;padding:6px 10px;">Group Budget</th>';
+        html += '<th style="text-align:right;padding:6px 10px;">Group Used</th>';
+        html += '<th style="text-align:right;padding:6px 10px;">Remaining</th>';
+        html += '</tr></thead><tbody>';
+
+        (lines || []).forEach(l => {
+          const lineAmt = parseFloat(l.total_price || l.quantity * l.unit_price || 0);
+          // Match to budget line by sap_account or category
+          let matched = budgetLines.find(bl => bl.sap_account && l.sap_account && bl.sap_account === l.sap_account);
+          if (!matched) {
+            // Try match by name keyword
+            const itemLower = (l.item_name || '').toLowerCase();
+            matched = budgetLines.find(bl => {
+              const blName = (bl.name || '').toLowerCase();
+              if (itemLower.includes('material') || itemLower.includes('equipment')) return blName.includes('material');
+              if (itemLower.includes('labor') || itemLower.includes('install')) return blName.includes('labor');
+              if (itemLower.includes('transport')) return blName.includes('transport');
+              return false;
+            });
+          }
+          if (!matched) matched = budgetLines[0]; // fallback to first
+
+          const blBudget = parseFloat(matched.budget_amount || 0);
+          const blUsed = parseFloat(matched.actual_amount || 0) + parseFloat(matched.committed_amount || 0);
+          const blRemain = blBudget - blUsed;
+          const overLine = lineAmt > blRemain && blBudget > 0;
+
+          html += '<tr style="border-bottom:1px solid var(--border-light);">';
+          html += '<td style="padding:8px 10px;font-weight:500;">' + (l.item_name || l.item_code || '-') + '</td>';
+          html += '<td style="padding:8px 10px;text-align:right;font-weight:600;">' + moneyBaht(lineAmt) + '</td>';
+          html += '<td style="padding:8px 10px;"><a href="budget.html?tab=project&project_id=' + doc.project_id + '" style="text-decoration:none;"><span style="background:var(--primary-light);color:var(--primary);padding:2px 8px;border-radius:var(--radius-full);font-size:10px;font-weight:600;cursor:pointer;">' + (matched.name || '-') + '</span></a></td>';
+          html += '<td style="padding:8px 10px;text-align:right;">' + moneyBaht(blBudget) + '</td>';
+          html += '<td style="padding:8px 10px;text-align:right;color:var(--warning);">' + moneyBaht(blUsed) + '</td>';
+          html += '<td style="padding:8px 10px;text-align:right;color:' + (overLine ? 'var(--danger)' : 'var(--success)') + ';font-weight:600;">' + moneyBaht(blRemain) + '</td>';
+          html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+
+        // Link to budget page
+        html += '<div style="margin-top:12px;text-align:right;"><a href="budget.html?tab=project&project_id=' + doc.project_id + '" style="font-size:12px;color:var(--primary);font-weight:500;">View Budget Detail &rarr;</a></div>';
+
+        el.innerHTML = html;
+      } catch(e) { el.innerHTML = ''; }
+    }
+
+    function buildApprovalSteps(doc, amount) {
+      const s = doc.status || 'draft';
+      const steps = [
+        { label:'Created', st: s==='draft'&&!isNew?'done':'done', sub: doc.requester_name||'' },
+        { label:'Submitted', st: s==='draft'?'pending':'done' },
+        { label:'Manager', st: ['draft','pending_manager'].includes(s)?s==='pending_manager'?'current':'pending':'done' },
+      ];
+      if (amount > 10000) steps.push({ label:'Finance', st: ['draft','pending_manager','pending_finance'].includes(s)?s==='pending_finance'?'current':'pending':'done' });
+      if (amount > 100000) steps.push({ label:'Executive', st: ['draft','pending_manager','pending_finance','pending_executive'].includes(s)?s==='pending_executive'?'current':'pending':'done' });
+      steps.push({ label:'Budget Deduction', st: ['approved','paid','sent_to_sap','received'].includes(s)?'done':'pending', sub:'Auto' });
+      steps.push({ label:'Push to SAP', st: ['sent_to_sap','received'].includes(s)?'done':'pending', sub: doc.sap_doc_num?'SAP #'+doc.sap_doc_num:'' });
+      return steps;
+    }
+
+    function switchBTab(tab, el) {
+      document.querySelectorAll('.erp-btab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.erp-tab-panel').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('btab-' + tab).classList.add('active');
+    }
+
+    function navDoc(dir) {
+      currentIdx = Math.max(0, Math.min(allDocs.length-1, currentIdx + dir));
+      doc = allDocs[currentIdx];
+      lines = [];
+      if (docType === 'pr') API.getPR(doc.id).then(d => { lines = d.lines||[]; doc.chain = d.chain; render(); renderDocFlowChain(doc, docType); }).catch(() => render());
+      else if (docType === 'po') API.getPO(doc.id).then(d => { lines = d.lines||[]; doc.chain = d.chain; render(); renderDocFlowChain(doc, docType); }).catch(() => render());
+      else render();
+    }
+
+    function toggleEdit() { isEditing = true; render(); }
+    function cancelEdit() { isEditing = false; render(); }
+    function addLine() {
+      lines.push({ item_code:'', item_name:'', quantity:1, unit_price:0, uom:'EA', tax_code:'IG07', sap_account:'114101', total_price:0 });
+      renderLines();
+      // Focus last row first input
+      setTimeout(() => {
+        const rows = document.querySelectorAll('#lines-body tr');
+        const lastRow = rows[rows.length - 1];
+        if (lastRow) lastRow.querySelector('input')?.focus();
+      }, 100);
+    }
+
+    function removeLine(i) {
+      if (lines.length <= 1) return;
+      lines.splice(i, 1);
+      renderLines();
+    }
+
+    function calcLines() {
+      const rows = document.querySelectorAll('#lines-body tr');
+      let grandTotal = 0;
+      rows.forEach((row, i) => {
+        const inputs = row.querySelectorAll('input, select');
+        if (inputs.length >= 6) {
+          const qty = parseFloat(inputs[2]?.value) || 0;
+          const price = parseFloat(inputs[4]?.value) || 0;
+          const disc = parseFloat(inputs[5]?.value) || 0;
+          const total = qty * price * (1 - disc / 100);
+          lines[i] = lines[i] || {};
+          lines[i].quantity = qty;
+          lines[i].unit_price = price;
+          lines[i].discount = disc;
+          lines[i].total_price = total;
+          // Update total cell (second to last td in the row)
+          const tds = row.querySelectorAll('td');
+          const totalTd = tds[tds.length - 2]; // last is delete button
+          if (totalTd) totalTd.textContent = money(total);
+          grandTotal += total;
+        }
+      });
+      // Update footer grand total
+      const grandTotalCell = document.querySelector('#lines-foot .grand-total td.num');
+      if (grandTotalCell) grandTotalCell.textContent = money(grandTotal);
+      // Update subtotal (simplified: assume subtotal = grandTotal before tax split)
+      const subtotalCell = document.querySelector('#lines-foot .subtotal-row td.num');
+      if (subtotalCell) subtotalCell.textContent = money(grandTotal);
+    }
+
+    function readFormData() {
+      const fields = document.querySelectorAll('.erp-fields input, .erp-fields select');
+      const data = {};
+      fields.forEach(f => {
+        const label = f.closest('.erp-field')?.querySelector('label')?.textContent?.trim().toLowerCase() || '';
+        if (label.includes('date') && f.type === 'date') data.doc_date = f.value;
+        if (label.includes('vendor code')) data.vendor_code = f.value?.split(' ')[0] || '';
+        if (label.includes('vendor name')) data.vendor_name = f.value;
+        if (label.includes('description')) data.description = f.value;
+        if (label.includes('amount')) data.amount = parseFloat(f.value) || 0;
+        if (label.includes('gl account')) data.sap_account = f.value?.split(' ')[0] || '';
+        if (label.includes('tax')) data.tax_code = f.value?.split(' ')[0] || '';
+        if (label.includes('type') && f.tagName === 'SELECT') data.expense_type = f.value.toLowerCase().includes('advance') ? (f.value.toLowerCase().includes('clear') ? 'advance_clear' : 'advance') : 'reimbursement';
+        if (label.includes('remarks')) data.remarks = f.value;
+        if (label.includes('project')) data.project_code = f.value;
+      });
+
+      // Read line items from grid
+      if (docType !== 'expense') {
+        const rows = document.querySelectorAll('#lines-body tr');
+        data.lines = [];
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input, select');
+          if (inputs.length >= 6) {
+            const qty = parseFloat(inputs[2]?.value) || 1;
+            const price = parseFloat(inputs[4]?.value) || 0;
+            data.lines.push({
+              item_code: inputs[0]?.value || '',
+              item_name: inputs[1]?.value || '',
+              quantity: qty,
+              uom: inputs[3]?.value || 'EA',
+              unit_price: price,
+              total_price: qty * price,
+              tax_code: inputs[5]?.value || 'IG07',
+              sap_account: inputs[6]?.value || '114101',
+            });
+          }
+        });
+        data.total_amount = data.lines.reduce((s, l) => s + l.total_price, 0);
+      }
+      return data;
+    }
+
+    async function saveDoc() {
+      try {
+        const data = readFormData();
+        let result;
+
+        if (isNew) {
+          if (docType === 'pr') {
+            result = await API.createPR(data);
+          } else if (docType === 'expense') {
+            result = await API.createExpense(data);
+          } else if (docType === 'po') {
+            result = await API.createPO(data);
+          }
+          alert('Document created: ' + (result.doc_number || 'OK'));
+          window.location = 'doc-detail.html?type=' + docType + '&doc=' + result.doc_number;
+        } else {
+          // Update existing document
+          try {
+            if (docType === 'pr') await API.put('/pr/' + doc.id, { status: doc.status });
+            else if (docType === 'po') await API.put('/po/' + doc.id, { status: doc.status });
+            isEditing = false;
+            render();
+          } catch(e) { alert('Error: ' + e.message); }
+        }
+      } catch (e) {
+        alert('Error saving: ' + e.message);
+      }
+    }
+
+    async function submitDoc() {
+      try {
+        if (isNew) {
+          await saveDoc();
+          return;
+        }
+        if (docType === 'pr') await API.submitPR(doc.id);
+        else if (docType === 'expense') await API.submitExpense(doc.id);
+        else if (docType === 'po') await API.post('/po/' + doc.id + '/submit');
+        alert('Submitted for approval!');
+        location.reload();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function approveDoc() {
+      try {
+        if (docType === 'pr') await API.approvePR(doc.id);
+        else if (docType === 'po') await API.post('/po/' + doc.id + '/approve');
+        else if (docType === 'expense') await API.approveExpense(doc.id);
+        alert('Approved!');
+        location.reload();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function rejectDoc() {
+      const reason = prompt('Reason for rejection:');
+      if (reason === null) return;
+      try {
+        if (docType === 'pr') await API.post('/pr/' + doc.id + '/reject', { reason });
+        else if (docType === 'po') await API.post('/po/' + doc.id + '/reject', { reason });
+        else if (docType === 'expense') await API.post('/expense/' + doc.id + '/reject', { reason });
+        location.reload();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    function copyDoc() {
+      window.location = 'doc-detail.html?type=' + docType + '&mode=new';
+    }
+
+    function addNew() {
+      window.location = 'doc-detail.html?type=' + docType + '&mode=new';
+    }
+
+    function copyToPO() {
+      if (!confirm('Copy this PR to a new Purchase Order?')) return;
+      sessionStorage.setItem('copyFromPR', JSON.stringify({
+        pr_id: doc.id, project_id: doc.project_id,
+        vendor_code: doc.vendor_code, vendor_name: doc.vendor_name,
+        lines: lines
+      }));
+      window.location = 'doc-detail.html?type=po&mode=new&from_pr=1';
+    }
+
+    async function cancelDoc() {
+      if (!confirm('Cancel this document? This cannot be undone.')) return;
+      try {
+        if (docType === 'pr') await API.put('/pr/' + doc.id, { status: 'cancelled' });
+        else if (docType === 'po') await API.put('/po/' + doc.id, { status: 'cancelled' });
+        doc.status = 'cancelled';
+        render();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // Render Document Flow Chain with clickable links
+    function renderDocFlowChain(doc, docType) {
+      const chain = doc.chain || {};
+      const arrow = '<span style="color:var(--text-muted);font-size:20px;">&rarr;</span>';
+      const doneStatuses = ['approved','sent_to_sap','received','posted','paid','completed'];
+
+      function flowNode(label, docNum, status, type, isCurrent) {
+        const isDone = status && doneStatuses.includes(status);
+        const checkMark = isDone ? '<span style="color:var(--success);font-size:14px;margin-left:4px;">&#10003;</span>' : '';
+
+        if (docNum) {
+          const link = `doc-detail.html?type=${type}&doc=${docNum}`;
+          const border = isCurrent ? 'border:2px solid var(--primary);background:var(--primary-light);'
+            : isDone ? 'border:2px solid var(--success);background:var(--success-bg);'
+            : 'border:1px solid var(--border);';
+          return `<a href="${link}" style="text-decoration:none;padding:12px 18px;border-radius:var(--radius-lg);${border}font-size:13px;display:block;text-align:center;min-width:120px;">
+            <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">${label}${checkMark}</div>
+            <div style="font-weight:700;margin:4px 0;color:var(--text-primary);">${docNum}</div>
+            <div>${statusBadge(status)}</div>
+          </a>`;
+        } else {
+          const style = isCurrent
+            ? 'border:2px solid var(--primary);background:var(--primary-light);'
+            : 'border:1px dashed var(--border);';
+          return `<div style="padding:12px 18px;border-radius:var(--radius-lg);${style}font-size:13px;color:var(--text-muted);text-align:center;min-width:120px;">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;">${label}</div>
+            <div style="margin-top:4px;">${isCurrent ? '<span style="font-weight:700;color:var(--primary);">'+doc.doc_number+'</span><br>'+statusBadge(doc.status) : 'Pending'}</div>
+          </div>`;
+        }
+      }
+
+      const el = document.getElementById('doc-flow-chain');
+      if (!el) return;
+
+      let nodes = [];
+
+      if (docType === 'pr') {
+        nodes.push(flowNode('Purchase Request', doc.doc_number, doc.status, 'pr', true));
+        nodes.push(arrow);
+        nodes.push(flowNode('Purchase Order', chain.po?.doc_number, chain.po?.status, 'po', false));
+        nodes.push(arrow);
+        nodes.push(flowNode('Sent to SAP', doc.sap_doc_num ? 'SAP #'+doc.sap_doc_num : null, doc.status === 'sent_to_sap' ? 'sent_to_sap' : null, 'pr', false));
+      } else if (docType === 'po') {
+        nodes.push(flowNode('Purchase Request', chain.pr?.doc_number, chain.pr?.status, 'pr', false));
+        nodes.push(arrow);
+        nodes.push(flowNode('Purchase Order', doc.doc_number, doc.status, 'po', true));
+        nodes.push(arrow);
+        nodes.push(flowNode('Sent to SAP', doc.sap_doc_num ? 'SAP #'+doc.sap_doc_num : null, doc.status === 'sent_to_sap' ? 'sent_to_sap' : null, 'po', false));
+      } else {
+        nodes.push(flowNode(docType.toUpperCase(), doc.doc_number, doc.status, docType, true));
+      }
+
+      el.innerHTML = nodes.join('');
+    }
+
+    loadDocument();
+  </script>
+</body>
+</html>

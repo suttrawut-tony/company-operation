@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Travel</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .travel-stats {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px;
+    }
+    .t-stat {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-xs);
+    }
+    .t-stat .label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+    .t-stat .value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+
+    .travel-list { display: flex; flex-direction: column; gap: 12px; }
+    .travel-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+      overflow: hidden; transition: all 0.2s;
+    }
+    .travel-card:hover { box-shadow: var(--shadow-sm); }
+    .travel-card-main {
+      display: grid; grid-template-columns: auto 1fr auto auto; gap: 20px;
+      padding: 20px; align-items: center;
+    }
+    .travel-dest {
+      display: flex; flex-direction: column; align-items: center;
+      min-width: 80px;
+    }
+    .travel-dest .icon { font-size: 28px; margin-bottom: 4px; }
+    .travel-dest .city { font-size: 13px; font-weight: 700; }
+    .travel-dest .dates { font-size: 11px; color: var(--text-muted); }
+
+    .travel-detail h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .travel-detail .meta {
+      display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-secondary);
+    }
+    .travel-detail .meta-item { display: flex; align-items: center; gap: 4px; }
+
+    .travel-team {
+      display: flex; flex-direction: column; gap: 4px; min-width: 160px;
+    }
+    .team-member {
+      display: flex; align-items: center; gap: 6px; font-size: 12px;
+    }
+    .team-member .check { color: var(--success); font-weight: 700; }
+    .team-member .pending { color: var(--text-muted); }
+    .team-member .lead-badge {
+      background: var(--primary); color: #fff; font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: var(--radius-full); margin-left: 2px;
+    }
+
+    .travel-amount { text-align: right; min-width: 100px; }
+    .travel-amount .total { font-size: 18px; font-weight: 800; }
+    .travel-amount .breakdown { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .travel-amount .advance-highlight {
+      font-size: 13px; font-weight: 700; color: var(--warning); margin-top: 2px;
+    }
+
+    .travel-card-footer {
+      padding: 10px 20px; border-top: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-light); font-size: 12px;
+    }
+    .travel-links { display: flex; gap: 12px; align-items: center; }
+    .travel-link {
+      display: flex; align-items: center; gap: 4px;
+      color: var(--primary); font-weight: 500; font-size: 12px; cursor: pointer;
+      text-decoration: none;
+    }
+    .travel-link:hover { text-decoration: underline; }
+
+    .confirm-banner {
+      padding: 10px 20px; border-top: 1px solid var(--warning);
+      background: var(--warning-bg); display: flex; align-items: center;
+      justify-content: space-between; font-size: 12px;
+    }
+    .confirm-banner .msg { color: var(--warning); font-weight: 600; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .team-add {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .team-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--primary-light); color: var(--primary);
+      padding: 4px 10px; border-radius: var(--radius-full);
+      font-size: 12px; font-weight: 500;
+    }
+    .team-tag .remove { cursor: pointer; font-size: 14px; }
+    .team-tag .lead-label { font-weight: 700; font-size: 10px; }
+
+    .team-tags-wrap {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;
+    }
+
+    .member-dropdown {
+      position: relative;
+    }
+    .member-dropdown-list {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm);
+      max-height: 180px; overflow-y: auto; display: none;
+    }
+    .member-dropdown-list.show { display: block; }
+    .member-dropdown-item {
+      padding: 8px 12px; font-size: 13px; cursor: pointer;
+    }
+    .member-dropdown-item:hover { background: var(--bg-light); }
+
+    .project-badge {
+      background: var(--info-bg, #e0f2fe); color: var(--info, #0284c7);
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .action-btns { display: flex; gap: 6px; align-items: center; }
+
+    .travel-filters {
+      display: flex; gap: 12px; align-items: center; margin-bottom: 16px;
+    }
+    .travel-filters label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+    .travel-filters .form-select { min-width: 220px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> Travel Request</h1>
+      </div>
+      <button class="btn btn-primary" onclick="openTravelModal()">+ New Travel Request</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="travel-stats" id="travel-stats"></div>
+
+    <!-- Filters -->
+    <div class="travel-filters">
+      <label>Project:</label>
+      <select id="filter-project" class="form-select" onchange="applyFilters()">
+        <option value="">All Projects</option>
+      </select>
+    </div>
+
+    <!-- Travel List -->
+    <div class="travel-list" id="travel-list"></div>
+  </main>
+  </div><!-- end main-wrapper -->
+
+  <!-- Travel Modal -->
+  <div id="travel-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeTravelModal()">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> New Travel Request</h2>
+        <button class="btn btn-ghost" onclick="closeTravelModal()" style="font-size:18px;">&#10005;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Destination</label>
+          <input id="trv-destination" class="form-input" placeholder="e.g. Phuket, Chonburi, Rayong">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Start Date</label>
+            <input id="trv-start-date" class="form-input" type="date" value="2026-05-20">
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date</label>
+            <input id="trv-end-date" class="form-input" type="date" value="2026-05-22">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Project</label>
+          <select id="trv-project" class="form-select">
+            <option value="">Select project...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Team Members</label>
+          <div class="team-tags-wrap" id="trv-team-tags"></div>
+          <div class="member-dropdown">
+            <input id="trv-member-search" class="form-input" placeholder="Search and add team member..." autocomplete="off">
+            <div class="member-dropdown-list" id="trv-member-dropdown"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Estimated Cost (&#3647;)</label>
+            <input id="trv-estimated-cost" class="form-input" type="number" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Advance Amount (&#3647;)</label>
+            <input id="trv-advance-amount" class="form-input" type="number" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Purpose / Remarks</label>
+          <textarea id="trv-purpose" class="form-textarea" placeholder="วัตถุประสงค์การเดินทาง..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
+        <button class="btn btn-primary" onclick="submitTravel()">Submit for Approval</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    /* ── State ── */
+    let allUsers = [];
+    let selectedMembers = [];   // [{user_id, name, is_lead}]
+    let projectsMap = {};       // id -> {code, name}
+    let allTravelData = [];     // unfiltered travel rows
+
+    /* ── Modal open/close ── */
+    function openTravelModal() {
+      document.getElementById('travel-modal').classList.remove('hidden');
+      resetForm();
+      loadUsersForDropdown();
+    }
+    function closeTravelModal() {
+      document.getElementById('travel-modal').classList.add('hidden');
+    }
+
+    function resetForm() {
+      document.getElementById('trv-destination').value = '';
+      document.getElementById('trv-start-date').value = '';
+      document.getElementById('trv-end-date').value = '';
+      document.getElementById('trv-project').value = '';
+      document.getElementById('trv-estimated-cost').value = '';
+      document.getElementById('trv-advance-amount').value = '';
+      document.getElementById('trv-purpose').value = '';
+      document.getElementById('trv-member-search').value = '';
+      selectedMembers = [];
+      renderTeamTags();
+    }
+
+    /* ── Load users for team member dropdown ── */
+    async function loadUsersForDropdown() {
+      if (allUsers.length) return;
+      try {
+        allUsers = await API.get('/auth/users');
+      } catch (e) {
+        console.error('Failed to load users:', e);
+      }
+    }
+
+    /* ── Member search/dropdown ── */
+    const memberSearch = document.getElementById('trv-member-search');
+    const memberDropdown = document.getElementById('trv-member-dropdown');
+
+    memberSearch.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      if (!q) { memberDropdown.classList.remove('show'); return; }
+      const selectedIds = selectedMembers.map(m => m.user_id);
+      const matches = allUsers.filter(u =>
+        !selectedIds.includes(u.id) &&
+        ((u.first_name + ' ' + u.last_name).toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q))
+      ).slice(0, 8);
+      if (!matches.length) { memberDropdown.classList.remove('show'); return; }
+      memberDropdown.innerHTML = matches.map(u =>
+        `<div class="member-dropdown-item" onclick="addMember(${u.id}, '${(u.first_name + ' ' + (u.last_name || '')).replace(/'/g, "\\'")}')">${u.first_name} ${u.last_name || ''} <span style="color:var(--text-muted);font-size:11px;">${u.email || ''}</span></div>`
+      ).join('');
+      memberDropdown.classList.add('show');
+    });
+
+    memberSearch.addEventListener('blur', function() {
+      setTimeout(() => memberDropdown.classList.remove('show'), 200);
+    });
+
+    function addMember(userId, name) {
+      if (selectedMembers.find(m => m.user_id === userId)) return;
+      const isLead = selectedMembers.length === 0; // first member = lead
+      selectedMembers.push({ user_id: userId, name: name, is_lead: isLead });
+      memberSearch.value = '';
+      memberDropdown.classList.remove('show');
+      renderTeamTags();
+    }
+
+    function removeMember(userId) {
+      selectedMembers = selectedMembers.filter(m => m.user_id !== userId);
+      // Re-assign lead to first member if lead was removed
+      if (selectedMembers.length && !selectedMembers.some(m => m.is_lead)) {
+        selectedMembers[0].is_lead = true;
+      }
+      renderTeamTags();
+    }
+
+    function renderTeamTags() {
+      const el = document.getElementById('trv-team-tags');
+      el.innerHTML = selectedMembers.map(m =>
+        `<span class="team-tag">${m.name}${m.is_lead ? ' <span class="lead-label">(Lead)</span>' : ''} <span class="remove" onclick="removeMember(${m.user_id})">&#10005;</span></span>`
+      ).join('');
+    }
+
+    /* ── Load projects for dropdown + mapping ── */
+    async function loadProjects() {
+      try {
+        const projects = await API.getProjects();
+        const sel = document.getElementById('trv-project');
+        const filterSel = document.getElementById('filter-project');
+        sel.innerHTML = '<option value="">Select project...</option>';
+        filterSel.innerHTML = '<option value="">All Projects</option>';
+        projects.forEach(p => {
+          const code = p.project_code || p.code || ('PRJ-' + p.id);
+          const label = code + ' — ' + (p.name || p.project_name || '');
+          projectsMap[p.id] = { code: code, name: p.name || p.project_name || '' };
+          sel.innerHTML += `<option value="${p.id}">${label}</option>`;
+          filterSel.innerHTML += `<option value="${p.id}">${label}</option>`;
+        });
+      } catch (e) {
+        console.error('Failed to load projects:', e);
+      }
+    }
+
+    /* ── Submit travel ── */
+    async function submitTravel() {
+      const destination = document.getElementById('trv-destination').value.trim();
+      const start_date = document.getElementById('trv-start-date').value;
+      const end_date = document.getElementById('trv-end-date').value;
+      const project_id = document.getElementById('trv-project').value || null;
+      const estimated_cost = parseFloat(document.getElementById('trv-estimated-cost').value) || 0;
+      const advance_amount = parseFloat(document.getElementById('trv-advance-amount').value) || 0;
+      const purpose = document.getElementById('trv-purpose').value.trim();
+
+      if (!destination) { alert('Please enter a destination'); return; }
+      if (!start_date || !end_date) { alert('Please select start and end dates'); return; }
+
+      const data = {
+        destination, start_date, end_date, purpose,
+        estimated_cost, advance_amount, project_id,
+        members: selectedMembers.map(m => ({ user_id: m.user_id, is_lead: m.is_lead }))
+      };
+
+      try {
+        const created = await API.createTravel(data);
+        // Auto-submit for approval
+        await API.submitTravel(created.id);
+        alert('Travel request submitted for approval!');
+        closeTravelModal();
+        loadTravel();
+      } catch (e) {
+        console.error('Submit failed:', e);
+        alert('Submit failed: ' + e.message);
+      }
+    }
+
+    /* ── Save draft ── */
+    async function saveDraft() {
+      const destination = document.getElementById('trv-destination').value.trim();
+      const start_date = document.getElementById('trv-start-date').value;
+      const end_date = document.getElementById('trv-end-date').value;
+      const project_id = document.getElementById('trv-project').value || null;
+      const estimated_cost = parseFloat(document.getElementById('trv-estimated-cost').value) || 0;
+      const advance_amount = parseFloat(document.getElementById('trv-advance-amount').value) || 0;
+      const purpose = document.getElementById('trv-purpose').value.trim();
+
+      if (!destination) { alert('Please enter a destination'); return; }
+
+      const data = {
+        destination, start_date, end_date, purpose,
+        estimated_cost, advance_amount, project_id,
+        members: selectedMembers.map(m => ({ user_id: m.user_id, is_lead: m.is_lead }))
+      };
+
+      try {
+        await API.createTravel(data);
+        alert('Travel request saved as draft.');
+        closeTravelModal();
+        loadTravel();
+      } catch (e) {
+        console.error('Save draft failed:', e);
+        alert('Save failed: ' + e.message);
+      }
+    }
+
+    /* ── Helpers ── */
+    function tripDays(start, end) {
+      if (!start || !end) return 0;
+      const ms = new Date(end) - new Date(start);
+      return Math.max(1, Math.round(ms / 86400000) + 1);
+    }
+
+    function renderTravelStats(rows) {
+      const active = rows.filter(r => !['completed','cancelled'].includes((r.status||'').toLowerCase()));
+      const pending = rows.filter(r => (r.status||'').toLowerCase().includes('pending'));
+      const totalCost = rows.reduce((s, r) => s + (parseFloat(r.estimated_cost) || 0), 0);
+      const now = new Date();
+      const in7 = new Date(now.getTime() + 7 * 86400000);
+      const upcoming = rows.filter(r => {
+        const sd = new Date(r.start_date);
+        return sd >= now && sd <= in7;
+      });
+
+      document.getElementById('travel-stats').innerHTML = `
+        <div class="t-stat">
+          <div class="label">Active Trips</div>
+          <div class="value" style="color:var(--primary);">${active.length}</div>
+        </div>
+        <div class="t-stat">
+          <div class="label">Pending Approval</div>
+          <div class="value" style="color:var(--warning);">${pending.length}</div>
+        </div>
+        <div class="t-stat">
+          <div class="label">Total Estimated Cost</div>
+          <div class="value" style="color:var(--text-primary);">${fmtMoney(totalCost)}</div>
+        </div>
+        <div class="t-stat">
+          <div class="label">Upcoming (7 days)</div>
+          <div class="value" style="color:var(--info);">${upcoming.length}</div>
+        </div>`;
+    }
+
+    function isDepartingSoon(startDate) {
+      if (!startDate) return false;
+      const now = new Date();
+      const sd = new Date(startDate);
+      const diffMs = sd - now;
+      return diffMs >= 0 && diffMs <= 2 * 86400000;
+    }
+
+    function renderTeamMembers(members) {
+      if (!members || !members.length) return '';
+      return `<div class="travel-team">${members.map(m =>
+        `<div class="team-member">
+          ${avatarSm(m.name || (m.first_name + ' ' + (m.last_name || '')))}
+          <span>${m.name || (m.first_name + ' ' + (m.last_name || ''))}</span>
+          ${m.is_lead ? '<span class="lead-badge">Lead</span>' : ''}
+          ${m.confirmed ? '<span class="check">&#10003; Confirmed</span>' : '<span class="pending">&#9679; Pending</span>'}
+        </div>`
+      ).join('')}</div>`;
+    }
+
+    function getProjectBadge(row) {
+      const code = row.project_code;
+      if (code) return `<span class="project-badge">${code}</span>`;
+      if (!row.project_id) return '';
+      const p = projectsMap[row.project_id];
+      if (p) return `<span class="project-badge">${p.code}</span>`;
+      return `<span class="meta-item"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg> ${row.project_id}</span>`;
+    }
+
+    /* ── Approval action buttons ── */
+    function renderActionButtons(r) {
+      const st = (r.status || '').toLowerCase();
+      const currentUser = API.getUser();
+      const role = currentUser ? (currentUser.role || '') : '';
+      let btns = '';
+
+      if (st === 'draft') {
+        btns += `<button class="btn btn-sm btn-primary" onclick="submitTravelRequest(${r.id})">Submit</button>`;
+      }
+      if (st === 'pending_manager' && (role === 'pm' || role === 'manager' || role === 'admin')) {
+        btns += `<button class="btn btn-sm btn-success" onclick="approveTravelRequest(${r.id})">Approve</button>`;
+      }
+      if (st === 'pending_executive' && (role === 'executive' || role === 'admin')) {
+        btns += `<button class="btn btn-sm btn-success" onclick="approveTravelRequest(${r.id})">Approve</button>`;
+      }
+      return btns;
+    }
+
+    async function submitTravelRequest(id) {
+      if (!confirm('Submit this travel request for approval?')) return;
+      try {
+        await API.submitTravel(id);
+        loadTravel();
+      } catch (e) {
+        alert('Submit failed: ' + e.message);
+      }
+    }
+
+    async function approveTravelRequest(id) {
+      if (!confirm('Approve this travel request?')) return;
+      try {
+        await API.approveTravel(id);
+        loadTravel();
+      } catch (e) {
+        alert('Approve failed: ' + e.message);
+      }
+    }
+
+    /* ── Render travel list ── */
+    function renderTravelList(rows) {
+      if (!rows.length) {
+        document.getElementById('travel-list').innerHTML = emptyMsg('No travel requests found');
+        return;
+      }
+
+      const currentUser = API.getUser();
+
+      document.getElementById('travel-list').innerHTML = rows.map(r => {
+        const st = (r.status || '').toLowerCase();
+        const isCompleted = st === 'completed';
+        const days = tripDays(r.start_date, r.end_date);
+        const adv = parseFloat(r.advance_amount) || 0;
+        const est = parseFloat(r.estimated_cost) || 0;
+        const departingSoon = st === 'approved' && isDepartingSoon(r.start_date);
+        const members = r.team_members || r.members || [];
+
+        // Check if current user already confirmed
+        const userMember = currentUser && members.find(m => m.user_id === (currentUser.id || currentUser.user_id));
+        const userConfirmed = userMember ? userMember.confirmed : true;
+
+        // Vehicle link — show actual vehicle name if linked
+        const carIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>';
+        const dollarIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+
+        let vehicleLink;
+        if (r.vehicle_name) {
+          vehicleLink = `<a class="travel-link" href="vehicle.html" style="color:var(--success);">${carIcon} ${r.vehicle_name} (${r.vehicle_plate})</a>`;
+        } else if (r.vehicle_booking_id) {
+          vehicleLink = `<a class="travel-link" href="vehicle.html">${carIcon} Vehicle Booked</a>`;
+        } else {
+          vehicleLink = `<a class="travel-link" href="vehicle.html" style="color:var(--text-muted);">${carIcon} Book Vehicle</a>`;
+        }
+
+        // Advance / Expense link — show actual advance doc if linked
+        let advanceLink = '';
+        if (r.advance_doc_number) {
+          advanceLink = `<a class="travel-link" href="doc-detail.html?type=expense&doc=${r.advance_doc_number}" style="color:var(--info);">${dollarIcon} ${r.advance_doc_number} (${fmtMoney(r.advance_doc_amount || adv)}) — ${r.advance_status || ''}</a>`;
+        } else if (adv > 0) {
+          advanceLink = `<a class="travel-link" href="doc-detail.html?type=expense&mode=new" style="color:var(--warning);">${dollarIcon} Create Advance ${fmtMoney(adv)}</a>`;
+        }
+
+        // Action buttons
+        const actionBtns = renderActionButtons(r);
+
+        return `<div class="travel-card"${isCompleted ? ' style="opacity:0.7;"' : ''}>
+          ${departingSoon ? `<div class="confirm-banner">
+            <span class="msg">&#9888; Departing within 2 days &mdash; all team members must confirm before departure!</span>
+            ${!userConfirmed ? `<button class="btn btn-sm btn-warning" onclick="confirmTrip(${r.id})">Confirm My Attendance</button>` : ''}
+          </div>` : ''}
+          <div class="travel-card-main">
+            <div class="travel-dest">
+              <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div>
+              <div class="city">${r.destination || '-'}</div>
+              <div class="dates">${fmtDateShort(r.start_date)} - ${fmtDateShort(r.end_date)}</div>
+            </div>
+            <div class="travel-detail">
+              <h4>${r.doc_number || ''} &mdash; ${r.purpose || 'Travel'} ${getProjectBadge(r)}</h4>
+              <div class="meta">
+                ${r.lead_name ? `<span class="meta-item"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Lead: ${r.lead_name}</span>` : ''}
+                <span class="meta-item"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> ${days} day${days !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+            ${renderTeamMembers(members)}
+            <div class="travel-amount">
+              <div class="total">${fmtMoney(est)}</div>
+              ${adv > 0 ? `<div class="advance-highlight">Advance: ${fmtMoney(adv)}</div>` : ''}
+            </div>
+          </div>
+          <div class="travel-card-footer">
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${statusBadge(r.status || 'draft')}
+              <div class="action-btns">${actionBtns}</div>
+            </div>
+            <div class="travel-links">
+              ${vehicleLink}
+              ${advanceLink}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function confirmTrip(id) {
+      try {
+        await API.confirmTravel(id);
+        loadTravel();
+      } catch (e) {
+        console.error('Confirm failed:', e);
+        alert('Confirm failed: ' + e.message);
+      }
+    }
+
+    async function loadTravel() {
+      try {
+        const data = await API.getTravels();
+        allTravelData = data;
+        applyFilters();
+      } catch (e) {
+        console.error('Failed to load travel data:', e);
+        document.getElementById('travel-list').innerHTML = emptyMsg('Failed to load travel data');
+      }
+    }
+
+    function applyFilters() {
+      const projectId = document.getElementById('filter-project').value;
+      let filtered = allTravelData;
+      if (projectId) {
+        filtered = allTravelData.filter(r => String(r.project_id) === projectId);
+      }
+      renderTravelStats(filtered);
+      renderTravelList(filtered);
+    }
+
+    // Init
+    loadProjects();
+    loadTravel();
+  </script>
+</body>
+</html>

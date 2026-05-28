@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Create Purchase Request</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .form-section {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 20px; box-shadow: var(--shadow-xs);
+    }
+    .form-section-header {
+      padding: 16px 24px; border-bottom: 1px solid var(--border-light);
+      font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-body { padding: 24px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .form-full { grid-column: 1 / -1; }
+
+    /* Line Items */
+    .lines-editor { overflow-x: auto; }
+    .lines-editor table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .lines-editor th {
+      padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600;
+      color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
+      background: var(--bg-light); border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .lines-editor td { padding: 6px 6px; vertical-align: top; }
+    .lines-editor input, .lines-editor select {
+      width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font);
+      color: var(--text-primary); outline: none;
+    }
+    .lines-editor input:focus, .lines-editor select:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 2px rgba(79,110,247,0.1);
+    }
+    .lines-editor .num-input { text-align: right; }
+    .lines-editor .line-total {
+      font-weight: 700; font-size: 13px; padding: 8px 10px;
+      text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .lines-editor .remove-btn {
+      background: none; border: none; color: var(--text-muted); cursor: pointer;
+      font-size: 16px; padding: 6px;
+    }
+    .lines-editor .remove-btn:hover { color: var(--danger); }
+
+    .add-line-btn {
+      padding: 10px 16px; border: 1px dashed var(--border); border-radius: var(--radius);
+      background: none; width: 100%; font-size: 13px; color: var(--primary);
+      cursor: pointer; font-family: var(--font); font-weight: 500; margin-top: 8px;
+      transition: all 0.15s;
+    }
+    .add-line-btn:hover { background: var(--primary-50); border-color: var(--primary); }
+
+    /* Summary */
+    .summary-box {
+      background: var(--bg-light); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 16px 20px; margin-top: 16px;
+      max-width: 350px; margin-left: auto;
+    }
+    .summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+    .summary-row.total {
+      font-weight: 700; font-size: 16px; border-top: 2px solid var(--border);
+      padding-top: 8px; margin-top: 4px;
+    }
+
+    /* Budget Preview */
+    .budget-preview {
+      background: var(--warning-bg); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: var(--radius); padding: 14px 16px; margin-top: 12px;
+    }
+    .budget-preview.ok { background: var(--success-bg); border-color: rgba(16,185,129,0.2); }
+    .budget-preview h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .bp-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+
+    /* Sticky Footer */
+    .form-footer {
+      position: sticky; bottom: 0; background: var(--bg-white);
+      border-top: 1px solid var(--border); padding: 16px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 50;
+    }
+    .form-footer .total-display { font-size: 18px; font-weight: 800; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+
+    <div class="page-header">
+      <div>
+        <h1>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+          New Purchase Request
+        </h1>
+        <div class="subtitle">สร้างใบขอซื้อ &bull; Auto Number: <strong style="color:var(--primary);" id="next-number">PR2605XXXX</strong></div>
+      </div>
+      <a href="pr-po.html" class="btn btn-secondary">&larr; Back</a>
+    </div>
+
+    <form onsubmit="event.preventDefault(); submitPR();">
+
+      <!-- Section 1: Document Header -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+          Document Header
+        </div>
+        <div class="form-section-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">PR Number</label>
+              <input class="form-input" id="pr-number" readonly style="background:var(--bg-light);color:var(--text-muted);">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Document Date <span style="color:var(--danger);">*</span></label>
+              <input class="form-input" type="date" id="pr-date" value="2026-05-11">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Project <span style="color:var(--danger);">*</span></label>
+              <select class="form-select" id="pr-project">
+                <option value="">-- Select Project --</option>
+                <option value="SDA-2026-001">SDA-2026-001 — Marine Navigation System - Phuket</option>
+                <option value="SDA-2026-002">SDA-2026-002 — Sonar System Installation - Rayong</option>
+                <option value="SDA-2026-003">SDA-2026-003 — Radar System Upgrade - Bangkok</option>
+                <option value="SDA-2026-004">SDA-2026-004 — GPS Fleet Management - Samut Prakan</option>
+                <option value="SDA-2026-005">SDA-2026-005 — Satcom System - Chonburi</option>
+                <option value="SDA-2026-006">SDA-2026-006 — AIS Repeater System - Surat Thani</option>
+                <option value="SDA-2026-007">SDA-2026-007 — Weather Station Network - Chumphon</option>
+                <option value="SDA-2026-008">SDA-2026-008 — CCTV Monitoring Port - Laem Chabang</option>
+                <option value="SDA-2026-011">SDA-2026-011 — VTS System - Map Ta Phut</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select class="form-select" id="pr-priority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Vendor -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Vendor Information
+        </div>
+        <div class="form-section-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Vendor (SAP Business Partner) <span style="color:var(--danger);">*</span></label>
+              <select class="form-select" id="pr-vendor">
+                <option value="">-- Select Vendor --</option>
+                <option value="VD0001">VD0001 — Marine Electronics Co. (ในประเทศ)</option>
+                <option value="VD0002">VD0002 — Navigation Systems Ltd. (ในประเทศ)</option>
+                <option value="VF0001">VF0001 — Furuno Japan (ต่างประเทศ)</option>
+                <option value="VF0002">VF0002 — JRC Global (ต่างประเทศ)</option>
+                <option value="VO0001">VO0001 — General Supplier (อื่น)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Person</label>
+              <input class="form-input" placeholder="ชื่อผู้ติดต่อ" id="pr-contact">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Terms</label>
+              <select class="form-select" id="pr-terms">
+                <option value="cash">Cash</option>
+                <option value="7">Credit 7 วัน</option>
+                <option value="15">Credit 15 วัน</option>
+                <option value="30" selected>Credit 30 วัน</option>
+                <option value="60">Credit 60 วัน</option>
+                <option value="90">Credit 90 วัน</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Required Delivery Date</label>
+              <input class="form-input" type="date" id="pr-delivery">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ship To (Warehouse)</label>
+              <select class="form-select" id="pr-warehouse">
+                <option value="HQ01">HQ01 — คลังสินค้า (Default)</option>
+                <option value="PJ00">PJ00 — คลังโครงการ</option>
+                <option value="PJ01">PJ01 — คลังสินค้าคงเหลือจากโปรเจค</option>
+                <option value="BR01">BR01 — คลังยืม</option>
+                <option value="AS01">AS01 — คลังประกอบ</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Currency</label>
+              <select class="form-select" id="pr-currency">
+                <option value="THB" selected>THB — Thai Baht</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Line Items -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+          Line Items
+        </div>
+        <div class="form-section-body" style="padding:16px;">
+          <div class="lines-editor">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:30px;">#</th>
+                  <th style="width:100px;">Item Code</th>
+                  <th style="min-width:200px;">Description *</th>
+                  <th style="width:70px;">Qty *</th>
+                  <th style="width:70px;">UoM</th>
+                  <th style="width:110px;">Unit Price *</th>
+                  <th style="width:90px;">Tax Code</th>
+                  <th style="width:90px;">GL Account</th>
+                  <th style="width:100px;">Budget Line</th>
+                  <th style="width:110px;text-align:right;">Total</th>
+                  <th style="width:30px;"></th>
+                </tr>
+              </thead>
+              <tbody id="line-items">
+                <tr data-line="1">
+                  <td style="color:var(--text-muted);padding:10px;font-weight:600;">1</td>
+                  <td><input placeholder="SD-XXXX" list="items-list"></td>
+                  <td><input placeholder="Item description..." required></td>
+                  <td><input type="number" class="num-input" value="1" min="1" onchange="calcLine(this)"></td>
+                  <td><select>
+                    <option>EA</option><option>Set</option><option>Unit</option><option>Job</option>
+                    <option>Month</option><option>Day</option><option>System</option><option>Roll</option>
+                  </select></td>
+                  <td><input type="number" class="num-input" placeholder="0.00" step="0.01" onchange="calcLine(this)"></td>
+                  <td><select>
+                    <option value="IG07">IG07 (7%)</option>
+                    <option value="IG00">IG00 (0%)</option>
+                    <option value="IS07">IS07 (7%)</option>
+                    <option value="IS00">IS00 (0%)</option>
+                  </select></td>
+                  <td><select>
+                    <option value="114101">114101 สินค้า</option>
+                    <option value="511102">511102 ซื้อในปท.</option>
+                    <option value="511103">511103 ซื้อต่างปท.</option>
+                    <option value="511120">511120 วัสดุ</option>
+                    <option value="522709">522709 เบ็ดเตล็ด</option>
+                  </select></td>
+                  <td><select>
+                    <option value="">-- None --</option>
+                    <option value="material">Material</option>
+                    <option value="labor">Labor</option>
+                    <option value="transport">Transport</option>
+                    <option value="misc">Misc</option>
+                  </select></td>
+                  <td class="line-total">&#3647;0.00</td>
+                  <td><button type="button" class="remove-btn" onclick="removeLine(this)">&times;</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button type="button" class="add-line-btn" onclick="addLine()">+ Add Line Item</button>
+
+          <!-- Summary -->
+          <div class="summary-box">
+            <div class="summary-row"><span style="color:var(--text-secondary);">Subtotal</span><span id="subtotal">&#3647;0.00</span></div>
+            <div class="summary-row"><span style="color:var(--text-secondary);">VAT 7%</span><span id="vat-amount">&#3647;0.00</span></div>
+            <div class="summary-row"><span style="color:var(--text-secondary);">WHT</span><span id="wht-amount">&#3647;0.00</span></div>
+            <div class="summary-row total"><span>Grand Total</span><span id="grand-total" style="color:var(--primary);">&#3647;0.00</span></div>
+          </div>
+
+          <!-- Budget Impact Preview -->
+          <div class="budget-preview ok" id="budget-preview" style="display:none;">
+            <h4>Budget Impact Preview</h4>
+            <div class="bp-row"><span>Project Budget</span><span id="bp-budget">-</span></div>
+            <div class="bp-row"><span>Already Used</span><span id="bp-used">-</span></div>
+            <div class="bp-row"><span>This PR Amount</span><span id="bp-this" style="font-weight:700;">-</span></div>
+            <div class="bp-row" style="border-top:1px solid rgba(0,0,0,0.1);padding-top:4px;margin-top:4px;font-weight:700;"><span>Remaining After</span><span id="bp-remaining">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Remarks + Attachments -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/></svg>
+          Remarks & Attachments
+        </div>
+        <div class="form-section-body">
+          <div class="form-group">
+            <label class="form-label">Remarks / Notes</label>
+            <textarea class="form-textarea" id="pr-remarks" rows="3" placeholder="หมายเหตุ เช่น ต้องการด่วน, spec พิเศษ, etc."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Attachments</label>
+            <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;" onclick="document.getElementById('file-upload').click()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+              <div style="font-size:13px;font-weight:500;">Drop files here or click to upload</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">PDF, JPG, PNG, Excel (max 10MB per file)</div>
+              <input type="file" id="file-upload" multiple accept=".pdf,.jpg,.png,.xlsx,.xls" style="display:none;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Approval Preview -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+          Approval Flow Preview
+        </div>
+        <div class="form-section-body">
+          <div id="approval-preview" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--bg-light);border-radius:var(--radius-full);font-size:12px;font-weight:500;">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);"></span> You Create
+            </div>
+            <span style="color:var(--text-muted);">&rarr;</span>
+            <div style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--warning-bg);border-radius:var(--radius-full);font-size:12px;font-weight:500;color:var(--warning);">
+              Manager Approve
+            </div>
+            <span style="color:var(--text-muted);" id="flow-finance">&rarr;</span>
+            <div style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--success-bg);border-radius:var(--radius-full);font-size:12px;font-weight:500;color:var(--success);" id="flow-finance-badge">
+              Finance Approve
+            </div>
+            <span style="color:var(--text-muted);" id="flow-exec" style="display:none;">&rarr;</span>
+            <div id="flow-exec-badge" style="display:none;align-items:center;gap:6px;padding:8px 14px;background:var(--purple-bg);border-radius:var(--radius-full);font-size:12px;font-weight:500;color:var(--purple);">
+              Executive Approve
+            </div>
+            <span style="color:var(--text-muted);">&rarr;</span>
+            <div style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--info-bg);border-radius:var(--radius-full);font-size:12px;font-weight:500;color:var(--info);">
+              Push to SAP
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;" id="approval-tier-info">
+            Approval tier จะอัปเดตตามยอดรวม
+          </div>
+        </div>
+      </div>
+
+    </form>
+
+    <!-- Sticky Footer -->
+    <div class="form-footer">
+      <div>
+        <div style="font-size:12px;color:var(--text-secondary);">Grand Total</div>
+        <div class="total-display" id="footer-total">&#3647;0.00</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="pr-po.html" class="btn btn-secondary">Cancel</a>
+        <button class="btn btn-secondary" onclick="saveDraft()">Save as Draft</button>
+        <button class="btn btn-primary" onclick="submitPR()">Submit for Approval</button>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <datalist id="items-list">
+    <option value="SD-0001">Sounder Unit</option>
+    <option value="SD-0015">Sounder Transducer 200kHz</option>
+    <option value="SN-0001">Sonar Module</option>
+    <option value="SN-0005">Sonar Transducer</option>
+    <option value="WR-0001">Wave Radar Unit</option>
+    <option value="GP-0001">GPS Navigator</option>
+    <option value="GR-0001">Gyro Compass</option>
+    <option value="CP-0001">Computer Server</option>
+    <option value="SC-0001">Satcom Terminal</option>
+    <option value="OT-0001">Connector Kit</option>
+    <option value="OT-0005">Network Cable Cat6</option>
+    <option value="EX-0001">Calibration Tools</option>
+  </datalist>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let lineCount = 1;
+
+    function addLine() {
+      lineCount++;
+      const tbody = document.getElementById('line-items');
+      const row = tbody.querySelector('tr').cloneNode(true);
+      row.dataset.line = lineCount;
+      row.querySelector('td:first-child').textContent = lineCount;
+      row.querySelectorAll('input').forEach(inp => { inp.value = ''; });
+      row.querySelector('.num-input').value = '1';
+      row.querySelector('.line-total').textContent = '฿0.00';
+      tbody.appendChild(row);
+    }
+
+    function removeLine(btn) {
+      const tbody = document.getElementById('line-items');
+      if (tbody.querySelectorAll('tr').length <= 1) return;
+      btn.closest('tr').remove();
+      recalcAll();
+    }
+
+    function calcLine(input) {
+      const row = input.closest('tr');
+      const qty = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+      const price = parseFloat(row.querySelectorAll('input[type="number"]')[1]?.value) || 0;
+      const total = qty * price;
+      const taxCode = row.querySelector('select').value;
+      const taxRate = taxCode.includes('07') ? 0.07 : 0;
+      const totalWithTax = total * (1 + taxRate);
+      row.querySelector('.line-total').textContent = '฿' + totalWithTax.toLocaleString('th-TH', {minimumFractionDigits:2});
+      recalcAll();
+    }
+
+    function recalcAll() {
+      let subtotal = 0;
+      let vatTotal = 0;
+      document.querySelectorAll('#line-items tr').forEach(row => {
+        const qty = parseFloat(row.querySelector('input[type="number"]')?.value) || 0;
+        const price = parseFloat(row.querySelectorAll('input[type="number"]')[1]?.value) || 0;
+        const lineTotal = qty * price;
+        const taxCode = row.querySelector('select')?.value || '';
+        const taxRate = taxCode.includes('07') ? 0.07 : 0;
+        subtotal += lineTotal;
+        vatTotal += lineTotal * taxRate;
+      });
+      const grand = subtotal + vatTotal;
+      document.getElementById('subtotal').textContent = '฿' + subtotal.toLocaleString('th-TH', {minimumFractionDigits:2});
+      document.getElementById('vat-amount').textContent = '฿' + vatTotal.toLocaleString('th-TH', {minimumFractionDigits:2});
+      document.getElementById('grand-total').textContent = '฿' + grand.toLocaleString('th-TH', {minimumFractionDigits:2});
+      document.getElementById('footer-total').textContent = '฿' + grand.toLocaleString('th-TH', {minimumFractionDigits:2});
+
+      // Update approval flow based on amount
+      const tierInfo = document.getElementById('approval-tier-info');
+      const flowFinance = document.getElementById('flow-finance');
+      const flowFinanceBadge = document.getElementById('flow-finance-badge');
+      const flowExec = document.getElementById('flow-exec');
+      const flowExecBadge = document.getElementById('flow-exec-badge');
+
+      if (grand <= 10000) {
+        tierInfo.textContent = 'Tier 1 (≤ ฿10K): Manager only';
+        flowFinance.style.display = 'none'; flowFinanceBadge.style.display = 'none';
+        flowExec.style.display = 'none'; flowExecBadge.style.display = 'none';
+      } else if (grand <= 100000) {
+        tierInfo.textContent = 'Tier 2 (฿10K-100K): Manager + Finance';
+        flowFinance.style.display = ''; flowFinanceBadge.style.display = 'flex';
+        flowExec.style.display = 'none'; flowExecBadge.style.display = 'none';
+      } else {
+        tierInfo.textContent = 'Tier 3 (> ฿100K): Manager + Finance + Executive';
+        flowFinance.style.display = ''; flowFinanceBadge.style.display = 'flex';
+        flowExec.style.display = ''; flowExecBadge.style.display = 'flex';
+      }
+    }
+
+    function saveDraft() { alert('PR saved as Draft'); window.location = 'pr-po.html'; }
+    function submitPR() { alert('PR submitted for approval!'); window.location = 'pr-po.html'; }
+  </script>
+</body>
+</html>

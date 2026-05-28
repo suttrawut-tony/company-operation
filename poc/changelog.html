@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Change Log</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .version-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 20px; overflow: hidden;
+    }
+    .version-header {
+      padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .version-header:hover { background: var(--bg-hover); }
+    .version-tag {
+      font-size: 20px; font-weight: 800; color: var(--primary);
+    }
+    .version-date { font-size: 12px; color: var(--text-muted); }
+    .version-stats { display: flex; gap: 12px; font-size: 11px; }
+    .version-stats .stat { padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .stat-added { background: var(--success-bg); color: var(--success); }
+    .stat-changed { background: var(--warning-bg); color: var(--warning); }
+    .stat-fixed { background: var(--info-bg); color: var(--info); }
+    .stat-removed { background: var(--danger-bg); color: var(--danger); }
+
+    .version-body { padding: 0 24px 20px; display: none; }
+    .version-body.show { display: block; }
+
+    .change-group { margin-bottom: 16px; }
+    .change-group h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-light); }
+    .change-item {
+      display: flex; gap: 8px; padding: 6px 0; font-size: 13px; line-height: 1.5;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .change-item:last-child { border-bottom: none; }
+    .change-badge {
+      font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+      text-transform: uppercase; flex-shrink: 0; height: fit-content; margin-top: 2px;
+    }
+    .badge-new { background: var(--success-bg); color: var(--success); }
+    .badge-update { background: var(--warning-bg); color: var(--warning); }
+    .badge-fix { background: var(--info-bg); color: var(--info); }
+    .badge-remove { background: var(--danger-bg); color: var(--danger); }
+    .badge-security { background: #7c3aed20; color: #7c3aed; }
+
+    .compare-section {
+      background: var(--bg-light); border-radius: var(--radius); padding: 16px; margin-top: 16px;
+    }
+    .compare-section h4 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .file-diff { font-size: 11px; font-family: var(--font-mono); padding: 4px 0; border-bottom: 1px solid var(--border-light); display: flex; gap: 8px; }
+    .file-diff .added { color: var(--success); }
+    .file-diff .removed { color: var(--danger); }
+    .file-diff .path { color: var(--text-secondary); flex: 1; }
+
+    .current-changes {
+      background: var(--warning-bg); border: 1px solid var(--warning); border-radius: var(--radius-lg);
+      padding: 16px 24px; margin-bottom: 20px;
+    }
+    .current-changes h3 { font-size: 14px; font-weight: 700; color: var(--warning); margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1>Change Log</h1></div>
+      <div style="display:flex;gap:8px;">
+        <span id="current-version" style="font-size:14px;font-weight:700;color:var(--primary);padding:8px 16px;background:var(--primary-light);border-radius:var(--radius);"></span>
+      </div>
+    </div>
+
+    <!-- Unsaved Changes (live from working directory) -->
+    <div id="unsaved-section"></div>
+
+    <!-- Version History -->
+    <div id="version-list"></div>
+
+  </main>
+  </div>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    // Version changelog data — updated when saving versions
+    const VERSIONS = [
+      {
+        tag: 'v1.0',
+        date: '2026-05-27',
+        summary: 'SDA Operation Full ERP System',
+        stats: { added: 42, changed: 9, fixed: 0 },
+        changes: [
+          { type: 'new', module: 'Dashboard', desc: 'Customizable dashboard with masonry layout, KPI cards, My Tasks, AI Alerts, real-time WebSocket updates' },
+          { type: 'new', module: 'Projects', desc: 'Project CRUD, Gantt timeline, delay/penalty detection (LD), retention guarantee tracking' },
+          { type: 'new', module: 'Plan Project', desc: 'Phase > Step > Sub-task (3 levels), collapsible, status toggle, auto date fill' },
+          { type: 'new', module: 'Taskboard', desc: 'Kanban board with drag-drop, priority/assignee/timeline filters, real-time updates' },
+          { type: 'new', module: 'Budget', desc: 'Master/Project/Comparison views, commitment tracking, budget transfer, revision history, GL source drill-down' },
+          { type: 'new', module: 'PR/PO', desc: 'Document chain (PR>PO>SAP), approval by amount tier, budget validation on submit' },
+          { type: 'new', module: 'Advance', desc: 'Full loop: Request > Approve > Payment > Clear > Return/Reimburse, GL journal auto-generation, bank accounts' },
+          { type: 'new', module: 'Vehicle', desc: 'Fleet management, booking calendar, project vehicle history with stats' },
+          { type: 'new', module: 'Holiday/OT', desc: 'OT request with submit/approve workflow, project filter' },
+          { type: 'new', module: 'User & Permission', desc: 'User CRUD, role-based access (7 roles), project membership management' },
+          { type: 'new', module: 'Discussion', desc: 'Pantip-style comments per project with real-time updates' },
+          { type: 'new', module: 'Security', desc: 'JWT auth, role-based access, project-level filtering, cross-tenant protection, CORS, approval role validation' },
+          { type: 'new', module: 'Real-time', desc: 'WebSocket server with broadcast on all data changes, auto-reconnect' },
+          { type: 'new', module: 'UI/UX', desc: 'Searchable dropdowns, optimistic updates, collapsible sidebar, responsive layout' },
+        ],
+        files: [
+          { path: 'api/routes/advance.js', added: 350, removed: 0 },
+          { path: 'api/routes/projects.js', added: 280, removed: 20 },
+          { path: 'api/routes/budget.js', added: 200, removed: 15 },
+          { path: 'api/routes/pr.js', added: 150, removed: 10 },
+          { path: 'api/routes/po.js', added: 120, removed: 5 },
+          { path: 'poc/advance.html', added: 650, removed: 0 },
+          { path: 'poc/dashboard.html', added: 400, removed: 50 },
+          { path: 'poc/overview.html', added: 350, removed: 30 },
+          { path: 'poc/budget.html', added: 500, removed: 200 },
+          { path: 'poc/taskboard.html', added: 300, removed: 50 },
+          { path: 'poc/phases.html', added: 350, removed: 20 },
+          { path: 'poc/pr-po.html', added: 150, removed: 30 },
+          { path: 'poc/user-permissions.html', added: 200, removed: 20 },
+          { path: 'api/migrations/007-012', added: 250, removed: 0 },
+        ]
+      }
+    ];
+
+    function render() {
+      // Current version
+      const latest = VERSIONS[0];
+      document.getElementById('current-version').textContent = latest.tag;
+
+      // Check unsaved changes (simulated — in real app would call git API)
+      checkUnsavedChanges();
+
+      // Render versions
+      document.getElementById('version-list').innerHTML = VERSIONS.map((v, i) => {
+        const addedCount = v.changes.filter(c => c.type === 'new').length;
+        const updatedCount = v.changes.filter(c => c.type === 'update').length;
+        const fixedCount = v.changes.filter(c => c.type === 'fix').length;
+        const removedCount = v.changes.filter(c => c.type === 'remove').length;
+
+        // Group changes by module
+        const byModule = {};
+        v.changes.forEach(c => {
+          if (!byModule[c.module]) byModule[c.module] = [];
+          byModule[c.module].push(c);
+        });
+
+        return `
+        <div class="version-card">
+          <div class="version-header" onclick="toggleVersion(${i})">
+            <div>
+              <div class="version-tag">${v.tag}</div>
+              <div style="font-size:13px;font-weight:500;margin-top:2px;">${v.summary}</div>
+              <div class="version-date">${v.date}</div>
+            </div>
+            <div class="version-stats">
+              ${addedCount ? '<span class="stat stat-added">+'+addedCount+' new</span>' : ''}
+              ${updatedCount ? '<span class="stat stat-changed">'+updatedCount+' updated</span>' : ''}
+              ${fixedCount ? '<span class="stat stat-fixed">'+fixedCount+' fixed</span>' : ''}
+              ${removedCount ? '<span class="stat stat-removed">'+removedCount+' removed</span>' : ''}
+            </div>
+          </div>
+          <div class="version-body" id="vbody-${i}">
+            ${Object.entries(byModule).map(([mod, changes]) => `
+              <div class="change-group">
+                <h4>${mod}</h4>
+                ${changes.map(c => `
+                  <div class="change-item">
+                    <span class="change-badge badge-${c.type === 'new' ? 'new' : c.type === 'update' ? 'update' : c.type === 'fix' ? 'fix' : c.type === 'security' ? 'security' : 'remove'}">${c.type}</span>
+                    <span>${c.desc}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `).join('')}
+
+            ${v.files ? `
+            <div class="compare-section">
+              <h4>Files Changed (${v.files.length} files)</h4>
+              ${v.files.map(f => `
+                <div class="file-diff">
+                  <span class="path">${f.path}</span>
+                  <span class="added">+${f.added}</span>
+                  <span class="removed">-${f.removed}</span>
+                </div>
+              `).join('')}
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      // Auto-expand latest
+      if (VERSIONS.length) toggleVersion(0);
+    }
+
+    function toggleVersion(idx) {
+      const el = document.getElementById('vbody-' + idx);
+      if (!el) return;
+      el.classList.toggle('show');
+    }
+
+    async function checkUnsavedChanges() {
+      // This would ideally call a git status API
+      // For now, show a placeholder that updates when changes are detected
+      const section = document.getElementById('unsaved-section');
+      try {
+        // Try to detect changes by checking if any API data is newer than last version
+        const lastVersionDate = new Date(VERSIONS[0]?.date || '2026-01-01');
+        const now = new Date();
+        const daysSince = Math.floor((now - lastVersionDate) / 86400000);
+
+        if (daysSince > 0) {
+          section.innerHTML = `
+            <div class="current-changes">
+              <h3>Working Changes (since ${VERSIONS[0]?.tag || 'last save'})</h3>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">${daysSince} days since last version save</div>
+              <div style="font-size:13px;">Changes will be logged when you save the next version.</div>
+            </div>`;
+        } else {
+          section.innerHTML = '';
+        }
+      } catch(e) {
+        section.innerHTML = '';
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Taskboard</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .tb-header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .tb-filters { display: flex; gap: 8px; }
+
+    .kanban { min-height: 560px; }
+    .kanban-column { min-width: 260px; display: flex; flex-direction: column; }
+    .kanban-column-header .col-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .task-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px; cursor: grab;
+      box-shadow: var(--shadow-xs); transition: all 0.15s;
+    }
+    .task-card:hover { box-shadow: var(--shadow-sm); border-color: var(--primary); }
+    .task-card-top {
+      display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px;
+    }
+    .task-id { font-size: 11px; color: var(--primary); font-weight: 600; }
+    .task-priority {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+    }
+    .task-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
+    .task-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .task-tag {
+      font-size: 10px; padding: 1px 8px; border-radius: var(--radius-full);
+      font-weight: 500;
+    }
+    .task-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 8px; border-top: 1px solid var(--border-light);
+    }
+    .task-footer .assignee { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); }
+    .task-footer .due { font-size: 10px; color: var(--text-muted); }
+    .task-footer .due.overdue { color: var(--danger); font-weight: 600; }
+    .task-subtask { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+
+    /* Drag & Drop */
+    .kanban-body { min-height: 200px; flex: 1; padding-bottom: 40px; }
+    .task-card { transition: all 0.25s ease; }
+    .task-card.dragging { opacity: 0.4; transform: rotate(2deg); }
+    .task-card.dropping { animation: dropIn 0.3s ease; }
+    .kanban-body.drag-over { background: var(--primary-light); border-radius: var(--radius); outline: 2px dashed var(--primary); outline-offset: -2px; }
+    .kanban-body.drag-over * { pointer-events: none; }
+    @keyframes dropIn { from { opacity: 0; transform: scale(0.9) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+    /* Task actions */
+    .task-actions {
+      display: flex; gap: 2px; margin-top: 6px;
+    }
+    .task-actions button {
+      border: none; background: var(--bg-hover); cursor: pointer;
+      padding: 3px 8px; border-radius: var(--radius); font-size: 10px;
+      color: var(--text-secondary); font-family: var(--font); transition: all 0.15s;
+    }
+    .task-actions button:hover { background: var(--primary-light); color: var(--primary); }
+    .task-actions button.btn-del:hover { background: var(--danger-bg); color: var(--danger); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 480px; max-width: 95vw;
+      animation: slideUp 0.2s;
+    }
+    .modal-header {
+      padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      border: none; background: none; font-size: 20px; cursor: pointer;
+      color: var(--text-muted); padding: 4px 8px; border-radius: var(--radius);
+    }
+    .modal-close:hover { background: var(--bg-hover); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 16px 24px; border-top: 1px solid var(--border-light);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="6" height="14" x="2" y="6" rx="2"/><rect width="6" height="10" x="9" y="2" rx="2"/><rect width="6" height="14" x="16" y="8" rx="2"/></svg> Taskboard</h1>
+        <div class="subtitle" id="boardSubtitle"></div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddTask()">+ Add Task</button>
+    </div>
+
+    <div class="tb-header-row">
+      <div class="tb-filters">
+        <select class="form-select" id="projectSelect" style="width:260px;font-size:12px;padding:6px 10px;" onchange="onProjectChange()">
+          <option value="">-- Select Project --</option>
+        </select>
+        <select class="form-select" id="filterPriority" style="width:120px;font-size:12px;padding:6px 10px;" onchange="renderBoard()">
+          <option value="">All Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select class="form-select" id="filterAssignee" style="width:140px;font-size:12px;padding:6px 10px;" onchange="renderBoard()">
+          <option value="">All Assignee</option>
+        </select>
+        <select class="form-select" id="filterTimeline" style="width:130px;font-size:12px;padding:6px 10px;" onchange="renderBoard()">
+          <option value="">All Timeline</option>
+          <option value="overdue">Overdue</option>
+          <option value="today">Due Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="none">No Due Date</option>
+        </select>
+      </div>
+      <span id="taskStats" style="font-size:12px;color:var(--text-secondary);"></span>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban" id="kanbanBoard">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">Select a project above to load the taskboard</div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal-overlay" id="task-modal" onclick="if(event.target===this)closeTaskModal()">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="task-modal-title">เพิ่ม Task ใหม่</h3>
+          <button class="modal-close" onclick="closeTaskModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="task-edit-id">
+          <div class="form-group">
+            <label class="form-label">ชื่อ Task</label>
+            <input type="text" class="form-input" id="task-title" placeholder="e.g. GPS module calibration">
+          </div>
+          <div class="form-group">
+            <label class="form-label">รายละเอียด</label>
+            <textarea class="form-input" id="task-desc" rows="2" placeholder="อธิบายรายละเอียด (optional)"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select class="form-input" id="task-priority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-input" id="task-status">
+                <option value="todo">To-do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="review">Review</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ผู้รับผิดชอบ</label>
+              <select class="form-input" id="task-assignee">
+                <option value="">ไม่ระบุ</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Due Date</label>
+              <input type="date" class="form-input" id="task-due">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="closeTaskModal()">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" id="task-save-btn" onclick="saveTask()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div><!-- end main-wrapper -->
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allTasks = [];
+    const columns = [
+      { key: 'todo',        label: 'To-do',       dot: 'var(--text-muted)' },
+      { key: 'in_progress', label: 'In Progress',  dot: 'var(--primary)' },
+      { key: 'review',      label: 'Review',       dot: 'var(--warning)' },
+      { key: 'done',        label: 'Done',         dot: 'var(--success)' }
+    ];
+
+    const priorityColor = {
+      high: 'var(--danger)',
+      medium: 'var(--warning)',
+      low: 'var(--text-muted)'
+    };
+
+    let projectMembers = [];
+    let currentProjectId = null;
+
+    function taskCard(t) {
+      const isDone = t.status === 'done';
+      const pColor = priorityColor[t.priority] || 'var(--text-muted)';
+      const assigneeName = t.first_name_th || t.first_name || '';
+      const assigneeInitial = assigneeName ? assigneeName[0] : '?';
+      const isOverdue = t.due_date && !isDone && new Date(t.due_date) < new Date();
+      const isDueToday = t.due_date && !isDone && new Date(t.due_date).toDateString() === new Date().toDateString();
+      const borderColor = t.priority === 'high' ? 'var(--danger)' : t.priority === 'medium' ? 'var(--warning)' : 'var(--border)';
+      const cardOpacity = isDone ? 'opacity:0.6;' : '';
+      const titleStyle = isDone ? 'text-decoration:line-through;color:var(--text-muted);' : '';
+
+      // Priority badge
+      const priBadge = t.priority === 'high' ? '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--danger-bg);color:var(--danger);font-weight:600;">HIGH</span>'
+        : t.priority === 'medium' ? '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--warning-bg);color:var(--warning);font-weight:600;">MED</span>'
+        : '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--bg-hover);color:var(--text-muted);font-weight:600;">LOW</span>';
+
+      // Due date badge
+      let dueBadge = '';
+      if (t.due_date) {
+        if (isDone) dueBadge = '<span style="font-size:10px;color:var(--success);">' + fmtDateShort(t.due_date) + '</span>';
+        else if (isOverdue) dueBadge = '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--danger-bg);color:var(--danger);font-weight:600;">Overdue ' + fmtDateShort(t.due_date) + '</span>';
+        else if (isDueToday) dueBadge = '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--warning-bg);color:var(--warning);font-weight:600;">Today</span>';
+        else dueBadge = '<span style="font-size:10px;color:var(--text-muted);">' + fmtDateShort(t.due_date) + '</span>';
+      }
+
+      // Description preview
+      const descPreview = t.description ? '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t.description.substring(0,60) + '</div>' : '';
+
+      return `
+        <div class="task-card" draggable="true" data-task-id="${t.id}" data-task-status="${t.status}"
+             ondragstart="onTaskDragStart(event)" ondragend="onTaskDragEnd(event)"
+             style="border-left:3px solid ${borderColor};${cardOpacity}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            ${priBadge}
+            ${dueBadge}
+          </div>
+          <div class="task-title" style="${titleStyle}">${t.title || 'Untitled'}</div>
+          ${descPreview}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border-light);">
+            <div style="display:flex;align-items:center;gap:6px;">
+              ${assigneeName ? '<div style="width:24px;height:24px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">'+assigneeInitial+'</div><span style="font-size:11px;color:var(--text-secondary);">'+assigneeName+'</span>' : '<span style="font-size:11px;color:var(--text-muted);">Unassigned</span>'}
+            </div>
+          </div>
+          <div class="task-actions">
+            <button onclick="openEditTask('${t.id}')">Edit</button>
+            <button class="btn-del" onclick="deleteTask('${t.id}')">Delete</button>
+          </div>
+        </div>`;
+    }
+
+    function renderBoard() {
+      const board = document.getElementById('kanbanBoard');
+      const priorityFilter = document.getElementById('filterPriority').value;
+      const assigneeFilter = document.getElementById('filterAssignee').value;
+      const timelineFilter = document.getElementById('filterTimeline').value;
+
+      let filtered = allTasks;
+      if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
+      if (assigneeFilter) filtered = filtered.filter(t => t.assigned_to === assigneeFilter);
+      if (timelineFilter) {
+        const now = new Date(); const today = now.toDateString();
+        const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        filtered = filtered.filter(t => {
+          if (!t.due_date && timelineFilter === 'none') return true;
+          if (!t.due_date) return false;
+          const d = new Date(t.due_date);
+          if (timelineFilter === 'overdue') return d < now && t.status !== 'done';
+          if (timelineFilter === 'today') return d.toDateString() === today;
+          if (timelineFilter === 'week') return d <= weekEnd && d >= now;
+          if (timelineFilter === 'month') return d <= monthEnd && d >= now;
+          return true;
+        });
+      }
+
+      const totalCount = filtered.length;
+      const doneCount = filtered.filter(t => t.status === 'done').length;
+      const overdueCount = filtered.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length;
+      document.getElementById('taskStats').innerHTML = totalCount + ' tasks | ' + doneCount + ' done' + (overdueCount > 0 ? ' | <span style="color:var(--danger);font-weight:600;">'+overdueCount+' overdue</span>' : '');
+
+      board.innerHTML = columns.map(col => {
+        const colTasks = filtered.filter(t => t.status === col.key);
+        return `
+          <div class="kanban-column">
+            <div class="kanban-column-header">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="col-dot" style="background:${col.dot};"></div> ${col.label}
+              </div>
+              <span class="count">${colTasks.length}</span>
+            </div>
+            <div class="kanban-body" data-col-status="${col.key}"
+                 ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event)">
+              ${colTasks.length > 0 ? colTasks.map(taskCard).join('') : '<div style="min-height:60px;"></div>'}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    async function onProjectChange() {
+      const sel = document.getElementById('projectSelect');
+      currentProjectId = sel.value;
+      if (!currentProjectId) {
+        allTasks = [];
+        projectMembers = [];
+        document.getElementById('kanbanBoard').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">Select a project above to load the taskboard</div>';
+        document.getElementById('taskStats').textContent = '';
+        document.getElementById('boardSubtitle').textContent = 'Select a project to view tasks';
+        return;
+      }
+
+      const projName = sel.options[sel.selectedIndex].text;
+      document.getElementById('boardSubtitle').innerHTML = projName + ' &bull; Kanban: To-do &#8594; In Progress &#8594; Review &#8594; Done';
+      document.getElementById('kanbanBoard').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">Loading tasks...</div>';
+
+      try {
+        const [data, members] = await Promise.all([
+          API.get('/projects/' + currentProjectId + '/tasks'),
+          API.get('/projects/' + currentProjectId + '/members')
+        ]);
+        allTasks = Array.isArray(data) ? data : (data.data || []);
+        projectMembers = Array.isArray(members) ? members : [];
+        // Populate assignee filter
+        document.getElementById('filterAssignee').innerHTML = '<option value="">All Assignee</option>' +
+          projectMembers.map(m => `<option value="${m.user_id}">${m.first_name_th || m.first_name} ${m.last_name||''}</option>`).join('');
+        renderBoard();
+      } catch (err) {
+        document.getElementById('kanbanBoard').innerHTML = '<div style="grid-column:1/-1;">' + emptyMsg('Failed to load tasks: ' + err.message) + '</div>';
+      }
+    }
+
+    async function loadTaskboard() {
+      try {
+        const data = await API.getProjects();
+        const projects = Array.isArray(data) ? data : (data.data || []);
+        const sel = document.getElementById('projectSelect');
+        projects.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = (p.code || '') + ' \u2014 ' + (p.name || '');
+          sel.appendChild(opt);
+        });
+        // Auto-select first project if available
+        if (projects.length > 0) {
+          sel.value = projects[0].id;
+          onProjectChange();
+        }
+      } catch (err) {
+        document.getElementById('kanbanBoard').innerHTML = '<div style="grid-column:1/-1;">' + emptyMsg('Failed to load projects: ' + err.message) + '</div>';
+      }
+    }
+
+    // ═══ Drag & Drop ═══
+    let draggedTaskId = null;
+
+    function onTaskDragStart(e) {
+      const card = e.target.closest('.task-card');
+      draggedTaskId = card.dataset.taskId;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedTaskId);
+    }
+    function onTaskDragEnd(e) {
+      const card = e.target.closest('.task-card');
+      if (card) card.classList.remove('dragging');
+      draggedTaskId = null;
+      // Remove all drag-over highlights
+      document.querySelectorAll('.kanban-body.drag-over').forEach(el => el.classList.remove('drag-over'));
+    }
+    function onColDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      // Highlight the column body, not child elements
+      const body = e.currentTarget;
+      body.classList.add('drag-over');
+    }
+    function onColDragLeave(e) {
+      // Only remove highlight if we actually left the column (not entering a child)
+      const body = e.currentTarget;
+      const related = e.relatedTarget;
+      if (!body.contains(related)) {
+        body.classList.remove('drag-over');
+      }
+    }
+    async function onColDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const newStatus = e.currentTarget.dataset.colStatus;
+      if (!draggedTaskId || !currentProjectId) return;
+
+      const task = allTasks.find(t => t.id === draggedTaskId);
+      if (!task || task.status === newStatus) return;
+
+      // Optimistic: move card instantly
+      const oldStatus = task.status;
+      task.status = newStatus;
+      renderBoard();
+
+      // Animate the dropped card
+      const droppedCard = document.querySelector(`[data-task-id="${draggedTaskId}"]`);
+      if (droppedCard) droppedCard.classList.add('dropping');
+      setTimeout(() => { if (droppedCard) droppedCard.classList.remove('dropping'); }, 300);
+
+      // Update column counts
+      updateColumnCounts();
+
+      // Save to server in background
+      try {
+        await API.put('/projects/' + currentProjectId + '/tasks/' + draggedTaskId, { status: newStatus });
+      } catch (err) {
+        // Rollback on failure
+        task.status = oldStatus;
+        renderBoard();
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function updateColumnCounts() {
+      const priorityFilter = document.getElementById('filterPriority').value;
+      let filtered = allTasks;
+      if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
+      const totalCount = filtered.length;
+      const doneCount = filtered.filter(t => t.status === 'done').length;
+      document.getElementById('taskStats').textContent = totalCount + ' tasks \u2022 ' + doneCount + ' completed';
+    }
+
+    // ═══ Task Modal ═══
+    let allUsersCache = [];
+    async function populateAssigneeDropdown() {
+      if (!allUsersCache.length) {
+        try { allUsersCache = await API.get('/auth/users'); } catch(e) { allUsersCache = projectMembers; }
+      }
+      const sel = document.getElementById('task-assignee');
+      sel.innerHTML = '<option value="">ไม่ระบุ</option>' +
+        allUsersCache.map(m =>
+          `<option value="${m.id || m.user_id}">${m.first_name_th || m.first_name} ${m.last_name || ''}</option>`
+        ).join('');
+    }
+
+    async function openAddTask() {
+      if (!currentProjectId) { alert('กรุณาเลือกโปรเจกต์ก่อน'); return; }
+      document.getElementById('task-modal-title').textContent = 'เพิ่ม Task ใหม่';
+      document.getElementById('task-edit-id').value = '';
+      document.getElementById('task-title').value = '';
+      document.getElementById('task-desc').value = '';
+      document.getElementById('task-priority').value = 'medium';
+      document.getElementById('task-status').value = 'todo';
+      document.getElementById('task-due').value = '';
+      await populateAssigneeDropdown();
+      document.getElementById('task-assignee').value = '';
+      document.getElementById('task-modal').classList.add('show');
+      document.getElementById('task-title').focus();
+    }
+
+    async function openEditTask(taskId) {
+      const t = allTasks.find(x => x.id === taskId);
+      if (!t) return;
+      document.getElementById('task-modal-title').textContent = 'แก้ไข Task';
+      document.getElementById('task-edit-id').value = taskId;
+      document.getElementById('task-title').value = t.title || '';
+      document.getElementById('task-desc').value = t.description || '';
+      document.getElementById('task-priority').value = t.priority || 'medium';
+      document.getElementById('task-status').value = t.status || 'todo';
+      document.getElementById('task-due').value = t.due_date ? t.due_date.substring(0, 10) : '';
+      await populateAssigneeDropdown();
+      document.getElementById('task-assignee').value = t.assigned_to || '';
+      document.getElementById('task-modal').classList.add('show');
+    }
+
+    function closeTaskModal() {
+      document.getElementById('task-modal').classList.remove('show');
+    }
+
+    async function saveTask() {
+      const title = document.getElementById('task-title').value.trim();
+      if (!title) { alert('กรุณากรอกชื่อ Task'); return; }
+
+      const editId = document.getElementById('task-edit-id').value;
+      const btn = document.getElementById('task-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'กำลังบันทึก...';
+
+      const body = {
+        title,
+        description: document.getElementById('task-desc').value.trim(),
+        priority: document.getElementById('task-priority').value,
+        status: document.getElementById('task-status').value,
+        assigned_to: document.getElementById('task-assignee').value || null,
+        due_date: document.getElementById('task-due').value || null,
+      };
+
+      try {
+        if (editId) {
+          await API.put('/projects/' + currentProjectId + '/tasks/' + editId, body);
+        } else {
+          await API.post('/projects/' + currentProjectId + '/tasks', body);
+        }
+        closeTaskModal();
+        onProjectChange(); // reload
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'บันทึก';
+      }
+    }
+
+    async function deleteTask(taskId) {
+      if (!confirm('ลบ Task นี้?')) return;
+      try {
+        await API.del('/projects/' + currentProjectId + '/tasks/' + taskId);
+        onProjectChange();
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // Close modal on ESC
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTaskModal(); });
+
+    loadTaskboard().then(() => {
+      const params = new URLSearchParams(window.location.search);
+      const projParam = params.get('project');
+      const taskParam = params.get('task');
+      if (projParam) {
+        document.getElementById('projectSelect').value = projParam;
+        onProjectChange().then(() => {
+          if (taskParam) setTimeout(() => openEditTask(taskParam), 500);
+        });
+      }
+    });
+    API.onRealtime(msg => {
+      if (msg.type.startsWith('task_') && currentProjectId) onProjectChange();
+    });
+  </script>
+</body>
+</html>

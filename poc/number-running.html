@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Number Running</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .nr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .nr-table { width: 100%; border-collapse: collapse; }
+    .nr-table thead th {
+      padding: 10px 16px; text-align: left; font-size: var(--text-2xs); font-weight: 700;
+      color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
+      background: var(--bg-light); border-bottom: 2px solid var(--border);
+    }
+    .nr-table tbody tr:nth-child(even) { background: #fafbfc; }
+    .nr-table tbody tr:hover { background: #f0f4ff; }
+    .nr-table tbody td { padding: 10px 16px; font-size: var(--text-base); border-bottom: 1px solid var(--border-light); }
+    .nr-format {
+      font-family: var(--font-mono); font-size: var(--text-base); font-weight: 600; color: var(--primary);
+      background: var(--primary-light); padding: 3px 10px; border-radius: var(--radius-sm); display: inline-block;
+    }
+    .nr-current { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 700; color: var(--success); }
+    .sap-sync { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs); color: var(--info); font-weight: 600; }
+    .format-parts { display: flex; gap: 0; margin-top: 8px; }
+    .format-part {
+      text-align: center; padding: 10px 16px; border: 1px solid var(--border); font-size: var(--text-sm);
+    }
+    .format-part:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+    .format-part:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+    .format-part .val { font-family: var(--font-mono); font-size: var(--text-xl); font-weight: 700; color: var(--primary); }
+    .format-part .lbl { font-size: var(--text-2xs); color: var(--text-muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1>Document Number Running</h1>
+      </div>
+      <span class="badge badge-success badge-dot" id="sync-status" style="font-size:var(--text-sm);">Loading...</span>
+    </div>
+
+    <!-- Format Breakdown -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><h2>Document Number Format</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">Based on SAP Blueprint</span></div>
+      <div class="card-body">
+        <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:8px;">Format: <strong>Prefix + Year(YY) + Month(MM) + Running(4 digits)</strong></div>
+        <div class="format-parts" id="format-parts">Loading...</div>
+        <div style="text-align:center;margin-top:12px;" id="format-example"></div>
+      </div>
+    </div>
+
+    <!-- Series Tables -->
+    <div class="nr-grid">
+      <div class="card">
+        <div class="card-header"><h2>Web App Documents</h2></div>
+        <div class="table-container">
+          <table class="nr-table">
+            <thead><tr><th>Document</th><th>Format</th><th>Current No.</th><th>SAP</th></tr></thead>
+            <tbody id="web-series">Loading...</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>SAP Synced Documents</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">From SAP Blueprint</span></div>
+        <div class="table-container">
+          <table class="nr-table">
+            <thead><tr><th>Document</th><th>SAP Prefix</th><th>Range</th><th>Status</th></tr></thead>
+            <tbody id="sap-series">Loading...</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    const DOC_NAMES = { PR:'Purchase Request', PO:'Purchase Order', EXP:'Expense', ADV:'Advance', TRV:'Travel', OT:'Holiday/OT', VHC:'Vehicle Booking', BG:'Budget' };
+    const SAP_DOCS = [
+      { prefix:'PR', name:'Purchase Request', sapPrefix:'PR2605', range:'26050001-26059999', sap:'OPRQ' },
+      { prefix:'PO', name:'Purchase Order', sapPrefix:'PO2605', range:'26050001-26059999', sap:'OPOR' },
+      { prefix:'RP', name:'Goods Receipt PO', sapPrefix:'RP2605', range:'26050001-26059999', sap:'OPDN' },
+      { prefix:'IN', name:'A/P Invoice', sapPrefix:'IN2605', range:'26050001-26059999', sap:'OPCH' },
+      { prefix:'IV', name:'A/R Invoice', sapPrefix:'IV2605', range:'26050001-26059999', sap:'OINV' },
+      { prefix:'JE', name:'Journal Entry', sapPrefix:'JE2605', range:'26050001-26059999', sap:'OJDT' },
+    ];
+
+    async function loadNumberSeries() {
+      try {
+        const series = await API.getNumberSeries();
+        const synced = series.filter(s => s.sap_synced);
+        document.getElementById('sync-status').innerHTML = synced.length > 0 ? '&#10003; SAP Synced' : 'Web Only';
+        document.getElementById('sync-status').className = 'badge badge-' + (synced.length > 0 ? 'success' : 'gray') + ' badge-dot';
+
+        // Format breakdown from first series
+        const first = series[0] || { prefix:'PR', year_month:'2605', current_number:1 };
+        const num = String(first.current_number).padStart(4, '0');
+        document.getElementById('format-parts').innerHTML = `
+          <div class="format-part" style="background:var(--primary-light);"><div class="val">${first.prefix}</div><div class="lbl">Prefix</div></div>
+          <div class="format-part" style="background:var(--warning-bg);"><div class="val">${first.year_month.substring(0,2)}</div><div class="lbl">Year</div></div>
+          <div class="format-part" style="background:var(--success-bg);"><div class="val">${first.year_month.substring(2,4)}</div><div class="lbl">Month</div></div>
+          <div class="format-part" style="background:var(--purple-bg);"><div class="val">${num}</div><div class="lbl">Running</div></div>`;
+        document.getElementById('format-example').innerHTML = `<span style="font-family:var(--font-mono);font-size:var(--text-2xl);font-weight:800;color:var(--primary);">${first.prefix}${first.year_month}${num}</span>`;
+
+        // Web series
+        document.getElementById('web-series').innerHTML = series.length ? series.map(s => {
+          const current = s.prefix + s.year_month + String(s.current_number).padStart(4,'0');
+          return `<tr>
+            <td><strong>${DOC_NAMES[s.doc_type] || s.doc_type}</strong></td>
+            <td><span class="nr-format">${s.prefix}-YYMM-####</span></td>
+            <td><span class="nr-current">${current}</span></td>
+            <td>${s.sap_synced ? '<span class="sap-sync">&#10003; Synced</span>' : '<span style="font-size:var(--text-2xs);color:var(--text-muted);">Web only</span>'}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No series configured</td></tr>';
+
+        // SAP series
+        document.getElementById('sap-series').innerHTML = SAP_DOCS.map(s =>
+          `<tr>
+            <td><strong>${s.name}</strong></td>
+            <td><span class="nr-format">${s.sapPrefix}</span></td>
+            <td style="font-family:var(--font-mono);font-size:var(--text-sm);color:var(--text-secondary);">${s.range}</td>
+            <td><span class="badge badge-success" style="font-size:var(--text-2xs);">Active</span></td>
+          </tr>`
+        ).join('');
+      } catch(e) {
+        document.getElementById('web-series').innerHTML = `<tr><td colspan="4">${emptyMsg('Error: '+e.message)}</td></tr>`;
+      }
+    }
+    loadNumberSeries();
+  </script>
+</body>
+</html>

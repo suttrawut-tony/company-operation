@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Journal Entries</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .je-stats { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
+    .je-stat { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; box-shadow: var(--shadow-xs); }
+    .je-stat .label { font-size: var(--text-2xs); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; }
+    .je-stat .value { font-size: var(--text-2xl); font-weight: 800; margin-top: 6px; font-family: var(--font-mono); }
+    .je-stat .sub { font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px; }
+
+    .je-table { width: 100%; border-collapse: collapse; }
+    .je-table thead th {
+      padding: 10px 14px; text-align: left; font-size: var(--text-2xs); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border);
+      background: var(--bg-light); color: var(--text-secondary); white-space: nowrap;
+    }
+    .je-table thead th.r { text-align: right; }
+    .je-table tbody tr { transition: background 0.1s; }
+    .je-table tbody tr:nth-child(even) { background: #fafbfc; }
+    .je-table tbody tr:hover { background: #f0f4ff; }
+    .je-table tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); font-size: var(--text-base); }
+    .je-table .r { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+    .je-table .mono { font-family: var(--font-mono); font-weight: 600; }
+    .je-table .dr { color: var(--primary); font-weight: 600; }
+    .je-table .cr { color: var(--success); font-weight: 600; }
+    .je-table .link { color: var(--primary); cursor: pointer; font-weight: 600; }
+    .je-table .link:hover { text-decoration: underline; }
+    .je-table tfoot td {
+      padding: 12px 14px; font-weight: 800; font-size: var(--text-md);
+      border-top: 2px solid var(--primary); background: var(--primary-50);
+      font-family: var(--font-mono);
+    }
+
+    .je-group-header td {
+      padding: 10px 14px; font-weight: 700; font-size: var(--text-xs);
+      background: var(--bg-light); color: var(--primary); text-transform: uppercase;
+      letter-spacing: 0.5px; border-bottom: 1px solid var(--border);
+    }
+
+    @media print {
+      #sidebar, #topnav, #tabbar, .page-header, .je-stats, .filter-bar { display: none !important; }
+      .main-wrapper { margin: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1>Journal Entries — การบันทึกบัญชี</h1>
+        <div class="subtitle">รายการบันทึกบัญชีทั้งหมดจากเอกสาร PR/PO/Expense/OT</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-secondary" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <div class="je-stats" id="je-stats"></div>
+
+    <div class="filter-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <select class="form-select" id="je-filter-type" onchange="renderJE()" style="width:140px;">
+        <option value="">All Types</option>
+        <option value="pr">Purchase Request</option>
+        <option value="po">Purchase Order</option>
+        <option value="expense">Expense</option>
+        <option value="ot">OT / Holiday</option>
+      </select>
+      <select class="form-select" id="je-filter-status" onchange="renderJE()" style="width:140px;">
+        <option value="">All Status</option>
+        <option value="posted">Posted</option>
+        <option value="pending">Pending</option>
+      </select>
+      <div style="position:relative;flex:1;max-width:280px;">
+        <input class="form-input" id="je-search" placeholder="Search doc number, account, vendor..." oninput="renderJE()" style="padding-left:12px;">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Journal Entry Listing</h2>
+        <span style="font-size:var(--text-xs);color:var(--text-muted);" id="je-count"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="je-table">
+          <thead>
+            <tr>
+              <th>JE No.</th>
+              <th>Source Doc</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Description</th>
+              <th>GL Account</th>
+              <th>Account Name</th>
+              <th class="r">Debit (฿)</th>
+              <th class="r">Credit (฿)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="je-body"></tbody>
+          <tfoot id="je-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allJE = [];
+
+    const GL_NAMES = {
+      '114101':'สินค้าสำเร็จรูป','114102':'วัตถุดิบ',
+      '511101':'ต้นทุนขาย','511102':'ซื้อสินค้าในประเทศ','511103':'ซื้อสินค้าต่างประเทศ','511120':'ซื้อวัสดุสิ้นเปลือง',
+      '113103':'ลูกหนี้พนักงาน','115301':'ภาษีซื้อ','115302':'ภาษีซื้อยังไม่ถึงกำหนด',
+      '211301':'เจ้าหนี้การค้าในประเทศ','211302':'เจ้าหนี้การค้าต่างประเทศ',
+      '212203':'ภาษีหัก ณ ที่จ่าย',
+      '522501':'ค่าธรรมเนียมธนาคาร','522601':'ค่าเดินทาง','522602':'ค่าที่พัก','522603':'ค่าอาหาร',
+      '522701':'ค่าน้ำมัน','522709':'ค่าใช้จ่ายเบ็ดเตล็ด',
+      '611101':'เงินเดือน','611201':'ค่าล่วงเวลา',
+    };
+
+    function getGLName(code) { return GL_NAMES[code] || code; }
+
+    function buildJEFromDoc(doc, type) {
+      const entries = [];
+      const amt = parseFloat(doc.total_amount || doc.amount || doc.compensation || 0);
+      if (amt <= 0) return entries;
+
+      const isPosted = ['approved','paid','sent_to_sap','received'].includes(doc.status);
+      const jeNum = 'JE' + (doc.doc_number || '').replace(/[A-Z-]/g, '');
+      const date = doc.doc_date || doc.ot_date || doc.created_at;
+      const desc = doc.vendor_name || doc.description || doc.user_name || doc.doc_number;
+      const taxCode = doc.tax_code || '';
+      const hasTax = taxCode.includes('07');
+      const taxRate = hasTax ? 0.07 : 0;
+      const baseAmt = hasTax ? Math.round(amt / (1 + taxRate) * 100) / 100 : amt;
+      const taxAmt = amt - baseAmt;
+
+      if (type === 'pr' || type === 'po') {
+        const acct = doc.sap_account || '114101';
+        const apAcct = (doc.vendor_code || '').startsWith('VF') ? '211302' : '211301';
+        entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc, account: acct, accountName: getGLName(acct), debit: baseAmt, credit: 0, status: isPosted ? 'posted' : 'pending' });
+        if (taxAmt > 0) entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc, account: '115301', accountName: getGLName('115301'), debit: taxAmt, credit: 0, status: isPosted ? 'posted' : 'pending' });
+        entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc: 'เจ้าหนี้ — ' + (doc.vendor_name||''), account: apAcct, accountName: getGLName(apAcct), debit: 0, credit: amt, status: isPosted ? 'posted' : 'pending' });
+      } else if (type === 'expense') {
+        const acct = doc.sap_account || '522709';
+        entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc: doc.description || doc.doc_number, account: acct, accountName: getGLName(acct), debit: baseAmt, credit: 0, status: isPosted ? 'posted' : 'pending' });
+        if (taxAmt > 0) entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc: doc.description, account: '115301', accountName: getGLName('115301'), debit: taxAmt, credit: 0, status: isPosted ? 'posted' : 'pending' });
+        entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc: 'เจ้าหนี้ — ' + (doc.requester_name||''), account: '211301', accountName: getGLName('211301'), debit: 0, credit: amt, status: isPosted ? 'posted' : 'pending' });
+      } else if (type === 'ot') {
+        entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc: 'ค่าล่วงเวลา — ' + (doc.user_name||''), account: '611201', accountName: 'ค่าล่วงเวลา', debit: amt, credit: 0, status: isPosted ? 'posted' : 'pending' });
+        entries.push({ jeNum, sourceDoc: doc.doc_number, type, date, desc: 'เจ้าหนี้พนักงาน — ' + (doc.user_name||''), account: '211301', accountName: getGLName('211301'), debit: 0, credit: amt, status: isPosted ? 'posted' : 'pending' });
+      }
+      return entries;
+    }
+
+    async function loadJE() {
+      try {
+        const [prs, pos, expenses, ots] = await Promise.all([API.getPRs(), API.getPOs(), API.getExpenses(), API.getOTs()]);
+
+        allJE = [];
+        prs.forEach(d => allJE.push(...buildJEFromDoc(d, 'pr')));
+        pos.forEach(d => allJE.push(...buildJEFromDoc(d, 'po')));
+        expenses.forEach(d => allJE.push(...buildJEFromDoc(d, 'expense')));
+        ots.forEach(d => allJE.push(...buildJEFromDoc(d, 'ot')));
+
+        renderStats();
+        renderJE();
+      } catch(e) {
+        document.getElementById('je-body').innerHTML = `<tr><td colspan="10">${emptyMsg('Error: '+e.message)}</td></tr>`;
+      }
+    }
+
+    function renderStats() {
+      const posted = allJE.filter(e => e.status === 'posted');
+      const pending = allJE.filter(e => e.status === 'pending');
+      const totalDr = posted.reduce((s,e) => s + e.debit, 0);
+      const totalCr = posted.reduce((s,e) => s + e.credit, 0);
+      const docCount = new Set(allJE.map(e => e.sourceDoc)).size;
+      const balanced = Math.abs(totalDr - totalCr) < 0.01;
+
+      document.getElementById('je-stats').innerHTML = `
+        <div class="je-stat"><div class="label">Total JE Lines</div><div class="value">${allJE.length}</div><div class="sub">${docCount} documents</div></div>
+        <div class="je-stat"><div class="label">Posted</div><div class="value" style="color:var(--success);">${posted.length}</div><div class="sub">${new Set(posted.map(e=>e.sourceDoc)).size} docs</div></div>
+        <div class="je-stat"><div class="label">Pending</div><div class="value" style="color:var(--warning);">${pending.length}</div><div class="sub">${new Set(pending.map(e=>e.sourceDoc)).size} docs</div></div>
+        <div class="je-stat"><div class="label">Total Debit</div><div class="value" style="color:var(--primary);">${fmtMoney(totalDr)}</div></div>
+        <div class="je-stat"><div class="label">Total Credit</div><div class="value" style="color:var(--success);">${fmtMoney(totalCr)}</div><div class="sub" style="color:${balanced?'var(--success)':'var(--danger)'};">${balanced?'✓ Balanced':'⚠ Not balanced'}</div></div>
+      `;
+    }
+
+    function renderJE() {
+      const typeFilter = document.getElementById('je-filter-type').value;
+      const statusFilter = document.getElementById('je-filter-status').value;
+      const search = (document.getElementById('je-search').value || '').toLowerCase();
+
+      let rows = allJE;
+      if (typeFilter) rows = rows.filter(e => e.type === typeFilter);
+      if (statusFilter) rows = rows.filter(e => e.status === statusFilter);
+      if (search) rows = rows.filter(e => [e.jeNum, e.sourceDoc, e.account, e.accountName, e.desc].join(' ').toLowerCase().includes(search));
+
+      document.getElementById('je-count').textContent = `Showing ${rows.length} of ${allJE.length} entries`;
+
+      if (!rows.length) {
+        document.getElementById('je-body').innerHTML = `<tr><td colspan="10">${emptyMsg('No journal entries found')}</td></tr>`;
+        document.getElementById('je-foot').innerHTML = '';
+        return;
+      }
+
+      // Group by source doc
+      let currentDoc = '';
+      const typeLabels = { pr: 'PR', po: 'PO', expense: 'EXP', ot: 'OT' };
+      const typeColors = { pr: 'primary', po: 'info', expense: 'warning', ot: 'purple' };
+
+      let html = '';
+      let totalDr = 0, totalCr = 0;
+
+      rows.forEach(e => {
+        if (e.sourceDoc !== currentDoc) {
+          currentDoc = e.sourceDoc;
+          html += `<tr class="je-group-header"><td colspan="10">${e.sourceDoc} — ${e.desc}</td></tr>`;
+        }
+        totalDr += e.debit;
+        totalCr += e.credit;
+        const link = e.type === 'expense' ? `doc-detail.html?type=expense&doc=${e.sourceDoc}` : `doc-detail.html?type=${e.type}&doc=${e.sourceDoc}`;
+
+        html += `<tr>
+          <td class="mono" style="font-size:var(--text-xs);color:var(--text-muted);">${e.jeNum}</td>
+          <td><span class="link" onclick="window.location='${link}'">${e.sourceDoc}</span></td>
+          <td><span class="badge badge-${typeColors[e.type]}" style="font-size:var(--text-2xs);">${typeLabels[e.type]}</span></td>
+          <td style="font-size:var(--text-sm);">${fmtDateShort(e.date)}</td>
+          <td style="font-size:var(--text-sm);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.desc}</td>
+          <td class="mono" style="color:var(--primary);font-weight:600;">${e.account}</td>
+          <td style="font-size:var(--text-sm);">${e.accountName}</td>
+          <td class="r ${e.debit > 0 ? 'dr' : ''}">${e.debit > 0 ? money(e.debit) : ''}</td>
+          <td class="r ${e.credit > 0 ? 'cr' : ''}">${e.credit > 0 ? money(e.credit) : ''}</td>
+          <td>${e.status === 'posted' ? '<span class="badge badge-success" style="font-size:var(--text-2xs);">Posted</span>' : '<span class="badge badge-gray" style="font-size:var(--text-2xs);">Pending</span>'}</td>
+        </tr>`;
+      });
+
+      document.getElementById('je-body').innerHTML = html;
+      document.getElementById('je-foot').innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:right;">Grand Total</td>
+          <td class="r dr">${money(totalDr)}</td>
+          <td class="r cr">${money(totalCr)}</td>
+          <td><span style="font-size:var(--text-xs);color:${Math.abs(totalDr-totalCr)<0.01?'var(--success)':'var(--danger)'};">${Math.abs(totalDr-totalCr)<0.01?'✓ Balanced':'⚠ Diff: '+money(Math.abs(totalDr-totalCr))}</span></td>
+        </tr>`;
+    }
+
+    function exportCSV() {
+      const rows = [['JE No.','Source Doc','Type','Date','Description','GL Account','Account Name','Debit','Credit','Status']];
+      allJE.forEach(e => rows.push([e.jeNum, e.sourceDoc, e.type.toUpperCase(), e.date, e.desc, e.account, e.accountName, e.debit||'', e.credit||'', e.status]));
+      const csv = '\uFEFF' + rows.map(r => r.map(c => '"'+(c+'').replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'journal-entries.csv'; a.click();
+    }
+
+    loadJE();
+  </script>
+</body>
+</html>

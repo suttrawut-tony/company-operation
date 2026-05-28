@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Item Master</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1>Item Master</h1></div>
+      <button class="btn btn-primary" onclick="openItemModal()">+ New Item</button>
+    </div>
+    <div style="margin-bottom:16px;display:flex;gap:12px;">
+      <input type="text" class="form-input" id="item-search" placeholder="Search code, name..." oninput="renderItems()" style="width:300px;">
+      <select class="form-select" id="item-cat-filter" onchange="renderItems()" style="width:150px;">
+        <option value="">All Category</option>
+        <option value="equipment">Equipment</option>
+        <option value="material">Material</option>
+        <option value="service">Service</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="table-container">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:10px;">Code</th><th style="text-align:left;padding:10px;">Name</th><th style="text-align:left;padding:10px;">Name (TH)</th><th style="padding:10px;">Category</th><th style="padding:10px;">UOM</th><th style="text-align:right;padding:10px;">Unit Price</th><th style="padding:10px;">GL</th><th style="padding:10px;">Tax</th><th style="padding:10px;">Actions</th></tr></thead>
+          <tbody id="item-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal-overlay" id="item-modal" onclick="if(event.target===this)closeItemModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:520px;max-width:95vw;">
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="item-modal-title">New Item</h3><button onclick="closeItemModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px;">
+          <input type="hidden" id="im-id">
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-input" id="im-code" placeholder="ITM-XXX"></div>
+            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="im-name"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Name (TH)</label><input type="text" class="form-input" id="im-name-th"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Category</label><select class="form-input" id="im-cat"><option value="equipment">Equipment</option><option value="material">Material</option><option value="service">Service</option></select></div>
+            <div class="form-group"><label class="form-label">UOM</label><input type="text" class="form-input" id="im-uom" value="EA"></div>
+            <div class="form-group"><label class="form-label">Unit Price</label><input type="number" class="form-input" id="im-price" min="0"></div>
+            <div class="form-group"><label class="form-label">GL Account</label><input type="text" class="form-input" id="im-gl" value="114101"></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="closeItemModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveItem()">Save</button>
+        </div>
+      </div>
+    </div>
+  </main></div>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allItems = [];
+    async function loadItems() {
+      allItems = await API.get('/master/items');
+      renderItems();
+    }
+    function renderItems() {
+      let list = allItems;
+      const s = (document.getElementById('item-search')?.value||'').toLowerCase();
+      const c = document.getElementById('item-cat-filter')?.value;
+      if (s) list = list.filter(i => (i.item_code+i.item_name+i.item_name_th).toLowerCase().includes(s));
+      if (c) list = list.filter(i => i.category === c);
+      document.getElementById('item-table').innerHTML = list.map(i => `
+        <tr style="border-bottom:1px solid var(--border-light);cursor:pointer;" onclick="openEditItem('${i.id}')">
+          <td style="padding:10px;font-weight:600;color:var(--primary);">${i.item_code}</td>
+          <td style="padding:10px;">${i.item_name}</td>
+          <td style="padding:10px;color:var(--text-secondary);">${i.item_name_th||''}</td>
+          <td style="padding:10px;text-align:center;"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg-hover);">${i.category}</span></td>
+          <td style="padding:10px;text-align:center;">${i.uom}</td>
+          <td style="padding:10px;text-align:right;font-weight:600;">${fmtMoney(parseFloat(i.unit_price||0))}</td>
+          <td style="padding:10px;text-align:center;font-size:11px;">${i.gl_account||''}</td>
+          <td style="padding:10px;text-align:center;font-size:11px;">${i.tax_code||''}</td>
+          <td style="padding:10px;text-align:center;">${i.is_active?'<span style="color:var(--success);">Active</span>':'<span style="color:var(--text-muted);">Inactive</span>'}</td>
+        </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">No items</td></tr>';
+    }
+    function openItemModal() { document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }
+    function openEditItem(id) { const i=allItems.find(x=>x.id===id); if(!i)return; document.getElementById('im-id').value=id; document.getElementById('im-code').value=i.item_code; document.getElementById('im-code').readOnly=true; document.getElementById('im-name').value=i.item_name; document.getElementById('im-name-th').value=i.item_name_th||''; document.getElementById('im-cat').value=i.category||'equipment'; document.getElementById('im-uom').value=i.uom||'EA'; document.getElementById('im-price').value=i.unit_price||''; document.getElementById('im-gl').value=i.gl_account||''; document.getElementById('item-modal-title').textContent='Edit Item'; document.getElementById('item-modal').style.display='flex'; }
+    function closeItemModal() { document.getElementById('item-modal').style.display='none'; }
+    async function saveItem() {
+      const id=document.getElementById('im-id').value;
+      const body={item_code:document.getElementById('im-code').value,item_name:document.getElementById('im-name').value,item_name_th:document.getElementById('im-name-th').value,category:document.getElementById('im-cat').value,uom:document.getElementById('im-uom').value,unit_price:parseFloat(document.getElementById('im-price').value)||0,gl_account:document.getElementById('im-gl').value};
+      try { if(id) await API.put('/master/items/'+id,body); else await API.post('/master/items',body); closeItemModal(); await loadItems(); } catch(e){alert('Error: '+e.message);}
+    }
+    loadItems();
+  </script>
+</body></html>

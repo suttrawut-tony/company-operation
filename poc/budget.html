@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Budget</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .budget-tabs {
+      display: flex; gap: 0; margin-bottom: 24px;
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .budget-tab {
+      flex: 1; padding: 14px 20px; text-align: center;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      color: var(--text-secondary); border-right: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .budget-tab:last-child { border-right: none; }
+    .budget-tab:hover { background: var(--bg-hover); }
+    .budget-tab.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+
+    .compare-table th { text-align: right; }
+    .compare-table th:first-child, .compare-table td:first-child { text-align: left; }
+    .compare-table td { text-align: right; font-variant-numeric: tabular-nums; }
+    .compare-table .over { color: var(--danger); font-weight: 600; }
+    .compare-table .under { color: var(--success); font-weight: 600; }
+    .compare-table .total-row td { font-weight: 700; border-top: 2px solid var(--border); }
+
+    .var-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px; border-radius: var(--radius-full);
+      font-size: 11px; font-weight: 600;
+    }
+    .var-badge.over { background: var(--danger-bg); color: var(--danger); }
+    .var-badge.under { background: var(--success-bg); color: var(--success); }
+    .var-badge.neutral { background: var(--bg-hover); color: var(--text-secondary); }
+
+    .filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+
+    .summary-strip {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px;
+    }
+    .summary-item {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+    }
+    .summary-item .s-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+    .summary-item .s-value { font-size: 20px; font-weight: 800; margin-top: 4px; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Comparison View */
+    .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .comp-table th { background: var(--bg-light); padding: 10px 12px; text-align: right; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .comp-table th:first-child { text-align: left; }
+    .comp-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-light); text-align: right; }
+    .comp-table td:first-child { text-align: left; font-weight: 500; }
+    .comp-table tr:hover { background: var(--bg-hover); }
+    .comp-table .total-row { background: var(--bg-light); font-weight: 700; }
+    .comp-table .total-row td { border-top: 2px solid var(--border); }
+
+    /* Progress mini bar */
+    .pct-bar { width: 60px; height: 6px; background: var(--bg-hover); border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    .pct-bar-fill { height: 100%; border-radius: 3px; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+      animation: slideUp 0.2s;
+    }
+    .modal-header { padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-close { border: none; background: none; font-size: 20px; cursor: pointer; color: var(--text-muted); padding: 4px 8px; border-radius: var(--radius); }
+    .modal-close:hover { background: var(--bg-hover); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 8px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .line-row { display: grid; grid-template-columns: 2fr 1fr 1fr 32px; gap: 8px; align-items: end; margin-bottom: 8px; }
+    .line-row .form-input { font-size: 12px; padding: 7px 10px; }
+    .btn-remove-line { border: none; background: var(--danger-bg); color: var(--danger); border-radius: var(--radius); cursor: pointer; font-size: 14px; width: 32px; height: 34px; display: flex; align-items: center; justify-content: center; }
+    .btn-remove-line:hover { background: var(--danger); color: #fff; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Source breakdown */
+    .src-section { margin-bottom:16px; }
+    .src-section h4 { font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+    .src-section h4 .src-badge { background:var(--primary-light); color:var(--primary); padding:2px 8px; border-radius:var(--radius-full); font-size:10px; }
+    .src-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .src-table th { background:var(--bg-light); padding:6px 10px; text-align:left; font-size:10px; text-transform:uppercase; color:var(--text-muted); }
+    .src-table td { padding:8px 10px; border-bottom:1px solid var(--border-light); }
+    .src-table tr:hover { background:var(--bg-hover); }
+    .src-table .amt { text-align:right; font-weight:600; font-variant-numeric:tabular-nums; }
+    .src-total { background:var(--bg-light); font-weight:700; }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Budget Management</h1>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="openNewBudget()">+ New Budget</button>
+        <button class="btn btn-secondary" onclick="exportBudgetCSV()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export</button>
+      </div>
+    </div>
+
+    <!-- Budget Sub-tabs -->
+    <div class="budget-tabs">
+      <div class="budget-tab active" onclick="switchTab('master',this)">Master Budget</div>
+      <div class="budget-tab" onclick="switchTab('project',this)">Project Budget</div>
+      <div class="budget-tab" onclick="switchTab('comparison',this)">Comparison View</div>
+    </div>
+
+    <!-- Summary Strip (shared) -->
+    <div class="summary-strip" id="summaryStrip"></div>
+
+    <!-- ═══ Tab 1: Master Budget ═══ -->
+    <div class="tab-panel active" id="panel-master">
+      <div class="filter-bar">
+        <select class="form-select" id="filterStatus" style="width:140px;" onchange="loadMaster()">
+          <option value="">All Status</option>
+          <option value="draft">Draft</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+        </select>
+        <select class="form-select" id="filterYear" style="width:140px;" onchange="loadMaster()">
+          <option value="">All Years</option>
+          <option value="2026">Year 2026</option>
+          <option value="2025">Year 2025</option>
+        </select>
+        <select class="form-select" id="filterProject" style="width:180px;" onchange="loadMaster()">
+          <option value="">All Projects</option>
+        </select>
+      </div>
+      <div id="masterCards"></div>
+    </div>
+
+    <!-- ═══ Tab 2: Project Budget ═══ -->
+    <div class="tab-panel" id="panel-project">
+      <div class="filter-bar">
+        <select class="form-select" id="projBudgetSelect" style="width:320px;" onchange="loadProjectBudget()">
+          <option value="">-- เลือกโปรเจกต์ --</option>
+        </select>
+      </div>
+      <div id="projectBudgetContent">
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>
+      </div>
+    </div>
+
+    <!-- ═══ Tab 3: Comparison View ═══ -->
+    <div class="tab-panel" id="panel-comparison">
+      <div id="comparisonContent"></div>
+    </div>
+
+    <!-- ═══ New Budget Modal ═══ -->
+    <div class="modal-overlay" id="budget-modal" onclick="if(event.target===this)closeBudgetModal()">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="budget-modal-title">สร้าง Budget ใหม่</h3>
+          <button class="modal-close" onclick="closeBudgetModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">โปรเจกต์</label>
+              <select class="form-input" id="bg-project" onchange="autoFillBudgetCode()">
+                <option value="">เลือกโปรเจกต์</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Budget Code</label>
+              <input type="text" class="form-input" id="bg-code" placeholder="e.g. BG-2026-006">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ชื่อ Budget</label>
+              <input type="text" class="form-input" id="bg-name" placeholder="e.g. Budget Marine Nav">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ปีงบ</label>
+              <select class="form-input" id="bg-year">
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <label class="form-label" style="margin:0;">Group Budgets</label>
+              <button class="btn btn-secondary btn-sm" onclick="addLineRow()" style="font-size:11px;">+ Add Line</button>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 32px;gap:8px;margin-bottom:6px;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">
+              <span>รายการ</span><span>TOR</span><span>Budget</span><span></span>
+            </div>
+            <div id="line-items-container"></div>
+            <div style="margin-top:8px;padding:10px;background:var(--bg-light);border-radius:var(--radius);display:flex;justify-content:space-between;font-size:13px;font-weight:700;">
+              <span>Total</span>
+              <span id="bg-total">TOR: ฿0 | Budget: ฿0</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="closeBudgetModal()">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" id="bg-save-btn" onclick="saveBudget()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div class="modal-overlay" id="transfer-modal" onclick="if(event.target===this)closeTransferModal()">
+      <div class="modal-box" style="width:460px;">
+        <div class="modal-header">
+          <h3>โอนงบระหว่างรายการ</h3>
+          <button class="modal-close" onclick="closeTransferModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="tf-budget-id">
+          <div class="form-group">
+            <label class="form-label">โอนจาก</label>
+            <select class="form-input" id="tf-from"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">โอนไป</label>
+            <select class="form-input" id="tf-to"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">จำนวนเงิน (฿)</label>
+            <input type="number" class="form-input" id="tf-amount" min="1" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เหตุผล</label>
+            <input type="text" class="form-input" id="tf-reason" placeholder="เหตุผลการโอน">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="closeTransferModal()">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" onclick="saveTransfer()">โอนงบ</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  </div>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allBudgets = [];
+    let allProjects = [];
+    let currentTab = 'master';
+
+    // ═══ Helpers ═══
+    function varianceBadge(budget, actual) {
+      if (actual > budget) return '<span class="var-badge over">Over</span>';
+      const pct = budget > 0 ? (actual / budget) * 100 : 0;
+      if (pct >= 90) return '<span class="var-badge neutral">Close</span>';
+      return '<span class="var-badge under">Under</span>';
+    }
+    function varianceClass(budget, actual) { return actual > budget ? 'over' : 'under'; }
+    function varianceText(budget, actual) {
+      const v = budget - actual; // positive = under budget (green), negative = over budget (red)
+      if (v >= 0) return '<span style="color:var(--success);">฿' + Number(v).toLocaleString('th-TH') + '</span>';
+      return '<span style="color:var(--danger);">-฿' + Number(Math.abs(v)).toLocaleString('th-TH') + '</span>';
+    }
+    function pctBar(pct, color) {
+      return '<span class="pct-bar"><span class="pct-bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+color+';"></span></span>' + pct.toFixed(0) + '%';
+    }
+
+    function renderSummary(budgets) {
+      const totTor = budgets.reduce((s, b) => s + (parseFloat(b.total_tor) || 0), 0);
+      const totBudget = budgets.reduce((s, b) => s + (parseFloat(b.total_budget) || 0), 0);
+      const totActual = budgets.reduce((s, b) => s + (parseFloat(b.total_actual) || 0), 0);
+      const variance = totBudget - totActual;
+      const varColor = variance < 0 ? 'var(--danger)' : 'var(--success)';
+      document.getElementById('summaryStrip').innerHTML = `
+        <div class="summary-item"><div class="s-label">Total TOR</div><div class="s-value">${fmtMoney(totTor)}</div></div>
+        <div class="summary-item"><div class="s-label">Total Budget</div><div class="s-value" style="color:var(--primary);">${fmtMoney(totBudget)}</div></div>
+        <div class="summary-item"><div class="s-label">Total Actual</div><div class="s-value" style="color:var(--warning);">${fmtMoney(totActual)}</div></div>
+        <div class="summary-item"><div class="s-label">Variance</div><div class="s-value" style="color:${varColor};">${variance >= 0 ? '-' : '+'}${fmtMoney(Math.abs(variance))}</div></div>`;
+    }
+
+    // ═══ Tab Switching ═══
+    function switchTab(tab, el) {
+      currentTab = tab;
+      document.querySelectorAll('.budget-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + tab).classList.add('active');
+
+      if (tab === 'master') loadMaster();
+      else if (tab === 'project') loadProjectBudget();
+      else if (tab === 'comparison') loadComparison();
+    }
+
+    // ═══ Tab 1: Master Budget ═══
+    let cardCounter = 0;
+    function renderBudgetCard(b, clickable) {
+      cardCounter++;
+      const uid = b.id + '-' + cardCounter; // unique per render
+      const st = b.status || 'draft';
+      let actionBtns = '';
+      if (st === 'draft') actionBtns = '<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();submitBudget(\''+b.id+'\')">Submit</button>';
+      else if (st.includes('pending')) {
+        actionBtns = '<button class="btn btn-sm btn-success" onclick="event.stopPropagation();approveBudget(\''+b.id+'\')">Approve</button>' +
+                     '<button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="event.stopPropagation();rejectBudget(\''+b.id+'\')">Reject</button>';
+      }
+      const revLabel = b.revision > 0 ? ' <span style="font-size:10px;color:var(--text-muted);">(Rev.'+b.revision+')</span>' : '';
+      const controlBadge = b.control_mode === 'block' ? '<span class="var-badge over" style="font-size:9px;">Block Mode</span>' : b.control_mode === 'warn' ? '<span class="var-badge neutral" style="font-size:9px;">Warn '+b.warn_threshold+'%</span>' : '';
+
+      const clickAttr = clickable ? ` style="margin-bottom:20px;cursor:pointer;" onclick="viewProjectBudget('${b.project_id}')"` : ' style="margin-bottom:20px;"';
+
+      return `
+        <div class="card"${clickAttr} data-budget-id="${b.id}" data-lines-uid="${uid}">
+          <div class="card-header">
+            <h2>${b.code || ''} — ${b.name || ''}${revLabel}</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+              ${b._project_code ? '<span style="background:var(--bg-light);padding:2px 8px;border-radius:var(--radius-full);font-size:11px;font-weight:500;">'+b._project_code+'</span>' : ''}
+              ${statusBadge(st)}
+              ${actionBtns}
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="compare-table">
+              <thead><tr>
+                <th style="text-align:left;">Group Budget</th><th>TOR</th><th>Budget</th><th>Committed</th><th>Actual</th><th>Variance</th><th>% Used</th><th>Status</th>
+              </tr></thead>
+              <tbody id="lines-${uid}">
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border-light);display:flex;flex-wrap:wrap;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleSources('${b.project_id}','${uid}')" id="src-btn-${uid}" style="font-size:11px;">
+              ที่มายอด
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openTransfer('${b.id}')" style="font-size:11px;">
+              โอนงบ
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleRevisions('${b.id}','${uid}')" id="rev-btn-${uid}" style="font-size:11px;">
+              ประวัติแก้ไข
+            </button>
+            ${controlBadge}
+            ${b.reject_reason ? '<span style="font-size:11px;color:var(--danger);">Rejected: '+b.reject_reason+'</span>' : ''}
+          </div>
+          <div id="sources-${uid}" style="display:none;padding:0 20px 16px;"></div>
+          <div id="revisions-${uid}" style="display:none;padding:0 20px 16px;"></div>
+        </div>`;
+    }
+
+    function renderLines(uid, lines) {
+      const tbody = document.getElementById('lines-' + uid);
+      if (!tbody) return;
+      if (!lines || !lines.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:12px;">No line items</td></tr>'; return; }
+      let totT=0, totB=0, totC=0, totA=0, html='';
+      for (const l of lines) {
+        const t=parseFloat(l.tor_amount)||0, b=parseFloat(l.budget_amount)||0, c=parseFloat(l.committed_amount)||0, a=parseFloat(l.actual_amount)||0;
+        totT+=t; totB+=b; totC+=c; totA+=a;
+        const used = c + a;
+        const pct = b>0 ? (used/b*100).toFixed(1) : '0.0';
+        html += `<tr>
+          <td><strong>${l.name||l.category||'-'}</strong></td>
+          <td>${fmtMoney(t)}</td><td>${fmtMoney(b)}</td>
+          <td style="color:var(--info);">${c > 0 ? fmtMoney(c) : '-'}</td>
+          <td>${fmtMoney(a)}</td>
+          <td>${varianceText(b,a)}</td><td>${pct}%</td><td>${varianceBadge(b,a)}</td>
+        </tr>`;
+      }
+      const totUsed = totC + totA;
+      const totPct = totB>0 ? (totUsed/totB*100).toFixed(1) : '0.0';
+      html += `<tr class="total-row">
+        <td><strong>TOTAL</strong></td><td><strong>${fmtMoney(totT)}</strong></td><td><strong>${fmtMoney(totB)}</strong></td>
+        <td style="color:var(--info);"><strong>${totC > 0 ? fmtMoney(totC) : '-'}</strong></td>
+        <td><strong>${fmtMoney(totA)}</strong></td>
+        <td><strong>${varianceText(totB,totA)}</strong></td><td><strong>${totPct}%</strong></td><td>${varianceBadge(totB,totA)}</td>
+      </tr>`;
+      tbody.innerHTML = html;
+    }
+
+    let dataLoaded = false;
+    async function loadMaster() {
+      try {
+        // Save current filter values before repopulating
+        const sf = document.getElementById('filterStatus').value;
+        const yf = document.getElementById('filterYear').value;
+        const pf = document.getElementById('filterProject').value;
+
+        if (!dataLoaded) {
+          [allBudgets, allProjects] = await Promise.all([API.getBudgets(), API.getProjects()]);
+          allBudgets = Array.isArray(allBudgets) ? allBudgets : [];
+          allProjects = Array.isArray(allProjects) ? allProjects : [];
+          allBudgets.forEach(b => { const proj = allProjects.find(p => p.id === b.project_id); b._project_code = proj ? proj.code : ''; });
+
+          // Populate all dropdowns once
+          const projOptions = allProjects.map(p => `<option value="${p.id}">${p.code} — ${p.name}</option>`).join('');
+          document.getElementById('filterProject').innerHTML = '<option value="">All Projects</option>' + projOptions;
+          document.getElementById('projBudgetSelect').innerHTML = '<option value="">-- เลือกโปรเจกต์ --</option>' + projOptions;
+          document.getElementById('bg-project').innerHTML = '<option value="">เลือกโปรเจกต์</option>' + projOptions;
+          dataLoaded = true;
+        }
+
+        // Restore filter values
+        document.getElementById('filterStatus').value = sf;
+        document.getElementById('filterYear').value = yf;
+        document.getElementById('filterProject').value = pf;
+        let filtered = allBudgets;
+        if (sf) filtered = filtered.filter(b => sf === 'pending' ? b.status.includes('pending') : b.status === sf);
+        if (yf) filtered = filtered.filter(b => String(b.fiscal_year) === yf);
+        if (pf) filtered = filtered.filter(b => b.project_id === pf);
+
+        renderSummary(filtered);
+        const container = document.getElementById('masterCards');
+        if (!filtered.length) { container.innerHTML = emptyMsg('No budget records found'); return; }
+        container.innerHTML = filtered.map(b => renderBudgetCard(b, true)).join('');
+
+        // Load lines using uid from rendered cards
+        const cards = container.querySelectorAll('[data-budget-id]');
+        for (const card of cards) {
+          const bid = card.dataset.budgetId;
+          const uid = card.dataset.linesUid;
+          try { const d = await API.getBudget(bid); renderLines(uid, d.lines || []); } catch(e) { renderLines(uid, []); }
+        }
+      } catch(err) { document.getElementById('masterCards').innerHTML = emptyMsg('Error: ' + err.message); }
+    }
+
+    // ═══ Tab 2: Project Budget ═══
+    async function loadProjectBudget(forceProjectId) {
+      const projId = forceProjectId || document.getElementById('projBudgetSelect').value;
+      const container = document.getElementById('projectBudgetContent');
+      if (!projId) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>'; return; }
+
+      // Reload data if empty
+      if (!allBudgets.length || !allProjects.length) {
+        try {
+          [allBudgets, allProjects] = await Promise.all([API.getBudgets(), API.getProjects()]);
+          allBudgets = Array.isArray(allBudgets) ? allBudgets : [];
+          allProjects = Array.isArray(allProjects) ? allProjects : [];
+          allBudgets.forEach(b => { const p = allProjects.find(x => x.id === b.project_id); b._project_code = p ? p.code : ''; });
+          // Re-populate dropdown
+          const sel = document.getElementById('projBudgetSelect');
+          sel.innerHTML = '<option value="">-- เลือกโปรเจกต์ --</option>' + allProjects.map(p => `<option value="${p.id}">${p.code} — ${p.name}</option>`).join('');
+          sel.value = projId;
+        } catch(e) {}
+      }
+
+      const proj = allProjects.find(p => p.id === projId);
+      const projBudgets = allBudgets.filter(b => b.project_id === projId);
+
+      if (!projBudgets.length) {
+        container.innerHTML = `
+          <div class="card" style="text-align:center;padding:40px;">
+            <h3>${proj ? proj.code + ' — ' + proj.name : ''}</h3>
+            <p style="color:var(--text-muted);margin:12px 0;">ยังไม่มี Budget สำหรับโปรเจกต์นี้</p>
+            <button class="btn btn-primary" onclick="openNewBudget('${projId}')">+ สร้าง Budget ใหม่</button>
+          </div>`;
+        renderSummary([]);
+        return;
+      }
+
+      renderSummary(projBudgets);
+
+      // Show project info + budget cards
+      let html = `<div style="margin-bottom:16px;padding:12px 16px;background:var(--bg-light);border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;">
+        <div><strong>${proj ? proj.code : ''}</strong> — ${proj ? proj.name : ''}</div>
+        <button class="btn btn-primary btn-sm" onclick="openNewBudget('${projId}')">+ เพิ่ม Budget</button>
+      </div>`;
+
+      html += projBudgets.map(b => renderBudgetCard(b, false)).join('');
+      container.innerHTML = html;
+
+      // Load line items using uid from rendered cards
+      const cards = container.querySelectorAll('[data-budget-id]');
+      for (const card of cards) {
+        const bid = card.dataset.budgetId;
+        const uid = card.dataset.linesUid;
+        try { const d = await API.getBudget(bid); renderLines(uid, d.lines || []); } catch(e) { renderLines(uid, []); }
+      }
+    }
+
+    function viewProjectBudget(projectId) {
+      // Make sure dropdown has the option
+      const sel = document.getElementById('projBudgetSelect');
+      if (!sel.querySelector(`option[value="${projectId}"]`)) {
+        const proj = allProjects.find(p => p.id === projectId);
+        if (proj) {
+          const opt = document.createElement('option');
+          opt.value = proj.id;
+          opt.textContent = proj.code + ' — ' + proj.name;
+          sel.appendChild(opt);
+        }
+      }
+      sel.value = projectId;
+
+      // Switch to Project Budget tab
+      document.querySelectorAll('.budget-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.budget-tab')[1].classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-project').classList.add('active');
+      currentTab = 'project';
+      loadProjectBudget(projectId);
+    }
+
+    // ═══ Tab 3: Comparison View ═══
+    async function loadComparison() {
+      const container = document.getElementById('comparisonContent');
+
+      // Ensure data is loaded
+      if (!allBudgets.length || !allProjects.length) {
+        try {
+          [allBudgets, allProjects] = await Promise.all([API.getBudgets(), API.getProjects()]);
+          allBudgets = Array.isArray(allBudgets) ? allBudgets : [];
+          allProjects = Array.isArray(allProjects) ? allProjects : [];
+          allBudgets.forEach(b => { const proj = allProjects.find(p => p.id === b.project_id); b._project_code = proj ? proj.code : ''; });
+          dataLoaded = true;
+        } catch(e) { container.innerHTML = emptyMsg('Error: ' + e.message); return; }
+      }
+
+      renderSummary(allBudgets.filter(b => b.status === 'approved'));
+
+      let html = `<div class="card"><div class="card-header"><h2>TOR vs Budget vs Actual — ทุกโปรเจกต์</h2></div>
+        <div class="table-container"><table class="comp-table">
+        <thead><tr><th style="text-align:left;">Project</th><th>TOR</th><th>Budget</th><th>Actual</th><th>Remaining</th><th>% Used</th><th>Variance</th></tr></thead><tbody>`;
+
+      let gTor=0, gBud=0, gAct=0;
+      for (const p of allProjects) {
+        const pBudgets = allBudgets.filter(b => b.project_id === p.id && b.status === 'approved');
+        if (!pBudgets.length) continue;
+        const tor = pBudgets.reduce((s,b) => s + (parseFloat(b.total_tor)||0), 0);
+        const bud = pBudgets.reduce((s,b) => s + (parseFloat(b.total_budget)||0), 0);
+        const act = pBudgets.reduce((s,b) => s + (parseFloat(b.total_actual)||0), 0);
+        const rem = bud - act;
+        const pct = bud > 0 ? (act/bud*100) : 0;
+        const pctColor = pct > 100 ? 'var(--danger)' : pct > 80 ? 'var(--warning)' : 'var(--success)';
+        gTor+=tor; gBud+=bud; gAct+=act;
+
+        html += `<tr style="cursor:pointer;" onclick="viewProjectBudget('${p.id}')">
+          <td><strong>${p.code}</strong><br><span style="font-size:11px;color:var(--text-muted);">${p.name}</span></td>
+          <td>${fmtMoney(tor)}</td><td>${fmtMoney(bud)}</td>
+          <td style="color:${act>bud?'var(--danger)':'inherit'};">${fmtMoney(act)}</td>
+          <td style="color:${rem<0?'var(--danger)':'var(--success)'};">${fmtMoney(rem)}</td>
+          <td>${pctBar(pct, pctColor)}</td>
+          <td class="${varianceClass(bud,act)}">${varianceText(bud,act)}</td>
+        </tr>`;
+      }
+
+      const gRem = gBud - gAct;
+      const gPct = gBud > 0 ? (gAct/gBud*100) : 0;
+      html += `<tr class="total-row"><td><strong>TOTAL</strong></td><td><strong>${fmtMoney(gTor)}</strong></td><td><strong>${fmtMoney(gBud)}</strong></td><td><strong>${fmtMoney(gAct)}</strong></td><td style="color:${gRem<0?'var(--danger)':'var(--success)'}"><strong>${fmtMoney(gRem)}</strong></td><td><strong>${gPct.toFixed(0)}%</strong></td><td class="${varianceClass(gBud,gAct)}"><strong>${varianceText(gBud,gAct)}</strong></td></tr>`;
+      html += '</tbody></table></div></div>';
+      container.innerHTML = html;
+    }
+
+    // ═══ Status Actions ═══
+    function reRenderCard(id) {
+      const b = allBudgets.find(x => x.id === id);
+      if (!b) return;
+      const el = document.querySelector(`[data-budget-id="${id}"]`);
+      if (el) { const tmp = document.createElement('div'); tmp.innerHTML = renderBudgetCard(b, currentTab === 'master'); el.replaceWith(tmp.firstElementChild); }
+    }
+    async function submitBudget(id) {
+      const b = allBudgets.find(x => x.id === id); if (!b) return;
+      const old = b.status; b.status = 'pending_manager'; reRenderCard(id);
+      try { await API.submitBudget(id); } catch(e) { b.status = old; reRenderCard(id); alert('Error: '+e.message); }
+    }
+    async function approveBudget(id) {
+      const b = allBudgets.find(x => x.id === id); if (!b) return;
+      const old = b.status; b.status = {pending_manager:'pending_executive',pending_executive:'approved'}[b.status]||'approved'; reRenderCard(id);
+      try { await API.approveBudget(id); } catch(e) { b.status = old; reRenderCard(id); alert('Error: '+e.message); }
+    }
+
+    // ═══ New Budget Modal ═══
+    function openNewBudget(projectId) {
+      document.getElementById('budget-modal-title').textContent = 'สร้าง Budget ใหม่';
+      document.getElementById('bg-project').value = projectId || '';
+      document.getElementById('bg-code').value = '';
+      document.getElementById('bg-name').value = '';
+      document.getElementById('bg-year').value = '2026';
+      document.getElementById('line-items-container').innerHTML = '';
+      addLineRow(); addLineRow(); addLineRow();
+      autoFillBudgetCode();
+      updateLineTotal();
+      document.getElementById('budget-modal').classList.add('show');
+    }
+    function closeBudgetModal() { document.getElementById('budget-modal').classList.remove('show'); }
+
+    function autoFillBudgetCode() {
+      const projId = document.getElementById('bg-project').value;
+      const proj = allProjects.find(p => p.id === projId);
+      if (proj) {
+        const num = allBudgets.filter(b => b.project_id === projId).length + 1;
+        const yr = new Date().getFullYear();
+        document.getElementById('bg-code').value = 'BG-' + yr + '-' + String(num).padStart(3, '0');
+        document.getElementById('bg-name').value = 'Budget ' + proj.name;
+      }
+    }
+
+    function addLineRow() {
+      const c = document.getElementById('line-items-container');
+      const row = document.createElement('div');
+      row.className = 'line-row';
+      row.innerHTML = `
+        <input type="text" class="form-input" placeholder="รายการ e.g. Material" data-ln-name>
+        <input type="number" class="form-input" placeholder="TOR" data-ln-tor oninput="updateLineTotal()">
+        <input type="number" class="form-input" placeholder="Budget" data-ln-bud oninput="updateLineTotal()">
+        <button class="btn-remove-line" onclick="this.parentElement.remove();updateLineTotal()">&times;</button>`;
+      c.appendChild(row);
+    }
+
+    function updateLineTotal() {
+      let totT = 0, totB = 0;
+      document.querySelectorAll('.line-row').forEach(row => {
+        totT += parseFloat(row.querySelector('[data-ln-tor]')?.value || 0);
+        totB += parseFloat(row.querySelector('[data-ln-bud]')?.value || 0);
+      });
+      document.getElementById('bg-total').textContent = 'TOR: ฿' + Number(totT).toLocaleString('th-TH') + ' | Budget: ฿' + Number(totB).toLocaleString('th-TH');
+    }
+
+    async function saveBudget() {
+      const projectId = document.getElementById('bg-project').value;
+      const code = document.getElementById('bg-code').value.trim();
+      const name = document.getElementById('bg-name').value.trim();
+      const year = document.getElementById('bg-year').value;
+      if (!projectId || !code || !name) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+
+      const lines = [];
+      document.querySelectorAll('.line-row').forEach((row, i) => {
+        const ln = row.querySelector('[data-ln-name]').value.trim();
+        const tor = parseFloat(row.querySelector('[data-ln-tor]').value) || 0;
+        const bud = parseFloat(row.querySelector('[data-ln-bud]').value) || 0;
+        if (ln) lines.push({ name: ln, category: 'material', tor_amount: tor, budget_amount: bud, actual_amount: 0, sort_order: i+1 });
+      });
+      if (!lines.length) { alert('กรุณาเพิ่มรายการอย่างน้อย 1 รายการ'); return; }
+
+      const btn = document.getElementById('bg-save-btn');
+      btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+
+      try {
+        await API.createBudget({ project_id: projectId, code, name, fiscal_year: parseInt(year), lines });
+        closeBudgetModal();
+        dataLoaded = false; // force reload
+        await loadMaster();
+        if (currentTab === 'project') loadProjectBudget();
+      } catch(err) { alert('Error: ' + err.message); }
+      finally { btn.disabled = false; btn.textContent = 'บันทึก'; }
+    }
+
+    // ═══ Reject Budget ═══
+    async function rejectBudget(id) {
+      const reason = prompt('เหตุผลในการตีกลับ:');
+      if (reason === null) return;
+      const b = allBudgets.find(x => x.id === id);
+      if (!b) return;
+      const old = b.status;
+      b.status = 'draft'; b.reject_reason = reason;
+      reRenderCard(id);
+      try { await API.post('/budget/' + id + '/reject', { reason }); }
+      catch(e) { b.status = old; b.reject_reason = ''; reRenderCard(id); alert('Error: '+e.message); }
+    }
+
+    // ═══ Budget Transfer ═══
+    let transferLines = [];
+    async function openTransfer(budgetId) {
+      document.getElementById('tf-budget-id').value = budgetId;
+      try {
+        const d = await API.getBudget(budgetId);
+        transferLines = d.lines || [];
+        const opts = transferLines.map(l => `<option value="${l.id}">${l.name} (฿${Number(parseFloat(l.budget_amount)||0).toLocaleString()})</option>`).join('');
+        document.getElementById('tf-from').innerHTML = opts;
+        document.getElementById('tf-to').innerHTML = opts;
+        document.getElementById('tf-amount').value = '';
+        document.getElementById('tf-reason').value = '';
+        document.getElementById('transfer-modal').classList.add('show');
+      } catch(e) { alert('Error loading lines: ' + e.message); }
+    }
+    function closeTransferModal() { document.getElementById('transfer-modal').classList.remove('show'); }
+
+    async function saveTransfer() {
+      const budgetId = document.getElementById('tf-budget-id').value;
+      const from = document.getElementById('tf-from').value;
+      const to = document.getElementById('tf-to').value;
+      const amount = parseFloat(document.getElementById('tf-amount').value);
+      const reason = document.getElementById('tf-reason').value;
+      if (!from || !to || from === to) { alert('กรุณาเลือกรายการที่ต่างกัน'); return; }
+      if (!amount || amount <= 0) { alert('กรุณากรอกจำนวนเงิน'); return; }
+      try {
+        await API.post('/budget/' + budgetId + '/transfer', { from_line_id: from, to_line_id: to, amount, reason });
+        closeTransferModal();
+        dataLoaded = false;
+        if (currentTab === 'master') loadMaster();
+        else if (currentTab === 'project') loadProjectBudget();
+        else loadComparison();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ═══ Revision History ═══
+    async function toggleRevisions(budgetId, uid) {
+      const container = document.getElementById('revisions-' + uid);
+      const btn = document.getElementById('rev-btn-' + uid);
+      if (!container) return;
+      if (container.style.display !== 'none') {
+        container.style.display = 'none';
+        btn.innerHTML = 'ประวัติแก้ไข';
+        return;
+      }
+      container.style.display = 'block';
+      btn.innerHTML = 'ซ่อนประวัติ';
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Loading...</div>';
+      try {
+        const revisions = await API.get('/budget/' + budgetId + '/revisions');
+        const transfers = await API.get('/budget/' + budgetId + '/transfers');
+        let html = '';
+
+        if (transfers.length) {
+          html += '<div class="src-section"><h4>การโอนงบ <span class="src-badge">' + transfers.length + ' รายการ</span></h4>';
+          html += '<table class="src-table"><thead><tr><th>วันที่</th><th>จาก</th><th>ไป</th><th style="text-align:right;">จำนวน</th><th>เหตุผล</th><th>โดย</th></tr></thead><tbody>';
+          transfers.forEach(t => {
+            html += `<tr><td>${new Date(t.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</td>
+              <td>${t.from_line_name||'-'}</td><td>${t.to_line_name||'-'}</td>
+              <td class="amt">${fmtMoney(parseFloat(t.amount))}</td>
+              <td>${t.reason||'-'}</td><td>${t.transferred_by_name||'-'}</td></tr>`;
+          });
+          html += '</tbody></table></div>';
+        }
+
+        if (revisions.length) {
+          html += '<div class="src-section"><h4>ประวัติแก้ไขงบ <span class="src-badge">' + revisions.length + ' versions</span></h4>';
+          html += '<table class="src-table"><thead><tr><th>Version</th><th>วันที่</th><th style="text-align:right;">งบเดิม</th><th style="text-align:right;">งบใหม่</th><th>เหตุผล</th><th>โดย</th></tr></thead><tbody>';
+          revisions.forEach(r => {
+            html += `<tr><td>Rev.${r.version}</td>
+              <td>${new Date(r.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</td>
+              <td class="amt">${fmtMoney(parseFloat(r.old_total_budget))}</td>
+              <td class="amt">${fmtMoney(parseFloat(r.new_total_budget))}</td>
+              <td>${r.reason||'-'}</td><td>${r.revised_by_name||'-'}</td></tr>`;
+          });
+          html += '</tbody></table></div>';
+        }
+
+        if (!transfers.length && !revisions.length) {
+          html = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px;">ยังไม่มีประวัติการแก้ไข</div>';
+        }
+        container.innerHTML = html;
+      } catch(e) { container.innerHTML = '<div style="color:var(--danger);font-size:12px;">Error: ' + e.message + '</div>'; }
+    }
+
+    // ═══ Source Breakdown (ดูที่มายอด) ═══
+    const sourceCache = {};
+
+    async function toggleSources(projectId, uid) {
+      const container = document.getElementById('sources-' + uid);
+      const btn = document.getElementById('src-btn-' + uid);
+      if (!container) return;
+
+      // Toggle visibility
+      if (container.style.display !== 'none') {
+        container.style.display = 'none';
+        btn.innerHTML = 'ดูที่มายอด Actual (PR/PO/Expense)';
+        return;
+      }
+
+      container.style.display = 'block';
+      btn.innerHTML = 'ซ่อนที่มายอด';
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px;">Loading...</div>';
+
+      // Load from cache or API
+      if (!sourceCache[projectId]) {
+        try {
+          const [prs, expenses, ots] = await Promise.all([
+            API.get('/pr?project_id=' + projectId),
+            API.get('/expense?project_id=' + projectId),
+            API.get('/ot?project_id=' + projectId),
+          ]);
+          sourceCache[projectId] = {
+            prs: Array.isArray(prs) ? prs : [],
+            expenses: Array.isArray(expenses) ? expenses : [],
+            ots: Array.isArray(ots) ? ots : [],
+          };
+        } catch(e) {
+          container.innerHTML = '<div style="color:var(--danger);font-size:12px;">Error loading: ' + e.message + '</div>';
+          return;
+        }
+      }
+
+      const src = sourceCache[projectId];
+      let html = '';
+
+      // PR/PO Section
+      if (src.prs.length) {
+        const prTotal = src.prs.reduce((s, p) => s + (parseFloat(p.total_amount) || 0), 0);
+        html += `<div class="src-section">
+          <h4>Purchase Requests <span class="src-badge">${src.prs.length} รายการ</span></h4>
+          <table class="src-table">
+            <thead><tr><th>เลขที่</th><th>วันที่</th><th>Vendor</th><th>สถานะ</th><th style="text-align:right;">จำนวนเงิน</th></tr></thead>
+            <tbody>
+              ${src.prs.map(p => `<tr style="cursor:pointer;" onclick="window.location='doc-detail.html?type=pr&doc=${p.doc_number}'">
+                <td><strong style="color:var(--primary);">${p.doc_number}</strong></td>
+                <td>${p.doc_date ? new Date(p.doc_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) : '-'}</td>
+                <td>${p.vendor_name || '-'}</td>
+                <td>${statusBadge(p.status)}</td>
+                <td class="amt">${fmtMoney(parseFloat(p.total_amount)||0)}</td>
+              </tr>`).join('')}
+              <tr class="src-total"><td colspan="4">รวม PR</td><td class="amt">${fmtMoney(prTotal)}</td></tr>
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      // Expense Section
+      if (src.expenses.length) {
+        const expTotal = src.expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+        html += `<div class="src-section">
+          <h4>Expenses <span class="src-badge">${src.expenses.length} รายการ</span></h4>
+          <table class="src-table">
+            <thead><tr><th>เลขที่</th><th>วันที่</th><th>รายละเอียด</th><th>สถานะ</th><th style="text-align:right;">จำนวนเงิน</th></tr></thead>
+            <tbody>
+              ${src.expenses.map(e => `<tr>
+                <td><strong style="color:var(--primary);">${e.doc_number}</strong></td>
+                <td>${e.doc_date ? new Date(e.doc_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) : '-'}</td>
+                <td>${e.description || '-'}</td>
+                <td>${statusBadge(e.status)}</td>
+                <td class="amt">${fmtMoney(parseFloat(e.amount)||0)}</td>
+              </tr>`).join('')}
+              <tr class="src-total"><td colspan="4">รวม Expense</td><td class="amt">${fmtMoney(expTotal)}</td></tr>
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      // OT Section
+      if (src.ots.length) {
+        const otTotal = src.ots.reduce((s, o) => s + (parseFloat(o.compensation) || 0), 0);
+        html += `<div class="src-section">
+          <h4>OT / ล่วงเวลา <span class="src-badge">${src.ots.length} รายการ</span></h4>
+          <table class="src-table">
+            <thead><tr><th>เลขที่</th><th>วันที่</th><th>พนักงาน</th><th>ชั่วโมง</th><th>สถานะ</th><th style="text-align:right;">ค่าตอบแทน</th></tr></thead>
+            <tbody>
+              ${src.ots.map(o => `<tr>
+                <td><strong style="color:var(--primary);">${o.doc_number}</strong></td>
+                <td>${o.ot_date ? new Date(o.ot_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) : '-'}</td>
+                <td>${o.user_name || '-'}</td>
+                <td>${o.hours || 0} ชม.</td>
+                <td>${statusBadge(o.status)}</td>
+                <td class="amt">${fmtMoney(parseFloat(o.compensation)||0)}</td>
+              </tr>`).join('')}
+              <tr class="src-total"><td colspan="5">รวม OT</td><td class="amt">${fmtMoney(otTotal)}</td></tr>
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      // Grand Total
+      const grandTotal = (src.prs.reduce((s,p) => s+(parseFloat(p.total_amount)||0),0)) +
+                          (src.expenses.reduce((s,e) => s+(parseFloat(e.amount)||0),0)) +
+                          (src.ots.reduce((s,o) => s+(parseFloat(o.compensation)||0),0));
+
+      html += `<div style="padding:12px 16px;background:var(--primary-light);border-radius:var(--radius);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;">
+        <span>รวมทั้งหมด (PR + Expense + OT)</span>
+        <span style="font-size:18px;color:var(--primary);">${fmtMoney(grandTotal)}</span>
+      </div>`;
+
+      if (!src.prs.length && !src.expenses.length && !src.ots.length) {
+        html = '<div style="color:var(--text-muted);font-size:12px;padding:8px;text-align:center;">ไม่มีเอกสารที่เกี่ยวข้องกับโปรเจกต์นี้</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Close on ESC
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBudgetModal(); });
+
+    // ═══ Export CSV ═══
+    function exportBudgetCSV() {
+      const rows = [['Code','Name','Project','Status','TOR','Budget','Actual','Variance']];
+      allBudgets.forEach(b => {
+        const v = parseFloat(b.total_budget||0) - parseFloat(b.total_actual||0);
+        rows.push([b.code, b.name, b._project_code||'', b.status, b.total_tor, b.total_budget, b.total_actual, v]);
+      });
+      const csv = rows.map(r => r.map(c => '"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'budget_export_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+    }
+
+    // Init — check URL params for deep linking
+    const _urlParams = new URLSearchParams(window.location.search);
+    if (_urlParams.get('tab') === 'project') {
+      loadMaster().then(() => {
+        const pid = _urlParams.get('project_id');
+        if (pid) viewProjectBudget(pid);
+      });
+    } else {
+      loadMaster();
+    }
+    API.onRealtime(msg => {
+      if (msg.type.startsWith('budget_')) { dataLoaded = false; if (currentTab === 'master') loadMaster(); else if (currentTab === 'project') loadProjectBudget(); else loadComparison(); }
+    });
+  </script>
+</body>
+</html>

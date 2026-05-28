@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Plan Project</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .phase-timeline { display: flex; flex-direction: column; gap: 0; }
+    .phase-block {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xs);
+      margin-bottom: 16px;
+    }
+    .phase-header {
+      padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: background 0.1s;
+    }
+    .phase-header:hover { background: var(--bg-hover); }
+    .phase-header-left { display: flex; align-items: center; gap: 14px; }
+    .phase-number {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; flex-shrink: 0;
+    }
+    .phase-number.done { background: var(--success-bg); color: var(--success); }
+    .phase-number.active { background: var(--primary-light); color: var(--primary); border: 2px solid var(--primary); }
+    .phase-number.upcoming { background: var(--bg-hover); color: var(--text-muted); }
+    .phase-title h3 { font-size: 15px; font-weight: 700; }
+    .phase-title .dates { font-size: 12px; color: var(--text-secondary); }
+    .phase-header-right { display: flex; align-items: center; gap: 12px; }
+    .phase-pct { font-size: 14px; font-weight: 700; }
+
+    .phase-body { border-top: 1px solid var(--border-light); }
+    .step-item {
+      display: grid; grid-template-columns: 32px 1fr auto auto auto auto;
+      align-items: center; gap: 10px; padding: 10px 20px 10px 56px;
+      border-bottom: 1px solid var(--border-light); font-size: 13px;
+    }
+    .sub-row {
+      display: grid; grid-template-columns: 20px 1fr auto auto auto auto;
+      align-items: center; gap: 10px; padding: 8px 20px 8px 88px;
+      border-bottom: 1px solid var(--border-light); font-size: 13px;
+      background: var(--bg-light);
+    }
+    .sub-row:hover { background: var(--bg-hover); }
+    .sub-add-row { padding: 4px 20px 8px 88px; background: var(--bg-light); }
+    .sub-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; flex-shrink: 0; }
+    .sub-check.done { background: var(--success); border-color: var(--success); color: white; }
+    .sub-check.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .sub-actions button { border: none; background: var(--bg-hover); cursor: pointer; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-family: var(--font); transition: all 0.15s; }
+    .sub-actions button:hover { background: var(--primary-light); color: var(--primary); }
+    .sub-actions button.del:hover { background: var(--danger-bg); color: var(--danger); }
+    .step-check {
+      width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0; cursor: pointer;
+    }
+    .step-check.done { background: var(--success); border-color: var(--success); color: white; }
+    .step-check.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .step-name { font-weight: 500; }
+    .step-name.done-text { text-decoration: line-through; color: var(--text-muted); }
+    .step-assignee { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+    .step-date { font-size: 11px; color: var(--text-muted); min-width: 80px; text-align: right; }
+
+    /* Gantt-lite bar */
+    .gantt-bar {
+      height: 6px; border-radius: 3px; position: relative; margin-top: 6px;
+    }
+    .gantt-bg { background: var(--bg-hover); width: 100%; height: 6px; border-radius: 3px; }
+    .gantt-fill { height: 6px; border-radius: 3px; position: absolute; top: 0; left: 0; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000;
+      align-items: center; justify-content: center;
+      animation: fadeIn 0.15s;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+      animation: slideUp 0.2s;
+    }
+    .modal-header {
+      padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      border: none; background: none; font-size: 20px; cursor: pointer;
+      color: var(--text-muted); padding: 4px 8px; border-radius: var(--radius);
+    }
+    .modal-close:hover { background: var(--bg-hover); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 16px 24px; border-top: 1px solid var(--border-light);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .step-input-row {
+      display: grid; grid-template-columns: 1fr 120px 120px 32px; gap: 8px;
+      align-items: end; margin-bottom: 8px;
+    }
+    .step-input-row .form-input { font-size: 12px; padding: 7px 10px; }
+    .btn-remove-step {
+      border: none; background: var(--danger-bg); color: var(--danger);
+      border-radius: var(--radius); cursor: pointer; font-size: 14px;
+      width: 32px; height: 34px; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-remove-step:hover { background: var(--danger); color: #fff; }
+
+    /* Phase action buttons */
+    .phase-actions { display: flex; gap: 4px; }
+    .phase-actions button {
+      border: none; background: var(--bg-hover); cursor: pointer;
+      padding: 4px 8px; border-radius: var(--radius); font-size: 11px;
+      color: var(--text-secondary); font-family: var(--font); transition: all 0.15s;
+    }
+    .phase-actions button:hover { background: var(--primary-light); color: var(--primary); }
+    .phase-actions button.btn-del:hover { background: var(--danger-bg); color: var(--danger); }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Plan Project</h1>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select class="form-select" id="project-select" onchange="onProjectChange()" style="min-width:280px;">
+          <option value="">Loading projects...</option>
+        </select>
+        <button class="btn btn-primary" id="btn-add-phase" onclick="openAddPhase()">+ Add Phase</button>
+      </div>
+    </div>
+
+    <div class="phase-timeline" id="phase-timeline">
+      <div style="text-align:center;padding:40px;color:var(--text-muted);">Select a project to view phases</div>
+    </div>
+
+    <!-- Add Phase Modal -->
+    <div class="modal-overlay" id="phase-modal" onclick="if(event.target===this)closePhaseModal()">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="phase-modal-title">เพิ่ม Phase ใหม่</h3>
+          <button class="modal-close" onclick="closePhaseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="phase-edit-id">
+          <div class="form-group">
+            <label class="form-label">ชื่อ Phase</label>
+            <input type="text" class="form-input" id="phase-name" placeholder="e.g. Phase 1 — Survey & Design">
+          </div>
+          <div class="form-group">
+            <label class="form-label">รายละเอียด</label>
+            <textarea class="form-input" id="phase-desc" rows="2" placeholder="อธิบายรายละเอียดของ Phase"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">วันเริ่มต้น</label>
+              <input type="date" class="form-input" id="phase-start">
+            </div>
+            <div class="form-group">
+              <label class="form-label">วันสิ้นสุด</label>
+              <input type="date" class="form-input" id="phase-end">
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <label class="form-label" style="margin:0;">Steps</label>
+              <button class="btn btn-secondary btn-sm" onclick="addStepRow()" style="font-size:11px;">+ Add Step</button>
+            </div>
+            <div id="steps-container"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="closePhaseModal()">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" id="phase-save-btn" onclick="savePhase()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Step Modal (for adding step to existing phase) -->
+    <div class="modal-overlay" id="step-modal" onclick="if(event.target===this)closeStepModal()">
+      <div class="modal-box" style="width:420px;">
+        <div class="modal-header">
+          <h3>เพิ่ม Step</h3>
+          <button class="modal-close" onclick="closeStepModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="step-phase-id">
+          <div class="form-group">
+            <label class="form-label">ชื่อ Step</label>
+            <input type="text" class="form-input" id="step-name" placeholder="e.g. Site survey">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">วันเริ่มต้น</label>
+              <input type="date" class="form-input" id="step-start">
+            </div>
+            <div class="form-group">
+              <label class="form-label">วันสิ้นสุด</label>
+              <input type="date" class="form-input" id="step-end">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ผู้รับผิดชอบ</label>
+            <select class="form-input" id="step-assignee">
+              <option value="">ไม่ระบุ</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="closeStepModal()">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" onclick="saveStep()">เพิ่ม Step</button>
+        </div>
+      </div>
+    </div>
+    <!-- Sub-task Modal -->
+    <div id="sub-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)closeSubModal()">
+      <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:400px;max-width:95vw;">
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="font-size:16px;font-weight:700;">Sub-task</h3>
+          <button onclick="closeSubModal()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+        </div>
+        <div style="padding:20px 24px;">
+          <input type="hidden" id="sub-step-id">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-input" id="sub-name" placeholder="Sub-task name">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-input" id="sub-status">
+                <option value="pending">Pending</option>
+                <option value="active">Active</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Due Date</label>
+              <input type="date" class="form-input" id="sub-due">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Assignee</label>
+            <select class="form-input" id="sub-assignee"><option value="">ไม่ระบุ</option></select>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="closeSubModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveSubtask()">Save</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  </div><!-- end main-wrapper -->
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let currentProjectId = null;
+    let currentPhases = [];
+    const _user = API.getUser() || {};
+    const canEditPlan = ['pm','executive'].includes(_user.role);
+
+    function phaseStatusClass(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'completed' || s === 'done') return 'done';
+      if (s === 'active' || s === 'in_progress') return 'active';
+      return 'upcoming';
+    }
+
+    function phaseStatusBadge(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'completed' || s === 'done') return '<span class="badge badge-success">Complete</span>';
+      if (s === 'active' || s === 'in_progress') return '<span class="badge badge-primary badge-dot">In Progress</span>';
+      return '<span class="badge badge-gray">Upcoming</span>';
+    }
+
+    function phaseStatusColor(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'completed' || s === 'done') return 'var(--success)';
+      if (s === 'active' || s === 'in_progress') return 'var(--primary)';
+      return 'var(--text-muted)';
+    }
+
+    function stepStatusClass(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'completed' || s === 'done') return 'done';
+      if (s === 'active' || s === 'in_progress') return 'active';
+      return '';
+    }
+
+    let projectMembers = [];
+
+    function renderStep(step, phaseId) {
+      const sc = stepStatusClass(step.status);
+      const isDone = sc === 'done';
+      const isActive = sc === 'active';
+      const assigneeName = step.first_name_th || step.first_name || '';
+      const dateStr = step.start_date && step.end_date
+        ? `${fmtDateShort(step.start_date)} - ${fmtDateShort(step.end_date)}`
+        : (step.start_date ? fmtDateShort(step.start_date) : (step.dates || '-'));
+
+      // Next status cycle: pending → active → done → pending
+      const nextStatus = isDone ? 'pending' : isActive ? 'done' : 'active';
+
+      let checkHtml, nameHtml, badgeHtml;
+      if (isDone) {
+        checkHtml = `<div class="step-check done" onclick="event.stopPropagation();toggleStepStatus('${phaseId}','${step.id}','${nextStatus}')" style="cursor:pointer;" title="Click to reset">&#10003;</div>`;
+        nameHtml = `<div class="step-name done-text">${step.name || '-'}</div>`;
+        badgeHtml = '<span class="badge badge-success" style="font-size:10px;">Done</span>';
+      } else if (isActive) {
+        checkHtml = `<div class="step-check active" onclick="event.stopPropagation();toggleStepStatus('${phaseId}','${step.id}','${nextStatus}')" style="cursor:pointer;" title="Click to mark done">&#9679;</div>`;
+        nameHtml = `<div class="step-name"><strong>${step.name || '-'}</strong></div>`;
+        badgeHtml = '<span class="badge badge-primary" style="font-size:10px;">Active</span>';
+      } else {
+        checkHtml = `<div class="step-check" onclick="event.stopPropagation();toggleStepStatus('${phaseId}','${step.id}','${nextStatus}')" style="cursor:pointer;border-color:var(--text-muted);" title="Click to activate"></div>`;
+        nameHtml = `<div class="step-name" style="color:var(--text-muted);">${step.name || '-'}</div>`;
+        badgeHtml = '<span class="badge badge-gray" style="font-size:10px;">Pending</span>';
+      }
+
+      // Render subtasks
+      const subs = (step.subtasks || []);
+      const subCount = subs.length;
+      const subDoneCount = subs.filter(s => s.status === 'done').length;
+
+      const subsHtml = subs.map(sub => {
+        const subDone = sub.status === 'done';
+        const subActive = sub.status === 'active';
+        const subNext = subDone ? 'pending' : subActive ? 'done' : 'active';
+        const subCheckClass = subDone ? 'sub-check done' : subActive ? 'sub-check active' : 'sub-check';
+        const subCheckIcon = subDone ? '&#10003;' : subActive ? '&#9679;' : '';
+        const subNameStyle = subDone ? 'text-decoration:line-through;color:var(--text-muted);' : '';
+        const subAssignee = sub.first_name_th || sub.first_name || '';
+        return `<div class="sub-row" data-step-subs="${step.id}">
+          <div class="${subCheckClass}" onclick="event.stopPropagation();toggleSubStatus('${sub.id}','${subNext}')">${subCheckIcon}</div>
+          <div style="flex:1;${subNameStyle}overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sub.name}</div>
+          <div style="color:var(--text-secondary);font-size:12px;">${subAssignee}</div>
+          <div style="color:var(--text-muted);font-size:12px;">${sub.due_date ? fmtDateShort(sub.due_date) : ''}</div>
+          <select onchange="event.stopPropagation();toggleSubStatus('${sub.id}',this.value)" ${canEditPlan?'':'disabled'} style="font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-white);cursor:pointer;">
+            <option value="pending" ${sub.status==='pending'?'selected':''}>Pending</option>
+            <option value="active" ${sub.status==='active'?'selected':''}>Active</option>
+            <option value="done" ${sub.status==='done'?'selected':''}>Done</option>
+          </select>
+          ${canEditPlan ? `<div class="sub-actions" style="display:flex;gap:2px;">
+            <button onclick="event.stopPropagation();openEditSubtask('${sub.id}','${step.id}')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+            <button class="del" onclick="event.stopPropagation();deleteSubtask('${sub.id}')" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+          </div>` : ''}
+        </div>`;
+      }).join('');
+
+      const toggleBtn = subCount > 0 ? `<span onclick="event.stopPropagation();toggleSubs('${step.id}')" style="cursor:pointer;font-size:9px;color:var(--text-muted);margin-left:6px;background:var(--bg-hover);padding:1px 6px;border-radius:10px;" class="sub-toggle" data-step-toggle="${step.id}">&#9660; ${subDoneCount}/${subCount}</span>` : '';
+      const addSubBtn = `<div class="sub-add-row" data-step-subs="${step.id}">
+        <button onclick="event.stopPropagation();openAddSubtask('${step.id}')" style="border:none;background:none;cursor:pointer;font-size:10px;color:var(--primary);padding:2px 0;">+ Sub-task</button>
+      </div>`;
+
+      return `<div class="step-item">
+        ${checkHtml}
+        <div style="display:flex;align-items:center;gap:4px;font-weight:500;">${(step.name||'-')}${toggleBtn}</div>
+        <div class="step-assignee">${avatarSm(assigneeName, isDone || isActive ? '#3b82f6' : '#64748b')} ${assigneeName}</div>
+        <div class="step-date">${dateStr}</div>
+        ${badgeHtml}
+        ${canEditPlan ? `<div style="display:flex;gap:2px;">
+          <button onclick="event.stopPropagation();openEditStep('${phaseId}','${step.id}')" style="border:none;background:var(--bg-hover);cursor:pointer;padding:4px 6px;border-radius:4px;color:var(--text-secondary);" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+          <button onclick="event.stopPropagation();deleteStep('${phaseId}','${step.id}')" style="border:none;background:var(--bg-hover);cursor:pointer;padding:4px 6px;border-radius:4px;color:var(--danger);" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+        </div>` : ''}
+      </div>${subsHtml}${canEditPlan ? addSubBtn : ''}`;
+    }
+
+    function renderPhases(phases) {
+      const el = document.getElementById('phase-timeline');
+      if (!phases || !phases.length) {
+        el.innerHTML = emptyMsg('No phases found for this project');
+        return;
+      }
+
+      el.innerHTML = phases.map((p, i) => {
+        const sc = phaseStatusClass(p.status);
+        const pct = p.progress != null ? p.progress : (sc === 'done' ? 100 : sc === 'active' ? 50 : 0);
+        const steps = p.steps || [];
+        const isUpcoming = sc === 'upcoming';
+        const isActive = sc === 'active';
+        const dateStr = p.start_date && p.end_date
+          ? `${fmtDateShort(p.start_date)} - ${fmtDateShort(p.end_date)}`
+          : (p.dates || '');
+
+        let numberHtml;
+        if (sc === 'done') {
+          numberHtml = `<div class="phase-number done">&#10003;</div>`;
+        } else if (sc === 'active') {
+          numberHtml = `<div class="phase-number active">${i + 1}</div>`;
+        } else {
+          numberHtml = `<div class="phase-number upcoming">${i + 1}</div>`;
+        }
+
+        return `<div class="phase-block"${isActive ? ' style="border-color:var(--primary);"' : ''}${isUpcoming ? ' style="opacity:0.6;"' : ''}>
+          <div class="phase-header"${isActive ? ' style="background:var(--primary-50);"' : ''}>
+            <div class="phase-header-left">
+              ${numberHtml}
+              <div class="phase-title">
+                <h3>Phase ${p.phase_number || (i + 1)} &mdash; ${p.name || '-'}</h3>
+                <div class="dates">${dateStr}</div>
+              </div>
+            </div>
+            <div class="phase-header-right">
+              <div class="phase-pct" style="color:${phaseStatusColor(p.status)};">${pct}%</div>
+              ${phaseStatusBadge(p.status)}
+              ${canEditPlan ? `<div class="phase-actions">
+                <button onclick="event.stopPropagation();editPhase('${p.id}','${(p.name||'').replace(/'/g,"\\'")}','${p.description||''}','${p.start_date||''}','${p.end_date||''}')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                <button class="btn-del" onclick="event.stopPropagation();deletePhase('${p.id}')" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+              </div>` : ''}
+            </div>
+          </div>
+          <div class="phase-body">
+            ${steps.length ? steps.map(s => renderStep(s, p.id)).join('') : '<div style="padding:16px 20px;color:var(--text-muted);font-size:13px;">No steps defined</div>'}
+            <div style="padding:8px 20px 12px 56px;">
+              ${canEditPlan ? '<button class="btn btn-secondary btn-sm" onclick="openAddStep(\''+p.id+'\')" style="font-size:11px;">+ Add Step</button>' : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function onProjectChange() {
+      const sel = document.getElementById('project-select');
+      const id = sel.value;
+      if (!id) {
+        document.getElementById('phase-timeline').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Select a project to view phases</div>';
+        return;
+      }
+      currentProjectId = id;
+      document.getElementById('phase-timeline').innerHTML = emptyMsg('Loading phases...');
+      try {
+        const phases = await API.get('/projects/' + id + '/phases');
+        currentPhases = Array.isArray(phases) ? phases : (phases.phases || phases.data || []);
+        renderPhases(currentPhases);
+      } catch (e) {
+        console.error('Failed to load phases:', e);
+        document.getElementById('phase-timeline').innerHTML = emptyMsg('Failed to load phases');
+      }
+    }
+
+    async function loadProjects() {
+      try {
+        const projects = await API.getProjects();
+        const list = Array.isArray(projects) ? projects : (projects.data || projects.projects || []);
+        const sel = document.getElementById('project-select');
+        sel.innerHTML = '<option value="">Select project...</option>' + list.map(p =>
+          `<option value="${p.id}">${p.code || p.project_code || ''} — ${p.name || p.project_name || ''}</option>`
+        ).join('');
+
+        // Auto-select first project if available
+        if (list.length) {
+          sel.value = list[0].id;
+          onProjectChange();
+        }
+      } catch (e) {
+        console.error('Failed to load projects:', e);
+        document.getElementById('project-select').innerHTML = '<option value="">Failed to load projects</option>';
+      }
+    }
+
+    // ═══ Phase Modal ═══
+    let stepCounter = 0;
+
+    function openAddPhase() {
+      if (!currentProjectId) { alert('กรุณาเลือกโปรเจกต์ก่อน'); return; }
+      document.getElementById('phase-modal-title').textContent = 'เพิ่ม Phase ใหม่';
+      document.getElementById('phase-edit-id').value = '';
+      document.getElementById('phase-name').value = '';
+      document.getElementById('phase-desc').value = '';
+
+      // Auto-fill start date = day after last phase ends
+      // Auto-fill end date = last day of that month
+      let autoStart = '';
+      let autoEnd = '';
+      if (currentPhases.length) {
+        const lastPhase = currentPhases[currentPhases.length - 1];
+        if (lastPhase.end_date) {
+          const d = new Date(lastPhase.end_date);
+          d.setDate(d.getDate() + 1);
+          autoStart = d.toISOString().split('T')[0];
+          // End of that month
+          const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+          autoEnd = endOfMonth.toISOString().split('T')[0];
+        }
+      }
+      if (!autoStart) {
+        autoStart = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        autoEnd = eom.toISOString().split('T')[0];
+      }
+
+      document.getElementById('phase-start').value = autoStart;
+      document.getElementById('phase-end').value = autoEnd;
+      document.getElementById('steps-container').innerHTML = '';
+      stepCounter = 0;
+      addStepRow();
+      document.getElementById('phase-modal').classList.add('show');
+    }
+
+    function editPhase(phaseId, name, desc, startDate, endDate) {
+      if (!currentProjectId) return;
+      document.getElementById('phase-modal-title').textContent = 'แก้ไข Phase';
+      document.getElementById('phase-edit-id').value = phaseId;
+      document.getElementById('phase-name').value = name;
+      document.getElementById('phase-desc').value = desc;
+      document.getElementById('phase-start').value = startDate ? startDate.substring(0, 10) : '';
+      document.getElementById('phase-end').value = endDate ? endDate.substring(0, 10) : '';
+      document.getElementById('steps-container').innerHTML = '';
+      stepCounter = 0;
+      document.getElementById('phase-modal').classList.add('show');
+    }
+
+    function closePhaseModal() {
+      document.getElementById('phase-modal').classList.remove('show');
+    }
+
+    function addStepRow() {
+      stepCounter++;
+      const container = document.getElementById('steps-container');
+      const row = document.createElement('div');
+      row.className = 'step-input-row';
+      row.id = 'step-row-' + stepCounter;
+      row.innerHTML = `
+        <div class="form-group" style="margin:0;">
+          <input type="text" class="form-input" placeholder="Step name" data-step-name>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <input type="date" class="form-input" data-step-start>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <input type="date" class="form-input" data-step-end>
+        </div>
+        <button class="btn-remove-step" onclick="this.parentElement.remove()">&times;</button>
+      `;
+      container.appendChild(row);
+    }
+
+    async function savePhase() {
+      const name = document.getElementById('phase-name').value.trim();
+      if (!name) { alert('กรุณากรอกชื่อ Phase'); return; }
+
+      const editId = document.getElementById('phase-edit-id').value;
+      const btn = document.getElementById('phase-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'กำลังบันทึก...';
+
+      try {
+        const body = {
+          name,
+          description: document.getElementById('phase-desc').value.trim(),
+          start_date: document.getElementById('phase-start').value || null,
+          end_date: document.getElementById('phase-end').value || null,
+        };
+
+        if (editId) {
+          // Update existing phase
+          await API.put('/projects/' + currentProjectId + '/phases/' + editId, body);
+        } else {
+          // Collect steps
+          const stepRows = document.querySelectorAll('#steps-container .step-input-row');
+          const steps = [];
+          stepRows.forEach(row => {
+            const stepName = row.querySelector('[data-step-name]').value.trim();
+            if (stepName) {
+              steps.push({
+                name: stepName,
+                start_date: row.querySelector('[data-step-start]').value || null,
+                end_date: row.querySelector('[data-step-end]').value || null,
+              });
+            }
+          });
+          body.steps = steps;
+          await API.post('/projects/' + currentProjectId + '/phases', body);
+        }
+
+        closePhaseModal();
+        onProjectChange(); // reload
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'บันทึก';
+      }
+    }
+
+    async function deletePhase(phaseId) {
+      if (!confirm('ลบ Phase นี้ รวมถึง Steps ทั้งหมดด้วย?')) return;
+      try {
+        await API.del('/projects/' + currentProjectId + '/phases/' + phaseId);
+        onProjectChange();
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // ═══ Step Modal ═══
+    function openAddStep(phaseId) {
+      document.getElementById('step-modal').dataset.editStepId = '';
+      document.getElementById('step-phase-id').value = phaseId;
+      document.getElementById('step-name').value = '';
+      document.getElementById('step-start').value = '';
+      document.getElementById('step-end').value = '';
+      // Populate assignee dropdown from project members
+      const sel = document.getElementById('step-assignee');
+      sel.innerHTML = '<option value="">ไม่ระบุ</option>' +
+        projectMembers.map(m => `<option value="${m.user_id}">${m.first_name_th || m.first_name} ${m.last_name || ''}</option>`).join('');
+      document.getElementById('step-modal').classList.add('show');
+    }
+
+    function closeStepModal() {
+      document.getElementById('step-modal').dataset.editStepId = '';
+      document.getElementById('step-modal').classList.remove('show');
+    }
+
+    async function saveStep() {
+      const phaseId = document.getElementById('step-phase-id').value;
+      const name = document.getElementById('step-name').value.trim();
+      if (!name) { alert('กรุณากรอกชื่อ Step'); return; }
+
+      const body = {
+        name,
+        start_date: document.getElementById('step-start').value || null,
+        end_date: document.getElementById('step-end').value || null,
+        assigned_to: document.getElementById('step-assignee').value || null,
+      };
+
+      const editStepId = document.getElementById('step-modal').dataset.editStepId;
+
+      try {
+        if (editStepId) {
+          await API.put('/projects/' + currentProjectId + '/phases/' + phaseId + '/steps/' + editStepId, body);
+        } else {
+          await API.post('/projects/' + currentProjectId + '/phases/' + phaseId + '/steps', body);
+        }
+        closeStepModal();
+        onProjectChange();
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    async function toggleStepStatus(phaseId, stepId, newStatus) {
+      try {
+        await API.put('/projects/' + currentProjectId + '/phases/' + phaseId + '/steps/' + stepId, {
+          status: newStatus
+        });
+        onProjectChange();
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // Edit step — reuse step modal with pre-filled data
+    function openEditStep(phaseId, stepId) {
+      // Find step data from currentPhases
+      let stepData = null;
+      for (const ph of currentPhases) {
+        if (ph.id === phaseId && ph.steps) {
+          stepData = ph.steps.find(s => s.id === stepId);
+          break;
+        }
+      }
+      if (!stepData) { alert('Step not found'); return; }
+
+      document.getElementById('step-phase-id').value = phaseId;
+      document.getElementById('step-name').value = stepData.name || '';
+      document.getElementById('step-start').value = stepData.start_date ? stepData.start_date.substring(0,10) : '';
+      document.getElementById('step-end').value = stepData.end_date ? stepData.end_date.substring(0,10) : '';
+
+      const sel = document.getElementById('step-assignee');
+      sel.innerHTML = '<option value="">ไม่ระบุ</option>' +
+        projectMembers.map(m => `<option value="${m.user_id}" ${m.user_id===stepData.assigned_to?'selected':''}>${m.first_name_th || m.first_name} ${m.last_name || ''}</option>`).join('');
+
+      // Store edit mode
+      document.getElementById('step-modal').dataset.editStepId = stepId;
+      document.getElementById('step-modal').classList.add('show');
+    }
+
+    async function deleteStep(phaseId, stepId) {
+      if (!confirm('ลบ Step นี้?')) return;
+      try {
+        await API.del('/projects/' + currentProjectId + '/phases/' + phaseId + '/steps/' + stepId);
+        onProjectChange();
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // ═══ Sub-tasks ═══
+    function toggleSubs(stepId) {
+      const rows = document.querySelectorAll('[data-step-subs="'+stepId+'"]');
+      const toggle = document.querySelector('[data-step-toggle="'+stepId+'"]');
+      if (!rows.length) return;
+      const isHidden = rows[0].style.display === 'none';
+      rows.forEach(r => r.style.display = isHidden ? '' : 'none');
+      if (toggle) {
+        const text = toggle.textContent.replace(/[^0-9\/]/g,'');
+        toggle.innerHTML = (isHidden ? '&#9660; ' : '&#9654; ') + text;
+      }
+    }
+
+    function openAddSubtask(stepId) {
+      document.getElementById('sub-modal').dataset.editSubId = '';
+      document.getElementById('sub-step-id').value = stepId;
+      document.getElementById('sub-name').value = '';
+      document.getElementById('sub-status').value = 'pending';
+      document.getElementById('sub-due').value = '';
+      // Populate assignee
+      const sel = document.getElementById('sub-assignee');
+      sel.innerHTML = '<option value="">ไม่ระบุ</option>' +
+        projectMembers.map(m => `<option value="${m.user_id}">${m.first_name_th || m.first_name} ${m.last_name || ''}</option>`).join('');
+      document.getElementById('sub-modal').style.display = 'flex';
+    }
+
+    function openEditSubtask(subId, stepId) {
+      // Find subtask data
+      let subData = null;
+      for (const ph of currentPhases) {
+        for (const st of (ph.steps||[])) {
+          const found = (st.subtasks||[]).find(s => s.id === subId);
+          if (found) { subData = found; break; }
+        }
+        if (subData) break;
+      }
+      if (!subData) { alert('Sub-task not found'); return; }
+
+      document.getElementById('sub-modal').dataset.editSubId = subId;
+      document.getElementById('sub-step-id').value = stepId;
+      document.getElementById('sub-name').value = subData.name || '';
+      document.getElementById('sub-status').value = subData.status || 'pending';
+      document.getElementById('sub-due').value = subData.due_date ? subData.due_date.substring(0,10) : '';
+      const sel = document.getElementById('sub-assignee');
+      sel.innerHTML = '<option value="">ไม่ระบุ</option>' +
+        projectMembers.map(m => `<option value="${m.user_id}" ${m.user_id===subData.assigned_to?'selected':''}>${m.first_name_th || m.first_name} ${m.last_name || ''}</option>`).join('');
+      document.getElementById('sub-modal').style.display = 'flex';
+    }
+
+    function closeSubModal() {
+      document.getElementById('sub-modal').style.display = 'none';
+    }
+
+    async function saveSubtask() {
+      const name = document.getElementById('sub-name').value.trim();
+      if (!name) { alert('กรุณากรอกชื่อ'); return; }
+      const editId = document.getElementById('sub-modal').dataset.editSubId;
+      const body = {
+        step_id: document.getElementById('sub-step-id').value,
+        name,
+        status: document.getElementById('sub-status').value || 'pending',
+        assigned_to: document.getElementById('sub-assignee').value || null,
+        due_date: document.getElementById('sub-due').value || null,
+      };
+      try {
+        if (editId) {
+          await API.put('/projects/' + currentProjectId + '/subtasks/' + editId, body);
+        } else {
+          await API.post('/projects/' + currentProjectId + '/subtasks', body);
+        }
+        closeSubModal();
+        onProjectChange();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function toggleSubStatus(subId, newStatus) {
+      try {
+        await API.put('/projects/' + currentProjectId + '/subtasks/' + subId, { status: newStatus });
+        onProjectChange();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function deleteSubtask(subId) {
+      if (!confirm('ลบ sub-task นี้?')) return;
+      try {
+        await API.del('/projects/' + currentProjectId + '/subtasks/' + subId);
+        onProjectChange();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // Load project members when project changes
+    const _origOnProjectChange = onProjectChange;
+    onProjectChange = async function() {
+      const id = document.getElementById('project-select').value;
+      if (id) {
+        try {
+          projectMembers = await API.get('/projects/' + id + '/members');
+        } catch(e) { projectMembers = []; }
+      }
+      return _origOnProjectChange();
+    };
+
+    // Close modals on ESC
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closePhaseModal(); closeStepModal(); }
+    });
+
+    if (!canEditPlan) document.getElementById('btn-add-phase').style.display = 'none';
+    loadProjects();
+  </script>
+</body>
+</html>

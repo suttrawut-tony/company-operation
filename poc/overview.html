@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Project Detail</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* Gantt Chart */
+    .gantt-container { position:relative; min-width:700px; }
+    .gantt-header { display:flex; border-bottom:2px solid var(--border); margin-bottom:2px; }
+    .gantt-header-label { width:260px; flex-shrink:0; font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase; padding:8px 0; }
+    .gantt-header-months { flex:1; display:flex; }
+    .gantt-month { flex:1; text-align:center; font-size:10px; font-weight:600; color:var(--text-secondary); padding:8px 0; border-left:1px dashed var(--border-light); }
+    .gantt-row { display:flex; align-items:center; border-bottom:1px solid var(--border-light); }
+    .gantt-phase-row:hover { background:var(--bg-hover); }
+    .gantt-step-row { background:var(--bg-light); }
+    .gantt-step-row:hover { background:var(--bg-hover); }
+    .gantt-label { width:260px; flex-shrink:0; font-size:12px; padding:6px 8px 6px 0; display:grid; grid-template-columns:14px 8px 1fr 36px 52px; align-items:center; gap:4px; }
+    .gantt-phase-row .gantt-label { font-weight:600; }
+    .gantt-step-row .gantt-label { grid-template-columns:14px 6px 1fr 36px 52px; padding-left:20px; font-size:11px; }
+    .gantt-label .dot { border-radius:50%; flex-shrink:0; }
+    .gantt-label .g-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .gantt-label .g-meta { font-size:10px; color:var(--text-muted); white-space:nowrap; text-align:center; }
+    .gantt-label .g-status { font-size:9px; font-weight:600; white-space:nowrap; padding:1px 6px; border-radius:var(--radius-full); text-align:center; }
+    .gantt-bars { flex:1; position:relative; height:28px; }
+    .gantt-bar-bg { position:absolute; top:0; height:100%; border-left:1px dashed var(--border-light); }
+    .gantt-bar { position:absolute; border-radius:4px; font-size:9px; color:#fff; font-weight:600; display:flex; align-items:center; padding:0 6px; white-space:nowrap; overflow:hidden; min-width:2px; }
+
+    .project-banner {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-xs);
+    }
+    .project-title-area h2 { font-size: 20px; font-weight: 800; }
+    .project-title-area .code { font-size: 13px; color: var(--primary); font-weight: 600; }
+    .project-title-area .desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+    .project-meta-pills { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .progress-circle { text-align: center; }
+    .progress-circle .pct { font-size: 44px; font-weight: 800; color: var(--primary); }
+    .progress-circle .lbl { font-size: 12px; color: var(--text-secondary); }
+
+    .overview-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .ov-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-xs);
+    }
+    .ov-card h3 { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .ov-big { font-size: 32px; font-weight: 800; }
+    .ov-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .team-item {
+      display: flex; align-items: center; gap: 12px; padding: 8px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .team-item:last-child { border-bottom: none; }
+    .team-item .name { font-size: 13px; font-weight: 600; flex: 1; }
+
+    .activity-item {
+      display: flex; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid var(--border-light); font-size: 13px;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-item .time { font-size: 11px; color: var(--text-muted); min-width: 70px; }
+
+    .proj-select-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 768px) {
+      .overview-grid { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+      .project-banner { flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <div class="proj-select-bar">
+      <a href="projects.html" class="btn btn-secondary btn-sm">&larr; All Projects</a>
+      <select class="form-select" id="project-select" onchange="switchProject(this.value)" style="max-width:400px;"></select>
+    </div>
+
+    <div class="project-banner" id="banner"><div style="color:var(--text-muted);">Loading project...</div></div>
+    <div class="overview-grid" id="kpi-cards"></div>
+
+    <!-- Timeline Gantt Chart -->
+    <div class="card" style="margin-bottom:20px;" id="gantt-card">
+      <div class="card-header"><h2>Project Timeline</h2></div>
+      <div class="card-body" style="padding:16px 20px;overflow-x:auto;" id="gantt-chart">
+        <div style="color:var(--text-muted);font-size:13px;">Loading timeline...</div>
+      </div>
+    </div>
+
+    <!-- Row 1: Team + Budget -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>Project Team</h2></div>
+        <div class="card-body" id="team-list">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Budget Overview</h2><a href="budget.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-body" id="budget-info">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Row 2: Tasks + Phases -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>Tasks</h2><a href="taskboard.html" class="btn btn-ghost btn-sm">Taskboard &rarr;</a></div>
+        <div class="card-body" id="tasks-section">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Phases</h2><a href="phases.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-body" id="phases-section">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Row 3: PR + Advance -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>Purchase Requests</h2><a href="pr-po.html" class="btn btn-ghost btn-sm">PR/PO &rarr;</a></div>
+        <div class="card-body" id="pr-section">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Advance</h2><a href="advance.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-body" id="advance-section">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Row 4: OT + Vehicle -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>OT Records</h2><a href="ot.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-body" id="ot-section">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Vehicle Bookings</h2><a id="vehicle-detail-link" href="vehicle.html" class="btn btn-ghost btn-sm">Detail more &rarr;</a></div>
+        <div class="card-body" id="vehicle-section">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Row 5: Activity + Discussion -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>Activity Log</h2></div>
+        <div class="card-body" id="activity-section">Loading...</div>
+      </div>
+      <div class="card" style="grid-column:1/-1;">
+        <div class="card-header">
+          <h2>Discussion</h2>
+          <button class="btn btn-primary btn-sm" onclick="openNewThread()">+ New Thread</button>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <!-- Thread List -->
+          <div id="thread-list" style="padding:16px 20px;">Loading...</div>
+          <!-- Thread Detail (hidden by default) -->
+          <div id="thread-detail" style="display:none;padding:16px 20px;"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let currentProjectId = null;
+    async function loadProject(projectId) {
+      currentProjectId = projectId;
+      try {
+        const allProjects = await API.getProjects();
+        const select = document.getElementById('project-select');
+        select.innerHTML = allProjects.map(p =>
+          `<option value="${p.id}" ${p.id===projectId?'selected':''}>${p.code} — ${p.name}</option>`
+        ).join('');
+
+        if (!projectId && allProjects.length) projectId = allProjects[0].id;
+        if (!projectId) { document.getElementById('banner').innerHTML='<div>No projects</div>'; return; }
+
+        const p = await API.getProject(projectId);
+        const pct = p.progress||0;
+        const budget = parseFloat(p.budget_amount||0);
+        const actual = parseFloat(p.actual_amount||0);
+        const tor = parseFloat(p.tor_amount||0);
+        const remaining = budget - actual;
+        const budgetPct = budget>0?Math.round(actual/budget*100):0;
+        const barC = pct>=80?'green':pct>=50?'yellow':'red';
+
+        // Banner
+        document.getElementById('banner').innerHTML = `
+          <div class="project-title-area">
+            <div class="code">${p.code}</div>
+            <h2>${p.name}</h2>
+            <div class="desc">${p.description||''}</div>
+            <div class="project-meta-pills">
+              <span class="badge badge-${p.status==='active'?'success':p.status==='completed'?'primary':'warning'} badge-dot">${p.status}</span>
+              <span class="badge badge-gray">${fmtD(p.start_date)} — ${fmtD(p.end_date)}</span>
+              <span class="badge badge-gray">PM: ${p.pm_name||'-'}</span>
+            </div>
+          </div>
+          <div class="progress-circle">
+            <div class="pct">${pct}%</div>
+            <div class="lbl">Progress</div>
+            <div class="progress" style="width:120px;margin-top:8px;"><div class="progress-bar ${barC}" style="width:${pct}%;"></div></div>
+          </div>`;
+
+        // KPIs
+        const retAmt = parseFloat(p.retention_amount || 0);
+        const retRate = parseFloat(p.retention_rate || 5);
+        const retDue = p.retention_due_date ? new Date(p.retention_due_date) : null;
+        const retStatus = p.retention_status || 'none';
+        const daysLeft = retDue ? Math.ceil((retDue - Date.now()) / 86400000) : null;
+        const isOverdue = daysLeft !== null && daysLeft <= 0 && retStatus === 'holding';
+        const isNearDue = daysLeft !== null && daysLeft > 0 && daysLeft <= 30 && retStatus === 'holding';
+        const retColor = retStatus === 'released' ? 'var(--success)' : isOverdue ? 'var(--danger)' : isNearDue ? 'var(--warning)' : 'var(--primary)';
+        const retStatusLabel = retStatus === 'released' ? 'คืนแล้ว' : retStatus === 'holding' ? 'กำลังค้ำประกัน' : 'ยังไม่หัก';
+        const retDueFmt = retDue ? retDue.toLocaleDateString('th-TH', {day:'numeric',month:'short',year:'numeric'}) : '-';
+        const retDaysText = daysLeft !== null && retStatus === 'holding' ? (daysLeft > 0 ? 'เหลือ ' + daysLeft + ' วัน' : 'ครบกำหนดแล้ว!') : '';
+
+        // Penalty / LD calculation
+        const endDate = p.end_date ? new Date(p.end_date) : null;
+        const startDate = p.start_date ? new Date(p.start_date) : null;
+        const today = new Date();
+        const isContractOverdue = endDate && today > endDate && pct < 100;
+        const daysOverdue = isContractOverdue ? Math.ceil((today - endDate) / 86400000) : 0;
+
+        // Calculate expected progress based on timeline
+        let expectedPct = 0;
+        let behindDays = 0;
+        if (startDate && endDate) {
+          const totalDuration = (endDate - startDate) / 86400000;
+          const elapsed = (today - startDate) / 86400000;
+          expectedPct = totalDuration > 0 ? Math.min(100, Math.round(elapsed / totalDuration * 100)) : 0;
+          if (pct < expectedPct && expectedPct > 0) {
+            behindDays = Math.round((expectedPct - pct) / 100 * totalDuration);
+          }
+        }
+
+        const isAtRisk = pct < expectedPct - 5; // behind by more than 5%
+        const ldRate = 0.001; // 0.1% per day
+        const ldAmount = isContractOverdue ? Math.round(tor * ldRate * daysOverdue) : 0;
+        const ldMaxPct = 10;
+        const ldMax = tor * ldMaxPct / 100;
+        const ldCapped = Math.min(ldAmount, ldMax);
+        const ldPct = tor > 0 ? (ldCapped / tor * 100).toFixed(2) : 0;
+
+        let penaltyHtml = '';
+
+        // Case 1: Already overdue — show actual penalty
+        if (isContractOverdue) {
+          penaltyHtml = `
+          <div style="padding:16px 20px;background:var(--danger-bg);border:1px solid var(--danger);border-radius:var(--radius-lg);">
+            <div style="font-size:14px;font-weight:700;color:var(--danger);margin-bottom:8px;">Penalty (LD) — Contract Overdue</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;">
+              <div><div style="color:var(--text-muted);font-weight:600;">Overdue</div><div style="font-size:18px;font-weight:800;color:var(--danger);">${daysOverdue} days</div></div>
+              <div><div style="color:var(--text-muted);font-weight:600;">LD Rate</div><div style="font-size:14px;font-weight:700;">${(ldRate*100).toFixed(1)}% / day</div></div>
+              <div><div style="color:var(--text-muted);font-weight:600;">Penalty Amount</div><div style="font-size:18px;font-weight:800;color:var(--danger);">฿${fmtN(ldCapped)}</div></div>
+              <div><div style="color:var(--text-muted);font-weight:600;">% of TOR</div><div style="font-size:14px;font-weight:700;color:var(--danger);">${ldPct}%${ldAmount > ldMax ? ' (cap '+ldMaxPct+'%)' : ''}</div></div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-secondary);">
+              TOR ฿${fmtN(tor)} x ${(ldRate*100).toFixed(1)}% x ${daysOverdue} days = ฿${fmtN(ldAmount)}${ldAmount > ldMax ? ' (capped ฿'+fmtN(ldMax)+')' : ''}
+              | Contract end: ${fmtD(p.end_date)}
+            </div>
+          </div>`;
+        }
+        // Case 2: Not overdue yet but behind schedule — show warning
+        else if (isAtRisk && behindDays > 0) {
+          const daysToEnd = endDate ? Math.ceil((endDate - today) / 86400000) : 0;
+          const projectedPenaltyDays = Math.max(0, behindDays - daysToEnd + Math.ceil((100 - pct) / 100 * (endDate - startDate) / 86400000) - daysToEnd);
+          const estPenalty = Math.round(tor * ldRate * behindDays);
+          penaltyHtml = `
+          <div style="padding:16px 20px;background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-lg);">
+            <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:8px;">Delay Risk — Potential Penalty</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;">
+              <div><div style="color:var(--text-muted);font-weight:600;">Expected Progress</div><div style="font-size:18px;font-weight:800;">${expectedPct}%</div></div>
+              <div><div style="color:var(--text-muted);font-weight:600;">Actual Progress</div><div style="font-size:18px;font-weight:800;color:var(--danger);">${pct}%</div></div>
+              <div><div style="color:var(--text-muted);font-weight:600;">Behind</div><div style="font-size:18px;font-weight:800;color:var(--warning);">~${behindDays} days</div></div>
+              <div><div style="color:var(--text-muted);font-weight:600;">Days Remaining</div><div style="font-size:18px;font-weight:800;">${daysToEnd} days</div></div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-secondary);">
+              If delayed: est. penalty ฿${fmtN(estPenalty)} (${(ldRate*100).toFixed(1)}%/day x ${behindDays} days)
+              | Contract end: ${fmtD(p.end_date)}
+            </div>
+          </div>`;
+        }
+
+        document.getElementById('kpi-cards').innerHTML = `
+          <div class="ov-card"><h3>Budget Used</h3><div class="ov-big" style="color:${budgetPct>100?'var(--danger)':'var(--primary)'};">฿${fmtN(actual)}</div><div class="ov-sub">of ฿${fmtN(budget)} (${budgetPct}%)</div><div class="progress" style="margin-top:8px;"><div class="progress-bar ${budgetPct>100?'red':budgetPct>80?'yellow':'blue'}" style="width:${Math.min(budgetPct,100)}%;"></div></div></div>
+          <div class="ov-card"><h3>TOR Amount</h3><div class="ov-big">฿${fmtN(tor)}</div><div class="ov-sub">Remaining: ฿${fmtN(remaining)}</div></div>
+          <div class="ov-card"${isContractOverdue?' style="border-left:3px solid var(--danger);"':(isAtRisk?' style="border-left:3px solid var(--warning);"':'')}>
+            <h3>Status</h3>
+            <div class="ov-big" style="color:${pct>=80?'var(--success)':pct>=50?'var(--warning)':'var(--danger)'};">${pct>=80?'On Track':pct>=50?'At Risk':pct>0?'Delayed':'Not Started'}</div>
+            <div class="ov-sub">${pct}% complete</div>
+            ${isContractOverdue?`
+              <div style="margin-top:10px;padding:10px;background:var(--danger-bg);border-radius:var(--radius);font-size:11px;">
+                <div style="font-weight:700;color:var(--danger);margin-bottom:6px;">Penalty (LD)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                  <div><span style="color:var(--text-muted);">Overdue</span><br><strong style="color:var(--danger);">${daysOverdue} days</strong></div>
+                  <div><span style="color:var(--text-muted);">Penalty</span><br><strong style="color:var(--danger);">฿${fmtN(ldCapped)}</strong></div>
+                  <div><span style="color:var(--text-muted);">Rate</span><br><strong>${(ldRate*100).toFixed(1)}%/day</strong></div>
+                  <div><span style="color:var(--text-muted);">% TOR</span><br><strong style="color:var(--danger);">${ldPct}%</strong></div>
+                </div>
+                <div style="margin-top:6px;font-size:10px;color:var(--text-muted);">End: ${fmtD(p.end_date)}</div>
+              </div>
+            `:(isAtRisk?`
+              <div style="margin-top:10px;padding:10px;background:var(--warning-bg);border-radius:var(--radius);font-size:11px;">
+                <div style="font-weight:700;color:var(--warning);margin-bottom:6px;">Delay Risk</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                  <div><span style="color:var(--text-muted);">Expected</span><br><strong>${expectedPct}%</strong></div>
+                  <div><span style="color:var(--text-muted);">Actual</span><br><strong style="color:var(--danger);">${pct}%</strong></div>
+                  <div><span style="color:var(--text-muted);">Behind</span><br><strong style="color:var(--warning);">~${behindDays} days</strong></div>
+                  <div><span style="color:var(--text-muted);">Remaining</span><br><strong>${Math.ceil((endDate-today)/86400000)} days</strong></div>
+                </div>
+                <div style="margin-top:6px;font-size:10px;color:var(--text-muted);">หากส่งงานไม่ทัน อาจโดนค่าปรับ ฿${fmtN(Math.round(tor*ldRate*behindDays))}/วัน</div>
+                <div style="font-size:10px;color:var(--text-muted);">สิ้นสุดสัญญา: ${fmtD(p.end_date)}</div>
+              </div>
+            `:'')}
+          </div>
+          <div class="ov-card" style="border-left:3px solid ${retColor};">
+            <h3>ประกันผลงาน (${retRate}%)</h3>
+            <div class="ov-big" style="color:${retColor};">฿${fmtN(retAmt)}</div>
+            <div class="ov-sub">
+              <span class="badge badge-${retStatus==='released'?'success':isOverdue?'danger':isNearDue?'warning':'primary'}" style="font-size:10px;">${retStatusLabel}</span>
+              ครบกำหนด: ${retDueFmt}
+            </div>
+            ${retDaysText ? '<div style="margin-top:6px;font-size:12px;font-weight:600;color:'+retColor+';">'+retDaysText+'</div>' : ''}
+          </div>`;
+
+        // Gantt Timeline
+        try {
+          const phases = await API.get('/projects/'+projectId+'/phases');
+          renderGantt(phases, p);
+        } catch(e) { document.getElementById('gantt-chart').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No timeline data</div>'; }
+
+        // Team
+        try {
+          const members = await API.get('/projects/'+projectId+'/members');
+          document.getElementById('team-list').innerHTML = members.length ? members.map(m => `
+            <div class="team-item">
+              <div class="avatar" style="background:var(--primary);">${(m.first_name||'?')[0]}</div>
+              <div class="name">${m.first_name_th||m.first_name} ${m.last_name}</div>
+              <span class="badge badge-${m.role==='pm'?'primary':'gray'}" style="font-size:10px;">${m.role.toUpperCase()}</span>
+            </div>`).join('') : '<div style="color:var(--text-muted);font-size:13px;">No members</div>';
+        } catch(e) { document.getElementById('team-list').textContent = '-'; }
+
+        // Budget
+        document.getElementById('budget-info').innerHTML = `
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--text-secondary);">TOR</span><span style="font-weight:700;">฿${fmtN(tor)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--text-secondary);">Budget</span><span style="font-weight:700;">฿${fmtN(budget)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--primary);">Used</span><span style="font-weight:700;color:var(--primary);">฿${fmtN(actual)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--success);">Remaining</span><span style="font-weight:700;color:${remaining<0?'var(--danger)':'var(--success)'};">฿${fmtN(remaining)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;"><span style="color:${retColor};">ประกันผลงาน ${retRate}%</span><span style="font-weight:700;color:${retColor};">฿${fmtN(retAmt)}</span></div>
+          ${retDue ? '<div style="font-size:11px;color:var(--text-muted);padding:2px 0;">ครบกำหนด: '+retDueFmt+(retDaysText?' &bull; <strong style="color:'+retColor+';">'+retDaysText+'</strong>':'')+'</div>' : ''}
+          <div class="progress" style="margin-top:12px;"><div class="progress-bar ${budgetPct>100?'red':budgetPct>80?'yellow':'blue'}" style="width:${Math.min(budgetPct,100)}%;"></div></div>`;
+
+        // ── Tasks ──
+        load('/projects/'+projectId+'/tasks', 'tasks-section', items => {
+          const byStatus = {todo:0,in_progress:0,review:0,done:0};
+          items.forEach(t => byStatus[t.status] = (byStatus[t.status]||0)+1);
+          const total = items.length;
+          let h = `<div style="display:flex;gap:12px;margin-bottom:12px;">
+            <div style="text-align:center;flex:1;padding:8px;background:var(--bg-light);border-radius:var(--radius);"><div style="font-size:18px;font-weight:800;">${total}</div><div style="font-size:10px;color:var(--text-muted);">Total</div></div>
+            <div style="text-align:center;flex:1;padding:8px;background:var(--success-bg);border-radius:var(--radius);"><div style="font-size:18px;font-weight:800;color:var(--success);">${byStatus.done||0}</div><div style="font-size:10px;color:var(--text-muted);">Done</div></div>
+            <div style="text-align:center;flex:1;padding:8px;background:var(--primary-light);border-radius:var(--radius);"><div style="font-size:18px;font-weight:800;color:var(--primary);">${byStatus.in_progress||0}</div><div style="font-size:10px;color:var(--text-muted);">Active</div></div>
+            <div style="text-align:center;flex:1;padding:8px;background:var(--bg-light);border-radius:var(--radius);"><div style="font-size:18px;font-weight:800;">${byStatus.todo||0}</div><div style="font-size:10px;color:var(--text-muted);">To-do</div></div>
+          </div>`;
+          h += items.filter(t=>t.status!=='done').slice(0,5).map(t => `
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:${t.status==='in_progress'?'var(--primary)':t.status==='review'?'var(--warning)':'var(--text-muted)'};flex-shrink:0;"></span>
+              <span style="flex:1;font-weight:500;">${t.title}</span>
+              <span style="color:var(--text-muted);">${t.first_name_th||t.first_name||'-'}</span>
+            </div>`).join('');
+          return h || empty('No tasks');
+        });
+
+        // ── Phases ──
+        load('/projects/'+projectId+'/phases', 'phases-section', items => {
+          if (!items.length) return empty('No phases defined');
+          return items.map(ph => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light);">
+              <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;${ph.status==='completed'?'background:var(--success-bg);color:var(--success);':ph.status==='active'?'background:var(--primary-light);color:var(--primary);border:2px solid var(--primary);':'background:var(--bg-hover);color:var(--text-muted);'}">${ph.status==='completed'?'&#10003;':ph.sort_order}</div>
+              <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${ph.name}</div><div style="font-size:10px;color:var(--text-muted);">${ph.steps?ph.steps.length+' steps':''} ${ph.status==='active'?'— '+ph.progress+'%':''}</div></div>
+              <span class="badge badge-${ph.status==='completed'?'success':ph.status==='active'?'primary':'gray'}" style="font-size:10px;">${ph.status}</span>
+            </div>`).join('');
+        });
+
+        // ── PRs ──
+        load('/pr?project_id='+projectId, 'pr-section', items => {
+          if (!items.length) return empty('No PRs');
+          return items.slice(0,5).map(pr => `
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12px;cursor:pointer;" onclick="window.location='doc-detail.html?type=pr&doc=${pr.doc_number}'">
+              <div><a href="doc-detail.html?type=pr&doc=${pr.doc_number}" style="font-weight:600;color:var(--primary);text-decoration:none;">${pr.doc_number}</a><div style="color:var(--text-muted);font-size:11px;">${pr.vendor_name||'-'}</div></div>
+              <div style="font-weight:600;text-align:right;">฿${fmtN(parseFloat(pr.total_amount||0))}</div>
+              ${statusBadge(pr.status)}
+            </div>`).join('');
+        });
+
+        // ── Advance ──
+        load('/advance?project_id='+projectId, 'advance-section', items => {
+          if (!items.length) return empty('No advance records');
+          return items.slice(0,5).map(a => {
+            const balance = parseFloat(a.balance||0);
+            const balanceHtml = balance > 0 ? '<span style="color:var(--danger);font-size:10px;">Balance: ฿'+fmtN(balance)+'</span>'
+              : balance < 0 ? '<span style="color:var(--warning);font-size:10px;">Reimburse: ฿'+fmtN(Math.abs(balance))+'</span>'
+              : a.status === 'settled' ? '<span style="color:var(--success);font-size:10px;">Cleared</span>' : '';
+            return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12px;cursor:pointer;" onclick="window.location='advance.html'">
+              <div><span style="font-weight:600;color:var(--primary);">${a.doc_number}</span><div style="color:var(--text-muted);font-size:11px;">${a.description||a.purpose||'-'} ${balanceHtml}</div></div>
+              <div style="font-weight:600;text-align:right;">฿${fmtN(parseFloat(a.amount||0))}</div>
+              ${statusBadge(a.status)}
+            </div>`;
+          }).join('');
+        });
+
+        // ── OT ──
+        load('/ot', 'ot-section', items => {
+          const filtered = items.filter(o => o.project_id === projectId);
+          if (!filtered.length) return empty('No OT records');
+          const totalHrs = filtered.reduce((s,o) => s + parseFloat(o.hours||0), 0);
+          const totalComp = filtered.reduce((s,o) => s + parseFloat(o.compensation||0), 0);
+          let h = `<div style="display:flex;gap:8px;margin-bottom:8px;">
+            <div style="flex:1;text-align:center;padding:6px;background:var(--bg-light);border-radius:var(--radius);"><div style="font-weight:700;">${totalHrs}h</div><div style="font-size:10px;color:var(--text-muted);">Hours</div></div>
+            <div style="flex:1;text-align:center;padding:6px;background:var(--bg-light);border-radius:var(--radius);"><div style="font-weight:700;">฿${fmtN(totalComp)}</div><div style="font-size:10px;color:var(--text-muted);">Total</div></div>
+          </div>`;
+          h += filtered.slice(0,5).map(o => `
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;cursor:pointer;" onclick="window.location='ot.html'">
+              <div><span style="font-weight:600;color:var(--primary);">${o.doc_number}</span><div style="color:var(--text-muted);font-size:11px;">${o.user_name||'-'} | ${o.hours}h x${o.multiplier}</div></div>
+              <div style="font-weight:600;text-align:right;">฿${fmtN(parseFloat(o.compensation||0))}</div>
+              ${statusBadge(o.status)}
+            </div>`).join('');
+          return h;
+        });
+
+        // Update vehicle detail link
+        const vLink = document.getElementById('vehicle-detail-link');
+        if (vLink) vLink.href = 'vehicle-project.html?project_id='+projectId;
+
+        // ── Vehicle (active only) ──
+        load('/vehicle/bookings?project_id='+projectId, 'vehicle-section', items => {
+          if (!items.length) return empty('No bookings');
+
+          const stMap = { pending:'รออนุมัติ', approved:'รอรับรถ', checked_out:'กำลังใช้', checked_in:'คืนแล้ว' };
+          const stColorMap = { pending:'var(--warning)', approved:'var(--info)', checked_out:'var(--primary)', checked_in:'var(--success)' };
+
+          const active = items.filter(b => b.status === 'checked_out');
+
+          if (!active.length) return empty('No vehicles in use');
+
+          return active.map(b => {
+            const stLabel = stMap[b.status] || b.status;
+            const stColor = stColorMap[b.status] || 'var(--text-muted)';
+            return '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12px;">' +
+              '<div><div style="font-weight:600;">'+(b.vehicle_name||'Vehicle')+' <span style="color:var(--text-muted);">'+(b.plate_number||'')+'</span></div>' +
+              '<div style="color:var(--text-muted);font-size:11px;">'+fmtD(b.start_date)+' - '+fmtD(b.end_date)+(b.booked_by_name?' | '+b.booked_by_name:'')+'</div></div>' +
+              '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--radius-full);background:'+stColor+';color:#fff;">'+stLabel+'</span>' +
+            '</div>';
+          }).join('');
+        });
+
+        // ── Activity ──
+        load('/projects/'+projectId+'/activity', 'activity-section', items => {
+          if (!items.length) return empty('No activity yet');
+          return items.map(a => `
+            <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;">
+              <span style="color:var(--text-muted);min-width:60px;font-size:11px;">${timeAgo(a.created_at)}</span>
+              <span><strong>${a.first_name_th||a.first_name||'-'}</strong> ${a.description||a.action}</span>
+            </div>`).join('');
+        });
+
+        // ── Discussion Threads ──
+        loadThreads();
+
+      } catch(e) {
+        document.getElementById('banner').innerHTML = '<div style="color:var(--danger);">Error: '+e.message+'</div>';
+      }
+    }
+
+    function switchProject(id) { window.location = 'overview.html?id='+id; }
+
+    // ═══ Discussion Threads (Pantip-style) ═══
+    const roleColors = {executive:'#d97706',pm:'#2563eb',finance:'#059669',accounting:'#7c3aed',procurement:'#ea580c',admin:'#0891b2',staff:'#64748b'};
+
+    function avatarHtml(name, role, size) {
+      const s = size || 32;
+      const color = roleColors[role] || '#64748b';
+      return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:'+(s*0.4)+'px;font-weight:700;flex-shrink:0;">'+(name||'?')[0]+'</div>';
+    }
+
+    window.loadThreads = async function() {
+      if (!currentProjectId) return;
+      try {
+        const threads = await API.get('/projects/'+currentProjectId+'/threads');
+        const el = document.getElementById('thread-list');
+        document.getElementById('thread-detail').style.display = 'none';
+        el.style.display = 'block';
+
+        if (!threads.length) {
+          el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">No threads yet. Start a discussion!</div>';
+          return;
+        }
+
+        el.innerHTML = threads.map(t => {
+          const color = roleColors[t.role]||'#64748b';
+          const name = (t.first_name_th||t.first_name||'')+' '+(t.last_name||'');
+          return '<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border-light);cursor:pointer;" onclick="openThread(\''+t.id+'\')">' +
+            avatarHtml(t.first_name, t.role, 36) +
+            '<div style="flex:1;min-width:0;">' +
+              '<div style="font-size:14px;font-weight:600;margin-bottom:2px;">'+t.title+'</div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(t.body||'').substring(0,100)+'</div>' +
+              '<div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--text-muted);">' +
+                '<span>'+name+'</span>' +
+                '<span style="color:'+color+';font-weight:600;">'+t.role+'</span>' +
+                '<span>'+timeAgo(t.created_at)+'</span>' +
+                '<span style="font-weight:600;">'+t.reply_count+' replies</span>' +
+              '</div>' +
+            '</div>' +
+            (t.is_pinned?'<span style="font-size:10px;color:var(--warning);font-weight:600;">PINNED</span>':'') +
+          '</div>';
+        }).join('');
+      } catch(e) { document.getElementById('thread-list').innerHTML = '<div style="color:var(--danger);">Error: '+e.message+'</div>'; }
+    };
+
+    window.openThread = async function(threadId) {
+      if (!currentProjectId) return;
+      try {
+        const data = await API.get('/projects/'+currentProjectId+'/threads/'+threadId);
+        document.getElementById('thread-list').style.display = 'none';
+        const el = document.getElementById('thread-detail');
+        el.style.display = 'block';
+
+        const color = roleColors[data.role]||'#64748b';
+        const name = (data.first_name_th||data.first_name||'')+' '+(data.last_name||'');
+
+        let html = '<div style="margin-bottom:16px;">' +
+          '<a href="#" onclick="event.preventDefault();loadThreads();" style="font-size:12px;color:var(--primary);">Back to threads</a>' +
+        '</div>';
+
+        // Thread post
+        html += '<div style="display:flex;gap:12px;padding-bottom:16px;border-bottom:2px solid var(--border);">' +
+          avatarHtml(data.first_name, data.role, 40) +
+          '<div style="flex:1;">' +
+            '<div style="font-size:18px;font-weight:700;margin-bottom:4px;">'+data.title+'</div>' +
+            '<div style="display:flex;gap:8px;font-size:11px;color:var(--text-muted);margin-bottom:10px;">' +
+              '<span style="font-weight:600;">'+name+'</span>' +
+              '<span style="color:'+color+';">'+data.role+'</span>' +
+              '<span>'+timeAgo(data.created_at)+'</span>' +
+            '</div>' +
+            '<div style="font-size:14px;line-height:1.7;">'+(data.body||'').replace(/\\n/g,'<br>')+'</div>' +
+          '</div></div>';
+
+        // Replies
+        html += '<div style="margin-top:16px;">';
+        if (data.replies && data.replies.length) {
+          html += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;">'+data.replies.length+' replies</div>';
+          data.replies.forEach((r, i) => {
+            const rc = roleColors[r.role]||'#64748b';
+            const rn = (r.first_name_th||r.first_name||'')+' '+(r.last_name||'');
+            html += '<div style="display:flex;gap:10px;padding:12px 0;'+(i<data.replies.length-1?'border-bottom:1px solid var(--border-light);':'')+'">' +
+              avatarHtml(r.first_name, r.role, 28) +
+              '<div style="flex:1;">' +
+                '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
+                  '<span style="font-size:12px;font-weight:600;">'+rn+'</span>' +
+                  '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:'+rc+'20;color:'+rc+';font-weight:600;">'+r.role+'</span>' +
+                  '<span style="font-size:10px;color:var(--text-muted);">'+timeAgo(r.created_at)+'</span>' +
+                '</div>' +
+                '<div style="font-size:13px;line-height:1.5;">'+r.message+'</div>' +
+              '</div></div>';
+          });
+        } else {
+          html += '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;">No replies yet</div>';
+        }
+        html += '</div>';
+
+        // Reply input
+        html += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-light);display:flex;gap:8px;">' +
+          '<input type="text" class="form-input" id="reply-input" placeholder="Write a reply..." style="flex:1;" onkeydown="if(event.key===\'Enter\')postReply(\''+threadId+'\')">' +
+          '<button class="btn btn-primary btn-sm" onclick="postReply(\''+threadId+'\')">Reply</button>' +
+        '</div>';
+
+        el.innerHTML = html;
+        // Scroll to bottom of replies
+        el.scrollTop = el.scrollHeight;
+      } catch(e) { alert('Error: '+e.message); }
+    };
+
+    window.postReply = async function(threadId) {
+      const input = document.getElementById('reply-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = '';
+      try {
+        await API.post('/projects/'+currentProjectId+'/threads/'+threadId+'/reply', { message: msg });
+        openThread(threadId); // reload
+      } catch(e) { alert('Error: '+e.message); }
+    };
+
+    window.openNewThread = function() {
+      const title = prompt('Thread title:');
+      if (!title || !title.trim()) return;
+      const body = prompt('Description (optional):');
+      API.post('/projects/'+currentProjectId+'/threads', { title: title.trim(), body: body||'' })
+        .then(() => loadThreads())
+        .catch(e => alert('Error: '+e.message));
+    };
+
+    // Real-time
+    API.onRealtime(msg => {
+      if (msg.type === 'discussion_posted' && msg.data?.project_id === currentProjectId) {
+        if (msg.data.thread_id && document.getElementById('thread-detail').style.display !== 'none') {
+          openThread(msg.data.thread_id);
+        } else {
+          loadThreads();
+        }
+      }
+    });
+
+    function renderGantt(phases, project) {
+      const el = document.getElementById('gantt-chart');
+      if (!phases || !phases.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No phases defined — <a href="phases.html" style="color:var(--primary);">Add phases</a></div>'; return; }
+
+      const projStart = new Date(project.start_date);
+      const projEnd = new Date(project.end_date);
+      const today = new Date();
+
+      const rangeStart = new Date(projStart); rangeStart.setDate(1);
+      const rangeEnd = new Date(projEnd); rangeEnd.setMonth(rangeEnd.getMonth()+1); rangeEnd.setDate(0);
+      const totalDays = (rangeEnd - rangeStart) / 86400000;
+
+      const months = [];
+      const md = new Date(rangeStart);
+      while (md <= rangeEnd) { months.push({ label: md.toLocaleDateString('th-TH',{month:'short',year:'2-digit'}), start: new Date(md) }); md.setMonth(md.getMonth()+1); }
+
+      function dayPos(date) { return Math.max(0, Math.min(100, ((new Date(date) - rangeStart) / 86400000 / totalDays) * 100)); }
+      const todayPos = dayPos(today);
+      const colors = ['#4f6ef7','#8b5cf6','#ef4444','#f59e0b','#10b981','#06b6d4','#ec4899'];
+
+      // Build all rows: phases + steps
+      const rows = [];
+      phases.forEach((ph, i) => {
+        const phStart = ph.start_date ? new Date(ph.start_date) : projStart;
+        const phEnd = ph.end_date ? new Date(ph.end_date) : projEnd;
+        const duration = Math.ceil((phEnd - phStart) / 86400000);
+        const pct = ph.progress || (ph.status === 'completed' ? 100 : ph.status === 'active' ? 50 : 0);
+
+        // Is this phase delayed?
+        const phExpected = totalDays > 0 ? Math.min(100, Math.round(((today - phStart) / (phEnd - phStart)) * 100)) : 0;
+        const phDelayed = ph.status !== 'completed' && phExpected > 0 && pct < phExpected - 10;
+
+        rows.push({ type:'phase', phaseIdx: i, name: ph.name, start: phStart, end: phEnd, duration, pct, status: ph.status, color: colors[i%colors.length], delayed: phDelayed, stepsCount: (ph.steps||[]).length, stepsDone: (ph.steps||[]).filter(s => s.status==='done'||s.status==='completed').length });
+
+        // Steps
+        (ph.steps||[]).forEach(s => {
+          const sStart = s.start_date ? new Date(s.start_date) : phStart;
+          const sEnd = s.end_date ? new Date(s.end_date) : phEnd;
+          const sDur = Math.ceil((sEnd - sStart) / 86400000);
+          const isDone = s.status === 'done' || s.status === 'completed';
+          const isActive = s.status === 'active' || s.status === 'in_progress';
+          const sDelayed = !isDone && today > sEnd;
+          rows.push({ type:'step', phaseIdx: i, name: s.name, start: sStart, end: sEnd, duration: sDur, pct: isDone?100:isActive?50:0, status: s.status, color: colors[i%colors.length], delayed: sDelayed, assignee: s.first_name_th || s.first_name || '' });
+        });
+      });
+
+      // Render
+      let html = '<div class="gantt-container">';
+
+      // Header
+      html += '<div class="gantt-header"><div class="gantt-header-label">Phase / Step</div><div class="gantt-header-months" style="position:relative;">';
+      months.forEach(m => { html += '<div class="gantt-month">' + m.label + '</div>'; });
+      html += '</div></div>';
+
+      // Rows
+      rows.forEach(r => {
+        const left = dayPos(r.start);
+        const width = Math.max(1, dayPos(r.end) - left);
+        const isPhase = r.type === 'phase';
+        const barHeight = isPhase ? 20 : 14;
+        const rowHeight = isPhase ? 40 : 30;
+        const indent = isPhase ? '' : 'padding-left:20px;';
+        const fontWeight = isPhase ? '600' : '400';
+        const fontSize = isPhase ? '12px' : '11px';
+        const opacity = r.status === 'completed' || r.status === 'done' ? 1 : r.status === 'active' || r.status === 'in_progress' ? 1 : 0.5;
+
+        // Status badge
+        let statusBdg = '';
+        if (r.status === 'completed' || r.status === 'done') statusBdg = '<span class="g-status" style="background:var(--success-bg);color:var(--success);">Done</span>';
+        else if (r.delayed) statusBdg = '<span class="g-status" style="background:var(--danger-bg);color:var(--danger);">Delayed</span>';
+        else if (r.status === 'active' || r.status === 'in_progress') statusBdg = '<span class="g-status" style="background:var(--primary-light);color:var(--primary);">Active</span>';
+        else statusBdg = '<span class="g-status" style="background:var(--bg-hover);color:var(--text-muted);">Upcoming</span>';
+
+        // Meta info
+        let metaInfo = '';
+        if (isPhase && r.stepsCount > 0) metaInfo = '<span class="g-meta">' + r.stepsDone + '/' + r.stepsCount + '</span>';
+        else if (!isPhase && r.assignee) metaInfo = '<span class="g-meta">' + r.assignee + '</span>';
+
+        const rowClass = isPhase ? 'gantt-row gantt-phase-row' : 'gantt-row gantt-step-row';
+        const stepAttr = !isPhase ? ' data-phase-idx="'+r.phaseIdx+'"' : '';
+        const toggleBtn = isPhase && r.stepsCount > 0 ? '<span class="gantt-toggle" data-phase-idx="'+r.phaseIdx+'" onclick="toggleGanttPhase('+r.phaseIdx+')" style="cursor:pointer;font-size:10px;color:var(--text-muted);width:14px;text-align:center;">&#9660;</span>' : (isPhase ? '<span style="width:14px;"></span>' : '<span style="width:14px;"></span>');
+
+        html += '<div class="'+rowClass+'" style="min-height:'+rowHeight+'px;' + (r.delayed && isPhase ? 'background:var(--danger-bg);' : '') + '"'+stepAttr+'>';
+        html += '<div class="gantt-label">';
+        html += toggleBtn;
+        html += '<div class="dot" style="background:'+r.color+';width:'+(isPhase?8:6)+'px;height:'+(isPhase?8:6)+'px;"></div>';
+        html += '<span class="g-name" title="'+r.name+'">'+r.name+'</span>';
+        html += metaInfo;
+        html += statusBdg;
+        html += '</div>';
+        html += '<div class="gantt-bars" style="position:relative;">';
+
+        // Grid lines
+        months.forEach(m => { html += '<div class="gantt-bar-bg" style="left:'+dayPos(m.start)+'%;"></div>'; });
+
+        // Today line in each row
+        if (todayPos > 0 && todayPos < 100) {
+          html += '<div style="position:absolute;left:'+todayPos+'%;top:0;bottom:0;width:2px;background:var(--danger);opacity:0.4;z-index:1;"></div>';
+        }
+
+        // Background bar (planned)
+        html += '<div style="position:absolute;top:'+((rowHeight-barHeight)/2-4)+'px;left:'+left+'%;width:'+width+'%;height:'+barHeight+'px;background:'+r.color+';opacity:0.15;border-radius:4px;"></div>';
+
+        // Progress fill bar
+        const fillWidth = width * r.pct / 100;
+        html += '<div class="gantt-bar" style="left:'+left+'%;width:'+fillWidth+'%;height:'+barHeight+'px;top:'+((rowHeight-barHeight)/2-4)+'px;background:'+r.color+';opacity:'+opacity+';">';
+        if (isPhase && fillWidth > 5) html += r.pct + '%';
+        html += '</div>';
+
+        html += '</div></div>';
+      });
+
+      // Legend + link
+      html += '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);display:flex;justify-content:space-between;align-items:center;">';
+      html += '<div style="display:flex;gap:12px;align-items:center;font-size:11px;color:var(--text-muted);">';
+      html += '<span><span style="display:inline-block;width:2px;height:12px;background:var(--danger);vertical-align:middle;margin-right:4px;"></span> Today</span>';
+      html += '<span><span style="display:inline-block;width:20px;height:6px;background:var(--primary);opacity:0.15;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Planned</span>';
+      html += '<span><span style="display:inline-block;width:20px;height:6px;background:var(--primary);border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Actual</span>';
+      html += '<span style="background:var(--danger-bg);padding:1px 6px;border-radius:4px;color:var(--danger);">Delayed</span>';
+      html += '</div>';
+      html += '<a href="phases.html" style="font-size:11px;color:var(--primary);font-weight:500;">Plan Project &rarr;</a>';
+      html += '</div></div>';
+
+      el.innerHTML = html;
+    }
+
+    window.toggleGanttPhase = function(idx) {
+      const steps = document.querySelectorAll('.gantt-step-row[data-phase-idx="'+idx+'"]');
+      const toggle = document.querySelector('.gantt-toggle[data-phase-idx="'+idx+'"]');
+      const isHidden = steps.length && steps[0].style.display === 'none';
+      steps.forEach(s => { s.style.display = isHidden ? '' : 'none'; });
+      if (toggle) toggle.innerHTML = isHidden ? '&#9660;' : '&#9654;';
+    };
+
+    function fmtD(d) { return d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '-'; }
+    function fmtN(n) { return Number(n).toLocaleString('th-TH'); }
+    function empty(msg) { return `<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">${msg}</div>`; }
+    function statusBadge(s) { return `<span class="badge badge-${s.includes('pending')?'warning':s==='approved'||s==='completed'||s==='paid'?'success':s==='draft'?'gray':'primary'}" style="font-size:9px;">${s.replace(/_/g,' ')}</span>`; }
+    function docRow(num, desc, amount, status, link) {
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;cursor:pointer;" onclick="window.location='${link}'">
+        <span style="font-weight:600;color:var(--primary);min-width:90px;">${num}</span>
+        <span style="flex:1;color:var(--text-secondary);">${desc}</span>
+        <span style="font-weight:600;">฿${Number(amount).toLocaleString()}</span>
+        ${statusBadge(status)}
+      </div>`;
+    }
+    async function load(url, elId, renderFn) {
+      try {
+        const data = await API.get(url);
+        document.getElementById(elId).innerHTML = renderFn(Array.isArray(data) ? data : []);
+      } catch(e) { document.getElementById(elId).innerHTML = empty('-'); }
+    }
+    function timeAgo(d) {
+      const s = Math.round((Date.now() - new Date(d)) / 1000);
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.round(s/60)+'m ago';
+      if (s < 86400) return Math.round(s/3600)+'h ago';
+      return Math.round(s/86400)+'d ago';
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    loadProject(params.get('id'));
+  </script>
+</body>
+</html>

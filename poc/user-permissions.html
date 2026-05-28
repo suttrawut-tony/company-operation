@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — User Permissions</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .view-toggles {
+      display: flex; gap: 4px; background: var(--bg-light);
+      border-radius: var(--radius); padding: 3px;
+    }
+    .view-toggle {
+      padding: 7px 16px; border: none; background: none; border-radius: 6px;
+      cursor: pointer; font-size: 12px; font-weight: 500; color: var(--text-secondary);
+      font-family: var(--font); transition: all 0.15s;
+    }
+    .view-toggle.active { background: var(--bg-white); color: var(--text-primary); box-shadow: var(--shadow-xs); }
+
+    .role-stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px; margin-bottom: 24px;
+    }
+    .role-stat {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 14px; text-align: center;
+      cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow-xs);
+    }
+    .role-stat:hover { border-color: var(--primary); }
+    .role-stat.active { border-color: var(--primary); background: var(--primary-light); }
+    .role-stat .count { font-size: 24px; font-weight: 800; }
+    .role-stat .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* User Grid */
+    .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+    .user-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 18px; box-shadow: var(--shadow-xs);
+      transition: all 0.15s;
+    }
+    .user-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .user-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .user-avatar-lg {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .user-card-name { font-size: 14px; font-weight: 600; }
+    .user-card-pos { font-size: 12px; color: var(--text-secondary); }
+    .user-meta-grid { display: flex; flex-direction: column; gap: 8px; }
+    .user-meta-item {
+      display: flex; justify-content: space-between; align-items: center; font-size: 12px;
+    }
+    .user-meta-item .lbl { color: var(--text-secondary); }
+    .role-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: var(--radius-full);
+      font-size: 11px; font-weight: 600;
+    }
+    .role-pill.executive { background: rgba(245,158,11,0.12); color: #d97706; }
+    .role-pill.pm { background: rgba(59,130,246,0.12); color: #2563eb; }
+    .role-pill.finance { background: rgba(16,185,129,0.12); color: #059669; }
+    .role-pill.accounting { background: rgba(139,92,246,0.12); color: #7c3aed; }
+    .role-pill.procurement { background: rgba(249,115,22,0.12); color: #ea580c; }
+    .role-pill.admin { background: rgba(6,182,212,0.12); color: #0891b2; }
+    .role-pill.staff { background: rgba(100,116,139,0.12); color: #64748b; }
+
+    .avatar-colors {
+      --c-executive: linear-gradient(135deg, #f59e0b, #d97706);
+      --c-pm: linear-gradient(135deg, #3b82f6, #2563eb);
+      --c-finance: linear-gradient(135deg, #10b981, #059669);
+      --c-accounting: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      --c-procurement: linear-gradient(135deg, #f97316, #ea580c);
+      --c-admin: linear-gradient(135deg, #06b6d4, #0891b2);
+      --c-staff: linear-gradient(135deg, #64748b, #475569);
+    }
+
+    /* Perm Matrix */
+    .matrix-scroll { overflow-x: auto; }
+    .perm-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .perm-table thead th {
+      padding: 8px 10px; text-align: center; font-size: 10px; font-weight: 600;
+      color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
+      background: var(--bg-light); border-bottom: 1px solid var(--border);
+      white-space: nowrap; position: sticky; top: 0;
+    }
+    .perm-table thead th:first-child { text-align: left; min-width: 180px; position: sticky; left: 0; z-index: 2; }
+    .perm-table tbody td {
+      padding: 6px 10px; text-align: center; border-bottom: 1px solid var(--border-light);
+    }
+    .perm-table tbody td:first-child {
+      text-align: left; font-weight: 500; position: sticky; left: 0;
+      background: var(--bg-white); z-index: 1;
+    }
+    .perm-table tbody tr:hover td { background: var(--bg-hover); }
+    .perm-table .group-row td {
+      background: var(--bg-light) !important; font-weight: 700; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary);
+    }
+    .p-yes { color: var(--success); font-weight: 700; }
+    .p-own { color: #8b5cf6; font-weight: 600; font-size: 10px; }
+    .p-no { color: var(--border); }
+
+    /* Approval Flow */
+    .flow-cards { display: flex; flex-direction: column; gap: 14px; }
+    .flow-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xs);
+    }
+    .flow-card-head {
+      padding: 14px 20px; border-bottom: 1px solid var(--border-light);
+      font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+    }
+    .flow-steps {
+      padding: 16px 20px; display: flex; align-items: center; gap: 4px;
+      overflow-x: auto; flex-wrap: wrap;
+    }
+    .flow-node {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: var(--radius-full);
+      font-size: 12px; font-weight: 500; white-space: nowrap;
+    }
+    .flow-node.draft { background: var(--bg-hover); color: var(--text-secondary); }
+    .flow-node.pending { background: var(--warning-bg); color: var(--warning); }
+    .flow-node.approved { background: var(--success-bg); color: var(--success); }
+    .flow-node.sap { background: var(--info-bg); color: var(--info); }
+    .flow-arrow { color: var(--text-muted); font-size: 14px; }
+    .flow-tiers { padding: 10px 20px; border-top: 1px solid var(--border-light); display: flex; gap: 10px; flex-wrap: wrap; }
+    .flow-tier {
+      font-size: 11px; padding: 4px 12px; border-radius: var(--radius-full);
+      background: var(--bg-light); color: var(--text-secondary);
+    }
+    .flow-tier strong { color: var(--text-primary); }
+  </style>
+</head>
+<body class="avatar-colors">
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1>User & Permission</h1>
+        <div class="subtitle" id="subtitle-info">Loading...</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-primary" id="btn-add-user" onclick="openUserModal()" style="display:none;">+ Add User</button>
+        <div class="view-toggles">
+          <button class="view-toggle active" onclick="switchView('users',this)">Users</button>
+          <button class="view-toggle" onclick="switchView('matrix',this)">Permission Matrix</button>
+          <button class="view-toggle" onclick="switchView('approval',this)">Approval Flow</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role Stats -->
+    <div class="role-stats" id="role-stats">Loading...</div>
+
+    <!-- VIEW: Users -->
+    <div id="view-users">
+      <div style="display:flex;gap:12px;margin-bottom:16px;">
+        <select class="form-select" id="filter-user-project" style="width:250px;" onchange="renderUsers()">
+          <option value="">All Projects</option>
+        </select>
+        <input type="text" class="form-input" id="filter-user-search" placeholder="Search name, email..." oninput="renderUsers()" style="width:250px;">
+      </div>
+      <div class="user-grid" id="user-grid">Loading...</div>
+    </div>
+
+    <!-- VIEW: Permission Matrix -->
+    <div id="view-matrix" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h2>Permission Matrix — Role x Module x Action</h2>
+        </div>
+        <div class="matrix-scroll">
+          <table class="perm-table" id="perm-table"></table>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--border-light);display:flex;gap:20px;font-size:12px;color:var(--text-secondary);">
+          <span><span class="p-yes">&#10003;</span> Full Access</span>
+          <span><span class="p-own">own</span> Own Records Only</span>
+          <span><span class="p-no">&mdash;</span> No Access</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: Approval Flow -->
+    <div id="view-approval" class="hidden">
+      <div class="flow-cards" id="flow-cards"></div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeUserModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center;">
+          <h3 id="user-modal-title" style="font-size:16px;font-weight:700;">Add User</h3>
+          <button onclick="closeUserModal()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+        </div>
+        <div style="padding:20px 24px;">
+          <input type="hidden" id="um-id">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" id="um-email" placeholder="name@company.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="password" class="form-input" id="um-password" placeholder="Set password">
+            </div>
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-input" id="um-fname" placeholder="First name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-input" id="um-lname" placeholder="Last name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">First Name (TH)</label>
+              <input type="text" class="form-input" id="um-fname-th" placeholder="ชื่อภาษาไทย">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name (TH)</label>
+              <input type="text" class="form-input" id="um-lname-th" placeholder="นามสกุลภาษาไทย">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select class="form-input" id="um-role">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+                <option value="procurement">Procurement</option>
+                <option value="accounting">Accounting</option>
+                <option value="finance">Finance</option>
+                <option value="pm">Project Manager</option>
+                <option value="executive">Executive</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Position</label>
+              <input type="text" class="form-input" id="um-position" placeholder="e.g. Engineer">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <input type="text" class="form-input" id="um-dept" placeholder="e.g. Operations">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Approval Limit</label>
+              <input type="number" class="form-input" id="um-limit" placeholder="0" min="0">
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:24px;">
+              <input type="checkbox" id="um-approve" checked> <label for="um-approve" style="font-size:12px;">Can Approve</label>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:24px;">
+              <input type="checkbox" id="um-active" checked> <label for="um-active" style="font-size:12px;">Active</label>
+            </div>
+          </div>
+          <!-- Project Membership -->
+          <div id="um-projects-section" style="margin-top:16px;display:none;">
+            <label class="form-label">Projects</label>
+            <div id="um-projects-list" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;">
+              <select class="form-input" id="um-add-project" style="flex:1;font-size:12px;"></select>
+              <button class="btn btn-secondary btn-sm" onclick="addUserToProject()" style="font-size:11px;">Add</button>
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;">
+          <button class="btn btn-sm" id="um-delete-btn" style="background:var(--danger);color:#fff;display:none;" onclick="deleteUser()">Deactivate</button>
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button class="btn btn-secondary btn-sm" onclick="closeUserModal()">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="um-save-btn" onclick="saveUser()">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    const ROLE_NAMES = {
+      executive:'Executive', pm:'Project Manager', finance:'Finance',
+      accounting:'Accounting', procurement:'Procurement', admin:'Admin', staff:'Staff'
+    };
+    const ROLES_ORDER = ['executive','pm','finance','accounting','procurement','admin','staff'];
+
+    const MODULE_GROUPS = [
+      { label:'Core', modules:['dashboard','projects'] },
+      { label:'Project', modules:['overview','phases','taskboard','risks','cr','notes','discussion','calendar','team','attachments','activity','reports','timesheet'] },
+      { label:'SDA Modules', modules:['budget','pr_po','expense','vehicle','travel','ot','number_run'] },
+      { label:'System', modules:['user_perms','setup'] },
+    ];
+    const ACTIONS = ['view','create','edit','delete','approve','export','push_sap','configure'];
+
+    // Simplified permission data (from config/roles.js)
+    const PM = {
+      executive:{dashboard:{view:1,create:0,edit:0,delete:0,approve:0,export:1,push_sap:0,configure:1},projects:{view:1,create:1,edit:1,delete:1,approve:1,export:1,push_sap:0,configure:1},budget:{view:1,create:1,edit:1,delete:0,approve:1,export:1,push_sap:0,configure:1},pr_po:{view:1,create:0,edit:0,delete:0,approve:1,export:1,push_sap:1,configure:0},expense:{view:1,create:0,edit:0,delete:0,approve:1,export:1,push_sap:0,configure:0},vehicle:{view:1,create:0,edit:0,delete:0,approve:1,export:1,push_sap:0,configure:0},travel:{view:1,create:0,edit:0,delete:0,approve:1,export:1,push_sap:0,configure:0},ot:{view:1,create:0,edit:0,delete:0,approve:1,export:1,push_sap:0,configure:0},user_perms:{view:1,create:1,edit:1,delete:1,approve:0,export:1,push_sap:0,configure:1},setup:{view:1,create:1,edit:1,delete:1,approve:0,export:0,push_sap:0,configure:1}},
+      pm:{dashboard:{view:1},projects:{view:1,create:1,edit:'own'},budget:{view:1,create:1,edit:'own',approve:1},pr_po:{view:1,create:1,edit:'own',approve:1},expense:{view:1,create:1,edit:'own',approve:1},vehicle:{view:1,create:1,edit:'own',approve:1},travel:{view:1,create:1,edit:'own',approve:1},ot:{view:1,create:1,edit:'own',approve:1}},
+      finance:{dashboard:{view:1},projects:{view:1},budget:{view:1,approve:1,export:1},pr_po:{view:1,approve:1,push_sap:1},expense:{view:1,approve:1,push_sap:1},travel:{view:1,approve:1},ot:{view:1,approve:1}},
+      accounting:{dashboard:{view:1},projects:{view:1},budget:{view:1,export:1},pr_po:{view:1,export:1},expense:{view:1,export:1},reports:{view:1,create:1,export:1}},
+      procurement:{pr_po:{view:1,create:1,edit:1,approve:1,push_sap:1},budget:{view:1}},
+      admin:{vehicle:{view:1,create:1,edit:1,delete:1,configure:1},ot:{view:1,create:1,edit:1,configure:1},expense:{view:1,create:1,edit:'own'}},
+      staff:{pr_po:{view:'own',create:1,edit:'own'},expense:{view:'own',create:1,edit:'own'},vehicle:{view:1,create:1,edit:'own'},travel:{view:'own',create:1,edit:'own'},ot:{view:'own',create:1,edit:'own'}},
+    };
+
+    const APPROVAL_FLOWS = [
+      { name:'Purchase Request', steps:['Draft','Manager','Finance','Executive','Approved','SAP (OPRQ)'], tiers:['≤ ฿10K → Manager only','฿10K-100K → Manager + Finance','> ฿100K → Manager + Finance + Executive'] },
+      { name:'Purchase Order', steps:['Draft','Procurement','Finance','Executive','Approved','SAP (OPOR)'], tiers:['≤ ฿10K → Procurement','฿10K-100K → Procurement + Finance','> ฿100K → All'] },
+      { name:'Expense', steps:['Draft','Manager','Finance','Executive','Paid','SAP (OPCH)'], tiers:['≤ ฿10K → Manager','฿10K-100K → Manager + Finance','> ฿100K → All'] },
+      { name:'Budget', steps:['Draft','Manager','Executive','Active'], tiers:['ทุกมูลค่า → Manager + Executive'] },
+      { name:'Travel', steps:['Draft','Team Confirm','Manager','Executive','Approved'], tiers:['≤ ฿100K → Manager','> ฿100K → Manager + Executive'] },
+      { name:'Vehicle Booking', steps:['Request','Manager','Approved','Checked Out','Returned'], tiers:['ทุกรายการ → Manager'] },
+      { name:'Holiday / OT', steps:['Request','Manager','Executive','Approved','Paid'], tiers:['ทุกรายการ → Manager + Executive'] },
+    ];
+
+    let allUsers = [];
+    let currentFilter = 'all';
+    const currentUser = API.getUser() || {};
+    const canManageUsers = ['executive', 'admin'].includes(currentUser.role);
+    let allProjectsList = [];
+    let userProjectsMap = {}; // userId -> [project codes]
+
+    async function loadData() {
+      try {
+        const users = await API.get('/auth/users').catch(() => null);
+        // Fallback: use static data if API not available
+        if (users && users.length) {
+          allUsers = users;
+        } else {
+          // Mock from seed data
+          allUsers = [
+            {first_name:'Warit',last_name:'Decharintr',first_name_th:'วริศ',position:'CEO',department:'CEO',role:'executive',can_approve:true,approval_limit:999999999,sap_license:'Professional',email:'warit@sda-group.com'},
+            {first_name:'Somparat',last_name:'Decharintr',first_name_th:'ศมพรัตร์',position:'Assistant MD',department:'MD',role:'executive',can_approve:true,approval_limit:999999999,sap_license:'Professional',email:'somparat@sda-group.com'},
+            {first_name:'Jathuthep',last_name:'Kueadam',first_name_th:'จตุเทพ',position:'Manager',department:'PRJ',role:'pm',can_approve:true,approval_limit:100000,sap_license:'Limited-Logistics',email:'jathuthep@sda-group.com'},
+            {first_name:'Winit',last_name:'Navee',first_name_th:'วินิจ',position:'Head',department:'PRJ',role:'pm',can_approve:true,approval_limit:100000,sap_license:'Limited-Logistics',email:'winit@sda-group.com'},
+            {first_name:'Phuchong',last_name:'Mongkol',first_name_th:'ภุชงค์',position:'Head',department:'PRJ',role:'pm',can_approve:true,approval_limit:100000,sap_license:'Limited-Logistics',email:'phuchong@sda-group.com'},
+            {first_name:'Norawat',last_name:'Sappachang',first_name_th:'นรวัฒน์',position:'Manager',department:'Ass.MD',role:'pm',can_approve:true,approval_limit:100000,sap_license:'Limited-Logistics',email:'norawat@sda-group.com'},
+            {first_name:'Sukanya',last_name:'Duangsintham',first_name_th:'สุกัญญา',position:'Senior',department:'FIN',role:'finance',can_approve:true,approval_limit:100000,sap_license:'Limited-Financials',email:'sukanya@sda-group.com'},
+            {first_name:'Pranee',last_name:'Samritmeephon',first_name_th:'ปราณี',position:'Manager',department:'ACC',role:'accounting',can_approve:false,approval_limit:0,sap_license:'Limited-Financials',email:'pranee@sda-group.com'},
+            {first_name:'Wachirapron',last_name:'Sunthorn',first_name_th:'วชิราภรณ์',position:'Senior',department:'ACC',role:'accounting',can_approve:false,approval_limit:0,sap_license:'Limited-Financials'},
+            {first_name:'Nuanwan',last_name:'Wongpanich',first_name_th:'นวลวรรณ',position:'Staff',department:'ACC',role:'accounting',can_approve:false,approval_limit:0,sap_license:'Limited-Financials'},
+            {first_name:'Kanganavadee',last_name:'Konpetch',first_name_th:'กาญจนาวดี',position:'Staff',department:'ACC',role:'accounting',can_approve:false,approval_limit:0,sap_license:'Limited-Financials'},
+            {first_name:'Pimradaporn',last_name:'Sunahu',first_name_th:'พิมรดาภรณ์',position:'Senior',department:'PRC-Domestic',role:'procurement',can_approve:true,approval_limit:50000,sap_license:'Limited-Logistics'},
+            {first_name:'Mayurachat',last_name:'Chantawongwut',first_name_th:'มยุรฉัตร',position:'Senior',department:'PRC-Intl',role:'procurement',can_approve:true,approval_limit:50000,sap_license:'Limited-Logistics'},
+            {first_name:'Phetcharat',last_name:'Saenkaew',first_name_th:'เพชรรัตน์',position:'Staff',department:'WHL',role:'admin',can_approve:false,approval_limit:0,sap_license:'Limited-Logistics'},
+            {first_name:'Teera',last_name:'Suppakomolkit',first_name_th:'ธีระ',position:'Senior',department:'IT',role:'admin',can_approve:false,approval_limit:0,sap_license:'Limited-Logistics'},
+            {first_name:'Ampai',last_name:'Santadratanawong',first_name_th:'อำไพ',position:'Head',department:'SAL',role:'staff',can_approve:false,approval_limit:0,sap_license:'Limited-Logistics'},
+            {first_name:'Donnapa',last_name:'Inphupimon',first_name_th:'ดลนภา',position:'Senior',department:'SAL',role:'staff',can_approve:false,approval_limit:0,sap_license:'Limited-Logistics'},
+            {first_name:'Sirikwan',last_name:'Prakobkit',first_name_th:'ศิริขวัญ',position:'Senior',department:'PRJ',role:'staff',can_approve:false,approval_limit:0,sap_license:'Limited-Logistics'},
+            {first_name:'Noppamas',last_name:'Burana',first_name_th:'นพมาศ',position:'Staff',department:'PRJ',role:'staff',can_approve:false,approval_limit:0,sap_license:'Limited-Logistics'},
+            {first_name:'Pakorn',last_name:'Sala-Daeng',first_name_th:'ปกรณ์',position:'Web Administrator',department:'IT',role:'executive',can_approve:true,approval_limit:999999999,sap_license:'Professional',email:'pakorn@sala-daeng.com'},
+          ];
+        }
+        // Load projects for membership
+        try { allProjectsList = await API.getProjects(); } catch(e) { allProjectsList = []; }
+
+        renderStats();
+        renderUsers();
+        renderMatrix();
+        renderFlows();
+        // Populate project filter
+        document.getElementById('filter-user-project').innerHTML = '<option value="">All Projects</option>' +
+          allProjectsList.map(p => '<option value="'+p.id+'">'+p.code+' — '+p.name+'</option>').join('');
+
+        loadUserProjects();
+        document.getElementById('subtitle-info').textContent = `${ROLES_ORDER.length} Roles • ${allUsers.length} Users • ${MODULE_GROUPS.flatMap(g=>g.modules).length} Modules`;
+        // Show Add User button only for admin/executive
+        if (canManageUsers) document.getElementById('btn-add-user').style.display = '';
+      } catch(e) { console.error(e); }
+    }
+
+    function getFilteredUsers() {
+      let list = allUsers;
+      const projFilter = document.getElementById('filter-user-project')?.value;
+      if (projFilter) list = list.filter(u => (userProjectsMap[u.id]||[]).some(p => p.id === projFilter));
+      const search = (document.getElementById('filter-user-search')?.value || '').toLowerCase().trim();
+      if (search) list = list.filter(u => [u.first_name,u.last_name,u.first_name_th,u.last_name_th,u.email,u.position,u.department].join(' ').toLowerCase().includes(search));
+      return list;
+    }
+
+    function renderStats() {
+      const filtered = getFilteredUsers();
+      const counts = {};
+      ROLES_ORDER.forEach(r => counts[r] = filtered.filter(u => u.role === r).length);
+      const total = filtered.length;
+      document.getElementById('role-stats').innerHTML = `
+        <div class="role-stat ${currentFilter==='all'?'active':''}" onclick="filterRole('all',this)">
+          <div class="count">${total}</div><div class="label">All Users</div>
+        </div>
+        ${ROLES_ORDER.map(r => `
+          <div class="role-stat ${currentFilter===r?'active':''}" onclick="filterRole('${r}',this)">
+            <div class="count" style="color:var(--primary);">${counts[r]}</div>
+            <div class="label">${ROLE_NAMES[r]}</div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderUsers(filter) {
+      if (filter) currentFilter = filter;
+      renderStats();
+      let list = getFilteredUsers();
+      if (currentFilter !== 'all') list = list.filter(u => u.role === currentFilter);
+      document.getElementById('user-grid').innerHTML = list.map(u => {
+        const limitText = u.can_approve ? (u.approval_limit >= 999999999 ? 'Unlimited' : '฿' + Number(u.approval_limit).toLocaleString()) : '-';
+        return `
+        <div class="user-card" style="${canManageUsers?'cursor:pointer;':''}" onclick="${canManageUsers?'openEditUser(\''+u.id+'\')':''}">
+          <div class="user-card-header">
+            <div class="user-avatar-lg" style="background:var(--c-${u.role});">${(u.first_name||'?')[0]}</div>
+            <div>
+              <div class="user-card-name">${u.first_name_th || u.first_name} ${u.last_name}</div>
+              <div class="user-card-pos">${u.first_name} ${u.last_name} • ${u.position} • ${u.department}</div>
+            </div>
+          </div>
+          <div class="user-meta-grid">
+            <div class="user-meta-item"><span class="lbl">Role</span><span class="role-pill ${u.role}">${ROLE_NAMES[u.role]}</span></div>
+            <div class="user-meta-item"><span class="lbl">SAP License</span><span style="font-size:11px;padding:2px 8px;background:var(--bg-hover);border-radius:4px;">${u.sap_license || '-'}</span></div>
+            <div class="user-meta-item"><span class="lbl">Can Approve</span><span style="font-size:11px;padding:2px 8px;border-radius:4px;${u.can_approve?'background:var(--success-bg);color:var(--success);':'background:var(--bg-hover);color:var(--text-muted);'}">${u.can_approve ? 'Yes — ' + limitText : 'No'}</span></div>
+            ${u.email ? `<div class="user-meta-item"><span class="lbl">Email</span><span style="font-size:11px;color:var(--text-muted);">${u.email}</span></div>` : ''}
+            <div class="user-meta-item" style="flex-wrap:wrap;gap:4px;">
+              <span class="lbl">Projects</span>
+              <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                ${(userProjectsMap[u.id]||[]).length
+                  ? (userProjectsMap[u.id]||[]).sort((a,b)=>a.code.localeCompare(b.code)).map(p => '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-weight:500;">'+p.code+'</span>').join('')
+                  : '<span style="font-size:10px;color:var(--text-muted);">-</span>'}
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('') || '<div class="empty-state"><h3>No users found</h3></div>';
+    }
+
+    function filterRole(role, el) {
+      currentFilter = role;
+      renderStats();
+      renderUsers();
+    }
+
+    function renderMatrix() {
+      const modules = MODULE_GROUPS.flatMap(g => g.modules);
+      let html = `<thead><tr><th>Module / Action</th>`;
+      ROLES_ORDER.forEach(r => html += `<th>${ROLE_NAMES[r]}</th>`);
+      html += `</tr></thead><tbody>`;
+
+      MODULE_GROUPS.forEach(group => {
+        html += `<tr class="group-row"><td colspan="${ROLES_ORDER.length+1}">${group.label}</td></tr>`;
+        group.modules.forEach(mod => {
+          ACTIONS.forEach(act => {
+            html += `<tr><td style="padding-left:${act==='view'?'12':'28'}px;${act==='view'?'font-weight:600;':'color:var(--text-secondary);font-size:11px;'}">${act==='view'?mod.replace('_',' '):act}</td>`;
+            ROLES_ORDER.forEach(role => {
+              const val = PM[role]?.[mod]?.[act];
+              if (val === 1 || val === true) html += `<td class="p-yes">&#10003;</td>`;
+              else if (val === 'own') html += `<td class="p-own">own</td>`;
+              else html += `<td class="p-no">&mdash;</td>`;
+            });
+            html += '</tr>';
+          });
+        });
+      });
+      html += '</tbody>';
+      document.getElementById('perm-table').innerHTML = html;
+    }
+
+    function renderFlows() {
+      document.getElementById('flow-cards').innerHTML = APPROVAL_FLOWS.map(f => `
+        <div class="flow-card">
+          <div class="flow-card-head">${f.name}</div>
+          <div class="flow-steps">
+            ${f.steps.map((s, i) => {
+              const type = i === 0 ? 'draft' : s.includes('SAP') ? 'sap' : (s==='Approved'||s==='Active'||s==='Paid'||s==='Returned') ? 'approved' : 'pending';
+              return (i > 0 ? '<span class="flow-arrow">&rarr;</span>' : '') + `<div class="flow-node ${type}">${s}</div>`;
+            }).join('')}
+          </div>
+          <div class="flow-tiers">
+            ${f.tiers.map(t => `<div class="flow-tier">${t}</div>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function switchView(view, btn) {
+      document.querySelectorAll('.view-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-users').classList.toggle('hidden', view !== 'users');
+      document.getElementById('view-matrix').classList.toggle('hidden', view !== 'matrix');
+      document.getElementById('view-approval').classList.toggle('hidden', view !== 'approval');
+    }
+
+    // ═══ User Projects ═══
+    async function loadUserProjects() {
+      userProjectsMap = {};
+      // Load all members in parallel
+      const results = await Promise.all(
+        allProjectsList.map(p => API.get('/projects/' + p.id + '/members').catch(() => []).then(members => ({ project: p, members: members || [] })))
+      );
+      results.forEach(({ project, members }) => {
+        members.forEach(m => {
+          if (!userProjectsMap[m.user_id]) userProjectsMap[m.user_id] = [];
+          if (!userProjectsMap[m.user_id].find(x => x.id === project.id)) {
+            userProjectsMap[m.user_id].push({ code: project.code, name: project.name, id: project.id, role: m.role });
+          }
+        });
+      });
+      // Re-render users with project data
+      renderUsers();
+    }
+
+    // ═══ User Modal ═══
+    function openUserModal() {
+      document.getElementById('user-modal-title').textContent = 'Add User';
+      document.getElementById('um-id').value = '';
+      document.getElementById('um-email').value = '';
+      document.getElementById('um-email').readOnly = false;
+      document.getElementById('um-password').value = '';
+      document.getElementById('um-password').placeholder = 'Set password';
+      document.getElementById('um-fname').value = '';
+      document.getElementById('um-lname').value = '';
+      document.getElementById('um-fname-th').value = '';
+      document.getElementById('um-lname-th').value = '';
+      document.getElementById('um-role').value = 'staff';
+      document.getElementById('um-position').value = '';
+      document.getElementById('um-dept').value = '';
+      document.getElementById('um-limit').value = '0';
+      document.getElementById('um-approve').checked = true;
+      document.getElementById('um-active').checked = true;
+      document.getElementById('um-delete-btn').style.display = 'none';
+      document.getElementById('user-modal').style.display = 'flex';
+    }
+
+    function openEditUser(userId) {
+      const u = allUsers.find(x => x.id === userId);
+      if (!u) return;
+      document.getElementById('user-modal-title').textContent = 'Edit User';
+      document.getElementById('um-id').value = u.id;
+      document.getElementById('um-email').value = u.email;
+      document.getElementById('um-email').readOnly = true;
+      document.getElementById('um-password').value = '';
+      document.getElementById('um-password').placeholder = 'Leave blank to keep';
+      document.getElementById('um-fname').value = u.first_name || '';
+      document.getElementById('um-lname').value = u.last_name || '';
+      document.getElementById('um-fname-th').value = u.first_name_th || '';
+      document.getElementById('um-lname-th').value = u.last_name_th || '';
+      document.getElementById('um-role').value = u.role || 'staff';
+      document.getElementById('um-position').value = u.position || '';
+      document.getElementById('um-dept').value = u.department || '';
+      document.getElementById('um-limit').value = u.approval_limit || 0;
+      document.getElementById('um-approve').checked = !!u.can_approve;
+      document.getElementById('um-active').checked = u.is_active !== false;
+      document.getElementById('um-delete-btn').style.display = 'inline-flex';
+      // Show projects section
+      document.getElementById('um-projects-section').style.display = 'block';
+      renderUserProjectsInModal(u.id);
+      document.getElementById('user-modal').style.display = 'flex';
+    }
+
+    function renderUserProjectsInModal(userId) {
+      const projects = userProjectsMap[userId] || [];
+      const listEl = document.getElementById('um-projects-list');
+      listEl.innerHTML = projects.length ? projects.map(p =>
+        '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-weight:500;">' +
+        p.code + ' <span style="cursor:pointer;color:var(--danger);" onclick="removeUserFromProject(\''+userId+'\',\''+p.id+'\')">&times;</span></span>'
+      ).join('') : '<span style="font-size:11px;color:var(--text-muted);">No projects</span>';
+
+      // Populate add dropdown (exclude already assigned)
+      const assignedIds = projects.map(p => p.id);
+      document.getElementById('um-add-project').innerHTML = '<option value="">Select project...</option>' +
+        allProjectsList.filter(p => !assignedIds.includes(p.id)).map(p => '<option value="'+p.id+'">'+p.code+' — '+p.name+'</option>').join('');
+    }
+
+    function closeUserModal() {
+      document.getElementById('user-modal').style.display = 'none';
+    }
+
+    async function saveUser() {
+      const id = document.getElementById('um-id').value;
+      const body = {
+        email: document.getElementById('um-email').value.trim(),
+        first_name: document.getElementById('um-fname').value.trim(),
+        last_name: document.getElementById('um-lname').value.trim(),
+        first_name_th: document.getElementById('um-fname-th').value.trim(),
+        last_name_th: document.getElementById('um-lname-th').value.trim(),
+        role: document.getElementById('um-role').value,
+        position: document.getElementById('um-position').value.trim(),
+        department: document.getElementById('um-dept').value.trim(),
+        can_approve: document.getElementById('um-approve').checked,
+        approval_limit: parseFloat(document.getElementById('um-limit').value) || 0,
+        is_active: document.getElementById('um-active').checked,
+      };
+      const pw = document.getElementById('um-password').value;
+      if (pw) body.password = pw;
+
+      if (!body.email || !body.first_name) { alert('Email and First Name required'); return; }
+      if (!id && !pw) { alert('Password required for new user'); return; }
+
+      const btn = document.getElementById('um-save-btn');
+      btn.disabled = true; btn.textContent = 'Saving...';
+
+      try {
+        if (id) {
+          await API.put('/auth/users/' + id, body);
+        } else {
+          await API.post('/auth/users', body);
+        }
+        closeUserModal();
+        await loadData();
+      } catch(e) { alert('Error: ' + e.message); }
+      finally { btn.disabled = false; btn.textContent = 'Save'; }
+    }
+
+    async function deleteUser() {
+      const id = document.getElementById('um-id').value;
+      if (!id) return;
+      if (!confirm('Deactivate this user?')) return;
+      try {
+        await API.del('/auth/users/' + id);
+        closeUserModal();
+        await loadData();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function addUserToProject() {
+      const userId = document.getElementById('um-id').value;
+      const projectId = document.getElementById('um-add-project').value;
+      if (!userId || !projectId) return;
+      try {
+        await API.post('/projects/' + projectId + '/members', { user_id: userId, role: 'member' });
+        // Update local cache
+        const proj = allProjectsList.find(p => p.id === projectId);
+        if (!userProjectsMap[userId]) userProjectsMap[userId] = [];
+        userProjectsMap[userId].push({ code: proj?.code||'', name: proj?.name||'', id: projectId, role: 'member' });
+        renderUserProjectsInModal(userId);
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function removeUserFromProject(userId, projectId) {
+      if (!confirm('Remove from this project?')) return;
+      try {
+        await API.del('/projects/' + projectId + '/members/' + userId);
+        userProjectsMap[userId] = (userProjectsMap[userId] || []).filter(p => p.id !== projectId);
+        renderUserProjectsInModal(userId);
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUserModal(); });
+
+    loadData();
+  </script>
+</body>
+</html>

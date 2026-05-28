@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Vehicle</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .vehicle-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    .vehicle-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xs);
+      transition: all 0.2s;
+    }
+    .vehicle-card:hover { box-shadow: var(--shadow-sm); }
+    .vehicle-card-top {
+      padding: 20px; display: flex; align-items: center; gap: 16px;
+    }
+    .vehicle-icon {
+      width: 56px; height: 56px; border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; flex-shrink: 0;
+    }
+    .vehicle-info h3 { font-size: 16px; font-weight: 700; }
+    .vehicle-info .plate {
+      font-size: 13px; font-weight: 600; color: var(--primary);
+      background: var(--primary-light); padding: 2px 10px;
+      border-radius: var(--radius-full); display: inline-block; margin-top: 4px;
+    }
+    .vehicle-info .type { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+    .vehicle-status-bar {
+      padding: 12px 20px; border-top: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px;
+    }
+    .v-status {
+      display: flex; align-items: center; gap: 6px; font-weight: 600;
+    }
+    .v-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .vehicle-stats {
+      padding: 12px 20px; border-top: 1px solid var(--border-light);
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    }
+    .v-stat { text-align: center; }
+    .v-stat .val { font-size: 15px; font-weight: 700; }
+    .v-stat .lbl { font-size: 10px; color: var(--text-muted); }
+
+    /* Calendar */
+    .calendar-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+      background: var(--border-light); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .cal-header {
+      background: var(--bg-light); padding: 10px; text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+    .cal-day {
+      background: var(--bg-white); padding: 8px; min-height: 90px;
+      position: relative; cursor: pointer; transition: background 0.1s;
+    }
+    .cal-day:hover { background: var(--bg-hover); }
+    .cal-day.today { background: var(--primary-50); }
+    .cal-day.other-month { opacity: 0.4; }
+    .cal-day .day-num {
+      font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;
+    }
+    .cal-day.today .day-num {
+      background: var(--primary); color: white; width: 22px; height: 22px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+    }
+    .cal-booking {
+      font-size: 10px; padding: 2px 6px; border-radius: 4px;
+      margin-bottom: 2px; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; font-weight: 500; cursor: pointer;
+    }
+    .cal-booking.car1 { background: #dbeafe; color: #1d4ed8; }
+    .cal-booking.car2 { background: #fef3c7; color: #92400e; }
+    .cal-booking.car3 { background: #d1fae5; color: #065f46; }
+
+    /* Booking List */
+    .booking-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border-light);
+      transition: background 0.1s;
+    }
+    .booking-item:hover { background: var(--bg-hover); }
+    .booking-item:last-child { border-bottom: none; }
+    .booking-color {
+      width: 4px; height: 40px; border-radius: 4px; flex-shrink: 0;
+    }
+    .booking-info { flex: 1; }
+    .booking-info h4 { font-size: 13px; font-weight: 600; }
+    .booking-info .meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .booking-dates { text-align: right; font-size: 12px; }
+    .booking-dates .range { font-weight: 600; }
+    .booking-dates .duration { font-size: 11px; color: var(--text-muted); }
+
+    /* Check-in/out form */
+    .checkin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .checkin-card {
+      background: var(--bg-light); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .checkin-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+    /* Check-out/in inline forms */
+    .booking-actions { display: flex; align-items: center; gap: 8px; }
+    .checkout-form {
+      background: var(--bg-light); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 12px 16px; margin-top: 8px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .checkout-form .form-group { margin-bottom: 0; }
+    .checkout-form .form-label { font-size: 11px; margin-bottom: 4px; }
+    .checkout-form .form-input,
+    .checkout-form .form-select,
+    .checkout-form .form-textarea { font-size: 12px; padding: 6px 8px; }
+    .checkout-form .form-actions {
+      grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .vehicle-cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Nav -->
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+
+  <!-- Tab Bar -->
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Vehicle Management</h1>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="openBookingModal()">+ Book Vehicle</button>
+      </div>
+    </div>
+
+    <!-- Vehicle Fleet Cards -->
+    <div class="vehicle-cards" id="vehicle-fleet"></div>
+
+    <!-- Booking Calendar -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Booking Calendar</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">&#9664; Prev</button>
+          <span style="font-weight:600;" id="cal-month-label"></span>
+          <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)">Next &#9654;</button>
+        </div>
+      </div>
+      <div style="padding:4px;">
+        <div style="display:flex;gap:16px;padding:8px 12px;font-size:11px;" id="cal-legend"></div>
+        <div class="calendar-grid" id="cal-grid"></div>
+      </div>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Bookings</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select class="form-select" id="filter-project" style="font-size:12px;padding:4px 8px;min-width:180px;" onchange="applyProjectFilter()">
+            <option value="">All Projects</option>
+          </select>
+        </div>
+      </div>
+      <div id="booking-list"></div>
+    </div>
+  </main>
+  </div><!-- end main-wrapper -->
+
+  <!-- Booking Modal -->
+  <div id="booking-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeBookingModal()">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Book Vehicle</h2>
+        <button class="btn btn-ghost" onclick="closeBookingModal()" style="font-size:18px;">&#10005;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Vehicle</label>
+          <select class="form-select" id="book-vehicle">
+            <option value="">Select vehicle...</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Start Date</label>
+            <input class="form-input" type="date" id="book-start-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date</label>
+            <input class="form-input" type="date" id="book-end-date">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Project</label>
+          <select class="form-select" id="book-project">
+            <option value="">Select project...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Purpose</label>
+          <textarea class="form-textarea" id="book-purpose" placeholder="เหตุผลในการจองรถ..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Passengers</label>
+          <input class="form-input" id="book-passengers" placeholder="ชื่อผู้โดยสาร (เช่น Winit N., Noppamas B.)">
+        </div>
+
+        <!-- Conflict Warning (hidden by default) -->
+        <div style="background:var(--danger-bg);border:1px solid var(--danger);border-radius:var(--radius);padding:12px 16px;margin-top:12px;display:none;" id="conflict-warn">
+          <div style="font-size:13px;font-weight:600;color:var(--danger);">&#9888; Booking Conflict!</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;" id="conflict-warn-detail"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeBookingModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="doBooking()">Submit Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    async function openBookingModal() {
+      // Hide conflict warning
+      document.getElementById('conflict-warn').style.display = 'none';
+
+      // Set default dates: start = today, end = today + 1
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('book-start-date').value = today.toISOString().slice(0, 10);
+      document.getElementById('book-end-date').value = tomorrow.toISOString().slice(0, 10);
+
+      // Clear text fields
+      document.getElementById('book-purpose').value = '';
+      document.getElementById('book-passengers').value = '';
+
+      // Populate vehicle dropdown dynamically
+      try {
+        const vehicles = await API.getVehicles();
+        const vSelect = document.getElementById('book-vehicle');
+        vSelect.innerHTML = '<option value="">Select vehicle...</option>' + vehicles.map(v => {
+          const icon = vIcon(v.vehicle_type);
+          const disabled = (v.status || '').toLowerCase() !== 'available';
+          const statusLabel = disabled ? ` (${(v.status || 'unavailable').replace(/_/g, ' ')})` : ' (Available)';
+          return `<option value="${v.id}" ${disabled ? 'disabled' : ''}>${icon} ${v.plate_number} ${v.name || ''}${statusLabel}</option>`;
+        }).join('');
+      } catch (e) {
+        console.error('Failed to load vehicles for modal:', e);
+      }
+
+      // Populate project dropdown dynamically
+      try {
+        const projects = await API.getProjects();
+        const pSelect = document.getElementById('book-project');
+        pSelect.innerHTML = '<option value="">Select project...</option>' + projects.map(p =>
+          `<option value="${p.id}">${p.code} — ${p.name}</option>`
+        ).join('');
+      } catch (e) {
+        console.error('Failed to load projects for modal:', e);
+      }
+
+      document.getElementById('booking-modal').classList.remove('hidden');
+    }
+    function closeBookingModal() { document.getElementById('booking-modal').classList.add('hidden'); }
+
+    async function doBooking() {
+      const vehicle_id = document.getElementById('book-vehicle').value;
+      const project_id = document.getElementById('book-project').value;
+      const start_date = document.getElementById('book-start-date').value;
+      const end_date = document.getElementById('book-end-date').value;
+      const purpose = document.getElementById('book-purpose').value;
+      const passengers = document.getElementById('book-passengers').value;
+
+      if (!vehicle_id) { alert('Please select a vehicle.'); return; }
+      if (!start_date || !end_date) { alert('Please select start and end dates.'); return; }
+
+      // Hide previous conflict warning
+      document.getElementById('conflict-warn').style.display = 'none';
+
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const token = API.getToken();
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`${API.baseUrl}/vehicle/bookings`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ vehicle_id, project_id, start_date, end_date, purpose, passengers })
+        });
+
+        const data = await res.json();
+
+        if (res.status === 409) {
+          // Show conflict warning
+          const warnEl = document.getElementById('conflict-warn');
+          const detailEl = document.getElementById('conflict-warn-detail');
+          let detail = data.error || 'Date conflict detected.';
+          if (data.conflicts && data.conflicts.length) {
+            detail = data.conflicts.map(c =>
+              `${c.vehicle_name || c.plate_number || 'Vehicle'} is already booked ${fmtDateShort(c.start_date)} - ${fmtDateShort(c.end_date)} by ${c.booked_by_name || 'someone'}`
+            ).join('<br>');
+          }
+          detailEl.innerHTML = detail;
+          warnEl.style.display = 'block';
+          return;
+        }
+
+        if (!res.ok) throw new Error(data.error || 'Booking failed');
+
+        alert('Booking created successfully!');
+        closeBookingModal();
+        loadVehicles();
+      } catch (e) {
+        console.error('Booking failed:', e);
+        alert('Booking failed: ' + e.message);
+      }
+    }
+
+    let allBookings = [];
+    let allVehicles = [];
+    let allProjects = [];
+    let calYear, calMonth;
+
+    const vehicleColors = ['#dbeafe', '#fef3c7', '#d1fae5', '#fce7f3', '#e0e7ff'];
+    const vehicleTextColors = ['#1d4ed8', '#92400e', '#065f46', '#9d174d', '#4338ca'];
+    const vehicleIcons = { pickup: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>', van: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>', sedan: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>' };
+
+    function vIcon(type) {
+      const t = (type || '').toLowerCase();
+      if (t.includes('pickup') || t.includes('truck')) return vehicleIcons.pickup;
+      if (t.includes('van') || t.includes('commuter')) return vehicleIcons.van;
+      return vehicleIcons.sedan;
+    }
+
+    function statusDotColor(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'available') return 'var(--success)';
+      if (s.includes('in_use') || s.includes('in use') || s === 'checked_out') return 'var(--warning)';
+      if (s === 'maintenance') return 'var(--danger)';
+      return 'var(--text-muted)';
+    }
+
+    function renderFleet(vehicles) {
+      if (!vehicles.length) {
+        document.getElementById('vehicle-fleet').innerHTML = emptyMsg('No vehicles found');
+        return;
+      }
+      document.getElementById('vehicle-fleet').innerHTML = vehicles.map((v, i) => {
+        const bg = vehicleColors[i % vehicleColors.length];
+        return `<div class="vehicle-card">
+          <div class="vehicle-card-top">
+            <div class="vehicle-icon" style="background:${bg};">${vIcon(v.vehicle_type)}</div>
+            <div class="vehicle-info">
+              <h3>${v.name || '-'}</h3>
+              <span class="plate">${v.plate_number || '-'}</span>
+              <div class="type">${v.vehicle_type || '-'} &bull; ${v.seats || '-'} seats</div>
+            </div>
+          </div>
+          <div class="vehicle-status-bar">
+            <div class="v-status"><div class="dot" style="background:${statusDotColor(v.status)};"></div> ${(v.status || 'unknown').replace(/_/g, ' ')}</div>
+            <span style="color:var(--text-muted);">KM: ${fmtNum(v.current_km)} | Fuel: ${v.fuel_level || 'N/A'}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderBookingList(bookings) {
+      if (!bookings.length) {
+        document.getElementById('booking-list').innerHTML = emptyMsg('No bookings found');
+        return;
+      }
+      document.getElementById('booking-list').innerHTML = bookings.map(b => {
+        const days = Math.max(1, Math.round((new Date(b.end_date) - new Date(b.start_date)) / 86400000) + 1);
+        const st = (b.status || '').toLowerCase();
+        let actionBtn = '';
+        if (st === 'approved') {
+          actionBtn = `<button class="btn btn-sm btn-primary" onclick="toggleCheckoutForm(${b.id}, event)">Check Out</button>`;
+        } else if (st === 'checked_out') {
+          actionBtn = `<button class="btn btn-sm btn-warning" onclick="toggleCheckinForm(${b.id}, event)">Check In</button>`;
+        }
+        return `<div class="booking-item-wrapper" id="booking-wrapper-${b.id}">
+          <div class="booking-item">
+            <div class="booking-color" style="background:var(--primary);"></div>
+            <div class="booking-info">
+              <h4>${b.booked_by_name || '-'} &mdash; ${b.purpose || 'Booking'}</h4>
+              <div class="meta">${b.plate_number || ''} ${b.vehicle_name || ''} ${b.project_code ? ' &bull; <span style="background:var(--primary-light);color:var(--primary);padding:1px 8px;border-radius:var(--radius-full);font-size:11px;font-weight:600;">' + b.project_code + '</span>' : ''} ${b.travel_id ? '&bull; <a href="travel.html?id=' + b.travel_id + '" style="color:var(--primary);text-decoration:underline;">Travel: ' + b.travel_id + '</a>' : ''}</div>
+            </div>
+            <div class="booking-dates">
+              <div class="range">${fmtDateShort(b.start_date)} - ${fmtDateShort(b.end_date)}</div>
+              <div class="duration">${days} day${days !== 1 ? 's' : ''}</div>
+            </div>
+            <div class="booking-actions">
+              ${statusBadge(b.status || 'pending')}
+              ${actionBtn}
+            </div>
+          </div>
+          <div id="checkout-form-${b.id}" class="checkout-form" style="display:none;"></div>
+        </div>`;
+      }).join('');
+    }
+
+    function toggleCheckoutForm(id, event) {
+      event.stopPropagation();
+      const el = document.getElementById('checkout-form-' + id);
+      if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+      el.style.display = 'grid';
+      el.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">KM Start</label>
+          <input class="form-input" type="number" id="co-km-${id}" placeholder="e.g. 45000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fuel Level</label>
+          <select class="form-select" id="co-fuel-${id}">
+            <option value="full">Full</option>
+            <option value="3/4">3/4</option>
+            <option value="half">Half</option>
+            <option value="1/4">1/4</option>
+            <option value="empty">Empty</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">Condition Notes</label>
+          <textarea class="form-textarea" id="co-notes-${id}" rows="2" placeholder="Vehicle condition notes..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('checkout-form-${id}').style.display='none'">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="doCheckout(${id})">Confirm Check Out</button>
+        </div>`;
+    }
+
+    function toggleCheckinForm(id, event) {
+      event.stopPropagation();
+      const el = document.getElementById('checkout-form-' + id);
+      if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+      el.style.display = 'grid';
+      el.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">KM End</label>
+          <input class="form-input" type="number" id="ci-km-${id}" placeholder="e.g. 45350">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fuel Level</label>
+          <select class="form-select" id="ci-fuel-${id}">
+            <option value="full">Full</option>
+            <option value="3/4">3/4</option>
+            <option value="half">Half</option>
+            <option value="1/4">1/4</option>
+            <option value="empty">Empty</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">Condition Notes</label>
+          <textarea class="form-textarea" id="ci-notes-${id}" rows="2" placeholder="Return condition notes..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('checkout-form-${id}').style.display='none'">Cancel</button>
+          <button class="btn btn-sm btn-warning" onclick="doCheckin(${id})">Confirm Check In</button>
+        </div>`;
+    }
+
+    async function doCheckout(id) {
+      try {
+        const data = {
+          km_start: parseFloat(document.getElementById('co-km-' + id).value) || 0,
+          fuel_level: document.getElementById('co-fuel-' + id).value,
+          condition_notes: document.getElementById('co-notes-' + id).value
+        };
+        await API.checkoutVehicle(id, data);
+        loadVehicles();
+      } catch (e) {
+        console.error('Checkout failed:', e);
+        alert('Check-out failed: ' + e.message);
+      }
+    }
+
+    async function doCheckin(id) {
+      try {
+        const data = {
+          km_end: parseFloat(document.getElementById('ci-km-' + id).value) || 0,
+          fuel_level: document.getElementById('ci-fuel-' + id).value,
+          condition_notes: document.getElementById('ci-notes-' + id).value
+        };
+        await API.checkinVehicle(id, data);
+        loadVehicles();
+      } catch (e) {
+        console.error('Checkin failed:', e);
+        alert('Check-in failed: ' + e.message);
+      }
+    }
+
+    // ---- Calendar ----
+    function changeMonth(delta) {
+      calMonth += delta;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('cal-month-label').textContent = monthNames[calMonth] + ' ' + calYear;
+
+      const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+
+      // Build vehicle index map for consistent coloring
+      const vehicleIndexMap = {};
+      allVehicles.forEach((v, i) => { vehicleIndexMap[v.id] = i; });
+
+      // Build booking map: day -> [{plate, name, vehicle, vIdx}]
+      const bookingMap = {};
+      allBookings.forEach(b => {
+        const sd = new Date(b.start_date);
+        const ed = new Date(b.end_date);
+        const vIdx = vehicleIndexMap[b.vehicle_id] !== undefined ? vehicleIndexMap[b.vehicle_id] : 0;
+        for (let d = new Date(sd); d <= ed; d.setDate(d.getDate() + 1)) {
+          if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
+            const day = d.getDate();
+            if (!bookingMap[day]) bookingMap[day] = [];
+            bookingMap[day].push({ plate: b.plate_number || '', name: b.booked_by_name || '', vehicle: b.vehicle_name || '', vIdx });
+          }
+        }
+      });
+
+      let html = `<div class="cal-header">Sun</div><div class="cal-header">Mon</div><div class="cal-header">Tue</div>
+        <div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div>`;
+
+      // Previous month padding
+      for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="cal-day other-month"><div class="day-num">${daysInPrev - i}</div></div>`;
+      }
+
+      // Current month days
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday = dateStr === todayStr;
+        const bookings = bookingMap[d] || [];
+        const bookingHtml = bookings.map(b => {
+          const bg = vehicleColors[b.vIdx % vehicleColors.length];
+          const tc = vehicleTextColors[b.vIdx % vehicleTextColors.length];
+          return `<div class="cal-booking" style="background:${bg};color:${tc};">${b.vehicle.split(' ')[0] || b.plate} - ${b.name.split(' ')[0]}</div>`;
+        }).join('');
+        html += `<div class="cal-day${isToday ? ' today' : ''}"><div class="day-num">${d}</div>${bookingHtml}</div>`;
+      }
+
+      // Next month padding
+      const totalCells = firstDay + daysInMonth;
+      const remaining = (7 - (totalCells % 7)) % 7;
+      for (let i = 1; i <= remaining; i++) {
+        html += `<div class="cal-day other-month"><div class="day-num">${i}</div></div>`;
+      }
+
+      document.getElementById('cal-grid').innerHTML = html;
+    }
+
+    function applyProjectFilter() {
+      const projectId = document.getElementById('filter-project').value;
+      if (!projectId) {
+        renderBookingList(allBookings);
+      } else {
+        const filtered = allBookings.filter(b => String(b.project_id) === projectId);
+        renderBookingList(filtered);
+      }
+    }
+
+    async function loadVehicles() {
+      try {
+        const now = new Date();
+        calYear = now.getFullYear();
+        calMonth = now.getMonth();
+
+        const [vehicles, bookings, projects] = await Promise.all([API.getVehicles(), API.getBookings(), API.getProjects()]);
+        allVehicles = vehicles;
+        allBookings = bookings;
+        allProjects = projects;
+
+        // Populate project filter dropdown
+        const pFilter = document.getElementById('filter-project');
+        pFilter.innerHTML = '<option value="">All Projects</option>' + projects.map(p =>
+          `<option value="${p.id}">${p.code} — ${p.name}</option>`
+        ).join('');
+
+        renderFleet(vehicles);
+
+        // Build legend from vehicles
+        document.getElementById('cal-legend').innerHTML = vehicles.map((v, i) => {
+          const bg = vehicleColors[i % vehicleColors.length];
+          return `<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${bg};"></span> ${v.plate_number} ${v.name || ''}</span>`;
+        }).join('');
+
+        renderCalendar();
+        renderBookingList(bookings);
+      } catch (e) {
+        console.error('Failed to load vehicle data:', e);
+        document.getElementById('vehicle-fleet').innerHTML = emptyMsg('Failed to load vehicle data');
+      }
+    }
+
+    loadVehicles();
+  </script>
+</body>
+</html>

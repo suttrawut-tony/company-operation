@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Business Partner</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1>Business Partner</h1></div>
+      <button class="btn btn-primary" onclick="openBPModal()">+ New Partner</button>
+    </div>
+    <div style="margin-bottom:16px;display:flex;gap:12px;">
+      <input type="text" class="form-input" id="bp-search" placeholder="Search code, name, contact..." oninput="renderBPs()" style="width:300px;">
+      <select class="form-select" id="bp-type-filter" onchange="renderBPs()" style="width:150px;">
+        <option value="">All Types</option>
+        <option value="vendor">Vendor</option>
+        <option value="customer">Customer</option>
+      </select>
+    </div>
+    <div id="bp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px;"></div>
+    <!-- Modal -->
+    <div class="modal-overlay" id="bp-modal" onclick="if(event.target===this)closeBPModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="bp-modal-title">New Partner</h3><button onclick="closeBPModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px;">
+          <input type="hidden" id="bm-id">
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-input" id="bm-code" placeholder="VD0001"></div>
+            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="bm-name"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Name (TH)</label><input type="text" class="form-input" id="bm-name-th"></div>
+            <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="bm-type"><option value="vendor">Vendor</option><option value="customer">Customer</option></select></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Contact Person</label><input type="text" class="form-input" id="bm-contact"></div>
+            <div class="form-group"><label class="form-label">Phone</label><input type="text" class="form-input" id="bm-phone"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="bm-email"></div>
+            <div class="form-group"><label class="form-label">Tax ID</label><input type="text" class="form-input" id="bm-taxid"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-input" id="bm-address"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Payment Terms (days)</label><input type="number" class="form-input" id="bm-terms" value="30"></div>
+            <div class="form-group"><label class="form-label">Bank</label><input type="text" class="form-input" id="bm-bank"></div>
+            <div class="form-group"><label class="form-label">Bank Account</label><input type="text" class="form-input" id="bm-bankacc"></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="closeBPModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveBP()">Save</button>
+        </div>
+      </div>
+    </div>
+  </main></div>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allBPs = [];
+    async function loadBPs() { allBPs = await API.get('/master/bp'); renderBPs(); }
+    function renderBPs() {
+      let list = allBPs;
+      const s = (document.getElementById('bp-search')?.value||'').toLowerCase();
+      const t = document.getElementById('bp-type-filter')?.value;
+      if (s) list = list.filter(b => (b.bp_code+b.bp_name+b.bp_name_th+b.contact_person).toLowerCase().includes(s));
+      if (t) list = list.filter(b => b.bp_type === t);
+      document.getElementById('bp-grid').innerHTML = list.map(b => {
+        const isVendor = b.bp_type === 'vendor';
+        return `
+        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;cursor:pointer;transition:all 0.15s;border-left:3px solid ${isVendor?'var(--primary)':'var(--success)'};" onclick="openEditBP('${b.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--primary);">${b.bp_code}</div>
+              <div style="font-size:15px;font-weight:700;">${b.bp_name}</div>
+              <div style="font-size:12px;color:var(--text-secondary);">${b.bp_name_th||''}</div>
+            </div>
+            <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${isVendor?'var(--primary-light);color:var(--primary)':'var(--success-bg);color:var(--success)'};font-weight:600;">${b.bp_type}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;margin-top:10px;">
+            <div><span style="color:var(--text-muted);">Contact:</span> ${b.contact_person||'-'}</div>
+            <div><span style="color:var(--text-muted);">Phone:</span> ${b.phone||'-'}</div>
+            <div><span style="color:var(--text-muted);">Email:</span> ${b.email||'-'}</div>
+            <div><span style="color:var(--text-muted);">Terms:</span> ${b.payment_terms||30} days</div>
+            ${b.bank_name?'<div><span style="color:var(--text-muted);">Bank:</span> '+b.bank_name+' '+b.bank_account+'</div>':''}
+            ${b.tax_id?'<div><span style="color:var(--text-muted);">Tax ID:</span> '+b.tax_id+'</div>':''}
+          </div>
+        </div>`;
+      }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">No partners found</div>';
+    }
+    function openBPModal() { document.getElementById('bm-id').value=''; ['bm-code','bm-name','bm-name-th','bm-contact','bm-phone','bm-email','bm-taxid','bm-address','bm-bank','bm-bankacc'].forEach(id=>document.getElementById(id).value=''); document.getElementById('bm-code').readOnly=false; document.getElementById('bm-type').value='vendor'; document.getElementById('bm-terms').value='30'; document.getElementById('bp-modal-title').textContent='New Partner'; document.getElementById('bp-modal').style.display='flex'; }
+    function openEditBP(id) { const b=allBPs.find(x=>x.id===id); if(!b)return; document.getElementById('bm-id').value=id; document.getElementById('bm-code').value=b.bp_code; document.getElementById('bm-code').readOnly=true; document.getElementById('bm-name').value=b.bp_name; document.getElementById('bm-name-th').value=b.bp_name_th||''; document.getElementById('bm-type').value=b.bp_type; document.getElementById('bm-contact').value=b.contact_person||''; document.getElementById('bm-phone').value=b.phone||''; document.getElementById('bm-email').value=b.email||''; document.getElementById('bm-taxid').value=b.tax_id||''; document.getElementById('bm-address').value=b.address||''; document.getElementById('bm-terms').value=b.payment_terms||30; document.getElementById('bm-bank').value=b.bank_name||''; document.getElementById('bm-bankacc').value=b.bank_account||''; document.getElementById('bp-modal-title').textContent='Edit Partner'; document.getElementById('bp-modal').style.display='flex'; }
+    function closeBPModal() { document.getElementById('bp-modal').style.display='none'; }
+    async function saveBP() {
+      const id=document.getElementById('bm-id').value;
+      const body={bp_code:document.getElementById('bm-code').value,bp_name:document.getElementById('bm-name').value,bp_name_th:document.getElementById('bm-name-th').value,bp_type:document.getElementById('bm-type').value,contact_person:document.getElementById('bm-contact').value,phone:document.getElementById('bm-phone').value,email:document.getElementById('bm-email').value,tax_id:document.getElementById('bm-taxid').value,address:document.getElementById('bm-address').value,payment_terms:parseInt(document.getElementById('bm-terms').value)||30,bank_name:document.getElementById('bm-bank').value,bank_account:document.getElementById('bm-bankacc').value};
+      try { if(id) await API.put('/master/bp/'+id,body); else await API.post('/master/bp',body); closeBPModal(); await loadBPs(); } catch(e){alert('Error: '+e.message);}
+    }
+    loadBPs();
+  </script>
+</body></html>

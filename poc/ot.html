@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Holiday / OT</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .ot-stats {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px;
+    }
+    .ot-stat {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-xs);
+    }
+    .ot-stat .label { font-size: var(--text-xs); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .ot-stat .value { font-size: var(--text-3xl); font-weight: 800; margin-top: 6px; font-family: var(--font-mono); }
+    .ot-stat .sub { font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px; }
+
+    .ot-item {
+      display: grid;
+      grid-template-columns: 44px 1fr 70px 70px 130px 120px 100px;
+      align-items: center; gap: 12px; padding: 14px 20px;
+      border-bottom: 1px solid var(--border-light); transition: background 0.1s;
+    }
+    .ot-item:hover { background: var(--bg-hover); }
+    .ot-item:last-child { border-bottom: none; }
+    .ot-item:nth-child(even) { background: #fafbfc; }
+
+    .ot-type-icon {
+      width: 40px; height: 40px; border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .ot-type-icon svg { width: 20px; height: 20px; }
+    .ot-info { min-width: 0; }
+    .ot-info h4 { font-size: var(--text-md); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ot-info .meta {
+      font-size: var(--text-xs); color: var(--text-secondary); margin-top: 4px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .ot-hours { text-align: center; }
+    .ot-hours .hrs { font-size: var(--text-2xl); font-weight: 800; font-family: var(--font-mono); }
+    .ot-hours .lbl { font-size: var(--text-2xs); color: var(--text-muted); text-transform: uppercase; }
+    .ot-rate { text-align: center; }
+    .ot-rate .multiplier { font-size: var(--text-md); font-weight: 700; color: var(--purple); font-family: var(--font-mono); }
+    .ot-rate .type { font-size: var(--text-2xs); color: var(--text-muted); }
+    .ot-amount { text-align: right; }
+    .ot-amount .total { font-size: var(--text-lg); font-weight: 800; font-family: var(--font-mono); }
+    .ot-amount .calc { font-size: var(--text-2xs); color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+
+    .rate-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xs);
+    }
+    .rate-card-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border-light);
+      font-size: var(--text-md); font-weight: 600;
+    }
+    .rate-table { width: 100%; border-collapse: collapse; }
+    .rate-table th {
+      padding: 10px 16px; text-align: left; font-size: var(--text-2xs);
+      font-weight: 600; color: var(--text-secondary); text-transform: uppercase;
+      background: var(--bg-light); border-bottom: 1px solid var(--border-light);
+    }
+    .rate-table td {
+      padding: 10px 16px; font-size: 13px; border-bottom: 1px solid var(--border-light);
+    }
+    .rate-table tr:last-child td { border-bottom: none; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .calc-preview {
+      background: var(--bg-light); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 16px; margin-top: 16px;
+    }
+    .calc-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+    .calc-row.total { font-weight: 700; font-size: 15px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Holiday Work / OT</h1>
+      </div>
+      <button class="btn btn-primary" onclick="openOTModal()">+ New OT Request</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="ot-stats" id="ot-stats"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+      <!-- OT List -->
+      <div class="card">
+        <div class="card-header">
+          <h2>OT Records</h2>
+          <div style="display:flex;gap:8px;">
+            <select class="form-select" style="width:120px;font-size:12px;padding:6px 10px;" id="filter-type" onchange="renderOTList()">
+              <option value="">All Type</option>
+              <option value="normal">Normal OT</option>
+              <option value="holiday">Holiday OT</option>
+              <option value="special">Special OT</option>
+            </select>
+            <select class="form-select" style="width:140px;font-size:12px;padding:6px 10px;" id="filter-project" onchange="renderOTList()">
+              <option value="">All Projects</option>
+            </select>
+            <select class="form-select" style="width:120px;font-size:12px;padding:6px 10px;" id="filter-status" onchange="renderOTList()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+        </div>
+        <!-- Column Headers -->
+        <div style="display:grid;grid-template-columns:44px 1fr 70px 70px 130px 120px 100px;align-items:center;gap:12px;padding:8px 20px;background:var(--bg-light);border-bottom:2px solid var(--border);font-size:var(--text-2xs);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">
+          <span></span>
+          <span>Employee / Details</span>
+          <span style="text-align:center;">Hours</span>
+          <span style="text-align:center;">Rate</span>
+          <span style="text-align:right;">Compensation</span>
+          <span style="text-align:right;">Status</span>
+          <span style="text-align:center;">Action</span>
+        </div>
+        <div id="ot-list"></div>
+      </div>
+
+      <!-- Rate Policy + Monthly Summary -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="rate-card">
+          <div class="rate-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> OT Rate Policy</div>
+          <table class="rate-table">
+            <thead>
+              <tr><th>Type</th><th>Multiplier</th><th>Max/Day</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-gray">Normal OT</span></td>
+                <td style="font-weight:700;color:var(--primary);">x1.5</td>
+                <td>4 hours</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-warning">Holiday OT</span></td>
+                <td style="font-weight:700;color:var(--warning);">x2.0</td>
+                <td>8 hours</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-danger">Special OT</span></td>
+                <td style="font-weight:700;color:var(--danger);">x3.0</td>
+                <td>8 hours</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding:12px 16px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border-light);">
+            &#9888; Rate policy ต้อง confirm กับลูกค้า
+          </div>
+        </div>
+
+        <div class="rate-card">
+          <div class="rate-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Monthly Summary</div>
+          <div style="padding:16px;" id="ot-summary"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div><!-- end main-wrapper -->
+
+  <!-- OT Modal -->
+  <div id="ot-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeOTModal()">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> New OT Request</h2>
+        <button class="btn btn-ghost" onclick="closeOTModal()" style="font-size:18px;">&#10005;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input class="form-input" type="date" value="2026-05-11">
+          </div>
+          <div class="form-group">
+            <label class="form-label">OT Type</label>
+            <select class="form-select" id="ot-type">
+              <option value="1.5">Normal OT (x1.5)</option>
+              <option value="2.0">Holiday OT (x2.0)</option>
+              <option value="3.0">Special OT (x3.0)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Hours</label>
+            <input class="form-input" type="number" id="ot-hours" value="4" min="1" max="8">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Project</label>
+            <select class="form-select">
+              <option>SDA-2026-001 Marine Nav</option>
+              <option>SDA-2026-002 Sonar</option>
+              <option>SDA-2026-003 Radar</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason / Description</label>
+          <textarea class="form-textarea" placeholder="เหตุผลที่ต้อง OT / ทำงานวันหยุด..."></textarea>
+        </div>
+
+        <!-- Auto Calculation Preview -->
+        <div class="calc-preview">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Compensation Preview</div>
+          <div class="calc-row"><span style="color:var(--text-secondary);">Base Rate</span><span>&#3647;300/hr</span></div>
+          <div class="calc-row"><span style="color:var(--text-secondary);">Multiplier</span><span>x1.5 (Normal)</span></div>
+          <div class="calc-row"><span style="color:var(--text-secondary);">Hours</span><span>4 hours</span></div>
+          <div class="calc-row total"><span>Total Compensation</span><span style="color:var(--primary);">&#3647;1,800</span></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeOTModal()">Cancel</button>
+        <button class="btn btn-primary">Submit for Approval</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    function openOTModal() { document.getElementById('ot-modal').classList.remove('hidden'); }
+    function closeOTModal() { document.getElementById('ot-modal').classList.add('hidden'); }
+
+    let otData = [];
+
+    function otTypeIcon(type) {
+      const t = (type || '').toLowerCase();
+      if (t.includes('holiday')) return { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', bg: 'var(--warning-bg)' };
+      if (t.includes('special')) return { icon: '&#128293;', bg: 'var(--danger-bg)' };
+      return { icon: '&#9200;', bg: 'var(--purple-bg)' };
+    }
+
+    function otTypeName(type) {
+      const t = (type || '').toLowerCase();
+      if (t.includes('holiday')) return 'Holiday';
+      if (t.includes('special')) return 'Special';
+      return 'Normal';
+    }
+
+    function otActionBtn(r) {
+      const st = (r.status || 'draft').toLowerCase();
+      if (st === 'draft') return `<button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="otAction('submit',${r.id})">Submit</button>`;
+      if (st === 'pending_manager' || st === 'pending_executive') return `<button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="otAction('approve',${r.id})">Approve</button>`;
+      return '';
+    }
+
+    async function otAction(action, id) {
+      const ot = otData.find(r => r.id == id);
+      if (!ot) return;
+      const oldStatus = ot.status;
+      if (action === 'submit') ot.status = 'pending_manager';
+      else if (action === 'approve') ot.status = ot.status === 'pending_manager' ? 'pending_executive' : 'approved';
+      renderOTList();
+      try {
+        if (action === 'submit') await API.post('/ot/' + id + '/submit');
+        else if (action === 'approve') await API.post('/ot/' + id + '/approve');
+      } catch (e) {
+        ot.status = oldStatus;
+        renderOTList();
+        alert('Action failed: ' + (e.message || e));
+      }
+    }
+
+    function renderOTStats(rows) {
+      const totalHrs = rows.reduce((s, r) => s + (parseFloat(r.hours) || 0), 0);
+      const pending = rows.filter(r => (r.status || '').toLowerCase().includes('pending'));
+      const pendingHrs = pending.reduce((s, r) => s + (parseFloat(r.hours) || 0), 0);
+      const totalComp = rows.reduce((s, r) => s + (parseFloat(r.compensation) || 0), 0);
+      const holidays = rows.filter(r => (r.ot_type || '').toLowerCase().includes('holiday'));
+      const holidayHrs = holidays.reduce((s, r) => s + (parseFloat(r.hours) || 0), 0);
+
+      document.getElementById('ot-stats').innerHTML = `
+        <div class="ot-stat">
+          <div class="label">Total OT Hours</div>
+          <div class="value" style="color:var(--primary);">${fmtNum(totalHrs)}</div>
+          <div class="sub">${rows.length} requests</div>
+        </div>
+        <div class="ot-stat">
+          <div class="label">Pending Approval</div>
+          <div class="value" style="color:var(--warning);">${pending.length}</div>
+          <div class="sub">${fmtNum(pendingHrs)} hours</div>
+        </div>
+        <div class="ot-stat">
+          <div class="label">Total Compensation</div>
+          <div class="value" style="color:var(--text-primary);">${fmtMoney(totalComp)}</div>
+          <div class="sub">&nbsp;</div>
+        </div>
+        <div class="ot-stat">
+          <div class="label">Holiday Work</div>
+          <div class="value" style="color:var(--purple);">${holidays.length}</div>
+          <div class="sub">${fmtNum(holidayHrs)} hours</div>
+        </div>`;
+    }
+
+    function renderOTSummary(rows) {
+      const groups = { normal: { hrs: 0, comp: 0 }, holiday: { hrs: 0, comp: 0 }, special: { hrs: 0, comp: 0 } };
+      rows.forEach(r => {
+        const t = (r.ot_type || '').toLowerCase();
+        const key = t.includes('holiday') ? 'holiday' : t.includes('special') ? 'special' : 'normal';
+        groups[key].hrs += parseFloat(r.hours) || 0;
+        groups[key].comp += parseFloat(r.compensation) || 0;
+      });
+      const total = groups.normal.comp + groups.holiday.comp + groups.special.comp;
+      document.getElementById('ot-summary').innerHTML = `
+        <div class="calc-row"><span style="color:var(--text-secondary);">Normal OT</span><span>${fmtNum(groups.normal.hrs)} hrs &mdash; ${fmtMoney(groups.normal.comp)}</span></div>
+        <div class="calc-row"><span style="color:var(--text-secondary);">Holiday OT</span><span>${fmtNum(groups.holiday.hrs)} hrs &mdash; ${fmtMoney(groups.holiday.comp)}</span></div>
+        <div class="calc-row"><span style="color:var(--text-secondary);">Special OT</span><span>${fmtNum(groups.special.hrs)} hrs &mdash; ${fmtMoney(groups.special.comp)}</span></div>
+        <div class="calc-row total"><span>Total</span><span>${fmtMoney(total)}</span></div>`;
+    }
+
+    function renderOTList() {
+      const typeFilter = document.getElementById('filter-type').value;
+      const statusFilter = document.getElementById('filter-status').value;
+      const projectFilter = document.getElementById('filter-project').value;
+      let rows = otData;
+      if (typeFilter) rows = rows.filter(r => (r.ot_type || '').toLowerCase().includes(typeFilter));
+      if (statusFilter) rows = rows.filter(r => (r.status || '').toLowerCase().includes(statusFilter));
+      if (projectFilter) rows = rows.filter(r => String(r.project_id) === projectFilter);
+
+      if (!rows.length) {
+        document.getElementById('ot-list').innerHTML = emptyMsg('No OT records found');
+        return;
+      }
+
+      document.getElementById('ot-list').innerHTML = rows.map(r => {
+        const isHoliday = (r.ot_type || '').includes('holiday');
+        const isSpecial = (r.ot_type || '').includes('special');
+        const iconBg = isHoliday ? 'var(--warning-bg)' : isSpecial ? 'var(--danger-bg)' : 'var(--primary-light)';
+        const iconSvg = isHoliday
+          ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+        const hrs = parseFloat(r.hours) || 0;
+        const mult = parseFloat(r.multiplier) || 1;
+        const comp = parseFloat(r.compensation) || 0;
+        const baseRate = parseFloat(r.base_rate) || (hrs > 0 && mult > 0 ? Math.round(comp / mult / hrs) : 0);
+        const projCode = projectMap[r.project_id] || '';
+        return `<div class="ot-item">
+          <div class="ot-type-icon" style="background:${iconBg};">${iconSvg}</div>
+          <div class="ot-info">
+            <h4>${r.user_name || '-'}</h4>
+            <div class="meta">
+              <span>${fmtDateShort(r.ot_date)}</span>
+              <span>${hrs}h</span>
+              <span style="font-family:var(--font-mono);">${fmtMoney(baseRate)}/hr</span>
+              ${projCode ? '<span style="background:var(--bg-light);padding:1px 6px;border-radius:var(--radius-full);font-size:var(--text-2xs);">'+projCode+'</span>' : ''}
+            </div>
+          </div>
+          <div class="ot-hours"><div class="hrs">${fmtNum(hrs)}</div><div class="lbl">hours</div></div>
+          <div class="ot-rate"><div class="multiplier">x${mult.toFixed(1)}</div><div class="type">${otTypeName(r.ot_type)}</div></div>
+          <div class="ot-amount"><div class="total">${fmtMoney(comp)}</div><div class="calc" style="font-family:var(--font-mono);font-size:var(--text-2xs);">${fmtMoney(baseRate)} &times; ${mult.toFixed(1)} &times; ${hrs}h = ${fmtMoney(comp)}</div></div>
+          ${statusBadge(r.status || 'draft')}
+          <div style="text-align:center;">${otActionBtn(r)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    let projectMap = {};
+
+    async function loadOT() {
+      try {
+        // Load projects for mapping project_id → code and populate filter
+        try {
+          const projects = await API.getProjects();
+          const filterEl = document.getElementById('filter-project');
+          projects.forEach(p => {
+            projectMap[p.id] = p.code;
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.code + ' — ' + p.name;
+            filterEl.appendChild(opt);
+          });
+        } catch(e) {}
+
+        otData = await API.getOTs();
+        // Use project_code from API response to enrich projectMap
+        otData.forEach(r => { if (r.project_code && r.project_id) projectMap[r.project_id] = r.project_code; });
+        renderOTStats(otData);
+        renderOTSummary(otData);
+        renderOTList();
+      } catch (e) {
+        console.error('Failed to load OT data:', e);
+        document.getElementById('ot-list').innerHTML = emptyMsg('Failed to load OT data');
+      }
+    }
+
+    loadOT();
+  </script>
+</body>
+</html>

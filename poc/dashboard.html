@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Dashboard</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* Dashboard-specific styles */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-xs);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .kpi-card:nth-child(1)::before { background: var(--primary); }
+    .kpi-card:nth-child(2)::before { background: var(--warning); }
+    .kpi-card:nth-child(3)::before { background: var(--danger); }
+    .kpi-card:nth-child(4)::before { background: var(--success); }
+    .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; }
+    .kpi-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .kpi-value { font-size: 32px; font-weight: 800; margin-top: 12px; line-height: 1; letter-spacing: -0.5px; }
+    .kpi-label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; font-weight: 500; }
+    .kpi-change {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 11px; font-weight: 600; margin-top: 10px;
+      padding: 3px 10px; border-radius: var(--radius-full);
+    }
+    .kpi-change.up { background: var(--success-bg); color: var(--success); }
+    .kpi-change.down { background: var(--danger-bg); color: var(--danger); }
+    .kpi-change.neutral { background: var(--bg-hover); color: var(--text-secondary); }
+
+    .content-grid {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .content-grid .masonry-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+    .content-grid .widget-full {
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    /* AI Alerts */
+    .alert-card {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      border-left: 3px solid;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .alert-card:hover { transform: translateX(2px); box-shadow: var(--shadow-xs); }
+    .alert-card.critical { background: var(--danger-bg); border-color: var(--danger); }
+    .alert-card.warning { background: var(--warning-bg); border-color: var(--warning); }
+    .alert-card.info { background: var(--info-bg); border-color: var(--info); }
+    .alert-card .alert-icon { font-size: 16px; margin-top: 1px; }
+    .alert-card .alert-text { flex: 1; }
+    .alert-card .alert-text strong { font-weight: 600; }
+    .alert-card .alert-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Project Progress */
+    .project-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .project-row:hover { background: var(--bg-hover); }
+    .project-row:last-child { border-bottom: none; }
+    .project-name { flex: 1; }
+    .project-name h4 { font-size: 13px; font-weight: 600; }
+    .project-name .project-code { font-size: 11px; color: var(--text-muted); }
+    .project-progress-area { width: 180px; }
+    .project-pct { font-size: 12px; font-weight: 600; text-align: right; margin-bottom: 4px; }
+    .project-status-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    /* Pending Approvals */
+    .approval-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      transition: all 0.15s;
+    }
+    .approval-item:last-child { border-bottom: none; }
+    .approval-icon-wrap {
+      width: 36px; height: 36px;
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .approval-info { flex: 1; }
+    .approval-info h4 { font-size: 13px; font-weight: 600; }
+    .approval-info .meta { font-size: 11px; color: var(--text-secondary); display: flex; gap: 8px; margin-top: 2px; }
+    .approval-actions { display: flex; gap: 4px; }
+
+    /* Budget Donut */
+    .budget-summary {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 20px;
+    }
+    .donut-chart {
+      width: 120px; height: 120px; position: relative; flex-shrink: 0;
+    }
+    .donut-chart svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .donut-chart circle {
+      fill: none; stroke-width: 10; stroke-linecap: round;
+    }
+    .donut-bg { stroke: var(--bg-hover); }
+    .donut-fill { stroke: var(--primary); transition: stroke-dashoffset 0.5s ease; }
+    .donut-center {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .donut-center .pct { font-size: 24px; font-weight: 800; color: var(--primary); }
+    .donut-center .label { font-size: 10px; color: var(--text-muted); }
+    .budget-details { flex: 1; }
+    .budget-line {
+      display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .budget-line:last-child { border-bottom: none; }
+    .budget-line .amount { font-weight: 700; }
+
+    /* Customize button */
+    .btn-customize { gap: 6px; }
+    .btn-customize.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Edit-mode overlay on widgets */
+    .customize-mode .widget {
+      position: relative;
+      outline: 2px dashed var(--primary);
+      outline-offset: 2px;
+      border-radius: var(--radius-lg);
+    }
+    .customize-mode .widget.hidden-widget {
+      opacity: 0.35;
+      outline-color: var(--text-muted);
+    }
+    .widget-toolbar {
+      display: none;
+      position: absolute; top: -14px; right: 8px; z-index: 10;
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-full); padding: 2px 4px;
+      box-shadow: var(--shadow-sm);
+      gap: 2px; align-items: center;
+    }
+    .customize-mode .widget-toolbar { display: flex; }
+    .widget-toolbar button {
+      border: none; background: none; cursor: pointer; padding: 4px 6px;
+      border-radius: var(--radius); font-size: 14px; line-height: 1;
+      color: var(--text-secondary); transition: all 0.15s;
+    }
+    .widget-toolbar button:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .widget-toolbar button.btn-hide { color: var(--danger); }
+    .widget-toolbar button.btn-show { color: var(--success); }
+
+    /* Drag state */
+    .widget.dragging { opacity: 0.5; }
+    .widget.drag-over { outline-color: var(--success); outline-width: 3px; }
+
+    /* Customize panel */
+    .customize-panel {
+      display: none; background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px;
+      box-shadow: var(--shadow-sm); animation: fadeIn 0.2s;
+    }
+    .customize-panel.show { display: block; }
+    .customize-panel h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .customize-panel .panel-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; }
+    .customize-panel .panel-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    .widget-list-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border: 1px solid var(--border-light);
+      border-radius: var(--radius); margin-bottom: 6px;
+      background: var(--bg-white); cursor: grab; transition: all 0.15s;
+      font-size: 13px;
+    }
+    .widget-list-item:hover { border-color: var(--primary); background: var(--primary-light); }
+    .widget-list-item:active { cursor: grabbing; }
+    .widget-list-item .drag-handle { color: var(--text-muted); font-size: 16px; cursor: grab; }
+    .widget-list-item .widget-name { flex: 1; font-weight: 500; }
+    .widget-list-item .widget-toggle {
+      position: relative; width: 36px; height: 20px;
+      background: var(--border); border-radius: 10px; cursor: pointer;
+      transition: background 0.2s; border: none;
+    }
+    .widget-list-item .widget-toggle.on { background: var(--primary); }
+    .widget-list-item .widget-toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; background: #fff;
+      border-radius: 50%; transition: transform 0.2s; box-shadow: var(--shadow-xs);
+    }
+    .widget-list-item .widget-toggle.on::after { transform: translateX(16px); }
+
+    .layout-options { display: flex; gap: 8px; margin-bottom: 16px; }
+    .layout-option {
+      padding: 8px 16px; border: 2px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); cursor: pointer; font-size: 12px; font-weight: 600;
+      transition: all 0.15s;
+    }
+    .layout-option:hover { border-color: var(--primary); }
+    .layout-option.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Smooth transitions for all cards */
+    .card { transition: box-shadow 0.2s, border-color 0.2s; }
+    .card:hover { box-shadow: var(--shadow-sm); }
+
+    /* Widget card headers */
+    .widget .card-header h2 { font-size: 14px; }
+    .widget .card-header { padding: 14px 20px; }
+
+    @media (max-width: 1024px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .content-grid { flex-direction: column !important; }
+    }
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Top Nav ═══ -->
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+
+  <!-- ═══ Tab Bar ═══ -->
+  <div id="tabbar"></div>
+  <!-- ═══ Page Content ═══ -->
+  <main class="page fade-in">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1>Dashboard</h1>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> May 2026</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.print()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export</button>
+        <button class="btn btn-secondary btn-sm btn-customize" id="btn-customize" onclick="toggleCustomize()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          Customize
+        </button>
+      </div>
+    </div>
+
+    <!-- Customize Panel -->
+    <div class="customize-panel" id="customize-panel">
+      <h3>Customize Dashboard</h3>
+      <div class="panel-desc">เปิด/ปิด widget และลากเรียงลำดับตามต้องการ การตั้งค่าจะถูกบันทึกอัตโนมัติ</div>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:block;">Layout</label>
+      <div class="layout-options">
+        <button class="layout-option" data-layout="compact" onclick="setLayout('compact')">1 Column</button>
+        <button class="layout-option active" data-layout="default" onclick="setLayout('default')">2 Columns</button>
+        <button class="layout-option" data-layout="wide" onclick="setLayout('wide')">3 Columns</button>
+      </div>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:block;">Widgets</label>
+      <div id="widget-sort-list"></div>
+
+      <div class="panel-actions">
+        <button class="btn btn-primary btn-sm" onclick="toggleCustomize()">Done</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetDashboard()">Reset to Default</button>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="widget" data-widget="kpi" data-widget-label="KPI Cards">
+      <div class="widget-toolbar">
+        <button title="Drag to reorder" class="drag-handle" style="cursor:grab;">&#9776;</button>
+        <button title="Hide widget" class="btn-hide" onclick="toggleWidget('kpi')">&#10005;</button>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card" onclick="window.location='overview.html?hl=active-projects'" style="cursor:pointer;">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-value" id="kpi-projects">--</div>
+              <div class="kpi-label">Active Projects</div>
+            </div>
+            <div class="kpi-icon" style="background:var(--primary-light);color:var(--primary);"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></div>
+          </div>
+          <div class="kpi-change up">&#9650; +2 from last month</div>
+        </div>
+
+        <div class="kpi-card" onclick="window.location='budget.html?hl=budget-used'" style="cursor:pointer;">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-value" style="font-size:24px;" id="kpi-budget-used">--</div>
+              <div class="kpi-label" id="kpi-budget-label">Budget Used</div>
+            </div>
+            <div class="kpi-icon" style="background:var(--warning-bg);color:var(--warning);"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          </div>
+          <div class="kpi-change neutral" id="kpi-budget-pct">Loading...</div>
+        </div>
+
+        <div class="kpi-card" onclick="window.location='pr-po.html?hl=pending'" style="cursor:pointer;">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-value" id="kpi-pending">--</div>
+              <div class="kpi-label">Pending Approvals</div>
+            </div>
+            <div class="kpi-icon" style="background:var(--danger-bg);color:var(--danger);"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          </div>
+          <div class="kpi-change down" id="kpi-pending-detail">Loading...</div>
+        </div>
+
+        <div class="kpi-card" onclick="window.location='advance.html?hl=month-total'" style="cursor:pointer;">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-value" id="kpi-expense">--</div>
+              <div class="kpi-label">Expense This Month</div>
+            </div>
+            <div class="kpi-icon" style="background:var(--success-bg);color:var(--success);"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h4"/></svg></div>
+          </div>
+          <div class="kpi-change up">&#9650; +12% from Apr</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two-Column Content -->
+    <div class="content-grid" id="content-grid">
+
+        <!-- AI Alerts -->
+        <div class="widget" data-widget="alerts" data-widget-label="AI Alerts">
+          <div class="widget-toolbar">
+            <button title="Drag to reorder" class="drag-handle" style="cursor:grab;">&#9776;</button>
+            <button title="Hide widget" class="btn-hide" onclick="toggleWidget('alerts')">&#10005;</button>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg> AI Alerts</h2>
+              <span class="badge badge-danger badge-dot" id="alert-count">Loading...</span>
+            </div>
+            <div class="card-body" style="padding:16px 20px;" id="alert-list">
+              <div style="color:var(--text-muted);font-size:13px;">Loading alerts...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- My Tasks -->
+        <div class="widget" data-widget="mytasks" data-widget-label="My Tasks">
+          <div class="widget-toolbar">
+            <button title="Drag to reorder" class="drag-handle" style="cursor:grab;">&#9776;</button>
+            <button title="Hide widget" class="btn-hide" onclick="toggleWidget('mytasks')">&#10005;</button>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>My Tasks</h2>
+              <a href="taskboard.html" class="btn btn-ghost btn-sm">Taskboard &#8594;</a>
+            </div>
+            <div class="card-body" style="padding:12px 20px;" id="my-tasks-list">
+              <div style="color:var(--text-muted);font-size:13px;">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Status -->
+        <div class="widget" data-widget="projects" data-widget-label="Project Status">
+          <div class="widget-toolbar">
+            <button title="Drag to reorder" class="drag-handle" style="cursor:grab;">&#9776;</button>
+            <button title="Hide widget" class="btn-hide" onclick="toggleWidget('projects')">&#10005;</button>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>Project Status</h2>
+              <a href="overview.html?hl=projects" class="btn btn-ghost btn-sm">View All &#8594;</a>
+            </div>
+            <div class="card-body" id="project-list">
+              <div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center;">Loading projects...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Budget Summary -->
+        <div class="widget" data-widget="budget" data-widget-label="Budget Summary">
+          <div class="widget-toolbar">
+            <button title="Drag to reorder" class="drag-handle" style="cursor:grab;">&#9776;</button>
+            <button title="Hide widget" class="btn-hide" onclick="toggleWidget('budget')">&#10005;</button>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="window.location='budget.html?hl=budget-used'">
+            <div class="card-header">
+              <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Budget Summary</h2>
+              <a href="budget.html?hl=budget-used" class="btn btn-ghost btn-sm">Detail &#8594;</a>
+            </div>
+            <div class="budget-summary">
+              <div class="donut-chart">
+                <svg viewBox="0 0 42 42">
+                  <circle class="donut-bg" cx="21" cy="21" r="16" />
+                  <circle class="donut-fill" cx="21" cy="21" r="16" id="donut-arc"
+                    stroke-dasharray="100.53"
+                    stroke-dashoffset="100.53" />
+                </svg>
+                <div class="donut-center">
+                  <div class="pct" id="donut-pct">--%</div>
+                  <div class="label">Used</div>
+                </div>
+              </div>
+              <div class="budget-details" id="budget-summary-lines">
+                <div style="color:var(--text-muted);font-size:13px;">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Approvals -->
+        <div class="widget" data-widget="approvals" data-widget-label="Pending Approvals">
+          <div class="widget-toolbar">
+            <button title="Drag to reorder" class="drag-handle" style="cursor:grab;">&#9776;</button>
+            <button title="Hide widget" class="btn-hide" onclick="toggleWidget('approvals')">&#10005;</button>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>&#9203; Pending Approvals</h2>
+              <span class="badge badge-danger" id="pending-badge">--</span>
+            </div>
+            <div class="card-body" style="padding:12px 20px;" id="approval-list">
+              <div style="color:var(--text-muted);font-size:13px;padding:12px 0;text-align:center;">Loading...</div>
+            </div>
+            <div class="card-footer" style="text-align:center;">
+              <a href="pr-po.html?hl=pending" id="pending-link" style="color:var(--primary);font-size:13px;font-weight:500;">View all pending &#8594;</a>
+            </div>
+          </div>
+        </div>
+    </div>
+  </main>
+  </div><!-- end main-wrapper -->
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    function formatMoney(n) {
+      if (n >= 1000000) return '฿' + (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return '฿' + (n / 1000).toFixed(0) + 'K';
+      return '฿' + n.toLocaleString();
+    }
+
+    async function loadDashboard() {
+      try {
+        const data = await API.getDashboard();
+        const k = data.kpi;
+
+        // Update KPI cards
+        document.getElementById('kpi-projects').textContent = k.activeProjects;
+        document.getElementById('kpi-budget-used').textContent = formatMoney(k.budgetUsed);
+        document.getElementById('kpi-budget-label').textContent = 'Budget Used / ' + formatMoney(k.budgetTotal);
+        const pct = k.budgetTotal > 0 ? Math.round(k.budgetUsed / k.budgetTotal * 100) : 0;
+        document.getElementById('kpi-budget-pct').textContent = pct + '% utilized';
+        document.getElementById('kpi-pending').textContent = k.pendingApprovals;
+        document.getElementById('kpi-expense').textContent = formatMoney(k.expenseThisMonth);
+
+        // Update project list
+        const container = document.getElementById('project-list');
+        if (data.projects && data.projects.length) {
+          container.innerHTML = data.projects.map(p => {
+            const color = p.progress >= 80 ? 'var(--success)' : p.progress >= 50 ? 'var(--warning)' : 'var(--danger)';
+            const barClass = p.progress >= 80 ? 'green' : p.progress >= 50 ? 'yellow' : 'red';
+            const badge = p.progress >= 80 ? 'badge-success' : p.progress >= 50 ? 'badge-warning' : 'badge-danger';
+            const label = p.progress >= 80 ? 'On Track' : p.progress >= 50 ? 'At Risk' : 'Delayed';
+            return `<div class="project-row" style="cursor:pointer;" onclick="window.location='overview.html?hl=projects'">
+              <div class="project-status-dot" style="background:${color};"></div>
+              <div class="project-name"><h4>${p.name}</h4><span class="project-code">${p.code}</span></div>
+              <div class="project-progress-area">
+                <div class="project-pct" style="color:${color};">${p.progress}%</div>
+                <div class="progress"><div class="progress-bar ${barClass}" style="width:${p.progress}%;"></div></div>
+              </div>
+              <span class="badge ${badge} badge-dot">${label}</span>
+            </div>`;
+          }).join('');
+        }
+
+        // Update pending approvals
+        try {
+          const approvals = await API.getPendingApprovals();
+          document.getElementById('kpi-pending-detail').textContent = approvals.total + ' items waiting';
+          document.getElementById('pending-link').textContent = `View all ${approvals.total} pending →`;
+        } catch(e) {}
+
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      }
+    }
+
+    function fmtNum(n) { return Number(n).toLocaleString('th-TH'); }
+
+    // Map doc_type → link page
+    const DOC_LINKS = {
+      budget: 'budget.html', pr: 'pr-po.html', po: 'pr-po.html',
+      expense: 'advance.html', travel: 'travel.html', ot: 'ot.html', vehicle: 'vehicle.html'
+    };
+    function docLink(type, docNumber) {
+      const base = DOC_LINKS[type] || '#';
+      return base + '?hl=doc&doc=' + encodeURIComponent(docNumber);
+    }
+    const DOC_ICONS = {
+      budget: I.dollar, pr: I.cart, po: I.cart,
+      expense: I.receipt, travel: I.plane, ot: I.clock, vehicle: I.car
+    };
+    const DOC_COLORS = {
+      budget: 'var(--warning-bg)', pr: 'var(--primary-light)', po: 'var(--primary-light)',
+      expense: 'var(--purple-bg)', travel: 'var(--info-bg)', ot: 'var(--warning-bg)'
+    };
+
+    async function loadApprovals() {
+      try {
+        const data = await API.getPendingApprovals();
+        document.getElementById('pending-badge').textContent = data.total;
+        document.getElementById('kpi-pending-detail').textContent = data.total + ' items waiting';
+        document.getElementById('pending-link').textContent = `View all ${data.total} pending →`;
+        document.getElementById('pending-link').href = 'pr-po.html';
+
+        const list = document.getElementById('approval-list');
+        if (data.items.length === 0) {
+          list.innerHTML = '<div style="color:var(--success);font-size:13px;padding:16px 0;text-align:center;">&#10003; No pending approvals</div>';
+          return;
+        }
+        list.innerHTML = data.items.slice(0, 5).map(item => {
+          const link = docLink(item.doc_type, item.doc_number);
+          return `
+          <div class="approval-item" style="cursor:pointer;" onclick="window.location='${link}'">
+            <div class="approval-icon-wrap" style="background:${DOC_COLORS[item.doc_type] || 'var(--bg-hover)'};">${DOC_ICONS[item.doc_type] || I.fileText}</div>
+            <div class="approval-info">
+              <h4>${item.doc_number}</h4>
+              <div class="meta"><span>&#3647;${fmtNum(item.amount)}</span><span>${item.doc_type.toUpperCase()}</span></div>
+            </div>
+            <a href="${link}" class="btn btn-success btn-sm">View &#8594;</a>
+          </div>`;
+        }).join('');
+      } catch(e) { console.error('Approvals error:', e); }
+    }
+
+    async function loadBudgetSummary() {
+      try {
+        const data = await API.getDashboard();
+        const k = data.kpi;
+        const pct = k.budgetTotal > 0 ? Math.round(k.budgetUsed / k.budgetTotal * 100) : 0;
+        const remaining = k.budgetTotal - k.budgetUsed;
+        const circumference = 100.53;
+        const offset = circumference - (circumference * pct / 100);
+
+        document.getElementById('donut-pct').textContent = pct + '%';
+        document.getElementById('donut-arc').setAttribute('stroke-dashoffset', offset);
+
+        // Count over-budget projects
+        const overCount = data.projects.filter(p => p.progress < 50).length; // simplified
+
+        document.getElementById('budget-summary-lines').innerHTML = `
+          <div class="budget-line"><span style="color:var(--text-secondary);">Total Budget</span><span class="amount">&#3647;${fmtNum(k.budgetTotal)}</span></div>
+          <div class="budget-line"><span style="color:var(--primary);">Used</span><span class="amount" style="color:var(--primary);">&#3647;${fmtNum(k.budgetUsed)}</span></div>
+          <div class="budget-line"><span style="color:var(--success);">Remaining</span><span class="amount" style="color:var(--success);">&#3647;${fmtNum(remaining)}</span></div>
+        `;
+      } catch(e) { console.error('Budget summary error:', e); }
+    }
+
+    async function loadAlerts() {
+      try {
+        // Build alerts from real data
+        const data = await API.getDashboard();
+        const alerts = [];
+
+        // Check projects for budget issues
+        const budgets = await API.getBudgets();
+        budgets.forEach(b => {
+          const pctUsed = b.total_budget > 0 ? (b.total_actual / b.total_budget) * 100 : 0;
+          if (pctUsed > 100) {
+            alerts.push({
+              level: 'critical', link: `budget.html?hl=doc&doc=${b.code}`,
+              icon: I.alertTriangle,
+              html: `<strong>${b.code}</strong> — Over Budget! &#3647;${fmtNum(b.total_actual - b.total_budget)} เกินงบ (${pctUsed.toFixed(0)}%)`
+            });
+          } else if (pctUsed > 85) {
+            alerts.push({
+              level: 'warning', link: `budget.html?hl=doc&doc=${b.code}`,
+              icon: I.dollar,
+              html: `<strong>${b.code}</strong> — Budget เหลือ ${(100-pctUsed).toFixed(0)}% (&#3647;${fmtNum(b.total_budget - b.total_actual)} remaining)`
+            });
+          }
+        });
+
+        // Check retention guarantee due dates
+        try {
+          const projects = await API.getProjects();
+          projects.forEach(p => {
+            if (p.retention_status === 'holding' && p.retention_due_date) {
+              const dueDate = new Date(p.retention_due_date);
+              const daysLeft = Math.ceil((dueDate - Date.now()) / 86400000);
+              const retAmt = parseFloat(p.retention_amount || 0);
+              if (daysLeft <= 0) {
+                alerts.push({
+                  level: 'critical', link: `overview.html?id=${p.id}`,
+                  icon: I.alertTriangle,
+                  html: `<strong>${p.code}</strong> — ประกันผลงานครบกำหนดแล้ว! &#3647;${fmtNum(retAmt)} (เกิน ${Math.abs(daysLeft)} วัน)`
+                });
+              } else if (daysLeft <= 30) {
+                alerts.push({
+                  level: 'warning', link: `overview.html?id=${p.id}`,
+                  icon: I.clock,
+                  html: `<strong>${p.code}</strong> — ประกันผลงาน &#3647;${fmtNum(retAmt)} ครบกำหนดอีก ${daysLeft} วัน (${dueDate.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})})`
+                });
+              } else if (daysLeft <= 90) {
+                alerts.push({
+                  level: 'info', link: `overview.html?id=${p.id}`,
+                  icon: I.dollar,
+                  html: `<strong>${p.code}</strong> — ประกันผลงาน &#3647;${fmtNum(retAmt)} ครบกำหนด ${dueDate.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})} (เหลือ ${daysLeft} วัน)`
+                });
+              }
+            }
+          });
+        } catch(e) {}
+
+        // Check pending approvals aging
+        const approvals = await API.getPendingApprovals();
+        approvals.items.forEach(item => {
+          const hoursAgo = Math.round((Date.now() - new Date(item.created_at)) / 3600000);
+          if (hoursAgo > 24) {
+            alerts.push({
+              level: 'warning', link: docLink(item.doc_type, item.doc_number),
+              icon: I.clock,
+              html: `<strong>${item.doc_number}</strong> — รออนุมัติ ${Math.round(hoursAgo/24)} วัน (เกิน SLA 24 ชม.)`
+            });
+          }
+        });
+
+        // Check expense this month vs average
+        try {
+          const expenses = await API.getExpenses();
+          const thisMonth = expenses.filter(e => {
+            const d = new Date(e.doc_date);
+            const now = new Date();
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+          });
+          const monthTotal = thisMonth.reduce((s,e) => s + parseFloat(e.amount||0), 0);
+          if (monthTotal > 500000) {
+            alerts.push({
+              level: 'info', link: 'advance.html?hl=month-total',
+              icon: I.chart,
+              html: `<strong>Expense เดือนนี้</strong> — ฿${fmtNum(monthTotal)} (${thisMonth.length} รายการ) สูงกว่าปกติ`
+            });
+          }
+        } catch(e) {}
+
+        // Check travel pre-departure
+        try {
+          const travels = await API.getTravels();
+          travels.forEach(t => {
+            if (t.status === 'approved') {
+              const startDate = new Date(t.start_date);
+              const daysUntil = Math.round((startDate - Date.now()) / 86400000);
+              if (daysUntil <= 2 && daysUntil >= 0) {
+                alerts.push({
+                  level: 'warning', link: 'travel.html?hl=doc&doc='+t.doc_number,
+                  icon: I.plane,
+                  html: `<strong>${t.doc_number}</strong> — เดินทาง${t.destination} อีก ${daysUntil} วัน ตรวจสอบ team confirm`
+                });
+              }
+            }
+          });
+        } catch(e) {}
+
+        // Check vehicle maintenance
+        try {
+          const vehicles = await API.getVehicles();
+          vehicles.forEach(v => {
+            if (v.status === 'maintenance') {
+              alerts.push({
+                level: 'info', link: 'vehicle.html',
+                icon: I.car,
+                html: `<strong>${v.name}</strong> (${v.plate_number}) — อยู่ระหว่างซ่อมบำรุง`
+              });
+            }
+          });
+        } catch(e) {}
+
+        // If no alerts
+        if (alerts.length === 0) {
+          alerts.push({ level: 'info', link: '#', icon: '&#10003;', html: 'ไม่มี alerts — ทุกอย่างปกติ' });
+        }
+
+        document.getElementById('alert-count').textContent = alerts.length + ' alerts';
+        document.getElementById('alert-list').innerHTML = alerts.map(a => `
+          <div class="alert-card ${a.level}" style="cursor:pointer;" onclick="window.location='${a.link}'">
+            <span class="alert-icon">${a.icon}</span>
+            <div class="alert-text">${a.html}</div>
+          </div>
+        `).join('');
+      } catch(e) { console.error('Alerts error:', e); }
+    }
+
+    // ═══ Customize Dashboard ═══
+    const STORAGE_KEY = 'sda_dashboard_config';
+    const DEFAULT_CONFIG = {
+      layout: 'default',
+      widgets: {
+        kpi:       { visible: true, order: 0 },
+        alerts:    { visible: true, order: 1 },
+        mytasks:   { visible: true, order: 2 },
+        projects:  { visible: true, order: 3 },
+        budget:    { visible: true, order: 4 },
+        approvals: { visible: true, order: 5 }
+      }
+    };
+
+    function loadConfig() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch(e) {}
+      return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    }
+
+    function saveConfig(config) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    }
+
+    let customizeMode = false;
+
+    function toggleCustomize() {
+      customizeMode = !customizeMode;
+      const page = document.querySelector('.page');
+      const panel = document.getElementById('customize-panel');
+      const btn = document.getElementById('btn-customize');
+
+      if (customizeMode) {
+        page.classList.add('customize-mode');
+        panel.classList.add('show');
+        btn.classList.add('active');
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Done';
+        renderWidgetList();
+        enableDragDrop();
+      } else {
+        page.classList.remove('customize-mode');
+        panel.classList.remove('show');
+        btn.classList.remove('active');
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Customize';
+        disableDragDrop();
+      }
+    }
+
+    function toggleWidget(widgetId) {
+      const config = loadConfig();
+      config.widgets[widgetId].visible = !config.widgets[widgetId].visible;
+      saveConfig(config);
+      applyConfig(config);
+      if (customizeMode) renderWidgetList();
+    }
+
+    function setLayout(layout) {
+      const config = loadConfig();
+      config.layout = layout;
+      saveConfig(config);
+      applyConfig(config);
+      document.querySelectorAll('.layout-option').forEach(el => {
+        el.classList.toggle('active', el.dataset.layout === layout);
+      });
+    }
+
+    function applyConfig(config) {
+      // Ensure new widgets have config
+      document.querySelectorAll('.widget').forEach(el => {
+        const id = el.dataset.widget;
+        if (id && !config.widgets[id]) {
+          config.widgets[id] = { visible: true, order: Object.keys(config.widgets).length };
+        }
+      });
+
+      // Update hide/show buttons + visibility
+      document.querySelectorAll('.widget').forEach(el => {
+        const id = el.dataset.widget;
+        const wConf = config.widgets[id];
+        if (!wConf) return;
+        el.style.display = wConf.visible ? '' : 'none';
+        el.classList.toggle('hidden-widget', !wConf.visible);
+        if (customizeMode && !wConf.visible) el.style.display = '';
+        const btn = el.querySelector('.btn-hide');
+        if (btn) {
+          btn.className = wConf.visible ? 'btn-hide' : 'btn-show';
+          btn.title = wConf.visible ? 'Hide widget' : 'Show widget';
+          btn.innerHTML = wConf.visible ? '&#10005;' : '&#10003;';
+        }
+      });
+
+      const grid = document.getElementById('content-grid');
+      if (!grid) return;
+
+      // Collect sorted widgets
+      const allWidgets = [...document.querySelectorAll('.widget')];
+      const sorted = allWidgets
+        .filter(el => config.widgets[el.dataset.widget])
+        .sort((a, b) => config.widgets[a.dataset.widget].order - config.widgets[b.dataset.widget].order);
+
+      // Move KPI before grid
+      sorted.forEach(w => {
+        if (w.dataset.widget === 'kpi') grid.parentNode.insertBefore(w, grid);
+      });
+
+      // Determine column count
+      const cols = config.layout === 'wide' ? 3 : config.layout === 'compact' ? 1 : 2;
+
+      // Build masonry columns
+      grid.innerHTML = '';
+      const colEls = [];
+      for (let i = 0; i < cols; i++) {
+        const col = document.createElement('div');
+        col.className = 'masonry-col';
+        grid.appendChild(col);
+        colEls.push(col);
+      }
+
+      // Distribute widgets into shortest column (balanced masonry)
+      const colHeights = new Array(cols).fill(0);
+      const nonKpi = sorted.filter(w => w.dataset.widget !== 'kpi');
+
+      nonKpi.forEach(w => {
+        const wConf = config.widgets[w.dataset.widget];
+        const isVisible = wConf.visible || customizeMode;
+        if (!isVisible) return;
+
+        if (wConf.span === 'full') {
+          // Full width: insert before grid as standalone
+          const wrapper = document.createElement('div');
+          wrapper.className = 'widget-full';
+          wrapper.appendChild(w);
+          grid.parentNode.insertBefore(wrapper, grid);
+        } else {
+          // Find shortest column
+          const shortestIdx = colHeights.indexOf(Math.min(...colHeights));
+          colEls[shortestIdx].appendChild(w);
+          // Estimate height (will be approximate but good enough)
+          colHeights[shortestIdx] += (w.offsetHeight || 200) + 16;
+        }
+      });
+    }
+
+    function renderWidgetList() {
+      const config = loadConfig();
+      const list = document.getElementById('widget-sort-list');
+      const entries = Object.entries(config.widgets).sort((a, b) => a[1].order - b[1].order);
+
+      list.innerHTML = entries.map(([id, w]) => {
+        const el = document.querySelector(`[data-widget="${id}"]`);
+        const label = el ? el.dataset.widgetLabel : id;
+        const spanFull = w.span === 'full';
+        return `<div class="widget-list-item" draggable="true" data-sort-widget="${id}">
+          <span class="drag-handle">&#9776;</span>
+          <span class="widget-name">${label}</span>
+          <select onchange="setWidgetSpan('${id}',this.value)" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;">
+            <option value="auto" ${!spanFull?'selected':''}>Auto</option>
+            <option value="full" ${spanFull?'selected':''}>Full Width</option>
+          </select>
+          <button class="widget-toggle ${w.visible ? 'on' : ''}" onclick="toggleWidgetFromList('${id}', this)"></button>
+        </div>`;
+      }).join('');
+
+      // Drag-to-reorder in the panel list
+      const items = list.querySelectorAll('.widget-list-item');
+      items.forEach(item => {
+        item.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', item.dataset.sortWidget);
+          item.style.opacity = '0.4';
+        });
+        item.addEventListener('dragend', () => { item.style.opacity = ''; });
+        item.addEventListener('dragover', e => { e.preventDefault(); item.style.borderColor = 'var(--primary)'; });
+        item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
+        item.addEventListener('drop', e => {
+          e.preventDefault();
+          item.style.borderColor = '';
+          const fromId = e.dataTransfer.getData('text/plain');
+          const toId = item.dataset.sortWidget;
+          if (fromId !== toId) reorderWidgets(fromId, toId);
+        });
+      });
+    }
+
+    function setWidgetSpan(id, span) {
+      const config = loadConfig();
+      if (!config.widgets[id]) return;
+      config.widgets[id].span = span === 'full' ? 'full' : 'auto';
+      saveConfig(config);
+      applyConfig(config);
+    }
+
+    function toggleWidgetFromList(id, btn) {
+      toggleWidget(id);
+      btn.classList.toggle('on');
+    }
+
+    function reorderWidgets(fromId, toId) {
+      const config = loadConfig();
+      const entries = Object.entries(config.widgets).sort((a, b) => a[1].order - b[1].order);
+      const ids = entries.map(e => e[0]);
+
+      const fromIdx = ids.indexOf(fromId);
+      const toIdx = ids.indexOf(toId);
+      ids.splice(fromIdx, 1);
+      ids.splice(toIdx, 0, fromId);
+
+      ids.forEach((id, i) => { config.widgets[id].order = i; });
+      saveConfig(config);
+      applyConfig(config);
+      renderWidgetList();
+    }
+
+    // Drag-and-drop directly on widgets in customize mode
+    function enableDragDrop() {
+      document.querySelectorAll('.widget').forEach(w => {
+        w.setAttribute('draggable', 'true');
+        w.addEventListener('dragstart', onWidgetDragStart);
+        w.addEventListener('dragend', onWidgetDragEnd);
+        w.addEventListener('dragover', onWidgetDragOver);
+        w.addEventListener('dragleave', onWidgetDragLeave);
+        w.addEventListener('drop', onWidgetDrop);
+      });
+    }
+
+    function disableDragDrop() {
+      document.querySelectorAll('.widget').forEach(w => {
+        w.removeAttribute('draggable');
+        w.removeEventListener('dragstart', onWidgetDragStart);
+        w.removeEventListener('dragend', onWidgetDragEnd);
+        w.removeEventListener('dragover', onWidgetDragOver);
+        w.removeEventListener('dragleave', onWidgetDragLeave);
+        w.removeEventListener('drop', onWidgetDrop);
+      });
+    }
+
+    let draggedWidget = null;
+    function onWidgetDragStart(e) {
+      draggedWidget = this;
+      this.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', this.dataset.widget);
+    }
+    function onWidgetDragEnd() { this.classList.remove('dragging'); draggedWidget = null; }
+    function onWidgetDragOver(e) { e.preventDefault(); this.classList.add('drag-over'); }
+    function onWidgetDragLeave() { this.classList.remove('drag-over'); }
+    function onWidgetDrop(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      const fromId = e.dataTransfer.getData('text/plain');
+      const toId = this.dataset.widget;
+      if (fromId && toId && fromId !== toId) reorderWidgets(fromId, toId);
+    }
+
+    function resetDashboard() {
+      localStorage.removeItem(STORAGE_KEY);
+      applyConfig(DEFAULT_CONFIG);
+      if (customizeMode) {
+        renderWidgetList();
+        document.querySelectorAll('.layout-option').forEach(el => {
+          el.classList.toggle('active', el.dataset.layout === 'default');
+        });
+      }
+    }
+
+    // Apply saved config on load
+    applyConfig(loadConfig());
+
+    // ═══ My Tasks ═══
+    async function loadMyTasks() {
+      try {
+        const tasks = await API.get('/dashboard/my-tasks');
+        const el = document.getElementById('my-tasks-list');
+        if (!tasks.length) {
+          el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--success);font-size:13px;">No pending tasks</div>';
+          return;
+        }
+
+        el.innerHTML = tasks.map(t => {
+          const isOverdue = t.due_date && new Date(t.due_date) < new Date();
+          const isDueToday = t.due_date && new Date(t.due_date).toDateString() === new Date().toDateString();
+          const priColor = t.priority === 'high' ? 'var(--danger)' : t.priority === 'medium' ? 'var(--warning)' : 'var(--text-muted)';
+          const statusLabel = t.status === 'in_progress' ? 'In Progress' : t.status === 'review' ? 'Review' : 'To-do';
+          const statusColor = t.status === 'in_progress' ? 'var(--primary)' : t.status === 'review' ? 'var(--warning)' : 'var(--text-muted)';
+
+          let dueBadge = '';
+          if (isOverdue) dueBadge = '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--danger-bg);color:var(--danger);font-weight:600;">Overdue</span>';
+          else if (isDueToday) dueBadge = '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--warning-bg);color:var(--warning);font-weight:600;">Today</span>';
+          else if (t.due_date) dueBadge = '<span style="font-size:10px;color:var(--text-muted);">' + fmtDateShort(t.due_date) + '</span>';
+
+          return `
+          <div style="display:grid;grid-template-columns:4px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);cursor:pointer;" onclick="window.location='taskboard.html?project=${t.project_id}&task=${t.id}'">
+            <div style="width:4px;height:100%;min-height:24px;border-radius:2px;background:${priColor};"></div>
+            <div>
+              <div style="font-size:13px;font-weight:500;">${t.title}</div>
+              <div style="font-size:10px;color:var(--text-muted);">${t.project_code || ''} ${t.project_name ? '- ' + t.project_name : ''}</div>
+            </div>
+            <span style="font-size:9px;padding:1px 6px;border-radius:10px;background:${statusColor};color:#fff;font-weight:600;">${statusLabel}</span>
+            ${dueBadge}
+          </div>`;
+        }).join('');
+      } catch(e) {
+        document.getElementById('my-tasks-list').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">-</div>';
+      }
+    }
+
+    // Load everything
+    Promise.all([loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks()])
+      .then(() => applyConfig(loadConfig()));
+
+    // Real-time: auto-refresh on changes
+    API.onRealtime(msg => {
+      if (['pr_created','pr_updated','expense_created','expense_updated','budget_created','budget_updated','project_updated','task_created','task_updated'].includes(msg.type)) {
+        loadDashboard(); loadApprovals(); loadBudgetSummary(); loadAlerts(); loadMyTasks();
+      }
+    });
+  </script>
+</body>
+</html>

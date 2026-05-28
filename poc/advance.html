@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDA Operation — Advance</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .main-tabs { display:flex; gap:0; margin-bottom:20px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .main-tab { flex:1; padding:14px 20px; text-align:center; font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary); border-right:1px solid var(--border); transition:all 0.15s; }
+    .main-tab:last-child { border-right:none; }
+    .main-tab:hover { background:var(--bg-hover); }
+    .main-tab.active { background:var(--primary-light); color:var(--primary); font-weight:600; }
+    .main-tab .tab-count { font-size:10px; background:var(--bg-hover); padding:1px 6px; border-radius:10px; margin-left:4px; }
+
+    .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+    .stat-box { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
+    .stat-box .s-val { font-size:20px; font-weight:800; margin-top:4px; }
+    .stat-box .s-lbl { font-size:11px; color:var(--text-secondary); font-weight:500; }
+    .stat-box .s-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
+
+    .adv-card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:10px; overflow:hidden; transition:all 0.15s; }
+    .adv-card:hover { border-color:var(--primary); box-shadow:var(--shadow-sm); }
+    .adv-card-main { display:grid; grid-template-columns:4px 1fr auto auto auto; align-items:center; gap:12px; padding:14px 20px; cursor:pointer; }
+    .adv-card-info h4 { font-size:13px; font-weight:600; margin-bottom:2px; }
+    .adv-card-info .meta { font-size:11px; color:var(--text-secondary); display:flex; gap:8px; flex-wrap:wrap; }
+    .adv-card-amount { font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; }
+    .adv-card-balance { font-size:11px; text-align:right; }
+    .adv-card-expand { display:none; padding:0 20px 16px 36px; border-top:1px solid var(--border-light); }
+    .adv-card-expand.show { display:block; }
+
+    .settle-line { display:grid; grid-template-columns:1fr 100px 80px 60px; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid var(--border-light); font-size:12px; }
+    .settle-line:last-child { border-bottom:none; }
+
+    .flow-steps { display:flex; align-items:center; gap:4px; margin-bottom:20px; padding:12px 16px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow-x:auto; }
+    .flow-step { padding:6px 14px; border-radius:var(--radius-full); font-size:11px; font-weight:600; white-space:nowrap; }
+    .flow-step.done { background:var(--success-bg); color:var(--success); }
+    .flow-step.current { background:var(--primary-light); color:var(--primary); border:2px solid var(--primary); }
+    .flow-step.pending { background:var(--bg-hover); color:var(--text-muted); }
+    .flow-arrow { color:var(--text-muted); font-size:14px; }
+
+    .filter-bar { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+
+    .modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal-box { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:560px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .modal-header { padding:20px 24px 0; display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h3 { font-size:16px; font-weight:700; }
+    .modal-close { border:none; background:none; font-size:20px; cursor:pointer; color:var(--text-muted); }
+    .modal-body { padding:20px 24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border-light); display:flex; justify-content:flex-end; gap:8px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .line-row { display:grid; grid-template-columns:2fr 80px 1fr 32px; gap:8px; align-items:end; margin-bottom:6px; }
+    .line-row .form-input { font-size:12px; padding:6px 8px; }
+    .btn-remove { border:none; background:var(--danger-bg); color:var(--danger); border-radius:var(--radius); cursor:pointer; font-size:14px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1>Advance</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" id="btn-new" onclick="openNewModal()">+ New Advance</button>
+        <button class="btn btn-secondary" onclick="exportCSV()">Export</button>
+      </div>
+    </div>
+
+    <!-- Flow -->
+    <div class="flow-steps" id="flow-bar">
+      <div class="flow-step current">1. Request</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step pending">2. Approve</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step pending">3. Payment</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step pending">4. Clear</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step pending">5. Closed</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="main-tabs" id="main-tabs" style="margin-bottom:20px;"></div>
+
+    <!-- Stats -->
+    <div class="stat-grid" id="stats"></div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <select class="form-select" id="filter-project" style="width:220px;" onchange="renderList()"><option value="">All Projects</option></select>
+      <select class="form-select" id="filter-status" style="width:140px;" onchange="renderList()">
+        <option value="">All Status</option>
+        <option value="draft">Draft</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="paid">Paid</option>
+        <option value="settling">Settling</option>
+        <option value="settled">Settled</option>
+      </select>
+      <select class="form-select" id="filter-employee" style="width:180px;" onchange="renderList()"><option value="">All Employees</option></select>
+    </div>
+
+    <!-- List -->
+    <div id="adv-list"></div>
+
+    <!-- New Advance Modal -->
+    <div class="modal-overlay" id="new-modal" onclick="if(event.target===this)closeNewModal()">
+      <div class="modal-box">
+        <div class="modal-header"><h3>New Advance Request</h3><button class="modal-close" onclick="closeNewModal()">&times;</button></div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Project</label><select class="form-input" id="f-project"></select></div>
+            <div class="form-group"><label class="form-label">Employee</label><select class="form-input" id="f-employee"></select></div>
+          </div>
+          <div class="form-group"><label class="form-label">Description / Purpose</label><input type="text" class="form-input" id="f-desc" placeholder="Purpose of advance"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Amount</label><input type="number" class="form-input" id="f-amount" placeholder="0" min="0"></div>
+            <div class="form-group"><label class="form-label">Purpose</label>
+              <select class="form-input" id="f-purpose">
+                <option value="travel">Travel / Business Trip</option>
+                <option value="procurement">Procurement / Purchase</option>
+                <option value="event">Event / Meeting</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeNewModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveAdvance()">Create</button></div>
+      </div>
+    </div>
+
+    <!-- Clear Modal -->
+    <div class="modal-overlay" id="settle-modal" onclick="if(event.target===this)closeSettleModal()">
+      <div class="modal-box">
+        <div class="modal-header"><h3>Clear</h3><button class="modal-close" onclick="closeSettleModal()">&times;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="s-adv-id">
+          <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Advance Amount</span><strong id="s-adv-amount">0</strong></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <label class="form-label" style="margin:0;">Expense Items</label>
+            <button class="btn btn-secondary btn-sm" onclick="addSettleLine()" style="font-size:11px;">+ Add Line</button>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 80px 1fr 32px;gap:8px;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;margin-bottom:4px;">
+            <span>Description</span><span>Amount</span><span>Category</span><span></span>
+          </div>
+          <div id="settle-lines"></div>
+          <div style="margin-top:12px;padding:12px;background:var(--bg-light);border-radius:var(--radius);">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Total Expense</span><strong id="s-total">0</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Difference</span><strong id="s-diff" style="color:var(--success);">0</strong></div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="s-diff-label"></div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;" id="s-gl-preview"></div>
+          <div class="form-group" style="margin-top:12px;"><label class="form-label">Remarks</label><input type="text" class="form-input" id="s-remarks" placeholder="Clear remarks"></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeSettleModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveClear()">Submit</button></div>
+      </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="pay-modal" onclick="if(event.target===this)closePayModal()">
+      <div class="modal-box" style="width:420px;">
+        <div class="modal-header"><h3>Record Payment</h3><button class="modal-close" onclick="closePayModal()">&times;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="p-adv-id">
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
+            <div style="text-align:center;"><div style="font-size:10px;color:var(--text-muted);font-weight:600;">FROM (Company)</div><div id="p-company-bank" style="font-weight:600;margin-top:4px;">Select below</div></div>
+            <div style="font-size:18px;color:var(--primary);">&rarr;</div>
+            <div style="text-align:center;"><div style="font-size:10px;color:var(--text-muted);font-weight:600;">TO (Employee)</div><div id="p-emp-info" style="font-weight:600;margin-top:4px;">-</div></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Amount</label><input type="number" class="form-input" id="p-amount" min="0"></div>
+            <div class="form-group"><label class="form-label">Method</label>
+              <select class="form-input" id="p-method"><option value="transfer">Bank Transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Company Bank Account</label><select class="form-input" id="p-bank"><option value="">Select bank account</option></select></div>
+          <div class="form-group"><label class="form-label">Reference</label><input type="text" class="form-input" id="p-ref" placeholder="Transfer ref / Cheque no."></div>
+          <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="p-remarks"></div>
+          <div style="margin-top:12px;padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;">
+            <div style="font-weight:600;margin-bottom:4px;">GL Journal Entry (auto)</div>
+            <div style="color:var(--primary);">Dr. 113103 Employee Receivable</div>
+            <div style="color:var(--success);">Cr. <span id="p-gl-bank">111201 Bank Account</span></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closePayModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="savePayment()">Record Payment</button></div>
+      </div>
+    </div>
+
+    <!-- Return / Reimburse Modal -->
+    <div class="modal-overlay" id="return-modal" onclick="if(event.target===this)closeReturnModal()">
+      <div class="modal-box" style="width:440px;">
+        <div class="modal-header"><h3 id="ret-title">Receive Return</h3><button class="modal-close" onclick="closeReturnModal()">&times;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="r-adv-id">
+          <input type="hidden" id="r-action">
+          <div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;">
+              <span id="r-label">Amount</span>
+              <span id="r-amount" style="color:var(--primary);">฿0</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank Account</label>
+            <select class="form-input" id="r-bank"><option value="">Select bank</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reference</label>
+            <input type="text" class="form-input" id="r-ref" placeholder="Transfer ref / Slip no.">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Remarks</label>
+            <input type="text" class="form-input" id="r-remarks">
+          </div>
+          <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;" id="r-gl-preview"></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeReturnModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveReturnReimburse()">Confirm</button></div>
+      </div>
+    </div>
+  </main>
+  </div>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allAdvances = [];
+    let allProjects = [];
+    let allUsers = [];
+    const userRole = (API.getUser() || {}).role || '';
+
+    async function loadData() {
+      try {
+        const [advances, projects, users] = await Promise.all([
+          API.get('/advance'), API.getProjects(), API.get('/auth/users').catch(() => [])
+        ]);
+        allAdvances = Array.isArray(advances) ? advances : [];
+        allProjects = Array.isArray(projects) ? projects : [];
+        allUsers = Array.isArray(users) ? users : [];
+
+        const projOpts = allProjects.map(p => `<option value="${p.id}">${p.code} — ${p.name}</option>`).join('');
+        document.getElementById('filter-project').innerHTML = '<option value="">All Projects</option>' + projOpts;
+        document.getElementById('f-project').innerHTML = '<option value="">Select Project</option>' + projOpts;
+
+        const empOpts = allUsers.map(u => `<option value="${u.id}">${u.first_name_th||u.first_name} ${u.last_name||''}</option>`).join('');
+        document.getElementById('filter-employee').innerHTML = '<option value="">All Employees</option>' + empOpts;
+        document.getElementById('f-employee').innerHTML = empOpts;
+
+        renderTabs(); renderStats(); renderList();
+      } catch(e) { document.getElementById('adv-list').innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center;">Error: '+e.message+'</div>'; }
+    }
+
+    function renderTabs() {
+      const counts = { all: allAdvances.length, draft: 0, pending: 0, approved: 0, paid: 0, settling: 0, settled: 0 };
+      allAdvances.forEach(a => { if (a.status.includes('pending')) counts.pending++; else if (counts[a.status] !== undefined) counts[a.status]++; });
+      document.getElementById('main-tabs').innerHTML = [
+        { key:'all', label:'All' }, { key:'pending', label:'Pending' }, { key:'paid', label:'Paid' },
+        { key:'settling', label:'Clearing' }, { key:'settled', label:'Cleared' }
+      ].map(t => `<div class="main-tab${t.key===tabFilter?' active':''}" onclick="filterTab('${t.key}',this)">${t.label}<span class="tab-count">${counts[t.key]||0}</span></div>`).join('');
+    }
+
+    let tabFilter = 'all';
+    function filterTab(tab, el) {
+      tabFilter = tab;
+      document.querySelectorAll('#main-tabs .main-tab').forEach(t => t.classList.remove('active'));
+      if (el) el.classList.add('active');
+      renderList();
+    }
+
+    function renderStats() {
+      const total = allAdvances.reduce((s,a) => s + parseFloat(a.amount||0), 0);
+      const paid = allAdvances.filter(a => ['paid','settling','settled'].includes(a.status)).reduce((s,a) => s + parseFloat(a.paid_amount||0), 0);
+      const settled = allAdvances.filter(a => ['settling','settled'].includes(a.status)).reduce((s,a) => s + parseFloat(a.settled_amount||0), 0);
+      const outstanding = paid - settled;
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-box"><div class="s-lbl">Total Requested</div><div class="s-val">${fmtMoney(total)}</div><div class="s-sub">${allAdvances.length} requests</div></div>
+        <div class="stat-box"><div class="s-lbl">Paid Out</div><div class="s-val" style="color:var(--primary);">${fmtMoney(paid)}</div></div>
+        <div class="stat-box"><div class="s-lbl">Settled</div><div class="s-val" style="color:var(--success);">${fmtMoney(settled)}</div></div>
+        <div class="stat-box"><div class="s-lbl">Outstanding</div><div class="s-val" style="color:${outstanding>0?'var(--danger)':'var(--success)'};">${fmtMoney(outstanding)}</div></div>`;
+    }
+
+    function getFiltered() {
+      let list = allAdvances;
+      if (tabFilter !== 'all') {
+        if (tabFilter === 'pending') list = list.filter(a => a.status.includes('pending'));
+        else list = list.filter(a => a.status === tabFilter);
+      }
+      const pf = document.getElementById('filter-project').value;
+      const sf = document.getElementById('filter-status').value;
+      const ef = document.getElementById('filter-employee').value;
+      if (pf) list = list.filter(a => a.project_id === pf);
+      if (sf) { if (sf === 'pending') list = list.filter(a => a.status.includes('pending')); else list = list.filter(a => a.status === sf); }
+      if (ef) list = list.filter(a => a.employee_id === ef);
+      return list;
+    }
+
+    function getFlowSteps(status) {
+      const steps = ['draft','pending','approved','paid','settling','settled'];
+      const labels = ['Request','Approve','Approved','Payment','Clear','Closed'];
+      const idx = status.includes('pending') ? 1 : steps.indexOf(status);
+      return labels.map((l, i) => {
+        const cls = i < idx ? 'done' : i === idx ? 'current' : 'pending';
+        return `<div class="flow-step ${cls}">${i+1}. ${l}</div>`;
+      }).join('<div class="flow-arrow">&rarr;</div>');
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const container = document.getElementById('adv-list');
+      if (!list.length) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No records</div>'; return; }
+
+      container.innerHTML = list.map(a => {
+        const balance = parseFloat(a.balance || 0);
+        const paidAmt = parseFloat(a.paid_amount || 0);
+        const settledAmt = parseFloat(a.settled_amount || 0);
+        const statusColor = a.status === 'settled' ? 'var(--success)' : a.status === 'paid' ? 'var(--primary)' : a.status.includes('pending') ? 'var(--warning)' : 'var(--text-muted)';
+
+        // Action buttons based on status + role
+        let actions = '';
+        if (a.status === 'draft') actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();submitAdv(\''+a.id+'\')">Submit</button>';
+        else if (a.status.includes('pending') && ['pm','finance','executive'].includes(userRole)) actions = '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveAdv(\''+a.id+'\')">Approve</button>';
+        else if (a.status === 'approved' && ['finance','executive'].includes(userRole)) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPayModal(\''+a.id+'\','+parseFloat(a.amount)+')">Pay</button>';
+        else if (a.status === 'paid' && !a.clear_status) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
+        // After Clear is approved by Finance: show Return/Reimburse
+        const clearApproved = a.clear_status === 'approved';
+        if (a.status === 'settling' && clearApproved && balance > 0 && ['finance','executive'].includes(userRole)) {
+          actions += ' <button class="btn btn-sm" style="background:var(--success);color:#fff;" onclick="event.stopPropagation();openReturnModal(\''+a.id+'\','+balance+')">Receive Return ฿'+fmtNum(balance)+'</button>';
+        }
+        if (a.status === 'settling' && clearApproved && balance < 0 && ['finance','executive'].includes(userRole)) {
+          actions += ' <button class="btn btn-sm" style="background:var(--warning);color:#fff;" onclick="event.stopPropagation();openReimburseModal(\''+a.id+'\','+Math.abs(balance)+')">Pay Reimburse ฿'+fmtNum(Math.abs(balance))+'</button>';
+        }
+
+        return `
+        <div class="adv-card">
+          <div class="adv-card-main" onclick="toggleCard('${a.id}')">
+            <div style="width:4px;height:100%;min-height:30px;border-radius:2px;background:${statusColor};"></div>
+            <div class="adv-card-info">
+              <h4>${a.doc_number} — ${a.description || a.purpose || ''}</h4>
+              <div class="meta">
+                <span>${a.employee_name_th || a.employee_name || ''}</span>
+                <span>${a.doc_date ? new Date(a.doc_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) : ''}</span>
+                ${a.project_code ? '<span style="color:var(--primary);">'+a.project_code+'</span>' : ''}
+                <span style="color:var(--text-muted);">${a.purpose || ''}</span>
+              </div>
+            </div>
+            <div class="adv-card-amount">฿${fmtNum(parseFloat(a.amount||0))}</div>
+            <div class="adv-card-balance">
+              ${paidAmt > 0 ? '<div style="font-size:10px;color:var(--text-muted);">Paid: ฿'+fmtNum(paidAmt)+'</div>' : ''}
+              ${balance > 0 ? '<div style="font-size:11px;font-weight:600;color:var(--danger);">Balance: ฿'+fmtNum(balance)+'</div>' : ''}
+              ${balance < 0 ? '<div style="font-size:11px;font-weight:600;color:var(--warning);">Reimburse: ฿'+fmtNum(Math.abs(balance))+'</div>' : ''}
+              ${a.status === 'settled' && balance === 0 ? '<div style="font-size:11px;font-weight:600;color:var(--success);">Cleared</div>' : ''}
+            </div>
+            <div style="display:flex;gap:4px;align-items:center;">
+              ${statusBadge(a.status)}
+              <div onclick="event.stopPropagation();">${actions}</div>
+            </div>
+          </div>
+          <div class="adv-card-expand" id="expand-${a.id}">
+            <div style="margin-top:12px;">${getFlowSteps(a.status)}</div>
+            <div id="detail-${a.id}" style="margin-top:12px;color:var(--text-muted);font-size:12px;">Click to load details...</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function toggleCard(id) {
+      const el = document.getElementById('expand-' + id);
+      if (!el) return;
+      const isOpen = el.classList.contains('show');
+      // Close all
+      document.querySelectorAll('.adv-card-expand.show').forEach(e => e.classList.remove('show'));
+      if (isOpen) return;
+      el.classList.add('show');
+
+      // Load detail
+      const detailEl = document.getElementById('detail-' + id);
+      detailEl.innerHTML = '<div style="color:var(--text-muted);">Loading...</div>';
+      try {
+        const data = await API.get('/advance/' + id);
+        let html = '';
+
+        // Payments
+        if (data.payments && data.payments.length) {
+          html += '<div style="font-size:13px;font-weight:700;margin-bottom:8px;">Payments</div>';
+          data.payments.forEach(p => {
+            html += `<div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:8px;font-size:12px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-weight:600;">${new Date(p.payment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</span>
+                <strong style="color:var(--primary);font-size:14px;">฿${fmtNum(parseFloat(p.amount))}</strong>
+              </div>
+              <div style="color:var(--text-secondary);">${p.payment_method} ${p.reference ? '| Ref: '+p.reference : ''} ${p.paid_by_name ? '| '+p.paid_by_name : ''}</div>
+              ${p.journal_id ? '<div style="margin-top:6px;" id="journal-pay-'+p.id+'"><a href="#" onclick="event.preventDefault();loadJournal(\''+p.journal_id+'\',\'journal-pay-'+p.id+'\')" style="font-size:11px;color:var(--primary);">View GL Journal</a></div>' : ''}
+            </div>`;
+          });
+        }
+
+        // Clears
+        if (data.settlements && data.settlements.length) {
+          html += '<div style="font-size:13px;font-weight:700;margin-top:14px;margin-bottom:8px;">Clears</div>';
+          data.settlements.forEach(s => {
+            const diffColor = parseFloat(s.difference) > 0 ? 'var(--danger)' : parseFloat(s.difference) < 0 ? 'var(--success)' : 'var(--text-primary)';
+            const diffLabel = s.settlement_type === 'reimburse' ? 'Company owes employee' : s.settlement_type === 'return' ? 'Employee returns' : 'Exact match';
+            html += `<div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:8px;">
+                <span>${s.doc_number} ${statusBadge(s.status)} ${s.status==='pending_finance'&&['finance','executive'].includes(userRole)?'<button class="btn btn-success btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();approveClear(\''+s.id+'\')">Approve Clear</button>':''}</span>
+                <span>Total: ฿${fmtNum(parseFloat(s.total_expense))}</span>
+              </div>
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead><tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:4px 0;font-size:10px;color:var(--text-muted);">Description</th><th style="text-align:right;padding:4px;font-size:10px;color:var(--text-muted);">Amount</th><th style="text-align:left;padding:4px;font-size:10px;color:var(--text-muted);">Category</th><th style="font-size:10px;color:var(--text-muted);">Receipt</th></tr></thead>
+                <tbody>`;
+            if (s.lines && s.lines.length) {
+              s.lines.forEach(l => {
+                html += `<tr style="border-bottom:1px solid var(--border-light);">
+                  <td style="padding:6px 0;">${l.description}</td>
+                  <td style="text-align:right;padding:6px 4px;font-weight:600;">฿${fmtNum(parseFloat(l.amount))}</td>
+                  <td style="padding:6px 4px;"><span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--bg-hover);">${l.category||'misc'}</span></td>
+                  <td style="text-align:center;font-size:10px;color:${l.has_receipt?'var(--success)':'var(--text-muted)'};">${l.has_receipt?'Yes':'-'}</td>
+                </tr>`;
+              });
+            }
+            html += `</tbody></table>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                <span style="font-size:12px;font-weight:600;color:${diffColor};">${diffLabel}: ฿${fmtNum(Math.abs(parseFloat(s.difference)))}</span>
+                ${s.journal_id ? '<a href="#" onclick="event.preventDefault();loadJournal(\''+s.journal_id+'\',\'journal-settle-'+s.id+'\')" style="font-size:11px;color:var(--primary);">View GL Journal</a>' : ''}
+              </div>
+              ${s.journal_id ? '<div id="journal-settle-'+s.id+'" style="margin-top:6px;"></div>' : ''}
+            </div>`;
+          });
+        }
+
+        if (!html) html = '<div style="color:var(--text-muted);font-size:12px;">No payments or settlements yet</div>';
+        detailEl.innerHTML = html;
+      } catch(e) { detailEl.innerHTML = '<div style="color:var(--danger);">Error: '+e.message+'</div>'; }
+    }
+
+    // ═══ Actions ═══
+    async function submitAdv(id) {
+      try { await API.post('/advance/'+id+'/submit'); await loadData(); } catch(e) { alert('Error: '+e.message); }
+    }
+    async function approveAdv(id) {
+      try { await API.post('/advance/'+id+'/approve'); await loadData(); } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // Approve clearing
+    async function approveClear(settlementId) {
+      try { await API.post('/advance/settlement/'+settlementId+'/approve'); await loadData(); }
+      catch(e) { alert('Error: '+e.message); }
+    }
+
+
+    // ═══ New Modal ═══
+    function openNewModal() {
+      document.getElementById('new-modal').classList.add('show');
+    }
+    function closeNewModal() { document.getElementById('new-modal').classList.remove('show'); }
+    async function saveAdvance() {
+      const desc = document.getElementById('f-desc').value.trim();
+      const amount = parseFloat(document.getElementById('f-amount').value);
+      if (!desc || !amount) { alert('Fill description and amount'); return; }
+      try {
+        await API.post('/advance', {
+          project_id: document.getElementById('f-project').value || null,
+          employee_id: document.getElementById('f-employee').value || null,
+          description: desc, amount,
+          purpose: document.getElementById('f-purpose').value
+        });
+        closeNewModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Payment Modal ═══
+    let bankAccounts = [];
+    async function openPayModal(id, amount) {
+      document.getElementById('p-adv-id').value = id;
+      document.getElementById('p-amount').value = amount;
+      // Find employee bank info
+      const adv = allAdvances.find(a => a.id === id);
+      const empBank = adv ? (adv.employee_bank || '') + ' ' + (adv.employee_bank_account || '') : '';
+      const empName = adv ? (adv.employee_name_th || adv.employee_name || '') : '';
+      document.getElementById('p-emp-info').innerHTML = empName + (empBank.trim() ? '<br><span style="color:var(--primary);font-weight:600;">' + empBank.trim() + '</span>' : '<br><span style="color:var(--danger);">No bank account</span>');
+      document.getElementById('p-ref').value = '';
+      document.getElementById('p-remarks').value = '';
+      // Load bank accounts
+      if (!bankAccounts.length) {
+        try { bankAccounts = await API.get('/advance/banks/list'); } catch(e) { bankAccounts = []; }
+      }
+      document.getElementById('p-bank').innerHTML = '<option value="" data-gl="111201" data-name="Bank Account">Select bank</option>' +
+        bankAccounts.map(b => `<option value="${b.id}" data-gl="${b.gl_account}" data-name="${b.name}">${b.code} — ${b.name} (${b.account_number})</option>`).join('');
+      const bankSelect = document.getElementById('p-bank');
+      function updateGLPreview() {
+        const opt = bankSelect.options[bankSelect.selectedIndex];
+        const gl = opt?.dataset?.gl || '111201';
+        const name = opt?.dataset?.name || 'Bank Account';
+        document.getElementById('p-gl-bank').textContent = gl + ' ' + name;
+        document.getElementById('p-company-bank').innerHTML = opt?.value ? '<span style="color:var(--primary);">'+opt.textContent+'</span>' : 'Select below';
+      }
+      bankSelect.onchange = updateGLPreview;
+      updateGLPreview();
+      document.getElementById('pay-modal').classList.add('show');
+    }
+    function closePayModal() { document.getElementById('pay-modal').classList.remove('show'); }
+    async function savePayment() {
+      const id = document.getElementById('p-adv-id').value;
+      try {
+        await API.post('/advance/'+id+'/pay', {
+          amount: parseFloat(document.getElementById('p-amount').value),
+          payment_method: document.getElementById('p-method').value,
+          bank_account_id: document.getElementById('p-bank').value || null,
+          reference: document.getElementById('p-ref').value,
+          remarks: document.getElementById('p-remarks').value
+        });
+        closePayModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Clear Modal ═══
+    let settleAdvAmount = 0;
+    function openSettleModal(id, advAmt) {
+      settleAdvAmount = advAmt;
+      document.getElementById('s-adv-id').value = id;
+      document.getElementById('s-adv-amount').textContent = '฿' + fmtNum(advAmt);
+      document.getElementById('settle-lines').innerHTML = '';
+      document.getElementById('s-remarks').value = '';
+      addSettleLine(); addSettleLine();
+      updateSettleTotal();
+      document.getElementById('settle-modal').classList.add('show');
+    }
+    function closeSettleModal() { document.getElementById('settle-modal').classList.remove('show'); }
+
+    function addSettleLine() {
+      const c = document.getElementById('settle-lines');
+      const row = document.createElement('div');
+      row.className = 'line-row';
+      row.innerHTML = `
+        <input type="text" class="form-input" placeholder="Description" data-sl-desc>
+        <input type="number" class="form-input" placeholder="Amount" data-sl-amt oninput="updateSettleTotal()">
+        <select class="form-input" data-sl-cat>
+          <option value="travel">Travel</option><option value="food">Food</option>
+          <option value="accommodation">Accommodation</option><option value="transport">Transport</option>
+          <option value="material">Material</option><option value="misc">Misc</option>
+        </select>
+        <button class="btn-remove" onclick="this.parentElement.remove();updateSettleTotal();">&times;</button>`;
+      c.appendChild(row);
+    }
+
+    function updateSettleTotal() {
+      let total = 0;
+      document.querySelectorAll('[data-sl-amt]').forEach(el => { total += parseFloat(el.value) || 0; });
+      document.getElementById('s-total').textContent = '฿' + fmtNum(total);
+      const diff = total - settleAdvAmount;
+      document.getElementById('s-diff').textContent = (diff >= 0 ? '+' : '') + '฿' + fmtNum(diff);
+      document.getElementById('s-diff').style.color = diff > 0 ? 'var(--danger)' : diff < 0 ? 'var(--success)' : 'var(--text-primary)';
+      document.getElementById('s-diff-label').textContent = diff > 0 ? 'Company owes employee (Reimburse)' : diff < 0 ? 'Employee returns ฿'+fmtNum(Math.abs(diff)) : 'Exact match';
+
+      // GL Preview
+      const catAccounts = { travel:'522601', food:'522603', accommodation:'522602', transport:'522701', material:'511120', misc:'522709' };
+      let glHtml = '<div style="font-weight:600;margin-bottom:6px;">GL Journal Entry (auto)</div>';
+      glHtml += '<table style="width:100%;font-size:11px;border-collapse:collapse;">';
+      glHtml += '<tr style="font-weight:600;color:var(--text-muted);"><td>Account</td><td style="text-align:right;">Debit</td><td style="text-align:right;">Credit</td></tr>';
+      document.querySelectorAll('.line-row').forEach(row => {
+        const desc = row.querySelector('[data-sl-desc]')?.value || '';
+        const amt = parseFloat(row.querySelector('[data-sl-amt]')?.value) || 0;
+        const cat = row.querySelector('[data-sl-cat]')?.value || 'misc';
+        if (desc && amt > 0) {
+          const gl = catAccounts[cat] || '522709';
+          glHtml += '<tr><td style="color:var(--primary);padding:2px 0;">Dr. '+gl+' '+desc+'</td><td style="text-align:right;">'+fmtMoney(amt)+'</td><td></td></tr>';
+        }
+      });
+      glHtml += '<tr><td style="color:var(--success);padding:2px 0;">Cr. 113103 Employee Receivable</td><td></td><td style="text-align:right;">'+fmtMoney(total)+'</td></tr>';
+      if (diff < 0) {
+        glHtml += '<tr style="border-top:1px solid var(--border);"><td style="color:var(--primary);padding:2px 0;">Dr. 111201 Bank (Return)</td><td style="text-align:right;">'+fmtMoney(Math.abs(diff))+'</td><td></td></tr>';
+        glHtml += '<tr><td style="color:var(--success);padding:2px 0;">Cr. 113103 Employee Receivable</td><td></td><td style="text-align:right;">'+fmtMoney(Math.abs(diff))+'</td></tr>';
+      } else if (diff > 0) {
+        glHtml += '<tr style="border-top:1px solid var(--border);"><td style="color:var(--primary);padding:2px 0;">Dr. 113103 Employee Receivable</td><td style="text-align:right;">'+fmtMoney(diff)+'</td><td></td></tr>';
+        glHtml += '<tr><td style="color:var(--success);padding:2px 0;">Cr. 111201 Bank (Reimburse)</td><td></td><td style="text-align:right;">'+fmtMoney(diff)+'</td></tr>';
+      }
+      glHtml += '</table>';
+      document.getElementById('s-gl-preview').innerHTML = glHtml;
+    }
+
+    async function saveClear() {
+      const id = document.getElementById('s-adv-id').value;
+      const lines = [];
+      document.querySelectorAll('.line-row').forEach(row => {
+        const desc = row.querySelector('[data-sl-desc]').value.trim();
+        const amt = parseFloat(row.querySelector('[data-sl-amt]').value) || 0;
+        const cat = row.querySelector('[data-sl-cat]').value;
+        if (desc && amt > 0) lines.push({ description: desc, amount: amt, category: cat });
+      });
+      if (!lines.length) { alert('Add at least one expense item'); return; }
+      try {
+        await API.post('/advance/'+id+'/settle', { lines, remarks: document.getElementById('s-remarks').value });
+        closeSettleModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Return / Reimburse ═══
+    async function openReturnModal(id, amount) {
+      const adv = allAdvances.find(a => a.id === id);
+      const empBank = adv ? (adv.employee_bank||'') + ' ' + (adv.employee_bank_account||'') : '';
+      const empName = adv ? (adv.employee_name_th || adv.employee_name || '') : '';
+      document.getElementById('r-adv-id').value = id;
+      document.getElementById('r-action').value = 'return';
+      document.getElementById('ret-title').textContent = 'Receive Return from Employee';
+      document.getElementById('r-label').innerHTML = 'Employee returns<br><span style="font-size:11px;color:var(--text-secondary);">'+empName+' | '+empBank.trim()+'</span>';
+      document.getElementById('r-amount').textContent = '฿' + fmtNum(amount);
+      document.getElementById('r-amount').style.color = 'var(--success)';
+      document.getElementById('r-ref').value = '';
+      document.getElementById('r-remarks').value = '';
+      document.getElementById('r-gl-preview').innerHTML = '<div style="font-weight:600;margin-bottom:4px;">GL Journal (auto)</div><div style="color:var(--primary);">Dr. Bank Account (Company)</div><div style="color:var(--success);">Cr. 113103 Employee Receivable</div><div style="margin-top:6px;font-size:10px;color:var(--text-muted);">'+empName+' ('+empBank.trim()+') &rarr; Company Bank</div>';
+      if (!bankAccounts.length) { try { bankAccounts = await API.get('/advance/banks/list'); } catch(e) {} }
+      document.getElementById('r-bank').innerHTML = '<option value="">Select bank</option>' + bankAccounts.map(b => `<option value="${b.id}">${b.code} — ${b.name} (${b.account_number})</option>`).join('');
+      document.getElementById('return-modal').classList.add('show');
+    }
+
+    async function openReimburseModal(id, amount) {
+      const adv = allAdvances.find(a => a.id === id);
+      const empBank = adv ? (adv.employee_bank||'') + ' ' + (adv.employee_bank_account||'') : '';
+      const empName = adv ? (adv.employee_name_th || adv.employee_name || '') : '';
+      document.getElementById('r-adv-id').value = id;
+      document.getElementById('r-action').value = 'reimburse';
+      document.getElementById('ret-title').textContent = 'Pay Reimbursement to Employee';
+      document.getElementById('r-label').innerHTML = 'Company pays to<br><span style="font-size:11px;color:var(--text-secondary);">'+empName+' | '+empBank.trim()+'</span>';
+      document.getElementById('r-amount').textContent = '฿' + fmtNum(amount);
+      document.getElementById('r-amount').style.color = 'var(--danger)';
+      document.getElementById('r-ref').value = '';
+      document.getElementById('r-remarks').value = '';
+      document.getElementById('r-gl-preview').innerHTML = '<div style="font-weight:600;margin-bottom:4px;">GL Journal (auto)</div><div style="color:var(--primary);">Dr. 113103 Employee Receivable</div><div style="color:var(--success);">Cr. Bank Account (Company)</div><div style="margin-top:6px;font-size:10px;color:var(--text-muted);">Company Bank &rarr; '+empName+' ('+empBank.trim()+')</div>';
+      if (!bankAccounts.length) { try { bankAccounts = await API.get('/advance/banks/list'); } catch(e) {} }
+      document.getElementById('r-bank').innerHTML = '<option value="">Select bank</option>' + bankAccounts.map(b => `<option value="${b.id}">${b.code} — ${b.name} (${b.account_number})</option>`).join('');
+      document.getElementById('return-modal').classList.add('show');
+    }
+
+    function closeReturnModal() { document.getElementById('return-modal').classList.remove('show'); }
+
+    async function saveReturnReimburse() {
+      const id = document.getElementById('r-adv-id').value;
+      const action = document.getElementById('r-action').value;
+      const endpoint = action === 'return' ? '/advance/'+id+'/receive-return' : '/advance/'+id+'/pay-reimburse';
+      try {
+        await API.post(endpoint, {
+          bank_account_id: document.getElementById('r-bank').value || null,
+          reference: document.getElementById('r-ref').value,
+          remarks: document.getElementById('r-remarks').value
+        });
+        closeReturnModal();
+        await loadData();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function loadJournal(journalId, containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      if (el.innerHTML.includes('gl_account')) { el.innerHTML = ''; return; } // toggle
+      el.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">Loading GL...</div>';
+      try {
+        const j = await API.get('/advance/journal/' + journalId);
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px;">';
+        html += '<thead><tr style="background:var(--bg-hover);"><th style="text-align:left;padding:4px 6px;">#</th><th style="text-align:left;padding:4px 6px;">GL Account</th><th style="text-align:left;padding:4px 6px;">Account Name</th><th style="text-align:right;padding:4px 6px;">Debit</th><th style="text-align:right;padding:4px 6px;">Credit</th></tr></thead><tbody>';
+        let totalDr = 0, totalCr = 0;
+        (j.lines || []).forEach(l => {
+          totalDr += parseFloat(l.debit || 0);
+          totalCr += parseFloat(l.credit || 0);
+          html += `<tr style="border-bottom:1px solid var(--border-light);">
+            <td style="padding:4px 6px;">${l.line_num}</td>
+            <td style="padding:4px 6px;font-weight:600;color:var(--primary);">${l.gl_account}</td>
+            <td style="padding:4px 6px;">${l.account_name || ''}</td>
+            <td style="padding:4px 6px;text-align:right;${parseFloat(l.debit)>0?'color:var(--primary);font-weight:600;':''}">${parseFloat(l.debit) > 0 ? fmtMoney(parseFloat(l.debit)) : ''}</td>
+            <td style="padding:4px 6px;text-align:right;${parseFloat(l.credit)>0?'color:var(--success);font-weight:600;':''}">${parseFloat(l.credit) > 0 ? fmtMoney(parseFloat(l.credit)) : ''}</td>
+          </tr>`;
+        });
+        html += `<tr style="font-weight:700;border-top:2px solid var(--border);"><td colspan="3" style="padding:4px 6px;">Total</td><td style="padding:4px 6px;text-align:right;color:var(--primary);">${fmtMoney(totalDr)}</td><td style="padding:4px 6px;text-align:right;color:var(--success);">${fmtMoney(totalCr)}</td></tr>`;
+        html += '</tbody></table>';
+        html += `<div style="font-size:10px;color:${totalDr===totalCr?'var(--success)':'var(--danger)'};margin-top:4px;">${totalDr===totalCr?'Balanced':'NOT Balanced!'}</div>`;
+        el.innerHTML = html;
+      } catch(e) { el.innerHTML = '<div style="color:var(--danger);font-size:11px;">Error loading GL</div>'; }
+    }
+
+    function exportCSV() {
+      const list = getFiltered();
+      const rows = [['Doc','Date','Employee','Description','Amount','Paid','Settled','Balance','Status','Project']];
+      list.forEach(a => { rows.push([a.doc_number,a.doc_date,a.employee_name,a.description,a.amount,a.paid_amount,a.settled_amount,a.balance,a.status,a.project_code||'']); });
+      const csv = rows.map(r => r.map(c => '"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'advance_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+    }
+
+    document.addEventListener('keydown', e => { if (e.key==='Escape') { closeNewModal(); closePayModal(); closeSettleModal(); } });
+
+    loadData();
+    API.onRealtime(msg => { if (msg.type.startsWith('advance_')) loadData(); });
+  </script>
+</body>
+</html>
