@@ -163,42 +163,102 @@ async function maybeSeedPocDemo(client) {
     return { loaded: false, reason: 'POC seed already applied (marker present)' };
   }
 
-  console.log('[migrate] preparing POC seed — wiping data inserted by schema migrations...');
-  await client.query('TRUNCATE companies CASCADE');
-
   // Strip pg_dump 17 psql meta-commands the node-postgres parser rejects
   const cleanSql = rawSql
     .replace(/^\\restrict.*$/gm,   '-- stripped psql \\restrict')
     .replace(/^\\unrestrict.*$/gm, '-- stripped psql \\unrestrict');
 
-  console.log(`[migrate] loading POC demo data (${(rawSql.length / 1024).toFixed(0)} KB)...`);
-  await client.query(cleanSql);
+  // Run the destructive seed atomically. If the dump fails (e.g. it references
+  // a table the migrations don't create, like business_partners), ROLL BACK so
+  // the data seeded by migrations (002–012) is preserved rather than left
+  // truncated — keeping the app usable and the admin login intact.
+  console.log(`[migrate] preparing POC seed (transactional) — loading ${(rawSql.length / 1024).toFixed(0)} KB...`);
+  try {
+    await client.query('BEGIN');
+    await client.query('TRUNCATE companies CASCADE');
+    await client.query(cleanSql);
+    // pg_dump sets search_path='' on this connection — restore it so the
+    // unqualified statements below (and ensureAdminLogin) resolve `public`.
+    await client.query('SET search_path TO public');
 
-  // The static-login admin user (admin@local) needs to exist in the users
-  // table so write operations referencing its UUID pass FK checks.
-  // Static login itself bypasses DB entirely — this is purely for writes.
-  await client.query(
-    `INSERT INTO users (id, company_id, email, password_hash,
-                        first_name, last_name, first_name_th, last_name_th,
-                        role, position, department, is_active, created_at)
-     VALUES ($1, $2, $3, '',
-             $4, $5, $6, $7,
-             'executive', 'System Administrator', 'IT', true, NOW())
-     ON CONFLICT (id) DO NOTHING`,
-    [
-      STATIC_ADMIN_USER_ID, SEED_COMPANY_ID, 'admin@local',
-      'Admin', 'Local', 'แอดมิน', 'ระบบ',
-    ]
-  );
+    // The static-login admin user (admin@local) needs to exist in the users
+    // table so write operations referencing its UUID pass FK checks.
+    await client.query(
+      `INSERT INTO users (id, company_id, email, password_hash,
+                          first_name, last_name, first_name_th, last_name_th,
+                          role, position, department, is_active, created_at)
+       VALUES ($1, $2, $3, '',
+               $4, $5, $6, $7,
+               'executive', 'System Administrator', 'IT', true, NOW())
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        STATIC_ADMIN_USER_ID, SEED_COMPANY_ID, 'admin@local',
+        'Admin', 'Local', 'แอดมิน', 'ระบบ',
+      ]
+    );
 
-  await client.query(
-    'INSERT INTO _migrations (name) VALUES ($1) ON CONFLICT DO NOTHING',
-    [POC_SEED_MARKER]
-  );
+    await client.query(
+      'INSERT INTO _migrations (name) VALUES ($1) ON CONFLICT DO NOTHING',
+      [POC_SEED_MARKER]
+    );
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    await client.query('SET search_path TO public').catch(() => {});
+    throw err;
+  }
 
   const { rows: r2 } = await client.query('SELECT COUNT(*)::int AS c FROM projects');
   console.log(`[migrate] ✓ POC demo loaded — ${r2[0].c} project(s) now present`);
   return { loaded: true, reason: 'fresh DB seeded with POC data' };
+}
+
+/**
+ * Self-healing super-admin. Runs on EVERY boot (after migrations + seed) so the
+ * primary admin can ALWAYS log in — even if the POC seed excludes users, the
+ * dump failed/rolled back, a password was changed, or the account was disabled.
+ *   Login: admin@sala-daeng.com / 111111   (company slug: sda-group)
+ * Self-sufficient: creates the sda-group company if missing, then upserts the
+ * admin. Best-effort — never throws.
+ */
+async function ensureAdminLogin(client) {
+  if (!(await tableExists(client, 'users')) || !(await tableExists(client, 'companies'))) {
+    console.log('[migrate] ensure-admin skipped: users/companies table missing');
+    return;
+  }
+  try {
+    // A prior pg_dump load may have cleared search_path on this connection.
+    await client.query('SET search_path TO public');
+    // Guarantee the sda-group company exists (login joins on slug='sda-group').
+    await client.query(
+      `INSERT INTO companies (id, name, slug)
+       VALUES ($1, 'บริษัท เอส.ดี.เอ. กรุ๊ป จำกัด', 'sda-group')
+       ON CONFLICT (slug) DO NOTHING`,
+      [SEED_COMPANY_ID]
+    );
+    await client.query(`
+      INSERT INTO users (company_id, email, password_hash,
+                         first_name, last_name, first_name_th, last_name_th,
+                         role, position, department, can_approve, approval_limit, is_active)
+      SELECT c.id, 'admin@sala-daeng.com', crypt('111111', gen_salt('bf')),
+             'Admin', 'Sala-Daeng', 'แอดมิน', 'ศาลาแดง',
+             'executive', 'System Administrator', 'IT', true, 999999999, true
+      FROM companies c WHERE c.slug = 'sda-group'
+      ON CONFLICT (email) DO UPDATE SET
+        password_hash = crypt('111111', gen_salt('bf')),
+        is_active     = true,
+        role          = 'executive'
+    `);
+    // Keep 111111 usable — don't force a password change on this seed account.
+    try {
+      await client.query(
+        "UPDATE users SET must_change_password = false WHERE email = 'admin@sala-daeng.com'"
+      );
+    } catch (_) { /* column may not exist on older schema — ignore */ }
+    console.log('[migrate] ✓ ensured admin@sala-daeng.com / 111111 login');
+  } catch (err) {
+    console.error('[migrate] ensure-admin failed:', err.message);
+  }
 }
 
 /**
@@ -231,25 +291,26 @@ async function runAll() {
     const applied = new Set(rows.map(r => r.name));
     const pending = allFiles.filter(f => !applied.has(f));
 
-    if (pending.length === 0) {
-      console.log(`[migrate] all ${allFiles.length} migration(s) already applied`);
-      return { ran: 0, failed: 0, skipped: 0, error: null };
-    }
-
-    console.log(`[migrate] applying ${pending.length} pending migration(s):`);
     let ran = 0, failed = 0, firstError = null;
-    for (const name of pending) {
-      try {
-        console.log(`[migrate] → ${name}`);
-        await applyMigration(client, name);
-        console.log(`[migrate] ✓ ${name}`);
-        ran++;
-      } catch (err) {
-        failed++;
-        if (!firstError) firstError = `${name}: ${err.message}`;
-        console.error(`[migrate] ✗ ${name}: ${err.message}`);
-        // Stop on first failure — subsequent migrations may depend on this one.
-        break;
+    if (pending.length === 0) {
+      // Don't return early — seed + ensure-admin below must still run so the
+      // primary login is re-affirmed on every boot.
+      console.log(`[migrate] all ${allFiles.length} migration(s) already applied`);
+    } else {
+      console.log(`[migrate] applying ${pending.length} pending migration(s):`);
+      for (const name of pending) {
+        try {
+          console.log(`[migrate] → ${name}`);
+          await applyMigration(client, name);
+          console.log(`[migrate] ✓ ${name}`);
+          ran++;
+        } catch (err) {
+          failed++;
+          if (!firstError) firstError = `${name}: ${err.message}`;
+          console.error(`[migrate] ✗ ${name}: ${err.message}`);
+          // Stop on first failure — subsequent migrations may depend on this one.
+          break;
+        }
       }
     }
 
@@ -264,6 +325,9 @@ async function runAll() {
         console.error(`[migrate] seed failed: ${err.message}`);
       }
     }
+
+    // Always re-affirm the primary admin login (self-healing, every boot).
+    if (failed === 0) await ensureAdminLogin(client);
 
     return { ran, failed, skipped: 0, seeded, error: firstError };
   } finally {
