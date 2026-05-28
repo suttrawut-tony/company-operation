@@ -71,6 +71,7 @@ app.use('/api/master',        require('./routes/masterdata'));
 app.get('/api/health', async (req, res) => {
   let dbOk = false;
   let dbError = null;
+  let migrations = null;
   try { await db.query('SELECT 1'); dbOk = true; }
   catch (e) {
     const parts = [];
@@ -83,14 +84,25 @@ app.get('/api/health', async (req, res) => {
     }
     dbError = parts.filter(Boolean).join(' — ') || e.name || 'Unknown DB error';
   }
+  if (dbOk) {
+    try {
+      const { rows } = await db.query(`SELECT name FROM _migrations ORDER BY name`);
+      migrations = rows.map(r => r.name);
+    } catch (_) { migrations = '_migrations table missing'; }
+  }
   res.json({
     status: dbOk ? 'ok' : 'degraded',
+    version: 'auth-2026-05-28-v3',
     service: 'SDA Operation API',
     time: new Date().toISOString(),
     db: dbOk ? 'ok' : { error: dbError },
+    migrations,
     auth: {
-      jwt_secret: !!process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 32,
-      database_url: !!process.env.DATABASE_URL,
+      jwt_secret_set: !!process.env.JWT_SECRET,
+      jwt_secret_length: (process.env.JWT_SECRET || '').length,
+      database_url_set: !!process.env.DATABASE_URL,
+      require_register_approval: /^(true|1|yes)$/i.test(process.env.REQUIRE_REGISTER_APPROVAL || ''),
+      register_allowed_domains: process.env.REGISTER_ALLOWED_DOMAINS || '(any)',
     },
   });
 });

@@ -122,7 +122,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.json({ token: signToken(user, !!remember), user: publicUser(user) });
   } catch (err) {
     console.error('[auth/login]', err);
-    res.status(500).json({ error: 'Login service unavailable. Please try again.' });
+    res.status(500).json({ error: 'Login failed: ' + (err.message || 'unknown error') });
   }
 });
 
@@ -325,7 +325,7 @@ ${isActive ? 'View users at: ' : 'Approve at: '}${appUrl}/user-permissions.html`
     });
   } catch (err) {
     console.error('[auth/register]', err);
-    res.status(500).json({ error: 'Could not complete registration. Please try again.' });
+    res.status(500).json({ error: 'Register failed: ' + (err.message || 'unknown error') });
   }
 });
 
