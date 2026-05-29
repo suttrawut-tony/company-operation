@@ -264,6 +264,69 @@ async function ensureAdminLogin(client) {
 }
 
 /**
+ * Fix orphaned user references — runs every boot.
+ * Reassigns created_by, assigned_to, pm_user_id etc. that point to
+ * deleted/missing users to actual existing users. Best-effort.
+ */
+async function fixOrphanUsers(client) {
+  try {
+    await client.query('SET search_path TO public');
+    const { rows: users } = await client.query(
+      `SELECT id, role FROM users WHERE is_active = true ORDER BY
+       CASE role WHEN 'pm' THEN 1 WHEN 'finance' THEN 2 WHEN 'procurement' THEN 3
+       WHEN 'accounting' THEN 4 WHEN 'staff' THEN 5 WHEN 'admin' THEN 6 ELSE 7 END LIMIT 6`
+    );
+    if (users.length === 0) return;
+    const pm = users.find(u => u.role === 'pm') || users[0];
+    const fin = users.find(u => u.role === 'finance') || users[0];
+    const fallback = users[0].id;
+    const ids = users.map(u => u.id);
+    const pick = () => ids[Math.floor(Math.random() * ids.length)];
+
+    let fixed = 0;
+    const tables = [
+      { t: 'projects', col: 'pm_user_id', val: pm.id },
+      { t: 'purchase_requests', col: 'created_by' },
+      { t: 'purchase_orders', col: 'created_by' },
+      { t: 'advance_requests', col: 'created_by' },
+      { t: 'advance_payments', col: 'paid_by', val: fin.id },
+      { t: 'expenses', col: 'created_by' },
+      { t: 'tasks', col: 'assigned_to' },
+      { t: 'travel_requests', col: 'created_by', val: pm.id },
+      { t: 'ot_requests', col: 'user_id' },
+      { t: 'vehicle_bookings', col: 'booked_by' },
+    ];
+    for (const { t, col, val } of tables) {
+      try {
+        const { rowCount } = await client.query(
+          `UPDATE ${t} SET ${col} = $1 WHERE ${col} IS NOT NULL AND ${col} NOT IN (SELECT id FROM users)`,
+          [val || pick()]
+        );
+        fixed += rowCount;
+      } catch (_) { /* table/column may not exist */ }
+    }
+    // Also fix advance employee_id
+    try { await client.query(`UPDATE advance_requests SET employee_id = created_by WHERE employee_id IS NOT NULL AND employee_id NOT IN (SELECT id FROM users)`); } catch (_) {}
+    // Also fix ot created_by
+    try { await client.query(`UPDATE ot_requests SET created_by = user_id WHERE created_by IS NOT NULL AND created_by NOT IN (SELECT id FROM users)`); } catch (_) {}
+    // Ensure all users in all projects
+    try {
+      const cid = (await client.query(`SELECT company_id FROM users WHERE is_active = true LIMIT 1`)).rows[0]?.company_id;
+      if (cid) {
+        await client.query(
+          `INSERT INTO project_members (project_id, user_id, role)
+           SELECT p.id, u.id, u.role::text FROM projects p CROSS JOIN users u
+           WHERE u.company_id = $1 AND u.is_active = true ON CONFLICT DO NOTHING`, [cid]
+        );
+      }
+    } catch (_) {}
+    if (fixed > 0) console.log(`[migrate] ✓ fixed ${fixed} orphaned user reference(s)`);
+  } catch (err) {
+    console.error('[migrate] fix-orphans failed:', err.message);
+  }
+}
+
+/**
  * Runs pending migrations. Returns a summary.
  * Throws nothing — caller decides what to do if migrations failed.
  */
@@ -330,6 +393,9 @@ async function runAll() {
 
     // Always re-affirm the primary admin login (self-healing, every boot).
     if (failed === 0) await ensureAdminLogin(client);
+
+    // Fix orphaned user references (self-healing, every boot).
+    if (failed === 0) await fixOrphanUsers(client);
 
     return { ran, failed, skipped: 0, seeded, error: firstError };
   } finally {
