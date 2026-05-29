@@ -59,14 +59,16 @@ BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   IF v_count > 0 THEN RAISE NOTICE 'fix_orphans: purchase_orders.created_by — % rows fixed', v_count; END IF;
 
-  -- ═══ Advance Requests ═══
-  UPDATE advance_requests SET created_by = v_users[1 + (floor(random()*5))::int]
-  WHERE created_by NOT IN (SELECT id FROM users);
+  -- ═══ Advance Requests (fix all FK columns in one UPDATE to avoid mid-row constraint violations) ═══
+  UPDATE advance_requests SET
+    approved_by = CASE WHEN approved_by IS NOT NULL AND approved_by NOT IN (SELECT id FROM users) THEN v_exec    ELSE approved_by END,
+    employee_id = CASE WHEN employee_id NOT IN (SELECT id FROM users)                             THEN v_staff   ELSE employee_id END,
+    created_by  = CASE WHEN created_by IS NOT NULL AND created_by NOT IN (SELECT id FROM users)   THEN v_staff   ELSE created_by  END
+  WHERE approved_by NOT IN (SELECT id FROM users)
+     OR employee_id NOT IN (SELECT id FROM users)
+     OR (created_by IS NOT NULL AND created_by NOT IN (SELECT id FROM users));
   GET DIAGNOSTICS v_count = ROW_COUNT;
-  IF v_count > 0 THEN RAISE NOTICE 'fix_orphans: advance_requests.created_by — % rows fixed', v_count; END IF;
-
-  UPDATE advance_requests SET employee_id = created_by
-  WHERE employee_id IS NOT NULL AND employee_id NOT IN (SELECT id FROM users);
+  IF v_count > 0 THEN RAISE NOTICE 'fix_orphans: advance_requests — % rows fixed', v_count; END IF;
 
   -- ═══ Advance Payments ═══
   UPDATE advance_payments SET paid_by = v_finance

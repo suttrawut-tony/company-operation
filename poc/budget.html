@@ -394,24 +394,24 @@
         const t=parseFloat(l.tor_amount)||0, b=parseFloat(l.budget_amount)||0, c=parseFloat(l.committed_amount)||0, a=parseFloat(l.actual_amount)||0;
         totT+=t; totB+=b; totC+=c; totA+=a;
         const used = c + a;
-        const pct = b>0 ? (used/b*100).toFixed(1) : '0.0';
+        const pct = b>0 ? Math.round(used/b*100) : 0;
         html += `<tr>
           <td><strong>${l.name||l.category||'-'}</strong></td>
           <td>${fmtMoney(t)}</td><td>${fmtMoney(b)}</td>
           <td style="color:var(--info);">${c > 0 ? fmtMoney(c) : '-'}</td>
           <td>${fmtMoney(a)}</td>
-          <td>${varianceText(b,a)}</td><td>${pct}%</td><td>${varianceBadge(b,a)}</td>
+          <td>${varianceText(b,used)}</td><td>${pct}%</td><td>${varianceBadge(b,used)}</td>
         </tr>`;
       }
       const totUsed = totC + totA;
-      const totPct = totB>0 ? (totUsed/totB*100).toFixed(1) : '0.0';
+      const totPct = totB>0 ? Math.round(totUsed/totB*100) : 0;
       const totStatusColor = totPct >= 100 ? 'var(--danger)' : totPct >= 80 ? 'var(--warning)' : 'var(--success)';
       const totStatusLabel = totPct >= 100 ? 'Over' : totPct >= 80 ? 'Close' : 'Under';
       html += `<tr class="total-row">
         <td><strong>TOTAL</strong></td><td><strong>${fmtMoney(totT)}</strong></td><td><strong>${fmtMoney(totB)}</strong></td>
         <td style="color:var(--info);"><strong>${totC > 0 ? fmtMoney(totC) : '-'}</strong></td>
         <td><strong>${fmtMoney(totA)}</strong></td>
-        <td><strong>${varianceText(totB,totA)}</strong></td><td style="color:${totStatusColor};"><strong>${totPct}%</strong></td>
+        <td><strong>${varianceText(totB,totUsed)}</strong></td><td style="color:${totStatusColor};"><strong>${totPct}%</strong></td>
         <td><span class="var-badge ${totPct>=100?'over':'under'}" style="${totPct>=100?'background:var(--danger);color:#fff;':''}"><strong>${totStatusLabel}</strong></span></td>
       </tr>`;
       tbody.innerHTML = html;
