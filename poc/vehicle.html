@@ -629,14 +629,16 @@
 
     // ═══ Update KM Modal ═══
     function openUpdateKmModal(id, name, currentKm, fuelLevel) {
-      const html = `<div class="modal-overlay show" id="km-modal" onclick="if(event.target===this)closeKmModal()">
-        <div class="modal-box" style="width:400px;">
-          <div class="modal-header"><h3>Update KM — ${name}</h3><button class="modal-close" onclick="closeKmModal()">&times;</button></div>
-          <div class="modal-body">
+      // Remove existing modal if any
+      document.getElementById('km-modal')?.remove();
+      const html = `<div style="display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:center;justify-content:center;" id="km-modal" onclick="if(event.target===this)closeKmModal()">
+        <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:420px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+          <div style="padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center;"><h3 style="font-size:16px;font-weight:700;">Update KM — ${name}</h3><button style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text-muted);" onclick="closeKmModal()">&times;</button></div>
+          <div style="padding:20px 24px;">
             <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
               KM ปัจจุบัน: <strong style="color:var(--primary);">${fmtNum(currentKm)}</strong>
             </div>
-            <div class="form-group"><label class="form-label">KM ใหม่</label><input type="number" class="form-input" id="km-new" value="${currentKm}" min="${currentKm}" onchange="updateKmDiff(${currentKm})"></div>
+            <div class="form-group"><label class="form-label">KM ใหม่</label><input type="number" class="form-input" id="km-new" value="${currentKm}" min="${currentKm}" oninput="updateKmDiff(${currentKm})"></div>
             <div id="km-diff" style="display:none;padding:8px;background:var(--success-bg);border-radius:var(--radius);font-size:12px;color:var(--success);margin-bottom:12px;"></div>
             <div class="form-group"><label class="form-label">ระดับน้ำมัน</label>
               <select class="form-input" id="km-fuel">
@@ -650,7 +652,7 @@
             <div class="form-group"><label class="form-label">หมายเหตุ</label><input type="text" class="form-input" id="km-notes" placeholder="เช่น กลับจาก site ภูเก็ต"></div>
             <input type="hidden" id="km-vehicle-id" value="${id}">
           </div>
-          <div class="modal-footer"><button class="btn btn-secondary" onclick="closeKmModal()">ยกเลิก</button><button class="btn btn-primary" onclick="saveKmUpdate()">บันทึก</button></div>
+          <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;"><button class="btn btn-secondary" onclick="closeKmModal()">ยกเลิก</button><button class="btn btn-primary" onclick="saveKmUpdate()">บันทึก</button></div>
         </div>
       </div>`;
       document.body.insertAdjacentHTML('beforeend', html);
@@ -676,10 +678,11 @@
 
     // ═══ Photo Modal ═══
     function openPhotoModal(id, name) {
-      const html = `<div class="modal-overlay show" id="photo-modal" onclick="if(event.target===this)closePhotoModal()">
-        <div class="modal-box" style="width:440px;">
-          <div class="modal-header"><h3>Photo — ${name}</h3><button class="modal-close" onclick="closePhotoModal()">&times;</button></div>
-          <div class="modal-body">
+      document.getElementById('photo-modal')?.remove();
+      const html = `<div style="display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:center;justify-content:center;" id="photo-modal" onclick="if(event.target===this)closePhotoModal()">
+        <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:440px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+          <div style="padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center;"><h3 style="font-size:16px;font-weight:700;">Photo — ${name}</h3><button style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text-muted);" onclick="closePhotoModal()">&times;</button></div>
+          <div style="padding:20px 24px;">
             <div class="form-group">
               <label class="form-label">ถ่ายรูป / เลือกรูป</label>
               <input type="file" class="form-input" id="photo-file" accept="image/*" capture="environment" style="padding:6px;" onchange="previewPhoto()">
@@ -687,7 +690,7 @@
             <div id="photo-preview" style="margin-top:8px;"></div>
             <input type="hidden" id="photo-vehicle-id" value="${id}">
           </div>
-          <div class="modal-footer"><button class="btn btn-secondary" onclick="closePhotoModal()">ยกเลิก</button><button class="btn btn-primary" onclick="savePhoto()">บันทึก</button></div>
+          <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;"><button class="btn btn-secondary" onclick="closePhotoModal()">ยกเลิก</button><button class="btn btn-primary" onclick="savePhoto()">บันทึก</button></div>
         </div>
       </div>`;
       document.body.insertAdjacentHTML('beforeend', html);
