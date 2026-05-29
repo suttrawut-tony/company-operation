@@ -327,6 +327,23 @@
       const revLabel = b.revision > 0 ? ' <span style="font-size:10px;color:var(--text-muted);">(Rev.'+b.revision+')</span>' : '';
       const controlBadge = b.control_mode === 'block' ? '<span class="var-badge over" style="font-size:9px;">Block Mode</span>' : b.control_mode === 'warn' ? '<span class="var-badge neutral" style="font-size:9px;">Warn '+b.warn_threshold+'%</span>' : '';
 
+      // Budget status badge
+      const bTotal = parseFloat(b.total_budget) || 0;
+      const bActual = parseFloat(b.total_actual) || 0;
+      const bCommitted = parseFloat(b.total_committed) || 0;
+      const bUsed = bActual + bCommitted;
+      const bPct = bTotal > 0 ? (bUsed / bTotal * 100) : 0;
+      const blockThreshold = parseFloat(b.block_threshold) || 100;
+      const warnThreshold = parseFloat(b.warn_threshold) || 80;
+      let budgetStatusBadge = '';
+      if (bPct >= blockThreshold) {
+        budgetStatusBadge = '<span style="background:var(--danger);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;animation:pulse 2s infinite;">Over Budget ' + bPct.toFixed(0) + '%</span>';
+      } else if (bPct >= warnThreshold) {
+        budgetStatusBadge = '<span style="background:var(--warning);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;">Near Limit ' + bPct.toFixed(0) + '%</span>';
+      } else if (bPct >= 50 && bTotal > 0) {
+        budgetStatusBadge = '<span style="background:var(--success);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:600;">Normal ' + bPct.toFixed(0) + '%</span>';
+      }
+
       const clickAttr = clickable ? ` style="margin-bottom:20px;cursor:pointer;" onclick="viewProjectBudget('${b.project_id}')"` : ' style="margin-bottom:20px;"';
 
       return `
@@ -334,6 +351,7 @@
           <div class="card-header">
             <h2>${b.code || ''} — ${b.name || ''}${revLabel}</h2>
             <div style="display:flex;gap:8px;align-items:center;">
+              ${budgetStatusBadge}
               ${b._project_code ? '<span style="background:var(--bg-light);padding:2px 8px;border-radius:var(--radius-full);font-size:11px;font-weight:500;">'+b._project_code+'</span>' : ''}
               ${statusBadge(st)}
               ${actionBtns}
@@ -387,11 +405,14 @@
       }
       const totUsed = totC + totA;
       const totPct = totB>0 ? (totUsed/totB*100).toFixed(1) : '0.0';
+      const totStatusColor = totPct >= 100 ? 'var(--danger)' : totPct >= 80 ? 'var(--warning)' : 'var(--success)';
+      const totStatusLabel = totPct >= 100 ? 'Over' : totPct >= 80 ? 'Close' : 'Under';
       html += `<tr class="total-row">
         <td><strong>TOTAL</strong></td><td><strong>${fmtMoney(totT)}</strong></td><td><strong>${fmtMoney(totB)}</strong></td>
         <td style="color:var(--info);"><strong>${totC > 0 ? fmtMoney(totC) : '-'}</strong></td>
         <td><strong>${fmtMoney(totA)}</strong></td>
-        <td><strong>${varianceText(totB,totA)}</strong></td><td><strong>${totPct}%</strong></td><td>${varianceBadge(totB,totA)}</td>
+        <td><strong>${varianceText(totB,totA)}</strong></td><td style="color:${totStatusColor};"><strong>${totPct}%</strong></td>
+        <td><span class="var-badge ${totPct>=100?'over':'under'}" style="${totPct>=100?'background:var(--danger);color:#fff;':''}"><strong>${totStatusLabel}</strong></span></td>
       </tr>`;
       tbody.innerHTML = html;
     }

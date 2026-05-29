@@ -120,41 +120,10 @@ router.post('/:id/submit', async (req, res) => {
     const { rows: [pr] } = await db.query('SELECT * FROM purchase_requests WHERE id = $1 AND status = $2', [req.params.id, 'draft']);
     if (!pr) return res.status(400).json({ error: 'Cannot submit' });
 
-    // Budget validation
-    let budgetWarning = null;
-    const { rows: budgets } = await db.query(
-      'SELECT * FROM budgets WHERE project_id = $1 AND status = $2', [pr.project_id, 'approved']);
-    if (budgets.length) {
-      const budget = budgets[0];
-      const approvedBudget = parseFloat(budget.total_amount);
-      // Calculate total used: actual + committed from budget_lines
-      const { rows: [usage] } = await db.query(
-        `SELECT COALESCE(SUM(actual_amount), 0) AS total_actual,
-                COALESCE(SUM(committed_amount), 0) AS total_committed
-         FROM budget_lines WHERE budget_id = $1`, [budget.id]);
-      const totalUsed = parseFloat(usage.total_actual) + parseFloat(usage.total_committed) + parseFloat(pr.total_amount);
-      const usagePercent = approvedBudget > 0 ? (totalUsed / approvedBudget) * 100 : 0;
-
-      const blockThreshold = parseFloat(budget.block_threshold || 100);
-      const warnThreshold = parseFloat(budget.warn_threshold || 80);
-      const controlMode = budget.control_mode || 'warn';
-
-      if (controlMode === 'block' && usagePercent >= blockThreshold) {
-        return res.status(400).json({
-          error: 'Budget exceeded',
-          detail: `This PR would bring usage to ${usagePercent.toFixed(1)}% of the approved budget (block threshold: ${blockThreshold}%). Submission blocked.`
-        });
-      }
-      if (usagePercent >= warnThreshold) {
-        budgetWarning = `Budget warning: this PR would bring usage to ${usagePercent.toFixed(1)}% of the approved budget (warn threshold: ${warnThreshold}%).`;
-      }
-    }
-
+    // PR ไม่เช็คงบ — เช็คเฉพาะตอน PO submit
     const { rows } = await db.query(
       `UPDATE purchase_requests SET status = 'pending_manager' WHERE id = $1 RETURNING *`, [req.params.id]);
-    const result = rows[0];
-    if (budgetWarning) result.budget_warning = budgetWarning;
-    res.json(result);
+    res.json(rows[0]);
     req.broadcast('pr_updated', { id: req.params.id, status: 'pending_manager' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

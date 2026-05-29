@@ -77,15 +77,72 @@ router.put('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/po/:id/submit — Submit PO for approval
+// POST /api/po/:id/submit — Submit PO for approval (with budget check)
 router.post('/:id/submit', async (req, res) => {
   try {
+    const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id = $1 AND status = $2', [req.params.id, 'draft']);
+    if (!po) return res.status(400).json({ error: 'Cannot submit' });
+
+    // Budget validation
+    let budgetWarning = null;
+    if (po.project_id) {
+      const { rows: budgets } = await db.query(
+        'SELECT * FROM budgets WHERE project_id = $1 AND status = $2', [po.project_id, 'approved']);
+      if (budgets.length) {
+        const budget = budgets[0];
+        const approvedBudget = parseFloat(budget.total_budget || budget.total_amount || 0);
+        const { rows: [usage] } = await db.query(
+          `SELECT COALESCE(SUM(actual_amount), 0) AS total_actual,
+                  COALESCE(SUM(committed_amount), 0) AS total_committed
+           FROM budget_lines WHERE budget_id = $1`, [budget.id]);
+        const totalUsed = parseFloat(usage.total_actual) + parseFloat(usage.total_committed) + parseFloat(po.total_amount);
+        const usagePercent = approvedBudget > 0 ? (totalUsed / approvedBudget) * 100 : 0;
+        const blockThreshold = parseFloat(budget.block_threshold || 100);
+        const warnThreshold = parseFloat(budget.warn_threshold || 80);
+        const controlMode = budget.control_mode || 'warn';
+
+        if (controlMode === 'block' && usagePercent >= blockThreshold) {
+          // Notify PM
+          try {
+            const { rows: [project] } = await db.query('SELECT pm_user_id, code FROM projects WHERE id = $1', [po.project_id]);
+            if (project && project.pm_user_id) {
+              await db.query(
+                `INSERT INTO notifications (company_id, user_id, title, body, link_url, doc_type, doc_id)
+                 VALUES ($1, $2, $3, $4, $5, 'PO', $6)`,
+                [req.user.company_id, project.pm_user_id,
+                 'PO ถูก Block — เกินงบประมาณ',
+                 `${po.doc_number} (฿${parseFloat(po.total_amount).toLocaleString()}) ของโปรเจค ${project.code} ถูกบล็อค เนื่องจากงบจะเกิน ${usagePercent.toFixed(1)}% (เกณฑ์ ${blockThreshold}%)`,
+                 'doc-detail.html?type=po&doc=' + po.doc_number, po.id]);
+            }
+          } catch(_) {}
+          return res.status(400).json({
+            error: 'Budget exceeded',
+            detail: `PO นี้จะทำให้งบเกิน ${usagePercent.toFixed(1)}% (เกณฑ์บล็อค ${blockThreshold}%) — ไม่สามารถส่งอนุมัติได้`
+          });
+        }
+        if (usagePercent >= warnThreshold) {
+          budgetWarning = `งบประมาณเตือน: PO นี้จะทำให้ใช้งบ ${usagePercent.toFixed(1)}% (เกณฑ์เตือน ${warnThreshold}%)`;
+          try {
+            const { rows: [project] } = await db.query('SELECT pm_user_id, code FROM projects WHERE id = $1', [po.project_id]);
+            if (project && project.pm_user_id) {
+              await db.query(
+                `INSERT INTO notifications (company_id, user_id, title, body, link_url, doc_type, doc_id)
+                 VALUES ($1, $2, $3, $4, $5, 'PO', $6)`,
+                [req.user.company_id, project.pm_user_id,
+                 'PO เตือนงบประมาณ',
+                 `${po.doc_number} (฿${parseFloat(po.total_amount).toLocaleString()}) ของโปรเจค ${project.code} — งบจะถึง ${usagePercent.toFixed(1)}%`,
+                 'doc-detail.html?type=po&doc=' + po.doc_number, po.id]);
+            }
+          } catch(_) {}
+        }
+      }
+    }
+
     const { rows } = await db.query(
-      "UPDATE purchase_orders SET status='pending_manager' WHERE id=$1 AND status='draft' RETURNING *",
-      [req.params.id]
-    );
-    if (!rows[0]) return res.status(400).json({ error: 'Cannot submit' });
-    res.json(rows[0]);
+      "UPDATE purchase_orders SET status='pending_manager' WHERE id=$1 RETURNING *", [req.params.id]);
+    const result = rows[0];
+    if (budgetWarning) result.budget_warning = budgetWarning;
+    res.json(result);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -109,6 +166,21 @@ router.post('/:id/approve', async (req, res) => {
       'UPDATE purchase_orders SET status = $1 WHERE id = $2 RETURNING *',
       [nextStatus, req.params.id]
     );
+
+    // When approved, update budget committed_amount
+    if (nextStatus === 'approved' && po.project_id) {
+      try {
+        const { rows: budgets } = await db.query(
+          'SELECT id FROM budgets WHERE project_id = $1 AND status = $2', [po.project_id, 'approved']);
+        if (budgets.length) {
+          await db.query(
+            `UPDATE budget_lines SET committed_amount = COALESCE(committed_amount, 0) + $1
+             WHERE budget_id = $2 AND id = (SELECT id FROM budget_lines WHERE budget_id = $2 ORDER BY sort_order LIMIT 1)`,
+            [po.total_amount, budgets[0].id]);
+        }
+      } catch(_) {}
+    }
+
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

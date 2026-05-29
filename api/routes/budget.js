@@ -15,6 +15,14 @@ router.get('/', async (req, res) => {
     if (projectIds !== null) { params.push(projectIds); params.push(req.user.id); q += ` AND (project_id = ANY($${params.length - 1}) OR created_by = $${params.length})`; }
     q += ' ORDER BY created_at DESC';
     const { rows } = await db.query(q, params);
+    // Enrich with total_committed from budget_lines
+    for (const b of rows) {
+      try {
+        const { rows: [agg] } = await db.query(
+          'SELECT COALESCE(SUM(committed_amount), 0) AS total_committed FROM budget_lines WHERE budget_id = $1', [b.id]);
+        b.total_committed = agg.total_committed;
+      } catch(_) { b.total_committed = 0; }
+    }
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

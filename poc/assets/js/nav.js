@@ -188,7 +188,16 @@ function renderTopNav() {
         ${ICONS.search}
         <input type="text" placeholder="Search...">
       </div>
-      <button class="topbar-btn" title="Notifications">${ICONS.bell}<span class="topbar-notif-dot"></span></button>
+      <div style="position:relative;">
+        <button class="topbar-btn" title="Notifications" onclick="toggleNotifPanel()">${ICONS.bell}<span class="topbar-notif-dot" id="notif-dot" style="display:none;"></span><span id="notif-badge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;"></span></button>
+        <div id="notif-panel" style="display:none;position:absolute;right:0;top:100%;margin-top:8px;width:360px;max-height:400px;overflow-y:auto;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:999;">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:13px;">Notifications</strong>
+            <a href="#" onclick="markAllRead();return false;" style="font-size:11px;color:var(--primary);">Mark all read</a>
+          </div>
+          <div id="notif-list" style="font-size:12px;"></div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -249,6 +258,84 @@ function checkAuth() {
   if (!token) window.location.href = 'login.html';
 }
 
+// ═══ Notifications ═══
+async function loadNotifications() {
+  try {
+    const token = localStorage.getItem('sda_token');
+    if (!token) return;
+    const res = await fetch('/api/notifications', { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    const badge = document.getElementById('notif-badge');
+    const dot = document.getElementById('notif-dot');
+    const list = document.getElementById('notif-list');
+    if (!badge || !list) return;
+    const unread = data.unread || 0;
+    if (unread > 0) {
+      badge.style.display = 'flex';
+      badge.textContent = unread;
+      if (dot) { dot.style.display = 'block'; }
+    } else {
+      badge.style.display = 'none';
+      if (dot) { dot.style.display = 'none'; }
+    }
+    const items = data.items || [];
+    if (!items.length) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No notifications</div>';
+      return;
+    }
+    list.innerHTML = items.map(n => {
+      const isBlock = (n.title || '').includes('Block');
+      const isWarn = (n.title || '').includes('เตือน');
+      const bg = !n.is_read ? 'var(--bg-light)' : 'transparent';
+      const icon = isBlock ? '<span style="color:var(--danger);font-size:16px;">&#9888;</span>' : isWarn ? '<span style="color:var(--warning);font-size:16px;">&#9888;</span>' : '<span style="color:var(--primary);font-size:16px;">&#128276;</span>';
+      const time = n.created_at ? new Date(n.created_at).toLocaleDateString('th-TH', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div style="padding:10px 16px;border-bottom:1px solid var(--border-light);background:${bg};cursor:pointer;" onclick="readNotif('${n.id}','${n.link_url||''}')">
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          ${icon}
+          <div style="flex:1;">
+            <div style="font-weight:${n.is_read?'400':'600'};margin-bottom:2px;">${n.title||''}</div>
+            <div style="color:var(--text-muted);font-size:11px;line-height:1.4;">${n.body||''}</div>
+            <div style="color:var(--text-muted);font-size:10px;margin-top:4px;">${time}</div>
+          </div>
+          ${!n.is_read ? '<div style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:4px;"></div>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel.style.display === 'block') loadNotifications();
+}
+
+async function readNotif(id, url) {
+  try {
+    const token = localStorage.getItem('sda_token');
+    await fetch('/api/notifications/' + id + '/read', { method:'POST', headers:{'Authorization':'Bearer '+token} });
+  } catch(e) {}
+  if (url) window.location = url;
+  else { loadNotifications(); }
+}
+
+async function markAllRead() {
+  try {
+    const token = localStorage.getItem('sda_token');
+    await fetch('/api/notifications/read-all', { method:'POST', headers:{'Authorization':'Bearer '+token} });
+    loadNotifications();
+  } catch(e) {}
+}
+
+// Close notif panel on outside click
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notif-panel');
+  if (panel && panel.style.display === 'block' && !e.target.closest('#notif-panel') && !e.target.closest('.topbar-btn')) {
+    panel.style.display = 'none';
+  }
+});
+
 // Make ICONS globally accessible
 window.ICONS = ICONS;
 window.icon = icon;
@@ -259,4 +346,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
   renderTopNav();
   renderTabBar();
+  loadNotifications();
 });
