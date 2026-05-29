@@ -325,15 +325,15 @@
       return list;
     }
 
-    function getFlowSteps(status, advId, employeeConfirmed, isReimburse) {
-      const steps = isReimburse
-        ? ['draft','pending','approved','paid','settling','settled','confirmed']
+    function getFlowSteps(status, advId, employeeConfirmed, isReimburse, hasReturn) {
+      const steps = hasReturn
+        ? ['draft','pending','approved','paid','settling','emp_confirmed','settled']
         : ['draft','pending','approved','paid','settling','settled'];
-      const labels = isReimburse
-        ? ['Request','Approve','Approved','Payment','Clear','Closed','Employee Received']
+      const labels = hasReturn
+        ? ['Request','Approve','Approved','Payment','Clear','พนักงานคืนเงิน','การเงินรับคืน']
         : ['Request','Approve','Approved','Payment','Clear','Closed'];
       let idx = status.includes('pending') ? 1 : steps.indexOf(status);
-      if (employeeConfirmed && isReimburse) idx = 6;
+      if (hasReturn && status === 'settling' && employeeConfirmed) idx = 5;
       return '<div class="flow-steps">' + labels.map((l, i) => {
         const cls = i < idx ? 'done' : i === idx ? 'current' : 'pending';
         const dot = i < idx ? '&#10003;' : (i+1);
@@ -371,15 +371,16 @@
         else if (a.status === 'paid' && !a.clear_status) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
         // After Clear is approved by Finance: show Return/Reimburse
         const clearApproved = a.clear_status === 'approved';
-        if (a.status === 'settling' && clearApproved && balance > 0 && ['finance','executive'].includes(userRole)) {
-          actions += ' <button class="btn btn-sm" style="background:var(--success);color:#fff;" onclick="event.stopPropagation();openReturnModal(\''+a.id+'\','+balance+')">Receive Return ฿'+fmtNum(balance)+'</button>';
+        // balance > 0 = employee owes money: employee confirms return first, then finance receives
+        if (a.status === 'settling' && clearApproved && balance > 0 && !a.employee_confirmed) {
+          actions += ' <button class="btn btn-sm" style="background:var(--info);color:#fff;" onclick="event.stopPropagation();confirmReturn(\''+a.id+'\','+balance+')">ยืนยันคืนเงิน ฿'+fmtNum(balance)+'</button>';
         }
+        if (a.status === 'settling' && clearApproved && balance > 0 && a.employee_confirmed && ['finance','executive'].includes(userRole)) {
+          actions += ' <button class="btn btn-sm" style="background:var(--success);color:#fff;" onclick="event.stopPropagation();openReturnModal(\''+a.id+'\','+balance+')">รับเงินคืน ฿'+fmtNum(balance)+'</button>';
+        }
+        // balance < 0 = company owes employee: finance pays reimburse directly
         if (a.status === 'settling' && clearApproved && balance < 0 && ['finance','executive'].includes(userRole)) {
           actions += ' <button class="btn btn-sm" style="background:var(--warning);color:#fff;" onclick="event.stopPropagation();openReimburseModal(\''+a.id+'\','+Math.abs(balance)+')">Pay Reimburse ฿'+fmtNum(Math.abs(balance))+'</button>';
-        }
-        // Employee confirms received after settled — only for reimburse (company paid employee)
-        if (a.status === 'settled' && !a.employee_confirmed && balance < 0) {
-          actions += ' <button class="btn btn-sm" style="background:var(--info);color:#fff;" onclick="event.stopPropagation();confirmReceived(\''+a.id+'\')">✓ Confirm Received</button>';
         }
 
         return `
@@ -400,7 +401,8 @@
               ${paidAmt > 0 ? '<div style="font-size:10px;color:var(--text-muted);">Paid: ฿'+fmtNum(paidAmt)+'</div>' : ''}
               ${balance > 0 ? '<div style="font-size:11px;font-weight:600;color:var(--danger);">Balance: ฿'+fmtNum(balance)+'</div>' : ''}
               ${balance < 0 ? '<div style="font-size:11px;font-weight:600;color:var(--warning);">Reimburse: ฿'+fmtNum(Math.abs(balance))+'</div>' : ''}
-              ${a.employee_confirmed && balance < 0 ? '<div style="font-size:11px;font-weight:600;color:var(--success);">✓ พนักงานได้รับเงินแล้ว</div>' : (a.status === 'settled' ? '<div style="font-size:11px;font-weight:600;color:var(--success);">Cleared</div>' : '')}
+              ${a.employee_confirmed && balance > 0 && a.status === 'settling' ? '<div style="font-size:11px;font-weight:600;color:var(--info);">พนักงานยืนยันคืนแล้ว</div>' : ''}
+              ${a.status === 'settled' ? '<div style="font-size:11px;font-weight:600;color:var(--success);">Cleared</div>' : ''}
             </div>
             <div style="display:flex;gap:4px;align-items:center;">
               ${statusBadge(a.status)}
@@ -408,7 +410,7 @@
             </div>
           </div>
           <div class="adv-card-expand" id="expand-${a.id}">
-            <div style="margin-top:12px;">${getFlowSteps(a.status, a.id, a.employee_confirmed, balance < 0)}</div>
+            <div style="margin-top:12px;">${getFlowSteps(a.status, a.id, a.employee_confirmed, balance < 0, balance > 0)}</div>
             <div id="detail-${a.id}" style="margin-top:12px;color:var(--text-muted);font-size:12px;">Click to load details...</div>
           </div>
         </div>`;
@@ -556,10 +558,10 @@
     async function approveAdv(id) {
       try { await API.post('/advance/'+id+'/approve'); await loadData(); } catch(e) { alert('Error: '+e.message); }
     }
-    async function confirmReceived(id) {
-      if (!confirm('ยืนยันว่าได้รับเงินแล้ว?')) return;
+    async function confirmReturn(id, amount) {
+      if (!confirm('ยืนยันว่าคืนเงิน ฿'+fmtNum(amount)+' แล้ว?')) return;
       try {
-        await API.post('/advance/'+id+'/confirm-received');
+        await API.post('/advance/'+id+'/confirm-return');
         await loadData();
       } catch(e) { alert('Error: '+e.message); }
     }
@@ -770,9 +772,9 @@
       } catch(e) { alert('Error: ' + e.message); }
     }
 
-    async function confirmReceivedFromModal(id) {
+    async function confirmReturnFromModal(id) {
       try {
-        await API.post('/advance/'+id+'/confirm-received');
+        await API.post('/advance/'+id+'/confirm-return');
         closeReturnAndReload();
       } catch(e) { alert('Error: '+e.message); }
     }

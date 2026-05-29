@@ -430,16 +430,17 @@ router.post('/:id/pay-reimburse', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/advance/:id/confirm-received — Employee confirms received money
-router.post('/:id/confirm-received', async (req, res) => {
+// POST /api/advance/:id/confirm-return — Employee confirms they have returned money
+router.post('/:id/confirm-return', async (req, res) => {
   try {
     const { rows } = await db.query(
       `UPDATE advance_requests SET employee_confirmed = true, employee_confirmed_at = NOW()
-       WHERE id = $1 AND company_id = $2 RETURNING *`,
+       WHERE id = $1 AND company_id = $2 AND balance > 0 RETURNING *`,
       [req.params.id, req.user.company_id]
     );
-    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    if (!rows[0]) return res.status(404).json({ error: 'Not found or no balance to return' });
     res.json(rows[0]);
+    req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
