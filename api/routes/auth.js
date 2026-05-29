@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Auth routes (simplified, schema-tolerant)
+ * Company Operation — Auth routes (simplified, schema-tolerant)
  *
  * Endpoints intentionally use ONLY columns present in the original
  * users/companies schema. Optional columns added by migrations 013/014
@@ -143,7 +143,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     const { rows } = await db.query(
       `SELECT u.* FROM users u JOIN companies c ON u.company_id = c.id
         WHERE LOWER(u.email) = $1 AND c.slug = $2`,
-      [email, slug || 'sda-group']
+      [email, slug || 'company']
     );
     const user = rows[0];
     if (!user) return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
@@ -230,7 +230,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
         const resetUrl = `${appUrl}/reset-password.html?token=${raw}`;
         sendMail({
           to: user.email,
-          subject: 'SDA Operation — Password Reset',
+          subject: 'Company Operation — Password Reset',
           text: `Hello ${user.first_name},
 
 Reset your password within 1 hour:
@@ -303,7 +303,7 @@ router.post('/register', registerLimiter, async (req, res) => {
       return res.status(400).json({ error: 'This email domain is not allowed to register. Please contact your administrator.' });
     }
 
-    const companySlug = (slug || 'sda-group').trim();
+    const companySlug = (slug || 'company').trim();
     const { rows: companies } = await db.query('SELECT id FROM companies WHERE slug = $1', [companySlug]);
     if (!companies[0]) return res.status(400).json({ error: 'Invalid company' });
 
@@ -343,8 +343,8 @@ router.post('/register', registerLimiter, async (req, res) => {
         );
         const appUrl = (process.env.APP_URL || '').replace(/\/$/, '') || 'http://localhost:4000';
         const subject = isActive
-          ? 'SDA Operation — New user registered'
-          : 'SDA Operation — New account pending approval';
+          ? 'Company Operation — New user registered'
+          : 'Company Operation — New account pending approval';
         await Promise.all(admins.map(a => sendMail({
           to: a.email,
           subject,
@@ -382,7 +382,7 @@ ${isActive ? 'View users at: ' : 'Approve at: '}${appUrl}/user-permissions.html`
 // ═══════════════════════════════════════════════════════════
 router.get('/admins', async (req, res) => {
   try {
-    const slug = (req.query.slug || 'sda-group').toString().trim();
+    const slug = (req.query.slug || 'company').toString().trim();
     const { rows } = await db.query(
       `SELECT u.email, u.first_name, u.last_name, u.first_name_th, u.last_name_th, u.role
          FROM users u JOIN companies c ON u.company_id = c.id
@@ -481,7 +481,7 @@ router.post('/users/:id/approve', authenticate, requireRole('executive', 'admin'
 
     sendMail({
       to: rows[0].email,
-      subject: 'SDA Operation — Your account has been approved',
+      subject: 'Company Operation — Your account has been approved',
       text: `Hi ${rows[0].first_name},
 
 Your account is active. Sign in at:

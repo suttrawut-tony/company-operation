@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Premium SVG Icon Library
+ * Company Operation — Premium SVG Icon Library
  * Replaces all emoji with Lucide-style SVG icons
  * Include this BEFORE nav.js on every page
  */

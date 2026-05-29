@@ -1,5 +1,5 @@
 /**
- * SDA Operation — AI Alert Generator
+ * Company Operation — AI Alert Generator
  * Uses simple rules + trend analysis to generate executive alerts
  * Phase 2: integrate Claude API for smarter alerts
  */

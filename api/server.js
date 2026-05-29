@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Express Server
+ * Company Operation — Express Server
  * Redeployed: 2026-05-28
  */
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
@@ -93,7 +93,7 @@ app.get('/api/health', async (req, res) => {
   res.json({
     status: dbOk ? 'ok' : 'degraded',
     version: 'auth-2026-05-28-v3',
-    service: 'SDA Operation API',
+    service: 'Company Operation API',
     time: new Date().toISOString(),
     db: dbOk ? 'ok' : { error: dbError },
     migrations,
@@ -146,7 +146,7 @@ const { runAll: runMigrations } = require('./migrate');
   }
 
   const server = app.listen(PORT, () => {
-    console.log(`SDA Operation API running on http://localhost:${PORT}`);
+    console.log(`Company Operation API running on http://localhost:${PORT}`);
   });
 
   // ═══ WebSocket for real-time updates ═══

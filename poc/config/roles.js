@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Role & Permission Configuration
+ * Company Operation — Role & Permission Configuration
  * Based on: AI Brief (Section 4) + SAP Blueprint (User Licenses)
  *
  * 7 Roles × 22 Modules = Full Permission Matrix

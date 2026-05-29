@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Approval Matrix Configuration
+ * Company Operation — Approval Matrix Configuration
  * Based on: AI Brief (Section 4) + SAP Blueprint (Budget/BP Tab)
  *
  * กำหนด chain of command: สร้าง → อนุมัติ → ใช้

@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Frontend API Client
+ * Company Operation — Frontend API Client
  * Connects to backend at /api/*
  */
 
@@ -96,7 +96,7 @@ const API = {
   del(path) { return this.request('DELETE', path); },
 
   // ─── Auth ───
-  async login(email, password, slug = 'sda-group', remember = false) {
+  async login(email, password, slug = 'company', remember = false) {
     const data = await this.post('/auth/login', { email, password, slug, remember });
     this.setToken(data.token);
     this.setUser(data.user);
@@ -119,7 +119,7 @@ const API = {
   async approveUser(id, body = {}) {
     return this.post(`/auth/users/${id}/approve`, body);
   },
-  async getAdmins(slug = 'sda-group') {
+  async getAdmins(slug = 'company') {
     return this.get(`/auth/admins?slug=${encodeURIComponent(slug)}`);
   },
 

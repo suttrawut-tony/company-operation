@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Permission Middleware
+ * Company Operation — Permission Middleware
  * ตรวจสอบสิทธิ์ทั้ง Frontend guard + Backend middleware
  */
 

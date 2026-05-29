@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Sidebar Navigation (Premium Layout)
+ * Company Operation — Sidebar Navigation (Premium Layout)
  * Fixed sidebar ซ้ายมือ + Top bar + Content area
  * Style: Linear / Notion / Vercel-inspired
  */
@@ -231,7 +231,7 @@ function toggleSidebar() {
 }
 
 function handleLogout() {
-  if (confirm('Logout from SDA Operation?')) {
+  if (confirm('Logout from Company Operation?')) {
     localStorage.removeItem('sda_token');
     localStorage.removeItem('sda_user');
     window.location = 'login.html';

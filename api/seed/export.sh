@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════
-# SDA Operation — Export Postgres data to SQL seed file
+# Company Operation — Export Postgres data to SQL seed file
 #
 # วิธีใช้ (รันบนเครื่องเพื่อน):
 #   chmod +x export.sh
@@ -16,7 +16,7 @@ set -e
 DB_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/sda_operation}"
 OUTPUT_FILE="$(dirname "$0")/seed_data.sql"
 
-echo "═══ SDA Operation — Data Export ═══"
+echo "═══ Company Operation — Data Export ═══"
 echo "Source DB: ${DB_URL%%@*}@***"
 echo "Output:    ${OUTPUT_FILE}"
 echo ""
@@ -40,7 +40,7 @@ pg_dump "$DB_URL" \
 TEMP_FILE=$(mktemp)
 cat > "$TEMP_FILE" << 'HEADER'
 -- ═══════════════════════════════════════════════════════════
--- SDA Operation — Seed Data (exported from friend's DB)
+-- Company Operation — Seed Data (exported from friend's DB)
 -- Generated: TIMESTAMP_PLACEHOLDER
 --
 -- วิธี import:

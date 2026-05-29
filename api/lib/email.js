@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Email sender
+ * Company Operation — Email sender
  * Uses nodemailer if SMTP_HOST is set. Otherwise logs the message
  * (so dev/forgot-password still works without SMTP credentials).
  */

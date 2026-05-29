@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Database Connection (PostgreSQL)
+ * Company Operation — Database Connection (PostgreSQL)
  * src/api/db.js
  */
 const { Pool } = require('pg');

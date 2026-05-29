@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "=== SDA Operation Setup ==="
+echo "=== Company Operation Setup ==="
 echo ""
 
 # 1. Install dependencies
