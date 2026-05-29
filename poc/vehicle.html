@@ -377,9 +377,15 @@
               <div class="type">${v.vehicle_type || '-'} &bull; ${v.seats || '-'} seats</div>
             </div>
           </div>
+          ${v.image_url ? '<div style="margin:8px 0;"><img src="'+v.image_url+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);border:1px solid var(--border);"></div>' : ''}
           <div class="vehicle-status-bar">
             <div class="v-status"><div class="dot" style="background:${statusDotColor(v.status)};"></div> ${(v.status || 'unknown').replace(/_/g, ' ')}</div>
             <span style="color:var(--text-muted);">KM: ${fmtNum(v.current_km)} | Fuel: ${v.fuel_level || 'N/A'}</span>
+          </div>
+          <div style="display:flex;gap:6px;padding:8px 16px 12px;border-top:1px solid var(--border-light);">
+            <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openUpdateKmModal('${v.id}','${v.name}',${v.current_km||0},'${v.fuel_level||''}')">Update KM</button>
+            <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openPhotoModal('${v.id}','${v.name}')">Photo</button>
+            ${v.notes ? '<span style="font-size:10px;color:var(--text-muted);align-self:center;margin-left:auto;" title="'+v.notes+'">'+v.notes.substring(0,20)+(v.notes.length>20?'...':'')+'</span>' : ''}
           </div>
         </div>`;
       }).join('');
@@ -619,6 +625,99 @@
         console.error('Failed to load vehicle data:', e);
         document.getElementById('vehicle-fleet').innerHTML = emptyMsg('Failed to load vehicle data');
       }
+    }
+
+    // ═══ Update KM Modal ═══
+    function openUpdateKmModal(id, name, currentKm, fuelLevel) {
+      const html = `<div class="modal-overlay show" id="km-modal" onclick="if(event.target===this)closeKmModal()">
+        <div class="modal-box" style="width:400px;">
+          <div class="modal-header"><h3>Update KM — ${name}</h3><button class="modal-close" onclick="closeKmModal()">&times;</button></div>
+          <div class="modal-body">
+            <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
+              KM ปัจจุบัน: <strong style="color:var(--primary);">${fmtNum(currentKm)}</strong>
+            </div>
+            <div class="form-group"><label class="form-label">KM ใหม่</label><input type="number" class="form-input" id="km-new" value="${currentKm}" min="${currentKm}" onchange="updateKmDiff(${currentKm})"></div>
+            <div id="km-diff" style="display:none;padding:8px;background:var(--success-bg);border-radius:var(--radius);font-size:12px;color:var(--success);margin-bottom:12px;"></div>
+            <div class="form-group"><label class="form-label">ระดับน้ำมัน</label>
+              <select class="form-input" id="km-fuel">
+                <option value="full" ${fuelLevel==='full'?'selected':''}>เต็มถัง</option>
+                <option value="3/4" ${fuelLevel==='3/4'?'selected':''}>3/4</option>
+                <option value="half" ${fuelLevel==='half'?'selected':''}>ครึ่งถัง</option>
+                <option value="1/4" ${fuelLevel==='1/4'?'selected':''}>1/4</option>
+                <option value="empty" ${fuelLevel==='empty'?'selected':''}>เกือบหมด</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">หมายเหตุ</label><input type="text" class="form-input" id="km-notes" placeholder="เช่น กลับจาก site ภูเก็ต"></div>
+            <input type="hidden" id="km-vehicle-id" value="${id}">
+          </div>
+          <div class="modal-footer"><button class="btn btn-secondary" onclick="closeKmModal()">ยกเลิก</button><button class="btn btn-primary" onclick="saveKmUpdate()">บันทึก</button></div>
+        </div>
+      </div>`;
+      document.body.insertAdjacentHTML('beforeend', html);
+    }
+    function closeKmModal() { document.getElementById('km-modal')?.remove(); }
+    function updateKmDiff(oldKm) {
+      const newKm = parseFloat(document.getElementById('km-new').value) || 0;
+      const diff = newKm - oldKm;
+      const el = document.getElementById('km-diff');
+      if (diff > 0) { el.style.display = 'block'; el.textContent = 'วิ่งเพิ่ม: ' + fmtNum(diff) + ' km'; }
+      else { el.style.display = 'none'; }
+    }
+    async function saveKmUpdate() {
+      const id = document.getElementById('km-vehicle-id').value;
+      const km = parseFloat(document.getElementById('km-new').value);
+      const fuel = document.getElementById('km-fuel').value;
+      try {
+        await API.put('/vehicle/' + id, { current_km: km, fuel_level: fuel });
+        closeKmModal();
+        loadVehicles();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ═══ Photo Modal ═══
+    function openPhotoModal(id, name) {
+      const html = `<div class="modal-overlay show" id="photo-modal" onclick="if(event.target===this)closePhotoModal()">
+        <div class="modal-box" style="width:440px;">
+          <div class="modal-header"><h3>Photo — ${name}</h3><button class="modal-close" onclick="closePhotoModal()">&times;</button></div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">ถ่ายรูป / เลือกรูป</label>
+              <input type="file" class="form-input" id="photo-file" accept="image/*" capture="environment" style="padding:6px;" onchange="previewPhoto()">
+            </div>
+            <div id="photo-preview" style="margin-top:8px;"></div>
+            <input type="hidden" id="photo-vehicle-id" value="${id}">
+          </div>
+          <div class="modal-footer"><button class="btn btn-secondary" onclick="closePhotoModal()">ยกเลิก</button><button class="btn btn-primary" onclick="savePhoto()">บันทึก</button></div>
+        </div>
+      </div>`;
+      document.body.insertAdjacentHTML('beforeend', html);
+    }
+    function closePhotoModal() { document.getElementById('photo-modal')?.remove(); }
+    function previewPhoto() {
+      const file = document.getElementById('photo-file').files[0];
+      const preview = document.getElementById('photo-preview');
+      if (!file) { preview.innerHTML = ''; return; }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.innerHTML = `<img src="${e.target.result}" style="width:100%;max-height:250px;object-fit:cover;border-radius:var(--radius);border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${file.name} (${(file.size/1024).toFixed(1)} KB)</div>`;
+      };
+      reader.readAsDataURL(file);
+    }
+    async function savePhoto() {
+      const file = document.getElementById('photo-file').files[0];
+      if (!file) { alert('เลือกรูปก่อน'); return; }
+      const id = document.getElementById('photo-vehicle-id').value;
+      // Convert to base64 data URL and save as image_url
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          await API.put('/vehicle/' + id, { image_url: e.target.result });
+          closePhotoModal();
+          loadVehicles();
+        } catch(err) { alert('Error: ' + err.message); }
+      };
+      reader.readAsDataURL(file);
     }
 
     loadVehicles();

@@ -77,4 +77,29 @@ router.post('/bookings/:id/checkin', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// PUT /api/vehicle/:id — Update vehicle (KM, fuel, photo)
+router.put('/:id', async (req, res) => {
+  try {
+    const { current_km, fuel_level, image_url, notes, status } = req.body;
+    const sets = [];
+    const params = [];
+    let idx = 1;
+    if (current_km !== undefined) { sets.push(`current_km = $${idx++}`); params.push(current_km); }
+    if (fuel_level !== undefined) { sets.push(`fuel_level = $${idx++}`); params.push(fuel_level); }
+    if (image_url !== undefined) { sets.push(`image_url = $${idx++}`); params.push(image_url); }
+    if (notes !== undefined) { sets.push(`notes = $${idx++}`); params.push(notes); }
+    if (status !== undefined) { sets.push(`status = $${idx++}`); params.push(status); }
+    if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
+    sets.push(`updated_at = NOW()`);
+    params.push(req.params.id);
+    params.push(req.user.company_id);
+    const { rows } = await db.query(
+      `UPDATE vehicles SET ${sets.join(', ')} WHERE id = $${idx++} AND company_id = $${idx} RETURNING *`,
+      params
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Vehicle not found' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
