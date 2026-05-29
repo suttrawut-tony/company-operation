@@ -590,7 +590,7 @@
       try {
         const data = await API.get('/budget/check/' + doc.project_id);
         budget = parseFloat(data.total_budget || data.budget || 0);
-        used = parseFloat(data.used || data.used_amount || 0);
+        used = parseFloat(data.total_used || data.used || data.used_amount || 0);
       } catch(e) {
         // Fallback to 0 if API unavailable
         budget = 0; used = 0;
