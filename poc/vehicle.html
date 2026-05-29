@@ -368,12 +368,17 @@
       }
       document.getElementById('vehicle-fleet').innerHTML = vehicles.map((v, i) => {
         const bg = vehicleColors[i % vehicleColors.length];
-        return `<div class="vehicle-card">
+        const brandLine = [v.brand, v.model, v.year].filter(Boolean).join(' ');
+        const ownerBadge = v.ownership_type === 'leased' ? '<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--warning-bg);color:var(--warning);font-weight:600;">Leased</span>'
+          : v.ownership_type === 'rented' ? '<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--info-bg);color:var(--info);font-weight:600;">Rented</span>' : '';
+        const colorDot = v.color ? '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+v.color+';border:1px solid var(--border);vertical-align:middle;margin-right:4px;" title="'+v.color+'"></span>' : '';
+        return `<div class="vehicle-card" style="cursor:pointer;" onclick="openVehicleDetail('${v.id}')">
           <div class="vehicle-card-top">
             <div class="vehicle-icon" style="background:${bg};">${vIcon(v.vehicle_type)}</div>
             <div class="vehicle-info">
-              <h3>${v.name || '-'}</h3>
+              <h3>${v.name || '-'} ${ownerBadge}</h3>
               <span class="plate">${v.plate_number || '-'}</span>
+              ${brandLine ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">'+colorDot+brandLine+'</div>' : ''}
               <div class="type">${v.vehicle_type || '-'} &bull; ${v.seats || '-'} seats</div>
             </div>
           </div>
@@ -723,7 +728,258 @@
       reader.readAsDataURL(file);
     }
 
+    // ═══ Vehicle Detail Modal ═══
+    async function openVehicleDetail(vid) {
+      const v = allVehicles.find(x => x.id === vid);
+      if (!v) return;
+      let modal = document.getElementById('vehicle-detail-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'vehicle-detail-modal';
+        modal.className = 'modal-overlay hidden';
+        modal.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
+        document.body.appendChild(modal);
+      }
+      modal.innerHTML = `
+        <div class="modal" style="max-width:750px;max-height:85vh;overflow:auto;">
+          <div class="modal-header">
+            <h2>${v.name} — ${v.plate_number}</h2>
+            <button class="btn btn-ghost" onclick="document.getElementById('vehicle-detail-modal').classList.add('hidden')" style="font-size:18px;">&#10005;</button>
+          </div>
+          <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;">
+            <div class="vd-tab active" data-tab="general" onclick="switchVDTab(this)">General</div>
+            <div class="vd-tab" data-tab="lease" onclick="switchVDTab(this)">Lease</div>
+            <div class="vd-tab" data-tab="insurance" onclick="switchVDTab(this)">Insurance</div>
+            <div class="vd-tab" data-tab="maintenance" onclick="switchVDTab(this)">Maintenance</div>
+            <div class="vd-tab" data-tab="bookings" onclick="switchVDTab(this)">Bookings</div>
+          </div>
+          <div class="modal-body" style="padding:0 20px 20px;">
+            <div id="vd-general" class="vd-panel">${renderVDGeneral(v)}</div>
+            <div id="vd-lease" class="vd-panel" style="display:none;">${renderVDLease(v)}</div>
+            <div id="vd-insurance" class="vd-panel" style="display:none;"><div style="color:var(--text-muted);text-align:center;padding:20px;">Loading...</div></div>
+            <div id="vd-maintenance" class="vd-panel" style="display:none;"><div style="color:var(--text-muted);text-align:center;padding:20px;">Loading...</div></div>
+            <div id="vd-bookings" class="vd-panel" style="display:none;"><div style="color:var(--text-muted);text-align:center;padding:20px;">Loading...</div></div>
+          </div>
+        </div>`;
+      modal.classList.remove('hidden');
+      // Lazy load tabs
+      loadVDInsurance(vid);
+      loadVDMaintenance(vid);
+      loadVDBookings(vid);
+    }
+
+    function switchVDTab(el) {
+      document.querySelectorAll('.vd-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.vd-panel').forEach(p => p.style.display = 'none');
+      document.getElementById('vd-' + el.dataset.tab).style.display = '';
+    }
+
+    function renderVDGeneral(v) {
+      const row = (l, val) => val ? `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;"><span style="color:var(--text-secondary);">${l}</span><span style="font-weight:600;">${val}</span></div>` : '';
+      return `
+        ${row('Brand / Model', [v.brand, v.model].filter(Boolean).join(' ') || '-')}
+        ${row('Year', v.year)}
+        ${row('Color', v.color)}
+        ${row('Plate Number', v.plate_number)}
+        ${row('VIN', v.vin_number)}
+        ${row('Engine Number', v.engine_number)}
+        ${row('Vehicle Type', v.vehicle_type)}
+        ${row('Seats', v.seats)}
+        ${row('Current KM', fmtNum(v.current_km))}
+        ${row('Fuel Level', v.fuel_level)}
+        ${row('Registration Date', v.registration_date)}
+        ${row('Registration Expiry', v.registration_expiry)}
+        ${row('Ownership', v.ownership_type)}
+        ${row('Status', v.status)}
+        ${v.notes ? '<div style="margin-top:12px;font-size:12px;color:var(--text-secondary);">Notes: '+v.notes+'</div>' : ''}`;
+    }
+
+    function renderVDLease(v) {
+      if (v.ownership_type === 'owned' || !v.ownership_type) return '<div style="text-align:center;color:var(--text-muted);padding:20px;">This vehicle is company-owned</div>';
+      const row = (l, val) => val ? `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;"><span style="color:var(--text-secondary);">${l}</span><span style="font-weight:600;">${val}</span></div>` : '';
+      return `
+        ${row('Lease Company', v.lease_company)}
+        ${row('Contract Number', v.lease_contract_number)}
+        ${row('Start Date', v.lease_start)}
+        ${row('End Date', v.lease_end)}
+        ${row('Monthly Cost', v.lease_monthly_cost ? '฿'+fmtNum(v.lease_monthly_cost) : '-')}`;
+    }
+
+    async function loadVDInsurance(vid) {
+      try {
+        const data = await API.getVehicleInsurance(vid);
+        const el = document.getElementById('vd-insurance');
+        if (!data.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">No insurance records</div><button class="btn btn-sm btn-primary" onclick="openInsuranceModal(\''+vid+'\')">+ Add Insurance</button>'; return; }
+        el.innerHTML = '<button class="btn btn-sm btn-primary" style="margin-bottom:12px;" onclick="openInsuranceModal(\''+vid+'\')">+ Add Insurance</button>' +
+          data.map(ins => {
+            const daysLeft = ins.coverage_end ? Math.ceil((new Date(ins.coverage_end) - new Date()) / 86400000) : null;
+            const badge = ins.status === 'expired' ? '<span class="badge badge-danger" style="font-size:9px;">Expired</span>'
+              : daysLeft !== null && daysLeft <= 30 ? '<span class="badge badge-warning" style="font-size:9px;">'+daysLeft+'d left</span>'
+              : '<span class="badge badge-success" style="font-size:9px;">Active</span>';
+            const typeLabel = {compulsory:'พ.ร.บ.',voluntary_class1:'ชั้น 1',voluntary_class2:'ชั้น 2',voluntary_class3:'ชั้น 3'}[ins.insurance_type] || ins.insurance_type;
+            return `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><strong>${typeLabel}</strong> ${badge}</div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
+                ${ins.insurance_company||''} | กรมธรรม์: ${ins.policy_number||'-'}<br>
+                คุ้มครอง: ${ins.coverage_start||'-'} ถึง ${ins.coverage_end||'-'} | เบี้ย: ฿${fmtNum(ins.premium)}<br>
+                วงเงิน: ฿${fmtNum(ins.coverage_amount)} | Deductible: ฿${fmtNum(ins.deductible)}
+                ${ins.broker ? '<br>นายหน้า: '+ins.broker+' '+( ins.broker_phone||'') : ''}
+              </div></div>`;
+          }).join('');
+      } catch(e) { document.getElementById('vd-insurance').innerHTML = 'Error: '+e.message; }
+    }
+
+    async function loadVDMaintenance(vid) {
+      try {
+        const [maint, issues] = await Promise.all([API.getVehicleMaintenance(vid), API.getVehicleIssues(vid)]);
+        const el = document.getElementById('vd-maintenance');
+        let html = '<button class="btn btn-sm btn-primary" style="margin-bottom:12px;" onclick="openMaintenanceModal(\''+vid+'\')">+ Add Maintenance</button>';
+        if (maint.length) {
+          html += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;">Maintenance History</div>';
+          html += maint.map(m => {
+            const typeLabel = {scheduled:'Scheduled',repair:'Repair',emergency:'Emergency',recall:'Recall'}[m.maintenance_type]||m.maintenance_type;
+            const sBadge = m.status === 'completed' ? 'success' : m.status === 'in_progress' ? 'primary' : 'warning';
+            return `<div style="border-left:3px solid var(--${sBadge});padding:8px 12px;margin-bottom:8px;font-size:11px;">
+              <strong>${typeLabel}</strong> — ${m.service_date||'-'} <span class="badge badge-${sBadge}" style="font-size:9px;">${m.status}</span><br>
+              ${m.description||''}<br>
+              <span style="color:var(--text-muted);">${m.service_center||''} | KM: ${m.km_at_service||'-'} | Cost: ฿${fmtNum(m.cost)}</span>
+            </div>`;
+          }).join('');
+        }
+        if (issues.length) {
+          html += '<div style="font-size:12px;font-weight:600;margin:12px 0 8px;">Issues</div>';
+          html += issues.map(iss => {
+            const sevColor = {low:'var(--text-muted)',medium:'var(--warning)',high:'var(--danger)',critical:'#8B0000'}[iss.severity]||'var(--text-muted)';
+            return `<div style="border-left:3px solid ${sevColor};padding:6px 12px;margin-bottom:6px;font-size:11px;">
+              <strong style="color:${sevColor};">${iss.severity.toUpperCase()}</strong> — ${iss.issue_type} (${iss.report_date})<br>
+              ${iss.description||''} <span class="badge badge-${iss.status==='resolved'?'success':'warning'}" style="font-size:9px;">${iss.status}</span>
+            </div>`;
+          }).join('');
+        }
+        if (!maint.length && !issues.length) html += '<div style="color:var(--text-muted);text-align:center;padding:20px;">No records</div>';
+        el.innerHTML = html;
+      } catch(e) { document.getElementById('vd-maintenance').innerHTML = 'Error: '+e.message; }
+    }
+
+    async function loadVDBookings(vid) {
+      try {
+        const data = await API.getVehicleSchedule(vid, 6);
+        const el = document.getElementById('vd-bookings');
+        const bookings = data.bookings || [];
+        if (!bookings.length) { el.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;">No upcoming bookings</div>'; return; }
+        el.innerHTML = bookings.map(b => {
+          return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12px;">
+            <div><strong>${b.booked_by_name||'-'}</strong> ${b.project_code ? '<span style="color:var(--primary);">['+b.project_code+']</span>' : ''}<br>
+            <span style="color:var(--text-muted);">${b.purpose||''}</span></div>
+            <div style="text-align:right;"><span style="font-weight:600;">${b.start_date?.slice(0,10)||''} → ${b.end_date?.slice(0,10)||''}</span><br>
+            ${statusBadge(b.status)}</div></div>`;
+        }).join('');
+      } catch(e) { document.getElementById('vd-bookings').innerHTML = 'Error: '+e.message; }
+    }
+
+    // ═══ Insurance Modal ═══
+    function openInsuranceModal(vid) {
+      let m = document.getElementById('ins-modal');
+      if (!m) { m = document.createElement('div'); m.id = 'ins-modal'; m.className = 'modal-overlay hidden'; m.onclick = (e) => { if (e.target===m) m.classList.add('hidden'); }; document.body.appendChild(m); }
+      m.innerHTML = `<div class="modal" style="max-width:500px;">
+        <div class="modal-header"><h2>Add Insurance</h2><button class="btn btn-ghost" onclick="document.getElementById('ins-modal').classList.add('hidden')" style="font-size:18px;">&#10005;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="ins-vid" value="${vid}">
+          <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="ins-type"><option value="compulsory">พ.ร.บ.</option><option value="voluntary_class1">ชั้น 1</option><option value="voluntary_class2">ชั้น 2</option><option value="voluntary_class3">ชั้น 3</option></select></div>
+          <div class="form-group"><label class="form-label">Policy Number</label><input class="form-input" id="ins-policy"></div>
+          <div class="form-group"><label class="form-label">Insurance Company</label><input class="form-input" id="ins-company"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" type="date" id="ins-start"></div>
+            <div class="form-group"><label class="form-label">End Date</label><input class="form-input" type="date" id="ins-end"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Premium</label><input class="form-input" type="number" id="ins-premium" min="0"></div>
+            <div class="form-group"><label class="form-label">Coverage Amount</label><input class="form-input" type="number" id="ins-coverage" min="0"></div>
+            <div class="form-group"><label class="form-label">Deductible</label><input class="form-input" type="number" id="ins-deductible" min="0"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Broker</label><input class="form-input" id="ins-broker"></div>
+            <div class="form-group"><label class="form-label">Broker Phone</label><input class="form-input" id="ins-broker-phone"></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="document.getElementById('ins-modal').classList.add('hidden')">Cancel</button><button class="btn btn-primary" onclick="saveInsurance()">Save</button></div>
+      </div>`;
+      m.classList.remove('hidden');
+    }
+    async function saveInsurance() {
+      const vid = document.getElementById('ins-vid').value;
+      try {
+        await API.addVehicleInsurance(vid, {
+          insurance_type: document.getElementById('ins-type').value,
+          policy_number: document.getElementById('ins-policy').value,
+          insurance_company: document.getElementById('ins-company').value,
+          coverage_start: document.getElementById('ins-start').value || null,
+          coverage_end: document.getElementById('ins-end').value || null,
+          premium: parseFloat(document.getElementById('ins-premium').value) || 0,
+          coverage_amount: parseFloat(document.getElementById('ins-coverage').value) || 0,
+          deductible: parseFloat(document.getElementById('ins-deductible').value) || 0,
+          broker: document.getElementById('ins-broker').value,
+          broker_phone: document.getElementById('ins-broker-phone').value
+        });
+        document.getElementById('ins-modal').classList.add('hidden');
+        loadVDInsurance(vid);
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Maintenance Modal ═══
+    function openMaintenanceModal(vid) {
+      let m = document.getElementById('maint-modal');
+      if (!m) { m = document.createElement('div'); m.id = 'maint-modal'; m.className = 'modal-overlay hidden'; m.onclick = (e) => { if (e.target===m) m.classList.add('hidden'); }; document.body.appendChild(m); }
+      m.innerHTML = `<div class="modal" style="max-width:500px;">
+        <div class="modal-header"><h2>Add Maintenance</h2><button class="btn btn-ghost" onclick="document.getElementById('maint-modal').classList.add('hidden')" style="font-size:18px;">&#10005;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="maint-vid" value="${vid}">
+          <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="maint-type"><option value="scheduled">Scheduled</option><option value="repair">Repair</option><option value="emergency">Emergency</option><option value="recall">Recall</option></select></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="maint-desc"></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Service Date</label><input class="form-input" type="date" id="maint-date"></div>
+            <div class="form-group"><label class="form-label">KM at Service</label><input class="form-input" type="number" id="maint-km" min="0"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Service Center</label><input class="form-input" id="maint-center"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Cost</label><input class="form-input" type="number" id="maint-cost" min="0"></div>
+            <div class="form-group"><label class="form-label">Invoice #</label><input class="form-input" id="maint-invoice"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Next Service KM</label><input class="form-input" type="number" id="maint-next-km"></div>
+            <div class="form-group"><label class="form-label">Next Service Date</label><input class="form-input" type="date" id="maint-next-date"></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="document.getElementById('maint-modal').classList.add('hidden')">Cancel</button><button class="btn btn-primary" onclick="saveMaintenance()">Save</button></div>
+      </div>`;
+      m.classList.remove('hidden');
+    }
+    async function saveMaintenance() {
+      const vid = document.getElementById('maint-vid').value;
+      try {
+        await API.addVehicleMaintenance(vid, {
+          maintenance_type: document.getElementById('maint-type').value,
+          description: document.getElementById('maint-desc').value,
+          service_date: document.getElementById('maint-date').value || null,
+          km_at_service: parseFloat(document.getElementById('maint-km').value) || null,
+          service_center: document.getElementById('maint-center').value,
+          cost: parseFloat(document.getElementById('maint-cost').value) || 0,
+          invoice_number: document.getElementById('maint-invoice').value,
+          next_service_km: parseFloat(document.getElementById('maint-next-km').value) || null,
+          next_service_date: document.getElementById('maint-next-date').value || null
+        });
+        document.getElementById('maint-modal').classList.add('hidden');
+        loadVDMaintenance(vid);
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
     loadVehicles();
   </script>
+  <style>
+    .vd-tab { padding:10px 16px; font-size:12px; font-weight:600; cursor:pointer; color:var(--text-secondary); border-bottom:2px solid transparent; }
+    .vd-tab:hover { color:var(--primary); }
+    .vd-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+  </style>
 </body>
 </html>
