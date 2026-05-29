@@ -29,7 +29,7 @@ function timeAgo(d) {
   return Math.round(s / 86400) + 'd ago';
 }
 function statusBadge(s) {
-  const cls = s.includes('pending') ? 'warning' : ['approved','completed','paid','checked_in'].includes(s) ? 'success' : s === 'draft' ? 'gray' : ['sent_to_sap','received','in_progress'].includes(s) ? 'primary' : s === 'rejected' ? 'danger' : 'gray';
+  const cls = s === 'overdue' ? 'danger' : s.includes('pending') ? 'warning' : ['approved','completed','paid','checked_in'].includes(s) ? 'success' : s === 'draft' ? 'gray' : ['sent_to_sap','received','in_progress'].includes(s) ? 'primary' : s === 'rejected' ? 'danger' : 'gray';
   return `<span class="badge badge-${cls}" style="font-size:10px;">${s.replace(/_/g, ' ')}</span>`;
 }
 function avatarSm(name, bg) {

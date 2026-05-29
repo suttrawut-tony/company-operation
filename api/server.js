@@ -169,4 +169,12 @@ const { runAll: runMigrations } = require('./migrate');
   }
 
   app.set('broadcast', broadcast);
+
+  // ═══ Cron Jobs ═══
+  const cron = require('node-cron');
+  const { checkAdvanceOverdue } = require('./cron/advance-overdue');
+  cron.schedule('3 8 * * *', () => {
+    checkAdvanceOverdue().catch(err => console.error('[cron] advance-overdue failed:', err.message));
+  }, { timezone: 'Asia/Bangkok' });
+  console.log('[boot] cron: advance-overdue scheduled daily 08:03 (Asia/Bangkok)');
 })();

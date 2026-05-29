@@ -107,6 +107,11 @@
     <!-- Filters -->
     <div class="filter-bar">
       <select class="form-select" id="filter-project" style="width:220px;" onchange="renderList()"><option value="">All Projects</option></select>
+      <select class="form-select" id="filter-type" style="width:140px;" onchange="renderList()">
+        <option value="">All Types</option>
+        <option value="advance">Advance</option>
+        <option value="reimburse">Reimburse</option>
+      </select>
       <select class="form-select" id="filter-status" style="width:140px;" onchange="renderList()">
         <option value="">All Status</option>
         <option value="draft">Draft</option>
@@ -115,6 +120,7 @@
         <option value="paid">Paid</option>
         <option value="settling">Settling</option>
         <option value="settled">Settled</option>
+        <option value="overdue">Overdue</option>
       </select>
       <select class="form-select" id="filter-employee" style="width:180px;" onchange="renderList()"><option value="">All Employees</option></select>
     </div>
@@ -127,12 +133,20 @@
       <div class="modal-box">
         <div class="modal-header"><h3>New Advance Request</h3><button class="modal-close" onclick="closeNewModal()">&times;</button></div>
         <div class="modal-body">
+          <div style="display:flex;gap:16px;margin-bottom:16px;padding:10px;background:var(--bg-light);border-radius:var(--radius);">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
+              <input type="radio" name="f-type" value="advance" checked onchange="toggleAdvType()"> Advance (เงินทดรองจ่าย)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
+              <input type="radio" name="f-type" value="reimburse" onchange="toggleAdvType()"> Reimburse (เบิกคืน)
+            </label>
+          </div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">Project</label><select class="form-input" id="f-project"></select></div>
             <div class="form-group"><label class="form-label">Employee</label><select class="form-input" id="f-employee"></select></div>
           </div>
           <div class="form-group"><label class="form-label">Description / Purpose</label><input type="text" class="form-input" id="f-desc" placeholder="Purpose of advance"></div>
-          <div class="form-row">
+          <div class="form-row" id="amount-row">
             <div class="form-group"><label class="form-label">Amount</label><input type="number" class="form-input" id="f-amount" placeholder="0" min="0"></div>
             <div class="form-group"><label class="form-label">Purpose</label>
               <select class="form-input" id="f-purpose">
@@ -142,6 +156,15 @@
                 <option value="other">Other</option>
               </select>
             </div>
+          </div>
+          <!-- Receipt lines for reimburse -->
+          <div id="reimburse-section" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <label class="form-label" style="margin:0;">Receipt Lines</label>
+              <button class="btn btn-sm" style="font-size:11px;" onclick="addReceiptLine()">+ Add Line</button>
+            </div>
+            <div id="receipt-lines"></div>
+            <div style="text-align:right;font-size:13px;font-weight:700;margin-top:8px;">Total: <span id="receipt-total">0</span></div>
           </div>
         </div>
         <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeNewModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveAdvance()">Create</button></div>
@@ -194,8 +217,11 @@
               <select class="form-input" id="p-method"><option value="transfer">Bank Transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option></select>
             </div>
           </div>
-          <div class="form-group"><label class="form-label">Company Bank Account</label><select class="form-input" id="p-bank"><option value="">Select bank account</option></select></div>
-          <div class="form-group"><label class="form-label">Reference</label><input type="text" class="form-input" id="p-ref" placeholder="Transfer ref / Cheque no."></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Company Bank Account</label><select class="form-input" id="p-bank"><option value="">Select bank account</option></select></div>
+            <div class="form-group"><label class="form-label">Payment Date</label><input type="date" class="form-input" id="p-date"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Reference <span style="color:var(--danger);">*</span></label><input type="text" class="form-input" id="p-ref" placeholder="Transfer ref / Cheque no." required></div>
           <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="p-remarks"></div>
           <div class="form-group">
             <label class="form-label">Attachment (Slip / Receipt)</label>
@@ -314,26 +340,38 @@
       let list = allAdvances;
       if (tabFilter !== 'all') {
         if (tabFilter === 'pending') list = list.filter(a => a.status.includes('pending'));
+        else if (tabFilter === 'overdue') list = list.filter(a => a.status === 'overdue' || a.is_overdue);
         else list = list.filter(a => a.status === tabFilter);
       }
       const pf = document.getElementById('filter-project').value;
+      const tf = document.getElementById('filter-type').value;
       const sf = document.getElementById('filter-status').value;
       const ef = document.getElementById('filter-employee').value;
       if (pf) list = list.filter(a => a.project_id === pf);
-      if (sf) { if (sf === 'pending') list = list.filter(a => a.status.includes('pending')); else list = list.filter(a => a.status === sf); }
+      if (tf) list = list.filter(a => a.advance_type === tf);
+      if (sf) {
+        if (sf === 'pending') list = list.filter(a => a.status.includes('pending'));
+        else if (sf === 'overdue') list = list.filter(a => a.status === 'overdue' || a.is_overdue);
+        else list = list.filter(a => a.status === sf);
+      }
       if (ef) list = list.filter(a => a.employee_id === ef);
       return list;
     }
 
-    function getFlowSteps(status, advId, employeeConfirmed, isReimburse, hasReturn) {
-      const steps = hasReturn
-        ? ['draft','pending','approved','paid','settling','emp_confirmed','settled']
-        : ['draft','pending','approved','paid','settling','settled'];
-      const labels = hasReturn
-        ? ['Request','Approve','Approved','Payment','Clear','พนักงานคืนเงิน','การเงินรับคืน']
-        : ['Request','Approve','Approved','Payment','Clear','Closed'];
-      let idx = status.includes('pending') ? 1 : steps.indexOf(status);
-      if (hasReturn && status === 'settling' && employeeConfirmed) idx = 5;
+    function getFlowSteps(status, advId, advanceType, hasReturn) {
+      let steps, labels;
+      if (advanceType === 'reimburse') {
+        steps = ['draft','pending','approved','settled'];
+        labels = ['Request','Approve','Approved','Paid & Settled'];
+      } else if (hasReturn) {
+        steps = ['draft','pending','approved','paid','settling','settled'];
+        labels = ['Request','Approve','Approved','Payment','Clear','Closed'];
+      } else {
+        steps = ['draft','pending','approved','paid','settling','settled'];
+        labels = ['Request','Approve','Approved','Payment','Clear','Closed'];
+      }
+      let idx = status === 'overdue' ? steps.indexOf('paid') : status.includes('pending') ? 1 : steps.indexOf(status);
+      if (idx < 0) idx = 0;
       return '<div class="flow-steps">' + labels.map((l, i) => {
         const cls = i < idx ? 'done' : i === idx ? 'current' : 'pending';
         const dot = i < idx ? '&#10003;' : (i+1);
@@ -361,14 +399,29 @@
         const balance = parseFloat(a.balance || 0);
         const paidAmt = parseFloat(a.paid_amount || 0);
         const settledAmt = parseFloat(a.settled_amount || 0);
-        const statusColor = a.status === 'settled' ? 'var(--success)' : a.status === 'paid' ? 'var(--primary)' : a.status.includes('pending') ? 'var(--warning)' : 'var(--text-muted)';
+        const statusColor = a.status === 'overdue' ? 'var(--danger)' : a.status === 'settled' ? 'var(--success)' : a.status === 'paid' ? 'var(--primary)' : a.status.includes('pending') ? 'var(--warning)' : 'var(--text-muted)';
+
+        // Type badge
+        const typeBadge = a.advance_type === 'reimburse'
+          ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:var(--success-bg);color:var(--success);font-weight:600;">Reimburse</span>'
+          : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:var(--primary-light);color:var(--primary);font-weight:600;">Advance</span>';
+
+        // Countdown badge (advance type only)
+        let countdownBadge = '';
+        if (a.advance_type === 'advance' && a.days_remaining !== null && a.days_remaining !== undefined && ['paid','overdue'].includes(a.status)) {
+          const d = parseInt(a.days_remaining);
+          if (d < 0) countdownBadge = '<div style="font-size:10px;font-weight:700;color:#8B0000;padding:2px 8px;border-radius:10px;background:#8B000015;">Overdue '+Math.abs(d)+'d</div>';
+          else if (d <= 1) countdownBadge = '<div style="font-size:10px;font-weight:700;color:var(--danger);padding:2px 8px;border-radius:10px;background:var(--danger-bg);">'+d+'d left</div>';
+          else if (d <= 4) countdownBadge = '<div style="font-size:10px;font-weight:700;color:var(--warning);padding:2px 8px;border-radius:10px;background:var(--warning-bg);">'+d+'d left</div>';
+          else countdownBadge = '<div style="font-size:10px;font-weight:700;color:var(--success);padding:2px 8px;border-radius:10px;background:var(--success-bg);">'+d+'d left</div>';
+        }
 
         // Action buttons based on status + role
         let actions = '';
         if (a.status === 'draft') actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();submitAdv(\''+a.id+'\')">Submit</button>';
         else if (a.status.includes('pending') && ['pm','finance','executive'].includes(userRole)) actions = '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveAdv(\''+a.id+'\')">Approve</button>';
         else if (a.status === 'approved' && ['finance','executive'].includes(userRole)) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPayModal(\''+a.id+'\','+parseFloat(a.amount)+')">Pay</button>';
-        else if (a.status === 'paid' && !a.clear_status) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
+        else if ((a.status === 'paid' || a.status === 'overdue') && !a.clear_status) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
         // After Clear is approved by Finance: show Return/Reimburse
         const clearApproved = a.clear_status === 'approved';
         // balance > 0 = employee owes money: employee confirms return first, then finance receives
@@ -388,7 +441,7 @@
           <div class="adv-card-main" onclick="toggleCard('${a.id}')">
             <div style="width:4px;height:100%;min-height:30px;border-radius:2px;background:${statusColor};"></div>
             <div class="adv-card-info">
-              <h4>${a.doc_number} — ${a.description || a.purpose || ''}</h4>
+              <h4>${a.doc_number} — ${a.description || a.purpose || ''} ${typeBadge}</h4>
               <div class="meta">
                 <span>${a.employee_name_th || a.employee_name || ''}</span>
                 <span>${a.doc_date ? new Date(a.doc_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) : ''}</span>
@@ -401,7 +454,7 @@
               ${paidAmt > 0 ? '<div style="font-size:10px;color:var(--text-muted);">Paid: ฿'+fmtNum(paidAmt)+'</div>' : ''}
               ${balance > 0 ? '<div style="font-size:11px;font-weight:600;color:var(--danger);">Balance: ฿'+fmtNum(balance)+'</div>' : ''}
               ${balance < 0 ? '<div style="font-size:11px;font-weight:600;color:var(--warning);">Reimburse: ฿'+fmtNum(Math.abs(balance))+'</div>' : ''}
-              ${a.employee_confirmed && balance > 0 && a.status === 'settling' ? '<div style="font-size:11px;font-weight:600;color:var(--info);">พนักงานยืนยันคืนแล้ว</div>' : ''}
+              ${countdownBadge}
               ${a.status === 'settled' ? '<div style="font-size:11px;font-weight:600;color:var(--success);">Cleared</div>' : ''}
             </div>
             <div style="display:flex;gap:4px;align-items:center;">
@@ -410,7 +463,7 @@
             </div>
           </div>
           <div class="adv-card-expand" id="expand-${a.id}">
-            <div style="margin-top:12px;">${getFlowSteps(a.status, a.id, a.employee_confirmed, balance < 0, balance > 0)}</div>
+            <div style="margin-top:12px;">${getFlowSteps(a.status, a.id, a.advance_type, balance > 0)}</div>
             <div id="detail-${a.id}" style="margin-top:12px;color:var(--text-muted);font-size:12px;">Click to load details...</div>
           </div>
         </div>`;
@@ -576,21 +629,100 @@
     // ═══ New Modal ═══
     function openNewModal() {
       document.getElementById('new-modal').classList.add('show');
+      toggleAdvType();
     }
-    function closeNewModal() { document.getElementById('new-modal').classList.remove('show'); }
+    function closeNewModal() {
+      document.getElementById('new-modal').classList.remove('show');
+      document.getElementById('receipt-lines').innerHTML = '';
+    }
+
+    function toggleAdvType() {
+      const type = document.querySelector('input[name="f-type"]:checked').value;
+      const reimbSec = document.getElementById('reimburse-section');
+      const amtRow = document.getElementById('amount-row');
+      if (type === 'reimburse') {
+        reimbSec.style.display = 'block';
+        amtRow.style.display = 'none';
+        if (!document.getElementById('receipt-lines').children.length) addReceiptLine();
+      } else {
+        reimbSec.style.display = 'none';
+        amtRow.style.display = '';
+      }
+    }
+
+    function addReceiptLine() {
+      const container = document.getElementById('receipt-lines');
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:1fr 100px 100px 100px 100px 30px;gap:6px;margin-bottom:6px;align-items:center;';
+      row.innerHTML = `
+        <input type="text" class="form-input" data-rl-desc placeholder="Description" style="font-size:12px;padding:6px;">
+        <input type="number" class="form-input" data-rl-amt placeholder="Amount" min="0" style="font-size:12px;padding:6px;" onchange="updateReceiptTotal()">
+        <select class="form-input" data-rl-cat style="font-size:11px;padding:6px;">
+          <option value="travel">Travel</option><option value="food">Food</option>
+          <option value="accommodation">Hotel</option><option value="transport">Transport</option>
+          <option value="material">Material</option><option value="misc">Misc</option>
+        </select>
+        <input type="date" class="form-input" data-rl-date style="font-size:11px;padding:6px;">
+        <input type="text" class="form-input" data-rl-receipt placeholder="Receipt #" style="font-size:11px;padding:6px;">
+        <button class="btn btn-sm" style="color:var(--danger);padding:2px;" onclick="this.parentElement.remove();updateReceiptTotal()">x</button>`;
+      container.appendChild(row);
+    }
+
+    function updateReceiptTotal() {
+      const amts = document.querySelectorAll('[data-rl-amt]');
+      let total = 0;
+      amts.forEach(a => total += parseFloat(a.value) || 0);
+      document.getElementById('receipt-total').textContent = fmtNum(total);
+    }
+
+    function getReceiptLines() {
+      const rows = document.querySelectorAll('#receipt-lines > div');
+      const lines = [];
+      rows.forEach(r => {
+        const desc = r.querySelector('[data-rl-desc]').value.trim();
+        const amt = parseFloat(r.querySelector('[data-rl-amt]').value) || 0;
+        if (desc && amt > 0) {
+          lines.push({
+            description: desc, amount: amt,
+            category: r.querySelector('[data-rl-cat]').value,
+            receipt_date: r.querySelector('[data-rl-date]').value || null,
+            receipt_number: r.querySelector('[data-rl-receipt]').value || null
+          });
+        }
+      });
+      return lines;
+    }
+
     async function saveAdvance() {
+      const type = document.querySelector('input[name="f-type"]:checked').value;
       const desc = document.getElementById('f-desc').value.trim();
-      const amount = parseFloat(document.getElementById('f-amount').value);
-      if (!desc || !amount) { alert('Fill description and amount'); return; }
+      if (!desc) { alert('Fill description'); return; }
+
+      let amount, receipt_lines;
+      if (type === 'reimburse') {
+        receipt_lines = getReceiptLines();
+        if (!receipt_lines.length) { alert('Add at least 1 receipt line'); return; }
+        amount = receipt_lines.reduce((s, l) => s + l.amount, 0);
+      } else {
+        amount = parseFloat(document.getElementById('f-amount').value);
+        if (!amount) { alert('Fill amount'); return; }
+      }
+
       try {
         await API.post('/advance', {
           project_id: document.getElementById('f-project').value || null,
           employee_id: document.getElementById('f-employee').value || null,
           description: desc, amount,
-          purpose: document.getElementById('f-purpose').value
+          purpose: document.getElementById('f-purpose').value,
+          advance_type: type,
+          receipt_lines: receipt_lines || undefined
         });
         closeNewModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) {
+        if (e.error === 'OVERDUE_LOCK' || (e.message && e.message.includes('OVERDUE_LOCK'))) {
+          alert('ไม่สามารถสร้างรายการใหม่ได้ — มีเงินทดรองจ่ายเกินกำหนดเคลียร์อยู่ กรุณาเคลียร์ก่อน');
+        } else { alert('Error: '+e.message); }
+      }
     }
 
     // ═══ Payment Modal ═══
@@ -605,6 +737,7 @@
       document.getElementById('p-emp-info').innerHTML = empName + (empBank.trim() ? '<br><span style="color:var(--primary);font-weight:600;">' + empBank.trim() + '</span>' : '<br><span style="color:var(--danger);">No bank account</span>');
       document.getElementById('p-ref').value = '';
       document.getElementById('p-remarks').value = '';
+      document.getElementById('p-date').value = new Date().toISOString().slice(0,10);
       // Load bank accounts
       if (!bankAccounts.length) {
         try { bankAccounts = await API.get('/advance/banks/list'); } catch(e) { bankAccounts = []; }
@@ -627,13 +760,16 @@
     async function savePayment() {
       const id = document.getElementById('p-adv-id').value;
       const amount = parseFloat(document.getElementById('p-amount').value);
+      const ref = document.getElementById('p-ref').value.trim();
+      if (!ref) { alert('Reference is required'); return; }
       try {
         await API.post('/advance/'+id+'/pay', {
           amount,
           payment_method: document.getElementById('p-method').value,
           bank_account_id: document.getElementById('p-bank').value || null,
-          reference: document.getElementById('p-ref').value,
-          remarks: document.getElementById('p-remarks').value
+          reference: ref,
+          remarks: document.getElementById('p-remarks').value,
+          payment_date: document.getElementById('p-date').value || null
         });
         closePayModal(); await loadData();
       } catch(e) { alert('Error: '+e.message); }
