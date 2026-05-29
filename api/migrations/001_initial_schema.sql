@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════
--- SDA Operation — PostgreSQL Database Schema
+-- Company Operation — PostgreSQL Database Schema
 -- Migration 001: Initial Schema
 -- Based on: AI Brief + SAP Blueprint (S.D.A. Group)
 -- ═══════════════════════════════════════════════════════════

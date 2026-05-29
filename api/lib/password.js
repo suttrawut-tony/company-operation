@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Password rules + reset-token helpers
+ * Company Operation — Password rules + reset-token helpers
  */
 const crypto = require('crypto');
 

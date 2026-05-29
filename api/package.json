@@ -1,7 +1,7 @@
 {
   "name": "sda-operation-api",
   "version": "1.0.0",
-  "description": "SDA Operation — Backend API (Node.js + Express + PostgreSQL)",
+  "description": "Company Operation — Backend API (Node.js + Express + PostgreSQL)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════
--- SDA Operation — Seed Data for S.D.A. Group
+-- Company Operation — Seed Data for S.D.A. Group
 -- Based on SAP Blueprint actual data
 -- ═══════════════════════════════════════════════════════════
 

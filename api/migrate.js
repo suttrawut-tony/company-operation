@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Auto-migration runner
+ * Company Operation — Auto-migration runner
  *
  * Scans api/migrations/*.sql, tracks applied filenames in a `_migrations`
  * table, runs anything not yet applied in filename order.

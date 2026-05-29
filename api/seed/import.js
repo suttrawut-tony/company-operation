@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Import seed data into Postgres
+ * Company Operation — Import seed data into Postgres
  *
  * วิธีใช้:
  *   node api/seed/import.js                          # ใช้ DATABASE_URL จาก .env
@@ -55,7 +55,7 @@ const TABLES_DELETE_ORDER = [
 ];
 
 async function main() {
-  console.log('═══ SDA Operation — Seed Import ═══');
+  console.log('═══ Company Operation — Seed Import ═══');
 
   // 1. Check seed file exists
   if (!fs.existsSync(SEED_FILE)) {

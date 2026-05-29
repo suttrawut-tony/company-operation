@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Sidebar Navigation (Premium Layout)
+ * Company Operation — Sidebar Navigation (Premium Layout)
  * Fixed sidebar ซ้ายมือ + Top bar + Content area
  * Style: Linear / Notion / Vercel-inspired
  */
@@ -119,7 +119,7 @@ function renderSidebar() {
     <div class="sidebar-header">
       <a href="dashboard.html" class="sidebar-logo">
         ${icon('<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>', 24)}
-        <span class="sidebar-logo-text">SDA Operation</span>
+        <span class="sidebar-logo-text">Company Operation</span>
       </a>
       <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
         ${collapsed ? ICONS.chevronRight : ICONS.chevronLeft}
@@ -231,7 +231,7 @@ function toggleSidebar() {
 }
 
 function handleLogout() {
-  if (confirm('Logout from SDA Operation?')) {
+  if (confirm('Logout from Company Operation?')) {
     localStorage.removeItem('sda_token');
     localStorage.removeItem('sda_user');
     window.location = 'login.html';

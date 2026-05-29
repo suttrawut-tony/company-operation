@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Auth routes (simplified, schema-tolerant)
+ * Company Operation — Auth routes (simplified, schema-tolerant)
  *
  * Endpoints intentionally use ONLY columns present in the original
  * users/companies schema. Optional columns added by migrations 013/014
@@ -230,7 +230,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
         const resetUrl = `${appUrl}/reset-password.html?token=${raw}`;
         sendMail({
           to: user.email,
-          subject: 'SDA Operation — Password Reset',
+          subject: 'Company Operation — Password Reset',
           text: `Hello ${user.first_name},
 
 Reset your password within 1 hour:
@@ -343,8 +343,8 @@ router.post('/register', registerLimiter, async (req, res) => {
         );
         const appUrl = (process.env.APP_URL || '').replace(/\/$/, '') || 'http://localhost:4000';
         const subject = isActive
-          ? 'SDA Operation — New user registered'
-          : 'SDA Operation — New account pending approval';
+          ? 'Company Operation — New user registered'
+          : 'Company Operation — New account pending approval';
         await Promise.all(admins.map(a => sendMail({
           to: a.email,
           subject,
@@ -481,7 +481,7 @@ router.post('/users/:id/approve', authenticate, requireRole('executive', 'admin'
 
     sendMail({
       to: rows[0].email,
-      subject: 'SDA Operation — Your account has been approved',
+      subject: 'Company Operation — Your account has been approved',
       text: `Hi ${rows[0].first_name},
 
 Your account is active. Sign in at:

@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Shared Helpers
+ * Company Operation — Shared Helpers
  * ใช้ร่วมกันทุกหน้าที่ดึง data จาก API
  */
 

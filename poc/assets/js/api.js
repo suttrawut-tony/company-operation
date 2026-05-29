@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Frontend API Client
+ * Company Operation — Frontend API Client
  * Connects to backend at /api/*
  */
 

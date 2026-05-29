@@ -1,5 +1,5 @@
 /**
- * SDA Operation — SAP B1 Service Layer Client
+ * Company Operation — SAP B1 Service Layer Client
  * Based on SAP Blueprint: Version 10.0
  *
  * SAP Service Layer base URL: https://<server>:50000/b1s/v1

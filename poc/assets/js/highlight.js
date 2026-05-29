@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Precise Document Highlight
+ * Company Operation — Precise Document Highlight
  * วงเฉพาะแถว/item ที่มี doc number ตรงกับที่กดมา
  *
  * URL patterns:

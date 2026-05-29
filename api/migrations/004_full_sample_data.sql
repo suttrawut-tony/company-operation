@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════
--- SDA Operation — Full Sample Data
+-- Company Operation — Full Sample Data
 -- 12 Projects + Phases + Tasks + Budgets + PRs + POs
 -- + Expenses + Vehicle Bookings + Travel + OT + Notifications
 -- ═══════════════════════════════════════════════════════════

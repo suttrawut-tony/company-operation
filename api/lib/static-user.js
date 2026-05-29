@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Static (no-DB) login support
+ * Company Operation — Static (no-DB) login support
  *
  * When STATIC_LOGIN_EMAIL and STATIC_LOGIN_PASSWORD are both set, the
  * login route accepts that one credential pair WITHOUT touching the

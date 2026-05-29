@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Auth audit log helper
+ * Company Operation — Auth audit log helper
  * Never throws — failures are logged but the calling route should not be blocked.
  */
 const db = require('../db');

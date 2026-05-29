@@ -1,5 +1,5 @@
 /**
- * SDA Operation — Auth Middleware (JWT)
+ * Company Operation — Auth Middleware (JWT)
  */
 const jwt = require('jsonwebtoken');
 const db = require('../db');

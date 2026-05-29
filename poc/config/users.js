@@ -1,5 +1,5 @@
 /**
- * SDA Operation — User Master Data
+ * Company Operation — User Master Data
  * Source: SAP Blueprint Table 53 (19 users) → mapped to Web App roles
  *
  * SAP License mapping:
