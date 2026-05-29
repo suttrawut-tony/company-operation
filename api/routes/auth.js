@@ -143,7 +143,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     const { rows } = await db.query(
       `SELECT u.* FROM users u JOIN companies c ON u.company_id = c.id
         WHERE LOWER(u.email) = $1 AND c.slug = $2`,
-      [email, slug || 'sda-group']
+      [email, slug || 'company']
     );
     const user = rows[0];
     if (!user) return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
@@ -303,7 +303,7 @@ router.post('/register', registerLimiter, async (req, res) => {
       return res.status(400).json({ error: 'This email domain is not allowed to register. Please contact your administrator.' });
     }
 
-    const companySlug = (slug || 'sda-group').trim();
+    const companySlug = (slug || 'company').trim();
     const { rows: companies } = await db.query('SELECT id FROM companies WHERE slug = $1', [companySlug]);
     if (!companies[0]) return res.status(400).json({ error: 'Invalid company' });
 
@@ -382,7 +382,7 @@ ${isActive ? 'View users at: ' : 'Approve at: '}${appUrl}/user-permissions.html`
 // ═══════════════════════════════════════════════════════════
 router.get('/admins', async (req, res) => {
   try {
-    const slug = (req.query.slug || 'sda-group').toString().trim();
+    const slug = (req.query.slug || 'company').toString().trim();
     const { rows } = await db.query(
       `SELECT u.email, u.first_name, u.last_name, u.first_name_th, u.last_name_th, u.role
          FROM users u JOIN companies c ON u.company_id = c.id

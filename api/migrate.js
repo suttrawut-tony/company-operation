@@ -217,9 +217,9 @@ async function maybeSeedPocDemo(client) {
  * Self-healing super-admin. Runs on EVERY boot (after migrations + seed) so the
  * primary admin can ALWAYS log in — even if the POC seed excludes users, the
  * dump failed/rolled back, a password was changed, or the account was disabled.
- *   Login: admin@sala-daeng.com / 111111   (company slug: sda-group)
- * Self-sufficient: creates the sda-group company if missing, then upserts the
- * admin. Best-effort — never throws.
+ *   Login: admin@sala-daeng.com / 111111   (company slug: company)
+ * Self-sufficient: creates/normalises the company (slug 'company') then upserts
+ * the admin. Best-effort — never throws.
  */
 async function ensureAdminLogin(client) {
   if (!(await tableExists(client, 'users')) || !(await tableExists(client, 'companies'))) {
@@ -229,11 +229,13 @@ async function ensureAdminLogin(client) {
   try {
     // A prior pg_dump load may have cleared search_path on this connection.
     await client.query('SET search_path TO public');
-    // Guarantee the sda-group company exists (login joins on slug='sda-group').
+    // Guarantee the company (slug='company') exists (login joins on slug).
+    // Force the slug on the seed company id so an earlier 'sda-group' value
+    // (from migration 002 / poc-demo) is normalised to 'company'.
     await client.query(
       `INSERT INTO companies (id, name, slug)
-       VALUES ($1, 'บริษัท เอส.ดี.เอ. กรุ๊ป จำกัด', 'sda-group')
-       ON CONFLICT (slug) DO NOTHING`,
+       VALUES ($1, 'บริษัท เอส.ดี.เอ. กรุ๊ป จำกัด', 'company')
+       ON CONFLICT (id) DO UPDATE SET slug = 'company'`,
       [SEED_COMPANY_ID]
     );
     await client.query(`
@@ -243,7 +245,7 @@ async function ensureAdminLogin(client) {
       SELECT c.id, 'admin@sala-daeng.com', crypt('111111', gen_salt('bf')),
              'Admin', 'Sala-Daeng', 'แอดมิน', 'ศาลาแดง',
              'executive', 'System Administrator', 'IT', true, 999999999, true
-      FROM companies c WHERE c.slug = 'sda-group'
+      FROM companies c WHERE c.slug = 'company'
       ON CONFLICT (email) DO UPDATE SET
         password_hash = crypt('111111', gen_salt('bf')),
         is_active     = true,

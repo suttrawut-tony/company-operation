@@ -264,15 +264,15 @@
         <div class="form-group">
           <label class="form-label">Company</label>
           <div class="company-slug-row">
-            <span class="slug-prefix">app.sda-operation.com/</span>
-            <input type="text" class="slug-input" value="sda-group" placeholder="company-slug" id="login-slug">
+            <span class="slug-prefix">app.company-operation.com/</span>
+            <input type="text" class="slug-input" value="company" placeholder="company-slug" id="login-slug">
           </div>
         </div>
 
         <form onsubmit="event.preventDefault(); handleLogin();">
           <div class="form-group">
             <label class="form-label">Email</label>
-            <input type="email" class="form-input" placeholder="name@sda-group.com" id="login-email" autocomplete="email" required>
+            <input type="email" class="form-input" placeholder="name@company.com" id="login-email" autocomplete="email" required>
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
@@ -301,7 +301,7 @@
         <form onsubmit="event.preventDefault(); handleForgot();">
           <div class="form-group">
             <label class="form-label">Email</label>
-            <input type="email" class="form-input" placeholder="name@sda-group.com" id="forgot-email" autocomplete="email" required>
+            <input type="email" class="form-input" placeholder="name@company.com" id="forgot-email" autocomplete="email" required>
           </div>
           <button type="submit" class="login-submit" id="forgot-submit">Send reset link</button>
         </form>
@@ -347,7 +347,7 @@
     async function handleLogin() {
       const email    = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-      const slug     = document.getElementById('login-slug').value.trim() || 'sda-group';
+      const slug     = document.getElementById('login-slug').value.trim() || 'company';
       const remember = document.getElementById('login-remember').checked;
       const btn      = document.getElementById('login-submit');
 
