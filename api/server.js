@@ -173,8 +173,12 @@ const { runAll: runMigrations } = require('./migrate');
   // ═══ Cron Jobs ═══
   const cron = require('node-cron');
   const { checkAdvanceOverdue } = require('./cron/advance-overdue');
+  const { checkVehicleAlerts } = require('./cron/vehicle-alerts');
   cron.schedule('3 8 * * *', () => {
     checkAdvanceOverdue().catch(err => console.error('[cron] advance-overdue failed:', err.message));
   }, { timezone: 'Asia/Bangkok' });
-  console.log('[boot] cron: advance-overdue scheduled daily 08:03 (Asia/Bangkok)');
+  cron.schedule('5 8 * * *', () => {
+    checkVehicleAlerts().catch(err => console.error('[cron] vehicle-alerts failed:', err.message));
+  }, { timezone: 'Asia/Bangkok' });
+  console.log('[boot] cron: advance-overdue 08:03, vehicle-alerts 08:05 (Asia/Bangkok)');
 })();
