@@ -429,4 +429,269 @@ router.get('/:id/discussions', requireProjectAccess, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════
+// Phase Finance: Payment Schedule + Phase Costs + Dashboard
+// ═══════════════════════════════════════════════════════════
+
+// ═══ Payment Schedule (Revenue) ═══
+
+// GET /api/projects/:id/payment-schedule
+router.get('/:id/payment-schedule', async (req, res) => {
+  try {
+    const { rows: payments } = await db.query(
+      `SELECT pp.*, ph.name AS phase_name
+       FROM phase_payments pp LEFT JOIN phases ph ON pp.phase_id = ph.id
+       WHERE pp.project_id = $1 ORDER BY pp.sort_order, pp.created_at`, [req.params.id]);
+    const { rows: [proj] } = await db.query('SELECT tor_amount, retention_rate FROM projects WHERE id=$1', [req.params.id]);
+    const total = parseFloat(proj?.tor_amount || 0);
+    const invoiced = payments.filter(p => ['invoiced','partially_paid','paid'].includes(p.status)).reduce((s,p) => s + parseFloat(p.amount||0), 0);
+    const received = payments.reduce((s,p) => s + parseFloat(p.received_amount||0), 0);
+    const retention = payments.reduce((s,p) => s + parseFloat(p.retention_amount||0), 0);
+    res.json({ payments, summary: { total_contract: total, total_invoiced: invoiced, total_received: received, total_outstanding: total - received, total_retention: retention } });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/projects/:id/payment-schedule
+router.post('/:id/payment-schedule', async (req, res) => {
+  try {
+    const { phase_id, payment_term, description, percentage, due_conditions, expected_date, remarks, sort_order } = req.body;
+    const { rows: [proj] } = await db.query('SELECT tor_amount, retention_rate FROM projects WHERE id=$1', [req.params.id]);
+    const tor = parseFloat(proj?.tor_amount || 0);
+    const retRate = parseFloat(proj?.retention_rate || 0);
+    const pct = parseFloat(percentage || 0);
+    const amount = tor * pct / 100;
+    const retAmt = amount * retRate / 100;
+    const net = amount - retAmt;
+    const { rows: [p] } = await db.query(
+      `INSERT INTO phase_payments (project_id, phase_id, payment_term, description, percentage, amount, retention_amount, net_amount, due_conditions, expected_date, remarks, sort_order, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+      [req.params.id, phase_id||null, payment_term, description, pct, amount, retAmt, net, due_conditions, expected_date||null, remarks, sort_order||0, req.user.id]);
+    res.status(201).json(p);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/projects/payment-schedule/:paymentId
+router.put('/payment-schedule/:paymentId', async (req, res) => {
+  try {
+    const fields = ['payment_term','description','percentage','due_conditions','expected_date','invoice_number','invoice_date','received_date','received_amount','wht_amount','actual_net','payment_method','bank_reference','status','remarks','sort_order','phase_id'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    // Recalculate amount if percentage changed
+    if (req.body.percentage !== undefined) {
+      const { rows: [pp] } = await db.query('SELECT project_id FROM phase_payments WHERE id=$1', [req.params.paymentId]);
+      if (pp) {
+        const { rows: [proj] } = await db.query('SELECT tor_amount, retention_rate FROM projects WHERE id=$1', [pp.project_id]);
+        const tor = parseFloat(proj?.tor_amount||0);
+        const retRate = parseFloat(proj?.retention_rate||0);
+        const pct = parseFloat(req.body.percentage);
+        const amount = tor * pct / 100;
+        const retAmt = amount * retRate / 100;
+        sets.push(`amount = $${idx++}`); params.push(amount);
+        sets.push(`retention_amount = $${idx++}`); params.push(retAmt);
+        sets.push(`net_amount = $${idx++}`); params.push(amount - retAmt);
+      }
+    }
+    // Auto-set status to invoiced when invoice_number provided
+    if (req.body.invoice_number && !req.body.status) { sets.push(`status = $${idx++}`); params.push('invoiced'); }
+    // Auto-set status to paid when received_amount >= amount
+    if (req.body.received_amount !== undefined && !req.body.status) {
+      const { rows: [pp] } = await db.query('SELECT amount FROM phase_payments WHERE id=$1', [req.params.paymentId]);
+      if (pp && parseFloat(req.body.received_amount) >= parseFloat(pp.amount)) { sets.push(`status = $${idx++}`); params.push('paid'); }
+      else if (parseFloat(req.body.received_amount) > 0) { sets.push(`status = $${idx++}`); params.push('partially_paid'); }
+    }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.paymentId);
+    const { rows } = await db.query(`UPDATE phase_payments SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/projects/payment-schedule/:paymentId
+router.delete('/payment-schedule/:paymentId', async (req, res) => {
+  try {
+    const { rows } = await db.query("DELETE FROM phase_payments WHERE id=$1 AND status='pending' RETURNING id", [req.params.paymentId]);
+    if (!rows.length) return res.status(400).json({ error: 'Can only delete pending payments' });
+    res.json({ deleted: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/projects/:id/payment-schedule/generate — Auto-generate from phases
+router.post('/:id/payment-schedule/generate', async (req, res) => {
+  try {
+    const { rows: phases } = await db.query('SELECT * FROM phases WHERE project_id=$1 ORDER BY sort_order', [req.params.id]);
+    if (!phases.length) return res.status(400).json({ error: 'No phases found' });
+    const { rows: [proj] } = await db.query('SELECT tor_amount, retention_rate FROM projects WHERE id=$1', [req.params.id]);
+    const tor = parseFloat(proj?.tor_amount || 0);
+    const retRate = parseFloat(proj?.retention_rate || 0);
+    const pctEach = Math.round(10000 / phases.length) / 100; // Equal split rounded
+    const created = [];
+    for (let i = 0; i < phases.length; i++) {
+      const pct = i === phases.length - 1 ? (100 - pctEach * (phases.length - 1)) : pctEach; // Last phase gets remainder
+      const amount = tor * pct / 100;
+      const retAmt = amount * retRate / 100;
+      const { rows: [p] } = await db.query(
+        `INSERT INTO phase_payments (project_id, phase_id, payment_term, description, percentage, amount, retention_amount, net_amount, expected_date, sort_order, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+        [req.params.id, phases[i].id, `งวดที่ ${i+1}`, `ส่งมอบ ${phases[i].name}`, pct, amount, retAmt, amount-retAmt, phases[i].end_date, i+1, req.user.id]);
+      created.push(p);
+    }
+    res.status(201).json(created);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══ Phase Costs (Expenses) ═══
+
+// GET /api/projects/:id/phase-costs
+router.get('/:id/phase-costs', async (req, res) => {
+  try {
+    const { rows: phases } = await db.query('SELECT id, name, sort_order, planned_cost, actual_cost, cost_variance FROM phases WHERE project_id=$1 ORDER BY sort_order', [req.params.id]);
+    for (const ph of phases) {
+      const { rows: costs } = await db.query('SELECT cost_type, SUM(planned_amount) AS planned, SUM(actual_amount) AS actual FROM phase_costs WHERE phase_id=$1 GROUP BY cost_type', [ph.id]);
+      ph.costs_by_type = {};
+      costs.forEach(c => { ph.costs_by_type[c.cost_type] = { planned: parseFloat(c.planned||0), actual: parseFloat(c.actual||0) }; });
+    }
+    res.json(phases);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/projects/:id/phases/:phaseId/costs
+router.get('/:id/phases/:phaseId/costs', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT pc.*, pr.doc_number AS pr_number, po.doc_number AS po_number
+       FROM phase_costs pc
+       LEFT JOIN purchase_requests pr ON pc.pr_id = pr.id
+       LEFT JOIN purchase_orders po ON pc.po_id = po.id
+       WHERE pc.phase_id = $1 ORDER BY pc.created_at`, [req.params.phaseId]);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/projects/:id/phases/:phaseId/costs
+router.post('/:id/phases/:phaseId/costs', async (req, res) => {
+  try {
+    const { cost_type, description, planned_amount, actual_amount, pr_id, po_id, expense_id, advance_id, remarks } = req.body;
+    const { rows: [c] } = await db.query(
+      `INSERT INTO phase_costs (project_id, phase_id, cost_type, description, planned_amount, actual_amount, pr_id, po_id, expense_id, advance_id, remarks, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [req.params.id, req.params.phaseId, cost_type||'misc', description, planned_amount||0, actual_amount||0, pr_id||null, po_id||null, expense_id||null, advance_id||null, remarks, req.user.id]);
+    // Update phase actual_cost
+    await db.query(
+      `UPDATE phases SET actual_cost = (SELECT COALESCE(SUM(actual_amount),0) FROM phase_costs WHERE phase_id=$1),
+       cost_variance = planned_cost - (SELECT COALESCE(SUM(actual_amount),0) FROM phase_costs WHERE phase_id=$1)
+       WHERE id = $1`, [req.params.phaseId]);
+    res.status(201).json(c);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/projects/phase-costs/:costId
+router.put('/phase-costs/:costId', async (req, res) => {
+  try {
+    const fields = ['cost_type','description','planned_amount','actual_amount','pr_id','po_id','expense_id','advance_id','remarks'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.costId);
+    const { rows } = await db.query(`UPDATE phase_costs SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    // Update phase actual_cost
+    await db.query(
+      `UPDATE phases SET actual_cost = (SELECT COALESCE(SUM(actual_amount),0) FROM phase_costs WHERE phase_id=$1),
+       cost_variance = planned_cost - (SELECT COALESCE(SUM(actual_amount),0) FROM phase_costs WHERE phase_id=$1)
+       WHERE id = $1`, [rows[0].phase_id]);
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/projects/phase-costs/:costId
+router.delete('/phase-costs/:costId', async (req, res) => {
+  try {
+    const { rows } = await db.query('DELETE FROM phase_costs WHERE id=$1 RETURNING phase_id', [req.params.costId]);
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    await db.query(
+      `UPDATE phases SET actual_cost = (SELECT COALESCE(SUM(actual_amount),0) FROM phase_costs WHERE phase_id=$1),
+       cost_variance = planned_cost - (SELECT COALESCE(SUM(actual_amount),0) FROM phase_costs WHERE phase_id=$1)
+       WHERE id = $1`, [rows[0].phase_id]);
+    res.json({ deleted: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/projects/:id/cost-summary
+router.get('/:id/cost-summary', async (req, res) => {
+  try {
+    const { rows: phases } = await db.query(
+      `SELECT p.id, p.name, p.planned_cost, p.actual_cost, p.cost_variance,
+       CASE WHEN p.planned_cost > 0 THEN ROUND(p.actual_cost / p.planned_cost * 100) ELSE 0 END AS pct_used
+       FROM phases p WHERE p.project_id = $1 ORDER BY p.sort_order`, [req.params.id]);
+    const totalPlanned = phases.reduce((s,p) => s + parseFloat(p.planned_cost||0), 0);
+    const totalActual = phases.reduce((s,p) => s + parseFloat(p.actual_cost||0), 0);
+    res.json({ phases, total_planned: totalPlanned, total_actual: totalActual, total_variance: totalPlanned - totalActual });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══ Finance Dashboard ═══
+
+// GET /api/projects/:id/finance-summary
+router.get('/:id/finance-summary', async (req, res) => {
+  try {
+    const { rows: [proj] } = await db.query('SELECT * FROM projects WHERE id=$1', [req.params.id]);
+    if (!proj) return res.status(404).json({ error: 'Not found' });
+    const tor = parseFloat(proj.tor_amount || 0);
+
+    // Revenue
+    const { rows: payments } = await db.query('SELECT * FROM phase_payments WHERE project_id=$1 ORDER BY sort_order', [req.params.id]);
+    const totalReceived = payments.reduce((s,p) => s + parseFloat(p.received_amount||0), 0);
+    const totalRetention = payments.reduce((s,p) => s + parseFloat(p.retention_amount||0), 0);
+
+    // Costs
+    const { rows: phases } = await db.query(
+      `SELECT p.id, p.name, p.status, p.planned_cost, p.actual_cost, p.cost_variance FROM phases p WHERE p.project_id=$1 ORDER BY p.sort_order`, [req.params.id]);
+    const totalCost = phases.reduce((s,p) => s + parseFloat(p.actual_cost||0), 0);
+    const grossProfit = totalReceived - totalCost;
+
+    // Phase detail
+    const phaseDetail = phases.map(ph => {
+      const pmt = payments.find(p => p.phase_id === ph.id);
+      return {
+        phase_id: ph.id, phase_name: ph.name, status: ph.status,
+        revenue: { amount: parseFloat(pmt?.amount||0), received: parseFloat(pmt?.received_amount||0), outstanding: parseFloat(pmt?.amount||0) - parseFloat(pmt?.received_amount||0), retention: parseFloat(pmt?.retention_amount||0) },
+        cost: { planned: parseFloat(ph.planned_cost||0), actual: parseFloat(ph.actual_cost||0), variance: parseFloat(ph.cost_variance||0) },
+        profit: parseFloat(pmt?.received_amount||0) - parseFloat(ph.actual_cost||0),
+        margin_pct: parseFloat(pmt?.received_amount||0) > 0 ? Math.round((parseFloat(pmt?.received_amount||0) - parseFloat(ph.actual_cost||0)) / parseFloat(pmt?.received_amount||0) * 100) : 0
+      };
+    });
+
+    // Cash flow (monthly)
+    const { rows: cashIn } = await db.query(
+      `SELECT to_char(received_date, 'YYYY-MM') AS month, SUM(received_amount) AS inflow
+       FROM phase_payments WHERE project_id=$1 AND received_date IS NOT NULL GROUP BY 1 ORDER BY 1`, [req.params.id]);
+    const { rows: cashOut } = await db.query(
+      `SELECT to_char(pc.created_at, 'YYYY-MM') AS month, SUM(pc.actual_amount) AS outflow
+       FROM phase_costs pc WHERE pc.project_id=$1 GROUP BY 1 ORDER BY 1`, [req.params.id]);
+    const months = [...new Set([...cashIn.map(r=>r.month), ...cashOut.map(r=>r.month)])].sort();
+    let cumulative = 0;
+    const cashFlow = months.map(m => {
+      const inf = parseFloat(cashIn.find(r=>r.month===m)?.inflow || 0);
+      const outf = parseFloat(cashOut.find(r=>r.month===m)?.outflow || 0);
+      cumulative += inf - outf;
+      return { month: m, inflow: inf, outflow: outf, net: inf - outf, cumulative };
+    });
+
+    res.json({
+      contract_value: tor,
+      total_received: totalReceived,
+      total_outstanding: tor - totalReceived,
+      total_retention: totalRetention,
+      total_cost: totalCost,
+      gross_profit: grossProfit,
+      gross_margin_pct: tor > 0 ? Math.round(grossProfit / tor * 100) : 0,
+      phases: phaseDetail,
+      cash_flow: cashFlow
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
