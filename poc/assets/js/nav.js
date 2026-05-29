@@ -23,6 +23,7 @@ const ICONS = {
   prpo:         icon('<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>'),
   expense:      icon('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h4"/>'),
   advance:      icon('<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>'),
+  pettyCash:    icon('<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>'),
   vehicle:      icon('<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>'),
   travel:       icon('<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>'),
   ot:           icon('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
@@ -37,6 +38,7 @@ const ICONS = {
   chevronLeft:  icon('<path d="m15 18-6-6 6-6"/>'),
   chevronRight: icon('<path d="m9 18 6-6-6-6"/>'),
   menu:         icon('<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>'),
+  help:         icon('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
 };
 
 // Navigation groups
@@ -64,6 +66,7 @@ const NAV_GROUPS = [
       { id: 'budget',         label: 'Budget',         icon: ICONS.budget,    href: 'budget.html' },
       { id: 'pr-po',          label: 'PR / PO',        icon: ICONS.prpo,      href: 'pr-po.html' },
       { id: 'advance',        label: 'Advance',        icon: ICONS.advance,   href: 'advance.html' },
+      { id: 'petty-cash',     label: 'Petty Cash',     icon: ICONS.pettyCash, href: 'petty-cash.html' },
     ]
   },
   {
@@ -85,6 +88,7 @@ const NAV_GROUPS = [
       { id: 'permissions',    label: 'User & Permission', icon: ICONS.permissions, href: 'user-permissions.html' },
       { id: 'setup',          label: 'Setup',          icon: ICONS.setup,       href: 'setup.html' },
       { id: 'changelog',      label: 'Change Log',     icon: ICONS.reports,     href: 'changelog.html' },
+      { id: 'help',            label: 'User Guide',    icon: ICONS.help,        href: 'help.html' },
     ]
   },
 ];

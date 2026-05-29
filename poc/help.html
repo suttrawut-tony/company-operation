@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — คู่มือการใช้งาน</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .guide-header { margin-bottom:32px; }
+    .guide-header h1 { font-size:24px; margin-bottom:4px; }
+    .guide-header p { color:var(--text-secondary); font-size:14px; }
+
+    .guide-nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; padding:16px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); }
+    .guide-nav a { padding:6px 14px; border-radius:var(--radius-full); font-size:12px; font-weight:500; color:var(--text-secondary); text-decoration:none; background:var(--bg-hover); transition:all 0.15s; }
+    .guide-nav a:hover { background:var(--primary-light); color:var(--primary); }
+
+    .guide-section { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; overflow:hidden; }
+    .guide-section-header { display:flex; align-items:center; gap:12px; padding:16px 20px; cursor:pointer; font-weight:700; font-size:15px; }
+    .guide-section-header:hover { background:var(--bg-hover); }
+    .guide-section-header .badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; }
+    .guide-section-header .badge-main { background:var(--primary-light); color:var(--primary); }
+    .guide-section-header .badge-doc { background:var(--success-bg); color:var(--success); }
+    .guide-section-header .badge-res { background:var(--warning-bg); color:var(--warning); }
+    .guide-section-header .badge-sys { background:#e0f2fe; color:#0369a1; }
+    .guide-section-header .arrow { margin-left:auto; color:var(--text-muted); font-size:12px; transition:transform 0.2s; }
+    .guide-section-header.open .arrow { transform:rotate(180deg); }
+
+    .guide-section-body { display:none; padding:0 20px 20px; border-top:1px solid var(--border-light); }
+    .guide-section-body.show { display:block; }
+
+    .guide-block { margin-top:16px; }
+    .guide-block h4 { font-size:13px; font-weight:700; color:var(--primary); margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border-light); }
+    .guide-block p { font-size:13px; color:var(--text-secondary); line-height:1.7; margin-bottom:8px; }
+    .guide-block ul { font-size:13px; color:var(--text-secondary); line-height:1.8; padding-left:20px; }
+    .guide-block li { margin-bottom:4px; }
+
+    .guide-table { width:100%; border-collapse:collapse; font-size:12px; margin:8px 0; }
+    .guide-table th { text-align:left; padding:8px 10px; background:var(--bg-light); font-weight:600; color:var(--text-primary); border-bottom:1px solid var(--border); }
+    .guide-table td { padding:8px 10px; border-bottom:1px solid var(--border-light); color:var(--text-secondary); }
+    .guide-table tr:last-child td { border-bottom:none; }
+
+    .flow-diagram { display:flex; align-items:center; gap:4px; flex-wrap:wrap; padding:12px; background:var(--bg-light); border-radius:var(--radius); margin:8px 0; font-size:11px; }
+    .flow-step-box { padding:6px 12px; border-radius:var(--radius-full); background:var(--bg-white); border:1px solid var(--border); font-weight:600; }
+    .flow-arrow-sm { color:var(--text-muted); }
+
+    .tip-box { padding:10px 14px; background:#fffbeb; border-left:3px solid var(--warning); border-radius:0 var(--radius) var(--radius) 0; font-size:12px; color:#92400e; margin:8px 0; }
+    .info-box { padding:10px 14px; background:#eff6ff; border-left:3px solid var(--primary); border-radius:0 var(--radius) var(--radius) 0; font-size:12px; color:#1e40af; margin:8px 0; }
+
+    .gl-example { padding:10px; background:var(--bg-light); border-radius:var(--radius); font-size:11px; font-family:monospace; margin:8px 0; }
+    .gl-example .dr { color:var(--primary); }
+    .gl-example .cr { color:var(--success); }
+
+    .key-badge { display:inline-block; padding:1px 6px; background:var(--bg-hover); border:1px solid var(--border); border-radius:4px; font-size:10px; font-weight:600; font-family:monospace; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="guide-header">
+      <h1>คู่มือการใช้งาน</h1>
+      <p>Company Operation — ระบบจัดการงานปฏิบัติการ</p>
+    </div>
+
+    <!-- สารบัญ -->
+    <div class="guide-nav">
+      <a href="#dashboard">แดชบอร์ด</a>
+      <a href="#projects">โปรเจค</a>
+      <a href="#taskboard">บอร์ดงาน</a>
+      <a href="#budget">งบประมาณ</a>
+      <a href="#prpo">ใบขอซื้อ / ใบสั่งซื้อ</a>
+      <a href="#advance">เงินทดรองจ่าย</a>
+      <a href="#petty-cash">เงินสดย่อย</a>
+      <a href="#expense">ค่าใช้จ่าย</a>
+      <a href="#vehicle">ยานพาหนะ</a>
+      <a href="#travel">ขอเดินทาง</a>
+      <a href="#ot">ล่วงเวลา / วันหยุด</a>
+      <a href="#item-master">รายการสินค้า</a>
+      <a href="#bp-master">คู่ค้า</a>
+      <a href="#user-permission">ผู้ใช้งาน & สิทธิ์</a>
+      <a href="#setup">ตั้งค่าระบบ</a>
+      <a href="#roles">บทบาทผู้ใช้งาน</a>
+    </div>
+
+    <!-- ═══════════ หน้าหลัก ═══════════ -->
+
+    <div class="guide-section" id="dashboard">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        แดชบอร์ด (Dashboard) <span class="badge badge-main">หน้าหลัก</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>หน้าแรกที่เข้ามาหลัง login ใช้ดูภาพรวมงานทั้งหมดได้ในหน้าเดียว ไม่ต้องเปิดหลายหน้า</p>
+        </div>
+        <div class="guide-block">
+          <h4>การ์ดสรุปด้านบน</h4>
+          <table class="guide-table">
+            <tr><th>การ์ด</th><th>คำอธิบาย</th></tr>
+            <tr><td>โปรเจคที่กำลังทำ</td><td>นับโปรเจคที่ยังเปิดอยู่</td></tr>
+            <tr><td>งบที่ใช้ไป</td><td>ยอดงบที่ใช้แล้วและ % ที่เหลือ</td></tr>
+            <tr><td>รออนุมัติ</td><td>เอกสารที่รอให้คุณกดอนุมัติ</td></tr>
+            <tr><td>ค่าใช้จ่ายเดือนนี้</td><td>ยอดรวมที่เกิดขึ้นในเดือนนี้</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>ส่วนต่างๆ ในหน้า</h4>
+          <ul>
+            <li><strong>AI Alerts</strong> — แจ้งเตือนเรื่องที่ต้องระวัง เช่น โปรเจคเกินงบ งานค้าง</li>
+            <li><strong>งานของฉัน</strong> — งานที่ได้รับมอบหมาย กด "Taskboard" ไปดูทั้งหมดได้</li>
+            <li><strong>รออนุมัติ</strong> — เอกสารที่รอให้เราตรวจและกดอนุมัติ</li>
+            <li><strong>สรุปงบ</strong> — กราฟวงกลมดูง่ายๆ ว่างบเหลือเท่าไหร่</li>
+            <li><strong>สถานะโปรเจค</strong> — ดูว่าแต่ละโปรเจคอยู่ขั้นไหนแล้ว</li>
+          </ul>
+        </div>
+        <div class="tip-box">กดที่การ์ดหรือลิงก์ไหนก็ได้ จะพาไปหน้าที่เกี่ยวข้องเลย</div>
+      </div>
+    </div>
+
+    <!-- ═══ โปรเจค ═══ -->
+
+    <div class="guide-section" id="projects">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        โปรเจคทั้งหมด (All Projects) <span class="badge badge-main">โปรเจค</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>รวมโปรเจคทั้งหมดของบริษัทไว้ที่นี่ ดูได้ว่าแต่ละโปรเจคมีใครรับผิดชอบ สถานะเป็นยังไง</p>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะโปรเจค</h4>
+          <table class="guide-table">
+            <tr><th>สถานะ</th><th>ความหมาย</th></tr>
+            <tr><td>Planning</td><td>กำลังวางแผน ยังไม่ลงมือ</td></tr>
+            <tr><td>In Progress</td><td>เริ่มทำงานแล้ว</td></tr>
+            <tr><td>On Hold</td><td>พักไว้ก่อน</td></tr>
+            <tr><td>Completed</td><td>เสร็จแล้ว</td></tr>
+            <tr><td>Cancelled</td><td>ยกเลิกไป</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>กดที่การ์ดโปรเจคเพื่อเข้าไปดูรายละเอียด</li>
+            <li>ใช้ตัวกรองด้านบนเพื่อหาโปรเจคที่ต้องการ</li>
+            <li>กด <strong>+ New Project</strong> สร้างโปรเจคใหม่ได้ (เฉพาะ Admin กับ PM)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="taskboard">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        บอร์ดงาน (Taskboard) <span class="badge badge-main">โปรเจค</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>หน้าจัดการงานแบบบอร์ด ลากการ์ดงานย้ายไปมาระหว่างช่องได้เลย ใช้ง่าย เห็นภาพชัด</p>
+        </div>
+        <div class="guide-block">
+          <h4>คอลัมน์</h4>
+          <table class="guide-table">
+            <tr><th>คอลัมน์</th><th>คำอธิบาย</th></tr>
+            <tr><td>To Do</td><td>งานที่ยังไม่เริ่ม</td></tr>
+            <tr><td>In Progress</td><td>กำลังทำอยู่</td></tr>
+            <tr><td>Review</td><td>ทำเสร็จแล้ว รอตรวจสอบ</td></tr>
+            <tr><td>Done</td><td>เสร็จสิ้นและอนุมัติแล้ว</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>ลากการ์ดงานไปวางช่องอื่นได้เลย สถานะจะเปลี่ยนตาม</li>
+            <li>กดที่การ์ดงานเพื่อดูหรือแก้ไขรายละเอียด</li>
+            <li>กด <strong>+ Add Task</strong> ด้านบนช่องเพื่อเพิ่มงานใหม่</li>
+            <li>กรองดูเฉพาะโปรเจค คน หรือลำดับความสำคัญที่สนใจ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ เอกสาร ═══ -->
+
+    <div class="guide-section" id="budget">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        งบประมาณ (Budget) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ดูว่าแต่ละโปรเจคตั้งงบไว้เท่าไหร่ ใช้ไปเท่าไหร่แล้ว เหลือเท่าไหร่ แยกตามประเภทให้ดูง่าย</p>
+        </div>
+        <div class="guide-block">
+          <h4>โครงสร้างงบประมาณ</h4>
+          <ul>
+            <li><strong>รายการงบ (Budget Line)</strong> — รายการงบแต่ละตัว เช่น "อุปกรณ์ Radar ฿350,000"</li>
+            <li><strong>จัดสรร (Allocated)</strong> — งบที่วางแผนไว้</li>
+            <li><strong>ใช้ไป (Used)</strong> — ยอดที่ใช้จริง (จาก PR/PO/Expense)</li>
+            <li><strong>คงเหลือ (Remaining)</strong> — ยอดที่ยังเหลือใช้ได้</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>เลือกโปรเจคเพื่อดูงบประมาณ</li>
+            <li>คลิก <strong>+ เพิ่มรายการงบ</strong> เพื่อเพิ่มรายการใหม่</li>
+            <li>แก้ไขจำนวนเงินได้โดยคลิกที่ตัวเลข</li>
+            <li>ดูเปอร์เซ็นต์การใช้งบและคำเตือนเกินงบ</li>
+          </ul>
+        </div>
+        <div class="tip-box">พอ PR/PO ได้รับอนุมัติ งบจะถูกหักให้อัตโนมัติ ไม่ต้องมานั่งกรอกเอง</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="prpo">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ใบขอซื้อ / ใบสั่งซื้อ (PR / PO) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ใช้สร้างใบขอซื้อ (PR) แล้วต่อเป็นใบสั่งซื้อ (PO) ได้ ดูแบบบอร์ดหรือตารางก็ได้ตามสะดวก</p>
+        </div>
+        <div class="guide-block">
+          <h4>ขั้นตอนเอกสาร (Document Flow)</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">PR (ใบขอซื้อ)</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">PO (ใบสั่งซื้อ)</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">ส่งเข้า SAP</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">เลขเอกสาร SAP</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะเอกสาร</h4>
+          <table class="guide-table">
+            <tr><th>สถานะ</th><th>คำอธิบาย</th></tr>
+            <tr><td>Draft (ร่าง)</td><td>สร้างแล้ว ยังไม่ส่งอนุมัติ</td></tr>
+            <tr><td>Pending Approval (รออนุมัติ)</td><td>ส่งแล้ว รอผู้จัดการ/การเงินอนุมัติ</td></tr>
+            <tr><td>Approved (อนุมัติแล้ว)</td><td>อนุมัติแล้ว พร้อมส่งเข้า SAP</td></tr>
+            <tr><td>Sent to SAP (ส่งเข้า SAP)</td><td>ส่งข้อมูลเข้าระบบ SAP B1 แล้ว</td></tr>
+            <tr><td>Received (ได้รับ)</td><td>SAP ยืนยันแล้ว แสดงเลขเอกสารจริง</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>คลิก <strong>+ New PR</strong> หรือ <strong>+ New PO</strong> เพื่อสร้างเอกสาร</li>
+            <li>กรอก: โปรเจค, ผู้ขาย, รายการสินค้า (สินค้า, จำนวน, ราคา)</li>
+            <li>สลับมุมมองระหว่าง <strong>Kanban</strong> และ <strong>List</strong></li>
+            <li>คลิกเลขเอกสารเพื่อดูรายละเอียดและ Document Flow</li>
+            <li>สถานะเอกสารจะเปลี่ยนตามขั้นตอนอนุมัติ ไม่สามารถลากย้ายเองได้</li>
+          </ul>
+        </div>
+        <div class="info-box">พอ SAP รับเอกสารแล้ว จะได้เลขที่จริงจาก SAP กลับมาโชว์เป็น badge สีฟ้าในระบบ</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="advance">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        เงินทดรองจ่าย (Advance) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>พนักงานจะขอเบิกเงินล่วงหน้าไปใช้จ่าย พอใช้เสร็จก็มาเคลียร์กับใบเสร็จ ถ้าเงินเหลือก็คืน ถ้าไม่พอบริษัทจ่ายเพิ่มให้</p>
+        </div>
+        <div class="guide-block">
+          <h4>ขั้นตอนการทำงาน</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">ขอเบิก</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">อนุมัติ</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">จ่ายเงิน</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">เคลียร์</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">ปิด</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">พนักงานยืนยัน</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>รายละเอียดแต่ละขั้นตอน</h4>
+          <table class="guide-table">
+            <tr><th>ขั้นตอน</th><th>ผู้ดำเนินการ</th><th>สิ่งที่ต้องทำ</th></tr>
+            <tr><td>1. ขอเบิก</td><td>พนักงาน</td><td>กรอกว่าจะเบิกเท่าไหร่ ไปทำอะไร</td></tr>
+            <tr><td>2. อนุมัติ</td><td>หัวหน้า / การเงิน</td><td>เช็คแล้วกดอนุมัติ (เงินเยอะต้องผ่านหลายคน)</td></tr>
+            <tr><td>3. จ่ายเงิน</td><td>การเงิน</td><td>โอนเงินหรือจ่ายสดให้พนักงาน แนบสลิปด้วย</td></tr>
+            <tr><td>4. เคลียร์</td><td>พนักงาน</td><td>ใช้เงินเสร็จแล้วเอาใบเสร็จมาเคลียร์</td></tr>
+            <tr><td>5. ตรวจสอบ</td><td>การเงิน</td><td>เช็คใบเสร็จ กดอนุมัติ ถ้ามีส่วนต่างก็จัดการคืน/จ่ายเพิ่ม</td></tr>
+            <tr><td>6. ยืนยัน</td><td>พนักงาน</td><td>กดยืนยันว่าได้รับเงินเพิ่มแล้ว (เฉพาะกรณีบริษัทจ่ายเพิ่ม)</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>ระดับการอนุมัติ</h4>
+          <table class="guide-table">
+            <tr><th>จำนวนเงิน</th><th>ต้องได้รับอนุมัติจาก</th></tr>
+            <tr><td>ไม่เกิน 10,000 บาท</td><td>ผู้จัดการเท่านั้น</td></tr>
+            <tr><td>10,001 - 100,000 บาท</td><td>ผู้จัดการ + การเงิน</td></tr>
+            <tr><td>มากกว่า 100,000 บาท</td><td>ผู้จัดการ + การเงิน + ผู้บริหาร</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>บัญชี GL (สร้างอัตโนมัติ)</h4>
+          <div class="gl-example">
+            <strong>จ่ายเงิน:</strong><br>
+            <span class="dr">Dr. 113103 ลูกหนี้พนักงาน (เงินทดรอง)</span><br>
+            <span class="cr">Cr. 111201 บัญชีธนาคาร</span><br><br>
+            <strong>เคลียร์:</strong><br>
+            <span class="dr">Dr. 522xxx ค่าใช้จ่าย (ตามหมวด)</span><br>
+            <span class="cr">Cr. 113103 ลูกหนี้พนักงาน</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>ผลลัพธ์การเคลียร์</h4>
+          <table class="guide-table">
+            <tr><th>กรณี</th><th>ตัวอย่าง</th><th>การจัดการ</th></tr>
+            <tr><td>ตรงพอดี</td><td>เบิก 10,000 ใช้ 10,000</td><td>ปิดอัตโนมัติ</td></tr>
+            <tr><td>พนักงานคืนเงิน</td><td>เบิก 10,000 ใช้ 8,000</td><td>พนักงานคืน 2,000 บาท</td></tr>
+            <tr><td>บริษัทจ่ายเพิ่ม</td><td>เบิก 10,000 ใช้ 12,000</td><td>บริษัทจ่ายเพิ่ม 2,000 พนักงานกดยืนยันรับเงิน</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>ดูรายละเอียดในการ์ด</h4>
+          <ul>
+            <li>คลิกที่การ์ดเพื่อขยายดูขั้นตอนทั้งหมด</li>
+            <li>คลิก <strong>4. จ่ายเงิน &#9660;</strong> เพื่อดูรายละเอียดการจ่าย + GL</li>
+            <li>คลิก <strong>5. เคลียร์ &#9660;</strong> เพื่อดูรายการค่าใช้จ่าย + เงินคืน/จ่ายเพิ่ม</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="petty-cash">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        เงินสดย่อย (Petty Cash) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>เงินสดย่อยที่เก็บไว้ในออฟฟิศสำหรับจ่ายค่าเบ็ดเตล็ดต่างๆ เช่น ค่าแท็กซี่ ค่ากาแฟ ค่าพัสดุ ระบบจะคอยดูแลยอดเงิน บัญชี และเตือนเมื่อเงินใกล้หมด</p>
+        </div>
+        <div class="guide-block">
+          <h4>ขั้นตอนการทำงาน</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">สร้างกองทุน</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">เบิกจ่าย</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">ส่งใบเสร็จ</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">อนุมัติ</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">เติมเงิน</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">นับเงินปิดงวด</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>รายละเอียดแต่ละขั้นตอน</h4>
+          <table class="guide-table">
+            <tr><th>ขั้นตอน</th><th>ผู้ดำเนินการ</th><th>สิ่งที่ต้องทำ</th></tr>
+            <tr><td>1. สร้างกองทุน</td><td>Admin / การเงิน</td><td>ตั้งชื่อ กำหนดวงเงิน เลือกคนดูแล</td></tr>
+            <tr><td>2. เบิกจ่าย</td><td>คนดูแล</td><td>จ่ายเงินสดให้พนักงาน ลงบันทึกว่าจ่ายใคร เท่าไหร่ ซื้ออะไร</td></tr>
+            <tr><td>3. ส่งใบเสร็จ</td><td>พนักงาน</td><td>เอาใบเสร็จมาส่ง ใส่ยอดจริง ถ้ามีเงินทอนระบบคำนวณให้</td></tr>
+            <tr><td>4. อนุมัติใบเสร็จ</td><td>คนดูแล / การเงิน</td><td>เช็คใบเสร็จแล้วกดอนุมัติ ระบบลงบัญชีให้เอง</td></tr>
+            <tr><td>5. เติมเงิน</td><td>คนดูแล</td><td>เงินใกล้หมดก็กดขอเติม การเงินอนุมัติแล้วโอนเงินเข้ามา</td></tr>
+            <tr><td>6. นับเงินปิดงวด</td><td>คนดูแล</td><td>นับเงินสดในกล่อง ใส่ยอดจริง ระบบเทียบให้ว่าตรงไหม</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>หมวดค่าใช้จ่าย</h4>
+          <table class="guide-table">
+            <tr><th>หมวด</th><th>บัญชี GL</th><th>ตัวอย่าง</th></tr>
+            <tr><td>ค่าเดินทาง (Travel)</td><td>522601</td><td>แท็กซี่, วินมอเตอร์ไซค์</td></tr>
+            <tr><td>ค่าอาหาร (Food)</td><td>522603</td><td>อาหารเลี้ยงประชุม, ของว่าง</td></tr>
+            <tr><td>อุปกรณ์สำนักงาน (Office)</td><td>522501</td><td>กระดาษ, หมึกพิมพ์, ปากกา</td></tr>
+            <tr><td>ค่าจัดส่ง (Delivery)</td><td>522701</td><td>ไปรษณีย์, Kerry</td></tr>
+            <tr><td>ซ่อมบำรุง (Maintenance)</td><td>523101</td><td>ซ่อมอุปกรณ์เล็กน้อย</td></tr>
+            <tr><td>เบ็ดเตล็ด (Misc)</td><td>522709</td><td>อื่นๆ</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>บัญชี GL (สร้างอัตโนมัติ)</h4>
+          <div class="gl-example">
+            <strong>เบิกจ่าย (เมื่ออนุมัติ):</strong><br>
+            <span class="dr">Dr. 522xxx ค่าใช้จ่าย (ตามหมวด)</span><br>
+            <span class="cr">Cr. 111101 เงินสดย่อย</span><br><br>
+            <strong>เติมเงิน:</strong><br>
+            <span class="dr">Dr. 111101 เงินสดย่อย</span><br>
+            <span class="cr">Cr. 111201 บัญชีธนาคาร</span><br><br>
+            <strong>นับเงิน (ขาด):</strong><br>
+            <span class="dr">Dr. 522709 เงินสดขาดบัญชี</span><br>
+            <span class="cr">Cr. 111101 เงินสดย่อย</span><br><br>
+            <strong>นับเงิน (เกิน):</strong><br>
+            <span class="dr">Dr. 111101 เงินสดย่อย</span><br>
+            <span class="cr">Cr. 411901 เงินสดเกินบัญชี</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>การ์ดสรุปด้านบน</h4>
+          <table class="guide-table">
+            <tr><th>การ์ด</th><th>คำอธิบาย</th></tr>
+            <tr><td>วงเงินรวม (Total Fund Limit)</td><td>ยอดรวมวงเงินทุกกองทุน</td></tr>
+            <tr><td>ยอดคงเหลือ (Current Balance)</td><td>เงินสดคงเหลือทั้งหมด</td></tr>
+            <tr><td>ใช้ไป (Used)</td><td>ยอดที่เบิกจ่ายไปแล้ว</td></tr>
+            <tr><td>ยอดต่ำ (Low Balance)</td><td>จำนวนกองทุนที่เหลือต่ำกว่าเกณฑ์ (ค่าเริ่มต้น 20%)</td></tr>
+          </table>
+        </div>
+        <div class="tip-box">พอเงินเหลือน้อยกว่าเกณฑ์ที่ตั้งไว้ กองทุนจะย้ายไปอยู่ในแท็บ "Low Balance" เตือนว่าต้องเติมแล้ว</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="expense">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ค่าใช้จ่าย (Expense) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ลงค่าใช้จ่ายที่เกิดขึ้นในโปรเจค แนบใบเสร็จ ส่งขออนุมัติ พอผ่านแล้วจะไปหักงบโปรเจคให้เอง</p>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>คลิก <strong>+ New Expense</strong> เพื่อสร้างรายการ</li>
+            <li>กรอก: โปรเจค, รายละเอียด, จำนวนเงิน, หมวดหมู่, ภาษี</li>
+            <li>แนบรูปใบเสร็จ (ถ้ามี)</li>
+            <li>ส่งเพื่อขออนุมัติ</li>
+            <li>ค่าใช้จ่ายที่อนุมัติแล้วจะหักจากงบโปรเจคอัตโนมัติ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ทรัพยากร ═══ -->
+
+    <div class="guide-section" id="vehicle">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ยานพาหนะ (Vehicle) <span class="badge badge-res">ทรัพยากร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ดูรถทั้งหมดของบริษัท ว่างหรือไม่ ใครใช้อยู่ เอาไปจองให้โปรเจคได้</p>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะยานพาหนะ</h4>
+          <table class="guide-table">
+            <tr><th>สถานะ</th><th>ความหมาย</th></tr>
+            <tr><td>Available (พร้อมใช้)</td><td>ว่างอยู่ สามารถจองได้</td></tr>
+            <tr><td>In Use (กำลังใช้งาน)</td><td>ถูกมอบหมายให้ทริป/โปรเจคแล้ว</td></tr>
+            <tr><td>Maintenance (ซ่อมบำรุง)</td><td>อยู่ระหว่างซ่อมหรือเข้าศูนย์</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>ดูรายการยานพาหนะทั้งหมดและสถานะปัจจุบัน</li>
+            <li>คลิกที่ยานพาหนะเพื่อดูรายละเอียดและประวัติการใช้งาน</li>
+            <li>มอบหมายยานพาหนะให้โปรเจคหรือทริปเดินทาง</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="travel">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ขอเดินทาง (Travel Request) <span class="badge badge-res">ทรัพยากร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ใช้ขอเดินทางไปทำงานนอกสถานที่ จะจองรถหรือขอเบิกเงินทดรองไปด้วยก็ได้</p>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>คลิก <strong>+ New Travel</strong> เพื่อสร้างคำขอ</li>
+            <li>กรอก: จุดหมาย, วันที่, ทีมงาน, ยานพาหนะ, วัตถุประสงค์</li>
+            <li>ส่งเพื่อขออนุมัติ</li>
+            <li>เชื่อมกับเงินทดรองจ่ายถ้าต้องการเบิกเงินสด</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="ot">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ล่วงเวลา / วันหยุด (Holiday / OT) <span class="badge badge-res">ทรัพยากร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ลงขอทำ OT หรือทำงานวันหยุด ระบุวันเวลาและเหตุผล ส่งให้หัวหน้าอนุมัติ</p>
+        </div>
+        <div class="guide-block">
+          <h4>อัตราค่าล่วงเวลา</h4>
+          <table class="guide-table">
+            <tr><th>ประเภท</th><th>อัตรา</th></tr>
+            <tr><td>OT วันทำงานปกติ</td><td>1.5 เท่า</td></tr>
+            <tr><td>OT วันหยุด</td><td>2 - 3 เท่า</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>สร้างคำขอ OT โดยระบุวันที่ ชั่วโมง โปรเจค และเหตุผล</li>
+            <li>ส่งให้ผู้จัดการอนุมัติ</li>
+            <li>ดูสรุป OT รายเดือนของแต่ละพนักงาน</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ระบบ ═══ -->
+
+    <div class="guide-section" id="item-master">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        รายการสินค้า (Item Master) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>รายการสินค้าและบริการที่บริษัทใช้บ่อย ตั้งไว้แล้วตอนสร้าง PR/PO จะเลือกได้เลย ไม่ต้องพิมพ์ใหม่ทุกครั้ง</p>
+        </div>
+        <div class="guide-block">
+          <h4>ข้อมูลที่สำคัญ</h4>
+          <table class="guide-table">
+            <tr><th>ฟิลด์</th><th>คำอธิบาย</th></tr>
+            <tr><td>รหัสสินค้า (Item Code)</td><td>รหัสเฉพาะ เช่น MAT-001</td></tr>
+            <tr><td>ชื่อสินค้า (Item Name)</td><td>คำอธิบายภาษาอังกฤษ</td></tr>
+            <tr><td>หมวดหมู่ (Category)</td><td>อุปกรณ์, วัสดุ, บริการ ฯลฯ</td></tr>
+            <tr><td>หน่วยนับ (UoM)</td><td>EA (ชิ้น), M (เมตร), JOB (งาน), YR (ปี)</td></tr>
+            <tr><td>ราคาต่อหน่วย (Unit Price)</td><td>ราคาเริ่มต้น</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="bp-master">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        คู่ค้า (Business Partner) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>รายชื่อผู้ขายและลูกค้าที่บริษัททำงานด้วย ตั้งไว้แล้วใช้เลือกตอนสร้าง PR/PO ได้เลย</p>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>ดูรายการคู่ค้าทั้งหมด</li>
+            <li>ค้นหาตามชื่อ รหัส หรือเลขประจำตัวผู้เสียภาษี</li>
+            <li>เพิ่มผู้ขาย/ลูกค้าใหม่พร้อมข้อมูลติดต่อ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="user-permission">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ผู้ใช้งาน & สิทธิ์ (User & Permission) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ดูรายชื่อคนที่ใช้ระบบ กำหนดว่าใครมีสิทธิ์ทำอะไรได้บ้าง อยู่โปรเจคไหน</p>
+        </div>
+        <div class="guide-block" id="roles">
+          <h4>บทบาทผู้ใช้งาน</h4>
+          <table class="guide-table">
+            <tr><th>บทบาท</th><th>สิทธิ์การเข้าถึง</th></tr>
+            <tr><td><strong>Executive (ผู้บริหาร)</strong></td><td>เห็นทุกอย่าง อนุมัติได้ทุกระดับ</td></tr>
+            <tr><td><strong>Admin (แอดมิน)</strong></td><td>ทำได้ทุกอย่าง จัดการคนและตั้งค่าระบบ</td></tr>
+            <tr><td><strong>PM (ผู้จัดการโปรเจค)</strong></td><td>ดูแลโปรเจคที่รับผิดชอบ อนุมัติงานของลูกทีม</td></tr>
+            <tr><td><strong>Finance (การเงิน)</strong></td><td>จ่ายเงิน อนุมัติเบิกจ่าย ดูแลงบ</td></tr>
+            <tr><td><strong>Accounting (บัญชี)</strong></td><td>ดูรายการบัญชี GL จัดการค่าใช้จ่าย</td></tr>
+            <tr><td><strong>Procurement (จัดซื้อ)</strong></td><td>สร้าง PR/PO ดูแลเรื่องผู้ขายและสินค้า</td></tr>
+            <tr><td><strong>Staff (พนักงานทั่วไป)</strong></td><td>ดูโปรเจคตัวเอง ส่งคำขอต่างๆ ได้</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>ดูรายชื่อผู้ใช้งานและบทบาท</li>
+            <li>คลิกที่ผู้ใช้เพื่อแก้ไขบทบาท โปรเจค และสถานะ</li>
+            <li>มอบหมายผู้ใช้ให้กับโปรเจคเฉพาะ</li>
+            <li><strong>สมัครสมาชิก</strong> — ผู้ใช้ใหม่สามารถสมัครได้ที่หน้า /register.html</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="setup">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ตั้งค่าระบบ (Setup & Configuration) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>เลขที่เอกสารอัตโนมัติ (Number Running)</h4>
+          <p>เลขที่เอกสารรันอัตโนมัติตามรูปแบบนี้:</p>
+          <table class="guide-table">
+            <tr><th>Prefix</th><th>เอกสาร</th><th>ตัวอย่าง</th></tr>
+            <tr><td>PR</td><td>ใบขอซื้อ</td><td>PR26050001</td></tr>
+            <tr><td>PO</td><td>ใบสั่งซื้อ</td><td>PO26050001</td></tr>
+            <tr><td>ADV</td><td>เงินทดรองจ่าย</td><td>ADV26050001</td></tr>
+            <tr><td>CLR</td><td>เคลียร์เงินทดรอง</td><td>CLR26050001</td></tr>
+            <tr><td>PCF</td><td>กองทุนเงินสดย่อย</td><td>PCF26050001</td></tr>
+            <tr><td>PCD</td><td>เบิกจ่ายเงินสดย่อย</td><td>PCD26050001</td></tr>
+            <tr><td>PCR</td><td>เติมเงินสดย่อย</td><td>PCR26050001</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>บัญชีธนาคาร</h4>
+          <p>บัญชีธนาคารบริษัทที่ใช้โอนจ่ายเงิน เลือกได้ตอนจ่ายเงินทดรอง เติมเงินสดย่อย ฯลฯ</p>
+        </div>
+        <div class="guide-block">
+          <h4>การเชื่อมต่อ SAP</h4>
+          <p>เอกสารที่สร้างในระบบนี้สามารถส่งเข้า SAP B1 ได้ พอ SAP รับแล้วจะส่งเลขที่จริงกลับมาโชว์ให้ดู</p>
+          <table class="guide-table">
+            <tr><th>เอกสาร</th><th>SAP Object</th></tr>
+            <tr><td>ใบขอซื้อ (PR)</td><td>OPRQ</td></tr>
+            <tr><td>ใบสั่งซื้อ (PO)</td><td>OPOR</td></tr>
+            <tr><td>รับสินค้า (GRPO)</td><td>OPDN</td></tr>
+            <tr><td>ใบแจ้งหนี้ (AP Invoice)</td><td>OPCH</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    function toggleGuide(header) {
+      const body = header.nextElementSibling;
+      const isOpen = body.classList.contains('show');
+      document.querySelectorAll('.guide-section-body.show').forEach(b => b.classList.remove('show'));
+      document.querySelectorAll('.guide-section-header.open').forEach(h => h.classList.remove('open'));
+      if (!isOpen) {
+        body.classList.add('show');
+        header.classList.add('open');
+      }
+    }
+    if (window.location.hash) {
+      const el = document.querySelector(window.location.hash + ' .guide-section-header');
+      if (el) setTimeout(() => { el.click(); el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 300);
+    }
+  </script>
+</body>
+</html>

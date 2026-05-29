@@ -56,6 +56,7 @@ app.use('/api/po',            require('./routes/po'));
 app.use('/api/grpo',          require('./routes/grpo'));
 app.use('/api/expense',       require('./routes/expense'));
 app.use('/api/advance',       require('./routes/advance'));
+app.use('/api/petty-cash',    require('./routes/pettyCash'));
 app.use('/api/vehicle',       require('./routes/vehicle'));
 app.use('/api/travel',        require('./routes/travel'));
 app.use('/api/ot',            require('./routes/ot'));

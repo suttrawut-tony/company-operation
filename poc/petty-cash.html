@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Petty Cash</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .main-tabs { display:flex; gap:0; margin-bottom:20px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .main-tab { flex:1; padding:14px 20px; text-align:center; font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary); border-right:1px solid var(--border); transition:all 0.15s; }
+    .main-tab:last-child { border-right:none; }
+    .main-tab:hover { background:var(--bg-hover); }
+    .main-tab.active { background:var(--primary-light); color:var(--primary); font-weight:600; }
+    .main-tab .tab-count { font-size:10px; background:var(--bg-hover); padding:1px 6px; border-radius:10px; margin-left:4px; }
+
+    .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+    .stat-box { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; }
+    .s-val { font-size:20px; font-weight:800; }
+    .s-lbl { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+    .s-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
+
+    .fund-card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:12px; overflow:hidden; }
+    .fund-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; cursor:pointer; }
+    .fund-card-header:hover { background:var(--bg-hover); }
+    .fund-info h4 { font-size:14px; font-weight:700; margin-bottom:4px; }
+    .fund-info .meta { font-size:11px; color:var(--text-secondary); display:flex; gap:12px; }
+    .fund-balance { text-align:right; }
+    .fund-balance .amount { font-size:18px; font-weight:800; }
+    .fund-balance .limit { font-size:10px; color:var(--text-muted); }
+    .balance-bar { width:120px; height:6px; background:var(--bg-hover); border-radius:3px; margin-top:6px; }
+    .balance-fill { height:100%; border-radius:3px; transition:width 0.3s; }
+    .fund-expand { display:none; padding:0 20px 16px; border-top:1px solid var(--border-light); }
+    .fund-expand.show { display:block; }
+
+    .pc-item { display:grid; grid-template-columns:4px 1fr auto auto; gap:12px; align-items:center; padding:12px 16px; background:var(--bg-light); border-radius:var(--radius); margin-bottom:8px; }
+    .pc-item .info h5 { font-size:12px; font-weight:600; margin-bottom:2px; }
+    .pc-item .info .sub { font-size:10px; color:var(--text-muted); }
+    .pc-item .amount { font-size:14px; font-weight:700; }
+    .pc-item .dot { width:4px; height:100%; min-height:24px; border-radius:2px; }
+
+    .filter-bar { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal-box { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:520px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .modal-header { padding:20px 24px 0; display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h3 { font-size:16px; font-weight:700; }
+    .modal-close { border:none; background:none; font-size:20px; cursor:pointer; color:var(--text-muted); }
+    .modal-body { padding:20px 24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border-light); display:flex; justify-content:flex-end; gap:8px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    .section-title { font-size:13px; font-weight:700; margin:16px 0 8px; }
+    .count-box { padding:16px; background:var(--bg-light); border-radius:var(--radius-lg); margin-top:12px; }
+    .count-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
+    .count-row.total { font-weight:700; border-top:2px solid var(--border); margin-top:4px; padding-top:8px; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1>Petty Cash</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="openNewFundModal()">+ New Fund</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid" id="pc-stats"></div>
+
+    <!-- Tabs -->
+    <div class="main-tabs" id="pc-tabs"></div>
+
+    <!-- Filter -->
+    <div class="filter-bar">
+      <select class="form-select" id="filter-fund" onchange="renderFunds()" style="width:200px;">
+        <option value="">All Funds</option>
+      </select>
+    </div>
+
+    <!-- Fund List -->
+    <div id="fund-list">Loading...</div>
+  </main>
+  </div>
+
+  <!-- ═══ New Fund Modal ═══ -->
+  <div class="modal-overlay" id="fund-modal" onclick="if(event.target===this)closeFundModal()">
+    <div class="modal-box">
+      <div class="modal-header"><h3>Create Petty Cash Fund</h3><button class="modal-close" onclick="closeFundModal()">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Fund Name</label><input type="text" class="form-input" id="f-name" placeholder="e.g. Office Petty Cash"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Fund Limit (฿)</label><input type="number" class="form-input" id="f-limit" value="5000" min="0"></div>
+          <div class="form-group"><label class="form-label">Low Threshold (%)</label><input type="number" class="form-input" id="f-threshold" value="20" min="0" max="100"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Custodian</label><select class="form-input" id="f-custodian"><option value="">Select</option></select></div>
+          <div class="form-group"><label class="form-label">Project</label><select class="form-input" id="f-project"><option value="">None</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">GL Account</label><input type="text" class="form-input" id="f-gl" value="111101" placeholder="111101"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeFundModal()">Cancel</button><button class="btn btn-primary" onclick="saveFund()">Create Fund</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ Disbursement Modal ═══ -->
+  <div class="modal-overlay" id="disb-modal" onclick="if(event.target===this)closeDisbModal()">
+    <div class="modal-box">
+      <div class="modal-header"><h3>New Disbursement</h3><button class="modal-close" onclick="closeDisbModal()">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="d-fund-id">
+        <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
+          Fund: <strong id="d-fund-name">-</strong> | Balance: <strong id="d-fund-bal" style="color:var(--primary);">฿0</strong>
+        </div>
+        <div class="form-group"><label class="form-label">Recipient</label><input type="text" class="form-input" id="d-recipient" placeholder="Name of person receiving cash"></div>
+        <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="d-desc" placeholder="Purpose of disbursement"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Amount (฿)</label><input type="number" class="form-input" id="d-amount" min="0"></div>
+          <div class="form-group"><label class="form-label">Category</label>
+            <select class="form-input" id="d-category">
+              <option value="travel">Travel</option>
+              <option value="food">Food</option>
+              <option value="office">Office Supplies</option>
+              <option value="delivery">Delivery</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="misc" selected>Misc</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="d-remarks"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeDisbModal()">Cancel</button><button class="btn btn-primary" onclick="saveDisb()">Disburse</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ Submit Receipt Modal ═══ -->
+  <div class="modal-overlay" id="receipt-modal" onclick="if(event.target===this)closeReceiptModal()">
+    <div class="modal-box">
+      <div class="modal-header"><h3>Submit Receipt</h3><button class="modal-close" onclick="closeReceiptModal()">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="r-disb-id">
+        <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
+          Disbursed: <strong id="r-disb-amount" style="color:var(--primary);">฿0</strong> | <span id="r-disb-desc">-</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Actual Amount (฿)</label><input type="number" class="form-input" id="r-amount" min="0" onchange="updateChange()"></div>
+          <div class="form-group"><label class="form-label">Category</label>
+            <select class="form-input" id="r-category">
+              <option value="travel">Travel</option>
+              <option value="food">Food</option>
+              <option value="office">Office Supplies</option>
+              <option value="delivery">Delivery</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="misc">Misc</option>
+            </select>
+          </div>
+        </div>
+        <div id="r-change" style="display:none;padding:8px 12px;background:var(--success-bg);border-radius:var(--radius);font-size:12px;font-weight:600;color:var(--success);margin-bottom:12px;"></div>
+        <div class="form-group">
+          <label class="form-label">Receipt Image</label>
+          <input type="file" class="form-input" id="r-file" accept="image/*,.pdf" style="padding:6px;">
+          <div id="r-preview" style="margin-top:6px;"></div>
+        </div>
+        <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;margin-top:12px;">
+          <div style="font-weight:600;margin-bottom:4px;">GL Journal Entry (auto)</div>
+          <div style="color:var(--primary);" id="r-gl-dr">Dr. 522709 Expense</div>
+          <div style="color:var(--success);">Cr. 111101 Petty Cash</div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeReceiptModal()">Cancel</button><button class="btn btn-primary" onclick="submitReceipt()">Submit Receipt</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ Replenish Modal ═══ -->
+  <div class="modal-overlay" id="repl-modal" onclick="if(event.target===this)closeReplModal()">
+    <div class="modal-box">
+      <div class="modal-header"><h3>Request Replenishment</h3><button class="modal-close" onclick="closeReplModal()">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="rp-fund-id">
+        <div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;">
+          <div class="count-row"><span>Fund Limit</span><strong id="rp-limit">฿0</strong></div>
+          <div class="count-row"><span>Current Balance</span><strong id="rp-balance" style="color:var(--primary);">฿0</strong></div>
+          <div class="count-row total"><span>Suggested Replenish</span><strong id="rp-suggest" style="color:var(--warning);">฿0</strong></div>
+        </div>
+        <div class="form-group"><label class="form-label">Amount (฿)</label><input type="number" class="form-input" id="rp-amount" min="0"></div>
+        <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="rp-remarks"></div>
+        <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;margin-top:12px;">
+          <div style="font-weight:600;margin-bottom:4px;">GL Journal Entry (auto)</div>
+          <div style="color:var(--primary);">Dr. 111101 Petty Cash</div>
+          <div style="color:var(--success);">Cr. 111201 Bank Account</div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeReplModal()">Cancel</button><button class="btn btn-primary" onclick="saveRepl()">Submit Request</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ Cash Count Modal ═══ -->
+  <div class="modal-overlay" id="count-modal" onclick="if(event.target===this)closeCountModal()">
+    <div class="modal-box">
+      <div class="modal-header"><h3>Cash Count</h3><button class="modal-close" onclick="closeCountModal()">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="cc-fund-id">
+        <div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;">
+          <div class="count-row"><span>System Balance</span><strong id="cc-system">฿0</strong></div>
+        </div>
+        <div class="form-group"><label class="form-label">Actual Cash Counted (฿)</label><input type="number" class="form-input" id="cc-actual" min="0" onchange="updateCountDiff()"></div>
+        <div id="cc-diff" style="display:none;padding:10px;border-radius:var(--radius);font-size:13px;font-weight:600;margin-bottom:12px;"></div>
+        <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="cc-remarks"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeCountModal()">Cancel</button><button class="btn btn-primary" onclick="saveCashCount()">Record Count</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ Approve Replenish Modal ═══ -->
+  <div class="modal-overlay" id="approve-repl-modal" onclick="if(event.target===this)closeApproveReplModal()">
+    <div class="modal-box" style="width:440px;">
+      <div class="modal-header"><h3>Approve Replenishment</h3><button class="modal-close" onclick="closeApproveReplModal()">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ar-id">
+        <div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;text-align:center;">
+          <div style="font-size:10px;color:var(--text-muted);">Amount</div>
+          <div style="font-size:22px;font-weight:800;color:var(--primary);" id="ar-amount">฿0</div>
+        </div>
+        <div class="form-group"><label class="form-label">Bank Account</label><select class="form-input" id="ar-bank"><option value="">Select bank</option></select></div>
+        <div class="form-group"><label class="form-label">Reference</label><input type="text" class="form-input" id="ar-ref" placeholder="Transfer ref"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeApproveReplModal()">Cancel</button><button class="btn btn-primary" onclick="approveRepl()">Approve & Transfer</button></div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allFunds = [];
+    let allUsers = [];
+    let allProjects = [];
+    let bankAccounts = [];
+    let activeTab = 'all';
+    const userRole = (API.getUser()||{}).role || 'viewer';
+
+    const catLabels = { travel:'Travel', food:'Food', office:'Office Supplies', delivery:'Delivery', maintenance:'Maintenance', accommodation:'Accommodation', transport:'Transport', material:'Material', misc:'Misc' };
+    const catAccounts = { travel:'522601', food:'522603', accommodation:'522602', transport:'522701', material:'511120', office:'522501', delivery:'522701', maintenance:'523101', misc:'522709' };
+
+    async function loadData() {
+      try {
+        [allFunds, allUsers, allProjects] = await Promise.all([
+          API.get('/petty-cash/funds'),
+          API.get('/auth/users').catch(() => []),
+          API.getProjects().catch(() => [])
+        ]);
+        renderStats();
+        renderTabs();
+        renderFunds();
+        populateSelects();
+      } catch(e) { document.getElementById('fund-list').innerHTML = '<div style="color:var(--danger);padding:20px;">Error: '+e.message+'</div>'; }
+    }
+
+    function populateSelects() {
+      const custSel = document.getElementById('f-custodian');
+      custSel.innerHTML = '<option value="">Select</option>' + allUsers.map(u => `<option value="${u.id}">${u.first_name} ${u.last_name}</option>`).join('');
+      const projSel = document.getElementById('f-project');
+      projSel.innerHTML = '<option value="">None</option>' + allProjects.map(p => `<option value="${p.id}">${p.code} — ${p.name}</option>`).join('');
+      const filterFund = document.getElementById('filter-fund');
+      filterFund.innerHTML = '<option value="">All Funds</option>' + allFunds.map(f => `<option value="${f.id}">${f.fund_code} — ${f.fund_name}</option>`).join('');
+    }
+
+    function renderStats() {
+      const totalLimit = allFunds.reduce((s,f) => s + parseFloat(f.fund_limit||0), 0);
+      const totalBal = allFunds.reduce((s,f) => s + parseFloat(f.current_balance||0), 0);
+      const totalUsed = totalLimit - totalBal;
+      const lowCount = allFunds.filter(f => (parseFloat(f.current_balance)/parseFloat(f.fund_limit))*100 <= parseFloat(f.low_threshold)).length;
+      document.getElementById('pc-stats').innerHTML = `
+        <div class="stat-box"><div class="s-lbl">Total Fund Limit</div><div class="s-val">${fmtMoney(totalLimit)}</div><div class="s-sub">${allFunds.length} funds</div></div>
+        <div class="stat-box"><div class="s-lbl">Current Balance</div><div class="s-val" style="color:var(--primary);">${fmtMoney(totalBal)}</div><div class="s-sub">${totalLimit>0?Math.round(totalBal/totalLimit*100):0}% remaining</div></div>
+        <div class="stat-box"><div class="s-lbl">Used</div><div class="s-val" style="color:var(--warning);">${fmtMoney(totalUsed)}</div></div>
+        <div class="stat-box"><div class="s-lbl">Low Balance</div><div class="s-val" style="color:${lowCount>0?'var(--danger)':'var(--success)'};">${lowCount}</div><div class="s-sub">${lowCount>0?'Needs replenishment':'All funds OK'}</div></div>`;
+    }
+
+    function renderTabs() {
+      const tabs = [
+        { key:'all', label:'All Funds', count:allFunds.length },
+        { key:'active', label:'Active', count:allFunds.filter(f=>f.status==='active').length },
+        { key:'low', label:'Low Balance', count:allFunds.filter(f=>(parseFloat(f.current_balance)/parseFloat(f.fund_limit))*100<=parseFloat(f.low_threshold)).length },
+      ];
+      document.getElementById('pc-tabs').innerHTML = tabs.map(t =>
+        `<div class="main-tab ${activeTab===t.key?'active':''}" onclick="activeTab='${t.key}';renderTabs();renderFunds();">${t.label} <span class="tab-count">${t.count}</span></div>`
+      ).join('');
+    }
+
+    function getFilteredFunds() {
+      let list = [...allFunds];
+      const ff = document.getElementById('filter-fund')?.value;
+      if (ff) list = list.filter(f => f.id === ff);
+      if (activeTab === 'active') list = list.filter(f => f.status === 'active');
+      if (activeTab === 'low') list = list.filter(f => (parseFloat(f.current_balance)/parseFloat(f.fund_limit))*100 <= parseFloat(f.low_threshold));
+      return list;
+    }
+
+    function renderFunds() {
+      const funds = getFilteredFunds();
+      if (!funds.length) { document.getElementById('fund-list').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No funds</div>'; return; }
+
+      document.getElementById('fund-list').innerHTML = funds.map(f => {
+        const bal = parseFloat(f.current_balance||0);
+        const limit = parseFloat(f.fund_limit||0);
+        const pct = limit > 0 ? Math.round(bal/limit*100) : 0;
+        const isLow = pct <= parseFloat(f.low_threshold);
+        const barColor = isLow ? 'var(--danger)' : pct < 50 ? 'var(--warning)' : 'var(--success)';
+        return `
+        <div class="fund-card">
+          <div class="fund-card-header" onclick="toggleFund('${f.id}')">
+            <div class="fund-info">
+              <h4>${f.fund_code} — ${f.fund_name}</h4>
+              <div class="meta">
+                ${f.custodian_name ? '<span>Custodian: '+f.custodian_name+'</span>' : ''}
+                ${f.project_code ? '<span style="color:var(--primary);">'+f.project_code+'</span>' : ''}
+                <span>${statusBadge(f.status)}</span>
+              </div>
+            </div>
+            <div class="fund-balance">
+              <div class="amount" style="color:${isLow?'var(--danger)':'var(--text-primary)'};">฿${fmtNum(bal)}</div>
+              <div class="limit">of ฿${fmtNum(limit)} (${pct}%)</div>
+              <div class="balance-bar"><div class="balance-fill" style="width:${pct}%;background:${barColor};"></div></div>
+            </div>
+          </div>
+          <div class="fund-expand" id="expand-${f.id}">
+            <div style="display:flex;gap:8px;margin:12px 0;">
+              <button class="btn btn-primary btn-sm" onclick="openDisbModal('${f.id}','${f.fund_name}',${bal})">+ Disburse</button>
+              <button class="btn btn-secondary btn-sm" onclick="openReplModal('${f.id}',${limit},${bal})">Replenish</button>
+              <button class="btn btn-secondary btn-sm" onclick="openCountModal('${f.id}',${bal})">Cash Count</button>
+            </div>
+            <div id="detail-${f.id}"><div style="color:var(--text-muted);font-size:12px;">Loading...</div></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function toggleFund(id) {
+      const el = document.getElementById('expand-' + id);
+      if (!el) return;
+      const isOpen = el.classList.contains('show');
+      document.querySelectorAll('.fund-expand.show').forEach(e => e.classList.remove('show'));
+      if (isOpen) return;
+      el.classList.add('show');
+      await loadFundDetail(id);
+    }
+
+    async function loadFundDetail(id) {
+      const detailEl = document.getElementById('detail-' + id);
+      try {
+        const data = await API.get('/petty-cash/funds/' + id);
+        let html = '';
+
+        // Disbursements
+        html += '<div class="section-title">Recent Disbursements</div>';
+        if (data.disbursements && data.disbursements.length) {
+          data.disbursements.forEach(d => {
+            const dotColor = d.status === 'approved' ? 'var(--success)' : d.receipt_status === 'submitted' ? 'var(--warning)' : 'var(--text-muted)';
+            const receiptLabel = d.receipt_status === 'approved' ? '<span style="color:var(--success);font-size:10px;">&#10003; Receipt approved</span>'
+              : d.receipt_status === 'submitted' ? '<span style="color:var(--warning);font-size:10px;">Receipt pending</span>'
+              : '<a href="#" onclick="event.preventDefault();openReceiptModal(\''+d.id+'\','+parseFloat(d.amount)+',\''+d.description+'\',\''+d.category+'\')" style="font-size:10px;">Submit Receipt</a>';
+            const approveBtn = d.receipt_status === 'submitted' && ['finance','executive'].includes(userRole)
+              ? ' <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.preventDefault();approveDisb(\''+d.id+'\')">Approve</button>'
+              : '';
+            html += `<div class="pc-item">
+              <div class="dot" style="background:${dotColor};"></div>
+              <div class="info">
+                <h5>${d.doc_number} — ${d.description}</h5>
+                <div class="sub">${d.recipient||''} | ${fmtDateShort(d.doc_date)} | <span style="padding:1px 6px;border-radius:10px;background:var(--bg-hover);font-size:9px;">${catLabels[d.category]||d.category}</span> ${receiptLabel}${approveBtn}</div>
+              </div>
+              <div class="amount" style="color:var(--danger);">-฿${fmtNum(parseFloat(d.amount))}</div>
+              <div>${d.change_amount > 0 ? '<span style="font-size:10px;color:var(--success);">Change: ฿'+fmtNum(parseFloat(d.change_amount))+'</span>' : ''}</div>
+            </div>`;
+          });
+        } else { html += '<div style="color:var(--text-muted);font-size:12px;padding:8px;">No disbursements yet</div>'; }
+
+        // Replenishments
+        html += '<div class="section-title">Replenishments</div>';
+        if (data.replenishments && data.replenishments.length) {
+          data.replenishments.forEach(r => {
+            const stColor = r.status === 'transferred' ? 'var(--success)' : 'var(--warning)';
+            const approveBtn = r.status === 'requested' && ['finance','executive'].includes(userRole)
+              ? ' <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.preventDefault();openApproveReplModal(\''+r.id+'\','+parseFloat(r.amount)+')">Approve & Transfer</button>'
+              : '';
+            html += `<div class="pc-item">
+              <div class="dot" style="background:${stColor};"></div>
+              <div class="info">
+                <h5>${r.doc_number}</h5>
+                <div class="sub">${fmtDateShort(r.doc_date)} | ${statusBadge(r.status)}${approveBtn}</div>
+              </div>
+              <div class="amount" style="color:var(--success);">+฿${fmtNum(parseFloat(r.amount))}</div>
+              <div></div>
+            </div>`;
+          });
+        } else { html += '<div style="color:var(--text-muted);font-size:12px;padding:8px;">No replenishments yet</div>'; }
+
+        // Cash Counts
+        if (data.counts && data.counts.length) {
+          html += '<div class="section-title">Cash Counts</div>';
+          data.counts.forEach(c => {
+            const diff = parseFloat(c.difference);
+            const diffLabel = diff === 0 ? '<span style="color:var(--success);">Match &#10003;</span>'
+              : diff > 0 ? '<span style="color:var(--info);">Overage +฿'+fmtNum(diff)+'</span>'
+              : '<span style="color:var(--danger);">Shortage ฿'+fmtNum(diff)+'</span>';
+            html += `<div class="pc-item">
+              <div class="dot" style="background:${diff===0?'var(--success)':'var(--danger)'};"></div>
+              <div class="info">
+                <h5>Count: ${fmtDateShort(c.count_date)}</h5>
+                <div class="sub">System: ฿${fmtNum(parseFloat(c.system_balance))} | Actual: ฿${fmtNum(parseFloat(c.actual_balance))} | ${diffLabel}</div>
+              </div>
+              <div></div><div></div>
+            </div>`;
+          });
+        }
+
+        detailEl.innerHTML = html;
+      } catch(e) { detailEl.innerHTML = '<div style="color:var(--danger);">Error: '+e.message+'</div>'; }
+    }
+
+    // ═══ Fund Modal ═══
+    function openNewFundModal() { document.getElementById('fund-modal').classList.add('show'); }
+    function closeFundModal() { document.getElementById('fund-modal').classList.remove('show'); }
+    async function saveFund() {
+      const name = document.getElementById('f-name').value.trim();
+      if (!name) { alert('Enter fund name'); return; }
+      try {
+        await API.post('/petty-cash/funds', {
+          fund_name: name,
+          fund_limit: parseFloat(document.getElementById('f-limit').value) || 5000,
+          low_threshold: parseFloat(document.getElementById('f-threshold').value) || 20,
+          custodian_id: document.getElementById('f-custodian').value || null,
+          project_id: document.getElementById('f-project').value || null,
+          gl_account: document.getElementById('f-gl').value || '111101'
+        });
+        closeFundModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Disbursement Modal ═══
+    function openDisbModal(fundId, fundName, balance) {
+      document.getElementById('d-fund-id').value = fundId;
+      document.getElementById('d-fund-name').textContent = fundName;
+      document.getElementById('d-fund-bal').textContent = '฿' + fmtNum(balance);
+      document.getElementById('d-recipient').value = '';
+      document.getElementById('d-desc').value = '';
+      document.getElementById('d-amount').value = '';
+      document.getElementById('d-remarks').value = '';
+      document.getElementById('disb-modal').classList.add('show');
+    }
+    function closeDisbModal() { document.getElementById('disb-modal').classList.remove('show'); }
+    async function saveDisb() {
+      const desc = document.getElementById('d-desc').value.trim();
+      const amount = parseFloat(document.getElementById('d-amount').value);
+      if (!desc || !amount) { alert('Fill description and amount'); return; }
+      try {
+        await API.post('/petty-cash/disbursements', {
+          fund_id: document.getElementById('d-fund-id').value,
+          recipient: document.getElementById('d-recipient').value,
+          description: desc, amount,
+          category: document.getElementById('d-category').value,
+          remarks: document.getElementById('d-remarks').value
+        });
+        closeDisbModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Receipt Modal ═══
+    let receiptDisbAmount = 0;
+    function openReceiptModal(disbId, amount, desc, category) {
+      receiptDisbAmount = amount;
+      document.getElementById('r-disb-id').value = disbId;
+      document.getElementById('r-disb-amount').textContent = '฿' + fmtNum(amount);
+      document.getElementById('r-disb-desc').textContent = desc;
+      document.getElementById('r-amount').value = amount;
+      document.getElementById('r-category').value = category || 'misc';
+      document.getElementById('r-change').style.display = 'none';
+      document.getElementById('r-preview').innerHTML = '';
+      updateReceiptGL();
+      document.getElementById('receipt-modal').classList.add('show');
+    }
+    function closeReceiptModal() { document.getElementById('receipt-modal').classList.remove('show'); }
+
+    function updateChange() {
+      const actual = parseFloat(document.getElementById('r-amount').value) || 0;
+      const change = receiptDisbAmount - actual;
+      const el = document.getElementById('r-change');
+      if (change > 0) { el.style.display = 'block'; el.textContent = 'Change returned: ฿' + fmtNum(change); }
+      else { el.style.display = 'none'; }
+      updateReceiptGL();
+    }
+    function updateReceiptGL() {
+      const cat = document.getElementById('r-category').value;
+      const gl = catAccounts[cat] || '522709';
+      document.getElementById('r-gl-dr').textContent = 'Dr. ' + gl + ' ' + (catLabels[cat]||cat);
+    }
+    document.getElementById('r-category').addEventListener('change', updateReceiptGL);
+    document.getElementById('r-file').addEventListener('change', function() {
+      const file = this.files[0];
+      const preview = document.getElementById('r-preview');
+      if (!file) { preview.innerHTML = ''; return; }
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => { preview.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:var(--radius);border:1px solid var(--border);">`; };
+        reader.readAsDataURL(file);
+      } else { preview.innerHTML = `<div style="font-size:11px;">${file.name}</div>`; }
+    });
+
+    async function submitReceipt() {
+      const amount = parseFloat(document.getElementById('r-amount').value);
+      if (!amount) { alert('Enter actual amount'); return; }
+      try {
+        await API.post('/petty-cash/disbursements/'+document.getElementById('r-disb-id').value+'/submit-receipt', {
+          receipt_amount: amount,
+          category: document.getElementById('r-category').value
+        });
+        closeReceiptModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Approve Disbursement ═══
+    async function approveDisb(id) {
+      if (!confirm('Approve this receipt?')) return;
+      try { await API.post('/petty-cash/disbursements/'+id+'/approve'); await loadData(); }
+      catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Replenish Modal ═══
+    function openReplModal(fundId, limit, balance) {
+      document.getElementById('rp-fund-id').value = fundId;
+      document.getElementById('rp-limit').textContent = '฿' + fmtNum(limit);
+      document.getElementById('rp-balance').textContent = '฿' + fmtNum(balance);
+      const suggest = limit - balance;
+      document.getElementById('rp-suggest').textContent = '฿' + fmtNum(suggest);
+      document.getElementById('rp-amount').value = suggest;
+      document.getElementById('rp-remarks').value = '';
+      document.getElementById('repl-modal').classList.add('show');
+    }
+    function closeReplModal() { document.getElementById('repl-modal').classList.remove('show'); }
+    async function saveRepl() {
+      const amount = parseFloat(document.getElementById('rp-amount').value);
+      if (!amount) { alert('Enter amount'); return; }
+      try {
+        await API.post('/petty-cash/replenish', {
+          fund_id: document.getElementById('rp-fund-id').value,
+          amount, remarks: document.getElementById('rp-remarks').value
+        });
+        closeReplModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Approve Replenish Modal ═══
+    function openApproveReplModal(id, amount) {
+      document.getElementById('ar-id').value = id;
+      document.getElementById('ar-amount').textContent = '฿' + fmtNum(amount);
+      document.getElementById('ar-ref').value = '';
+      // Load banks
+      if (!bankAccounts.length) {
+        API.get('/advance/banks/list').then(banks => {
+          bankAccounts = banks;
+          document.getElementById('ar-bank').innerHTML = '<option value="">Select bank</option>' + banks.map(b => `<option value="${b.id}">${b.code} — ${b.name}</option>`).join('');
+        }).catch(() => {});
+      } else {
+        document.getElementById('ar-bank').innerHTML = '<option value="">Select bank</option>' + bankAccounts.map(b => `<option value="${b.id}">${b.code} — ${b.name}</option>`).join('');
+      }
+      document.getElementById('approve-repl-modal').classList.add('show');
+    }
+    function closeApproveReplModal() { document.getElementById('approve-repl-modal').classList.remove('show'); }
+    async function approveRepl() {
+      try {
+        await API.post('/petty-cash/replenish/'+document.getElementById('ar-id').value+'/approve', {
+          bank_account_id: document.getElementById('ar-bank').value || null,
+          reference: document.getElementById('ar-ref').value
+        });
+        closeApproveReplModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Cash Count Modal ═══
+    function openCountModal(fundId, balance) {
+      document.getElementById('cc-fund-id').value = fundId;
+      document.getElementById('cc-system').textContent = '฿' + fmtNum(balance);
+      document.getElementById('cc-actual').value = '';
+      document.getElementById('cc-diff').style.display = 'none';
+      document.getElementById('cc-remarks').value = '';
+      document.getElementById('count-modal').classList.add('show');
+    }
+    function closeCountModal() { document.getElementById('count-modal').classList.remove('show'); }
+
+    function updateCountDiff() {
+      const system = parseFloat(document.getElementById('cc-system').textContent.replace(/[^0-9.-]/g,''));
+      const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
+      const diff = actual - system;
+      const el = document.getElementById('cc-diff');
+      if (diff === 0) { el.style.display = 'block'; el.style.background = 'var(--success-bg)'; el.style.color = 'var(--success)'; el.textContent = '✓ Match — no adjustment needed'; }
+      else if (diff > 0) { el.style.display = 'block'; el.style.background = 'var(--info-bg,#e0f2fe)'; el.style.color = 'var(--info)'; el.innerHTML = 'Overage: +฿'+fmtNum(diff)+'<br><span style="font-size:10px;font-weight:400;">GL: Dr. 111101 Petty Cash / Cr. 411901 Cash Overage</span>'; }
+      else { el.style.display = 'block'; el.style.background = 'var(--danger-bg)'; el.style.color = 'var(--danger)'; el.innerHTML = 'Shortage: ฿'+fmtNum(diff)+'<br><span style="font-size:10px;font-weight:400;">GL: Dr. 522709 Cash Shortage / Cr. 111101 Petty Cash</span>'; }
+    }
+
+    async function saveCashCount() {
+      const actual = parseFloat(document.getElementById('cc-actual').value);
+      if (isNaN(actual)) { alert('Enter actual amount'); return; }
+      try {
+        await API.post('/petty-cash/count', {
+          fund_id: document.getElementById('cc-fund-id').value,
+          actual_balance: actual,
+          remarks: document.getElementById('cc-remarks').value
+        });
+        closeCountModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    loadData();
+    API.onRealtime(msg => { if (msg.type.startsWith('pc_')) loadData(); });
+  </script>
+</body>
+</html>
