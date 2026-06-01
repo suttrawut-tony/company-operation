@@ -124,6 +124,21 @@
       grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;
     }
 
+    /* Availability Grid */
+    .avail-grid-table { width:100%; border-collapse:collapse; font-size:11px; }
+    .avail-grid-table th, .avail-grid-table td { padding:6px 4px; text-align:center; border:1px solid var(--border-light); white-space:nowrap; }
+    .avail-grid-table th { background:var(--bg-light); font-weight:600; font-size:10px; }
+    .avail-grid-table th.vehicle-name { text-align:left; min-width:120px; }
+    .avail-cell { width:28px; height:24px; border-radius:3px; cursor:default; }
+    .avail-cell.available { background:#bbf7d0; cursor:pointer; }
+    .avail-cell.booked { background:#fef08a; }
+    .avail-cell.maintenance { background:#fca5a5; }
+    .avail-cell.retired { background:#d1d5db; }
+
+    /* Alert icons */
+    .alert-icons { display:flex; gap:4px; padding:4px 16px 0; flex-wrap:wrap; }
+    .alert-tag { font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; line-height:1.2; }
+
     @media (max-width: 768px) {
       .vehicle-cards { grid-template-columns: 1fr; }
     }
@@ -157,6 +172,10 @@
       <div class="card-header">
         <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Booking Calendar</h2>
         <div style="display:flex;gap:8px;align-items:center;">
+          <div style="display:flex;gap:0;background:var(--bg-light);border-radius:6px;padding:2px;margin-right:8px;">
+            <button class="btn btn-sm" id="btn-cal-view" style="font-size:11px;padding:4px 10px;border-radius:4px;background:var(--bg-white);box-shadow:var(--shadow-xs);" onclick="switchCalView('calendar')">Calendar</button>
+            <button class="btn btn-sm btn-ghost" id="btn-grid-view" style="font-size:11px;padding:4px 10px;border-radius:4px;" onclick="switchCalView('grid')">Grid</button>
+          </div>
           <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">&#9664; Prev</button>
           <span style="font-weight:600;" id="cal-month-label"></span>
           <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)">Next &#9654;</button>
@@ -165,6 +184,7 @@
       <div style="padding:4px;">
         <div style="display:flex;gap:16px;padding:8px 12px;font-size:11px;" id="cal-legend"></div>
         <div class="calendar-grid" id="cal-grid"></div>
+        <div id="avail-grid" style="display:none;padding:8px;overflow-x:auto;"></div>
       </div>
     </div>
 
@@ -329,7 +349,7 @@
 
         if (!res.ok) throw new Error(data.error || 'Booking failed');
 
-        alert('Booking created successfully!');
+        showToast('Booking created successfully');
         closeBookingModal();
         loadVehicles();
       } catch (e) {
@@ -388,6 +408,7 @@
             <div class="v-status"><div class="dot" style="background:${statusDotColor(v.status)};"></div> ${(v.status || 'unknown').replace(/_/g, ' ')}</div>
             <span style="color:var(--text-muted);">KM: ${fmtNum(v.current_km)} | Fuel: ${v.fuel_level || 'N/A'}</span>
           </div>
+          ${renderAlertIcons(v.id)}
           <div style="display:flex;gap:6px;padding:8px 16px 12px;border-top:1px solid var(--border-light);">
             <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openUpdateKmModal('${v.id}','${v.name}',${v.current_km||0},'${v.fuel_level||''}')">Update KM</button>
             <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openPhotoModal('${v.id}','${v.name}')">Photo</button>
@@ -614,7 +635,8 @@
         calYear = now.getFullYear();
         calMonth = now.getMonth();
 
-        const [vehicles, bookings, projects] = await Promise.all([API.getVehicles(), API.getBookings(), API.getProjects()]);
+        const [vehicles, bookings, projects, alerts] = await Promise.all([API.getVehicles(), API.getBookings(), API.getProjects(), API.getVehicleAlerts().catch(() => [])]);
+        vehicleAlerts = Array.isArray(alerts) ? alerts : [];
         allVehicles = vehicles;
         allBookings = bookings;
         allProjects = projects;
@@ -687,6 +709,7 @@
         await API.put('/vehicle/' + id, { current_km: km, fuel_level: fuel });
         closeKmModal();
         loadVehicles();
+        showToast('KM updated');
       } catch(e) { alert('Error: ' + e.message); }
     }
 
@@ -732,6 +755,7 @@
           await API.put('/vehicle/' + id, { image_url: e.target.result });
           closePhotoModal();
           loadVehicles();
+          showToast('Photo saved');
         } catch(err) { alert('Error: ' + err.message); }
       };
       reader.readAsDataURL(file);
@@ -1133,7 +1157,128 @@
         });
         document.getElementById('add-vehicle-modal').classList.add('hidden');
         loadVehicles();
+        showToast('Vehicle created');
       } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ═══ Availability Grid ═══
+    let calViewMode = 'calendar';
+    function switchCalView(mode) {
+      calViewMode = mode;
+      document.getElementById('cal-grid').style.display = mode === 'calendar' ? '' : 'none';
+      document.getElementById('cal-legend').style.display = mode === 'calendar' ? '' : 'none';
+      document.getElementById('avail-grid').style.display = mode === 'grid' ? '' : 'none';
+      document.getElementById('btn-cal-view').style.background = mode === 'calendar' ? 'var(--bg-white)' : 'none';
+      document.getElementById('btn-cal-view').style.boxShadow = mode === 'calendar' ? 'var(--shadow-xs)' : 'none';
+      document.getElementById('btn-grid-view').style.background = mode === 'grid' ? 'var(--bg-white)' : 'none';
+      document.getElementById('btn-grid-view').style.boxShadow = mode === 'grid' ? 'var(--shadow-xs)' : 'none';
+      if (mode === 'grid') loadAvailabilityGrid();
+    }
+
+    async function loadAvailabilityGrid() {
+      try {
+        const data = await API.getVehicleAvailability({ days: 14 });
+        renderAvailGrid(data);
+      } catch(e) {
+        // Fallback: build from local data
+        renderAvailGridLocal();
+      }
+    }
+
+    function renderAvailGrid(data) {
+      const container = document.getElementById('avail-grid');
+      if (!data || !data.vehicles || !data.vehicles.length) {
+        renderAvailGridLocal();
+        return;
+      }
+      const dates = data.dates || [];
+      let html = '<table class="avail-grid-table"><thead><tr><th class="vehicle-name">Vehicle</th>';
+      dates.forEach(d => {
+        const dt = new Date(d);
+        html += '<th>' + dt.getDate() + '/' + (dt.getMonth()+1) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      data.vehicles.forEach(v => {
+        html += '<tr><td class="vehicle-name" style="text-align:left;font-weight:600;">' + (v.name||v.plate_number) + '</td>';
+        (v.availability || []).forEach((status, i) => {
+          const cls = status === 'available' ? 'available' : status === 'booked' ? 'booked' : status === 'maintenance' ? 'maintenance' : 'retired';
+          const onclick = cls === 'available' ? ' onclick="gridBookClick(\''+v.id+'\',\''+dates[i]+'\')"' : '';
+          html += '<td><div class="avail-cell '+cls+'"'+onclick+'></div></td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      html += '<div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text-secondary);"><span><span class="avail-cell available" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Available</span><span><span class="avail-cell booked" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Booked</span><span><span class="avail-cell maintenance" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Maintenance</span><span><span class="avail-cell retired" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Retired</span></div>';
+      container.innerHTML = html;
+    }
+
+    function renderAvailGridLocal() {
+      // Build from allVehicles + allBookings
+      const container = document.getElementById('avail-grid');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const dates = [];
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(today); d.setDate(d.getDate() + i);
+        dates.push(d.toISOString().slice(0,10));
+      }
+      let html = '<table class="avail-grid-table"><thead><tr><th class="vehicle-name">Vehicle</th>';
+      dates.forEach(d => {
+        const dt = new Date(d);
+        html += '<th>' + dt.getDate() + '/' + (dt.getMonth()+1) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      allVehicles.forEach(v => {
+        html += '<tr><td class="vehicle-name" style="text-align:left;font-weight:600;">' + (v.name||v.plate_number) + '</td>';
+        dates.forEach(dateStr => {
+          let status = 'available';
+          if ((v.status||'').toLowerCase() === 'maintenance') status = 'maintenance';
+          else if ((v.status||'').toLowerCase() === 'retired') status = 'retired';
+          else {
+            const booked = allBookings.some(b => b.vehicle_id === v.id && dateStr >= b.start_date.slice(0,10) && dateStr <= b.end_date.slice(0,10));
+            if (booked) status = 'booked';
+          }
+          const cls = status;
+          const onclick = cls === 'available' ? ' onclick="gridBookClick(\''+v.id+'\',\''+dateStr+'\')"' : '';
+          html += '<td><div class="avail-cell '+cls+'"'+onclick+'></div></td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      html += '<div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text-secondary);"><span><span class="avail-cell available" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Available</span><span><span class="avail-cell booked" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Booked</span><span><span class="avail-cell maintenance" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Maintenance</span><span><span class="avail-cell retired" style="display:inline-block;width:12px;height:12px;vertical-align:middle;"></span> Retired</span></div>';
+      container.innerHTML = html;
+    }
+
+    function gridBookClick(vehicleId, dateStr) {
+      openBookingModal();
+      setTimeout(() => {
+        document.getElementById('book-vehicle').value = vehicleId;
+        document.getElementById('book-start-date').value = dateStr;
+        const nextDay = new Date(dateStr); nextDay.setDate(nextDay.getDate()+1);
+        document.getElementById('book-end-date').value = nextDay.toISOString().slice(0,10);
+      }, 300);
+    }
+
+    // ═══ Vehicle Alerts ═══
+    let vehicleAlerts = [];
+
+    function renderAlertIcons(vehicleId) {
+      const alerts = vehicleAlerts.filter(a => a.vehicle_id === vehicleId);
+      if (!alerts.length) return '';
+      const tagMap = {
+        insurance_expiry: { label:'INS', bg:'#fca5a5', color:'#991b1b' },
+        maintenance_due: { label:'SVC', bg:'#fed7aa', color:'#9a3412' },
+        registration_expiry: { label:'REG', bg:'#fca5a5', color:'#991b1b' },
+        lease_expiry: { label:'LEASE', bg:'#fed7aa', color:'#9a3412' },
+        fuel_low: { label:'FUEL', bg:'#fef08a', color:'#854d0e' }
+      };
+      let html = '<div class="alert-icons">';
+      alerts.forEach(a => {
+        const t = tagMap[a.alert_type] || { label: (a.alert_type||'ALERT').toUpperCase().slice(0,4), bg:'#fed7aa', color:'#9a3412' };
+        const title = a.message || a.alert_type || '';
+        html += '<span class="alert-tag" style="background:'+t.bg+';color:'+t.color+';" title="'+title+'">'+t.label+'</span>';
+      });
+      html += '</div>';
+      return html;
     }
 
     loadVehicles();

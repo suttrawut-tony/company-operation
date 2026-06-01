@@ -167,7 +167,7 @@
           <table class="list-table">
             <thead><tr>
               <th>Doc No.</th><th>SAP Doc No.</th><th>Date</th><th>Project</th><th>Vendor</th><th>Requester</th>
-              <th style="text-align:right;">Amount</th><th>Status</th>
+              <th style="text-align:right;">Amount</th><th>Status</th><th>Actions</th>
             </tr></thead>
             <tbody id="list-body"></tbody>
           </table>
@@ -188,6 +188,18 @@
     let allPOs = [];
     let allProjects = [];
     let docType = 'pr'; // pr, po, all
+    const userRole = (API.getUser() || {}).role || '';
+
+    async function deletePR(id, doc) {
+      if (!confirm('Delete ' + doc + '?')) return;
+      try { await API.del('/pr/' + id); await loadPRPO(); showToast('Deleted ' + doc); }
+      catch(e) { alert('Error: ' + e.message); }
+    }
+    async function deletePO(id, doc) {
+      if (!confirm('Delete ' + doc + '?')) return;
+      try { await API.del('/po/' + id); await loadPRPO(); showToast('Deleted ' + doc); }
+      catch(e) { alert('Error: ' + e.message); }
+    }
 
     const COLUMNS = [
       { status: 'draft', label: 'Draft', color: 'var(--text-muted)', dropStatus: 'draft' },
@@ -295,13 +307,48 @@
           <div class="requester">${avatarSm(d.requester_name||d.creator_name||'?')} ${(d.requester_name||d.creator_name||'-').split(' ').slice(0,2).join(' ')}</div>
           <div class="date">${fmtDateShort(d.doc_date)}</div>
         </div>
+        ${renderDocActions(d)}
       </div>`;
+    }
+
+    function getDocType(d) {
+      return docType === 'all' ? (d.doc_number.startsWith('PO') ? 'po' : 'pr') : docType;
+    }
+    function renderDocActions(d) {
+      const dt = getDocType(d);
+      const canEditRoles = ['executive','manager','finance','pm'];
+      const canAct = canEditRoles.includes(userRole);
+      if (!canAct) return '';
+      let btns = '';
+      if (d.status === 'draft') {
+        btns += '<a href="doc-detail.html?type='+dt+'&id='+d.id+'&mode=edit" onclick="event.stopPropagation();" style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--primary-light);color:var(--primary);font-weight:600;text-decoration:none;margin-right:4px;">Edit</a>';
+      }
+      if (dt === 'pr' && (d.status === 'draft' || d.status.includes('pending'))) {
+        btns += '<button style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--danger-bg);color:var(--danger);font-weight:600;border:none;cursor:pointer;" onclick="event.stopPropagation();deletePR(\''+d.id+'\',\''+d.doc_number+'\')">Del</button>';
+      }
+      if (dt === 'po' && d.status === 'draft') {
+        btns += '<a href="doc-detail.html?type=po&id='+d.id+'&mode=edit" onclick="event.stopPropagation();" style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--primary-light);color:var(--primary);font-weight:600;text-decoration:none;margin-right:4px;">Edit</a>';
+        btns += '<button style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--danger-bg);color:var(--danger);font-weight:600;border:none;cursor:pointer;" onclick="event.stopPropagation();deletePO(\''+d.id+'\',\''+d.doc_number+'\')">Del</button>';
+      }
+      if (!btns) return '';
+      return '<div style="display:flex;gap:4px;padding:8px 12px 6px;border-top:1px solid var(--border-light);">' + btns + '</div>';
     }
 
     function renderList() {
       const docs = getDocs();
-      document.getElementById('list-body').innerHTML = docs.map(d => `
-        <tr style="cursor:pointer;" onclick="window.location='doc-detail.html?type=${docType==='all'?(d.doc_number.startsWith('PO')?'po':'pr'):docType}&doc=${d.doc_number}'">
+      document.getElementById('list-body').innerHTML = docs.map(d => {
+        const dt = getDocType(d);
+        const canEditRoles = ['executive','manager','finance','pm'];
+        const canAct = canEditRoles.includes(userRole);
+        let actionHtml = '';
+        if (canAct) {
+          if (d.status === 'draft') actionHtml += '<a href="doc-detail.html?type='+dt+'&id='+d.id+'&mode=edit" onclick="event.stopPropagation();" style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--primary-light);color:var(--primary);font-weight:600;text-decoration:none;margin-right:3px;">Edit</a>';
+          if (dt === 'pr' && (d.status === 'draft' || d.status.includes('pending')))
+            actionHtml += '<button style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--danger-bg);color:var(--danger);font-weight:600;border:none;cursor:pointer;" onclick="event.stopPropagation();deletePR(\''+d.id+'\',\''+d.doc_number+'\')">Del</button>';
+          if (dt === 'po' && d.status === 'draft')
+            actionHtml += '<button style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--danger-bg);color:var(--danger);font-weight:600;border:none;cursor:pointer;" onclick="event.stopPropagation();deletePO(\''+d.id+'\',\''+d.doc_number+'\')">Del</button>';
+        }
+        return `<tr style="cursor:pointer;" onclick="window.location='doc-detail.html?type=${dt}&doc=${d.doc_number}'">
           <td><span class="doc-id" style="color:var(--primary);font-weight:600;">${d.doc_number}</span></td>
           <td>${d.sap_doc_num ? '<span class="sap-doc-badge" style="font-size:10px;padding:2px 8px;">SAP #' + d.sap_doc_num + '</span>' : '<span style="color:var(--text-muted);font-size:11px;">—</span>'}</td>
           <td>${fmtDateShort(d.doc_date)}</td>
@@ -310,8 +357,9 @@
           <td>${d.requester_name || d.creator_name || '-'}</td>
           <td class="amount" style="text-align:right;font-weight:600;">${fmtMoney(d.total_amount)}</td>
           <td>${statusBadge(d.status)}</td>
-        </tr>
-      `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">No documents</td></tr>';
+          <td style="white-space:nowrap;">${actionHtml}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px;">No documents</td></tr>';
     }
 
     function refresh() {
