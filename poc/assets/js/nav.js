@@ -188,6 +188,7 @@ function renderTopNav() {
         ${ICONS.search}
         <input type="text" placeholder="Search...">
       </div>
+      <button class="topbar-btn" title="Help" onclick="openContextHelp()" style="font-size:14px;font-weight:700;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);">?</button>
       <div style="position:relative;">
         <button class="topbar-btn" title="Notifications" onclick="toggleNotifPanel()">${ICONS.bell}<span class="topbar-notif-dot" id="notif-dot" style="display:none;"></span><span id="notif-badge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;"></span></button>
         <div id="notif-panel" style="display:none;position:absolute;right:0;top:100%;margin-top:8px;width:360px;max-height:400px;overflow-y:auto;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:999;">
@@ -340,6 +341,40 @@ document.addEventListener('click', (e) => {
 window.ICONS = ICONS;
 window.icon = icon;
 
+// Contextual Help — map page to help section
+function openContextHelp() {
+  const page = location.pathname.split('/').pop().replace('.html','');
+  const map = { vehicle:'vehicle', advance:'advance', phases:'phases', budget:'budget', 'pr-po':'prpo', 'pr-create':'prpo', 'pr-detail':'prpo', projects:'projects', 'petty-cash':'petty-cash', travel:'travel', ot:'ot', dashboard:'dashboard', 'item-master':'item-master', 'bp-master':'bp-master', 'user-permissions':'user-permission', overview:'projects' };
+  const section = map[page] || '';
+  window.open('help.html' + (section ? '#' + section : ''), '_blank');
+}
+
+// Changelog "new" badge — check localStorage
+const CHANGELOG_VERSION = 'v2.0';
+function checkChangelogBadge() {
+  const seen = localStorage.getItem('changelog_seen_version');
+  if (seen !== CHANGELOG_VERSION) {
+    // Add red dot to Change Log menu item
+    const menuItems = document.querySelectorAll('#sidebar a, .sidebar a');
+    menuItems.forEach(a => {
+      if (a.textContent.includes('Change Log') || a.href?.includes('changelog')) {
+        if (!a.querySelector('.cl-badge')) {
+          const dot = document.createElement('span');
+          dot.className = 'cl-badge';
+          dot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-left:6px;';
+          a.appendChild(dot);
+        }
+      }
+    });
+  }
+}
+
+// Mark changelog as seen (call from changelog.html)
+window.markChangelogSeen = function() {
+  localStorage.setItem('changelog_seen_version', CHANGELOG_VERSION);
+  document.querySelectorAll('.cl-badge').forEach(b => b.remove());
+};
+
 // Auto-render
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
@@ -347,4 +382,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTopNav();
   renderTabBar();
   loadNotifications();
+  setTimeout(checkChangelogBadge, 500);
 });

@@ -92,6 +92,38 @@
     // Version changelog data — updated when saving versions
     const VERSIONS = [
       {
+        tag: 'v2.0',
+        date: '2026-05-29',
+        summary: 'Advance/Reimburse, Vehicle Management, Phase Finance, Full CRUD',
+        stats: { added: 15, changed: 3, fixed: 0 },
+        changes: [
+          { type: 'new', module: 'เงินทดรองจ่าย', desc: 'แยกประเภท "เบิกล่วงหน้า" และ "เบิกคืน" (<a href="help.html#advance">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'เงินทดรองจ่าย', desc: 'ระบบเคลียร์ 7 วัน + แจ้งเตือน + ล็อคถ้าเกินกำหนด (<a href="help.html#advance">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'เงินทดรองจ่าย', desc: 'ปรับ flow จบที่การเงินจ่ายเงิน (<a href="help.html#advance">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'รถยนต์', desc: 'ข้อมูลรถละเอียด (ยี่ห้อ, รุ่น, สี, เลขตัวถัง, สัญญาเช่า) (<a href="help.html#vehicle">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'รถยนต์', desc: 'ระบบประกันรถ + แจ้งเคลม (<a href="help.html#vehicle">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'รถยนต์', desc: 'ซ่อมบำรุง + แจ้งปัญหา (<a href="help.html#vehicle">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'รถยนต์', desc: 'ตารางรถว่าง + จองจากปฏิทิน (<a href="help.html#vehicle">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'รถยนต์', desc: 'แจ้งเตือนอัตโนมัติ (ประกัน/ทะเบียน/สัญญาเช่า/ซ่อมบำรุง) (<a href="help.html#vehicle">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'โปรเจกต์', desc: 'งวดรับเงินตาม Phase (Payment Schedule) (<a href="help.html#phase-finance">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'โปรเจกต์', desc: 'ต้นทุนราย Phase + ลิงก์ PR/PO (<a href="help.html#phase-finance">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'โปรเจกต์', desc: 'ภาพรวมกำไร-ขาดทุนราย Phase (<a href="help.html#phase-finance">ดูคู่มือ</a>)' },
+          { type: 'new', module: 'ทุกหน้า', desc: 'CRUD เต็มรูปแบบตามสิทธิ์ (สร้าง/แก้ไข/ลบ ตาม role) (<a href="help.html#crud">ดูคู่มือ</a>)' },
+          { type: 'update', module: 'คู่มือ', desc: 'ปรับปรุง User Guide ครอบคลุมฟีเจอร์ใหม่ (<a href="help.html">ดูคู่มือ</a>)' },
+          { type: 'update', module: 'คู่มือ', desc: 'ปรับเนื้อหาคู่มือให้กระชับ อ่านง่าย (<a href="help.html">ดูคู่มือ</a>)' },
+          { type: 'update', module: 'คู่มือ', desc: 'เพิ่มตารางสิทธิ์ role ครบทุก module (<a href="help.html#crud">ดูคู่มือ</a>)' },
+        ],
+        files: [
+          { path: 'poc/help.html', added: 450, removed: 300 },
+          { path: 'poc/changelog.html', added: 80, removed: 5 },
+          { path: 'poc/advance.html', added: 200, removed: 100 },
+          { path: 'poc/vehicle.html', added: 350, removed: 50 },
+          { path: 'poc/phases.html', added: 150, removed: 20 },
+          { path: 'api/routes/advance.js', added: 180, removed: 80 },
+          { path: 'api/routes/vehicle.js', added: 300, removed: 30 },
+        ]
+      },
+      {
         tag: 'v1.0',
         date: '2026-05-27',
         summary: 'Company Operation Full ERP System',
@@ -232,6 +264,8 @@
     }
 
     render();
+    // Mark changelog as seen
+    if (typeof markChangelogSeen === 'function') markChangelogSeen();
   </script>
 </body>
 </html>

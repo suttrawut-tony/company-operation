@@ -67,9 +67,11 @@
     <!-- สารบัญ -->
     <div class="guide-nav">
       <a href="#dashboard">แดชบอร์ด</a>
+      <a href="#crud">สร้าง/แก้ไข/ลบ</a>
       <a href="#projects">โปรเจค</a>
       <a href="#taskboard">บอร์ดงาน</a>
       <a href="#budget">งบประมาณ</a>
+      <a href="#phase-finance">การเงินราย Phase</a>
       <a href="#prpo">ใบขอซื้อ / ใบสั่งซื้อ</a>
       <a href="#advance">เงินทดรองจ่าย</a>
       <a href="#petty-cash">เงินสดย่อย</a>
@@ -93,29 +95,76 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>หน้าแรกที่เข้ามาหลัง login ใช้ดูภาพรวมงานทั้งหมดได้ในหน้าเดียว ไม่ต้องเปิดหลายหน้า</p>
+          <p>หน้าแรกหลัง login ดูภาพรวมงานทั้งหมดได้ในหน้าเดียว</p>
         </div>
         <div class="guide-block">
           <h4>การ์ดสรุปด้านบน</h4>
           <table class="guide-table">
             <tr><th>การ์ด</th><th>คำอธิบาย</th></tr>
             <tr><td>โปรเจคที่กำลังทำ</td><td>นับโปรเจคที่ยังเปิดอยู่</td></tr>
-            <tr><td>งบที่ใช้ไป</td><td>ยอดงบที่ใช้แล้วและ % ที่เหลือ</td></tr>
-            <tr><td>รออนุมัติ</td><td>เอกสารที่รอให้คุณกดอนุมัติ</td></tr>
+            <tr><td>งบที่ใช้ไป</td><td>ยอดงบที่ใช้แล้ว + % ที่เหลือ</td></tr>
+            <tr><td>รออนุมัติ</td><td>เอกสารที่รอคุณกดอนุมัติ</td></tr>
             <tr><td>ค่าใช้จ่ายเดือนนี้</td><td>ยอดรวมที่เกิดขึ้นในเดือนนี้</td></tr>
           </table>
         </div>
         <div class="guide-block">
-          <h4>ส่วนต่างๆ ในหน้า</h4>
+          <h4>ส่วนต่าง ๆ ในหน้า</h4>
           <ul>
-            <li><strong>AI Alerts</strong> — แจ้งเตือนเรื่องที่ต้องระวัง เช่น โปรเจคเกินงบ งานค้าง</li>
-            <li><strong>งานของฉัน</strong> — งานที่ได้รับมอบหมาย กด "Taskboard" ไปดูทั้งหมดได้</li>
-            <li><strong>รออนุมัติ</strong> — เอกสารที่รอให้เราตรวจและกดอนุมัติ</li>
-            <li><strong>สรุปงบ</strong> — กราฟวงกลมดูง่ายๆ ว่างบเหลือเท่าไหร่</li>
-            <li><strong>สถานะโปรเจค</strong> — ดูว่าแต่ละโปรเจคอยู่ขั้นไหนแล้ว</li>
+            <li><strong>AI Alerts</strong> — แจ้งเตือนเรื่องต้องระวัง เช่น โปรเจคเกินงบ งานค้าง</li>
+            <li><strong>งานของฉัน</strong> — งานที่ได้รับมอบหมาย กด Taskboard ดูทั้งหมดได้</li>
+            <li><strong>รออนุมัติ</strong> — เอกสารที่รอตรวจและกดอนุมัติ</li>
+            <li><strong>สรุปงบ</strong> — กราฟวงกลมดูง่าย ๆ ว่างบเหลือเท่าไหร่</li>
+            <li><strong>สถานะโปรเจค</strong> — แต่ละโปรเจคอยู่ขั้นไหนแล้ว</li>
           </ul>
         </div>
-        <div class="tip-box">กดที่การ์ดหรือลิงก์ไหนก็ได้ จะพาไปหน้าที่เกี่ยวข้องเลย</div>
+        <div class="tip-box">💡 กดที่การ์ดหรือลิงก์ใดก็ได้ จะพาไปหน้าที่เกี่ยวข้องทันที</div>
+      </div>
+    </div>
+
+    <!-- ═══ CRUD ═══ -->
+
+    <div class="guide-section" id="crud">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        การสร้าง แก้ไข ลบข้อมูล (CRUD) <span class="badge badge-main">พื้นฐาน</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ทุกหน้าในระบบใช้หลักเดียวกัน: สร้าง แก้ไข ลบ ตามสิทธิ์ของ role</p>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li><strong>สร้าง</strong> — กดปุ่ม <strong>+</strong> มุมขวาบน กรอกข้อมูล แล้วบันทึก</li>
+            <li><strong>แก้ไข</strong> — กดไอคอนดินสอที่รายการ แก้ข้อมูลแล้วบันทึก</li>
+            <li><strong>ลบ</strong> — กดไอคอนถังขยะ ระบบถามยืนยันก่อนลบ</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>กฎตามสถานะเอกสาร</h4>
+          <table class="guide-table">
+            <tr><th>สถานะ</th><th>แก้ไข</th><th>ลบ</th></tr>
+            <tr><td>ฉบับร่าง (Draft)</td><td>แก้ได้ทุกฟิลด์</td><td>ลบได้</td></tr>
+            <tr><td>รออนุมัติ (Pending)</td><td>แก้ได้เฉพาะหมายเหตุ</td><td>ลบไม่ได้</td></tr>
+            <tr><td>อนุมัติแล้ว (Approved)</td><td>แก้ไม่ได้ (ยกเว้นผู้บริหาร)</td><td>ลบไม่ได้</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>เอกสารการเงิน</h4>
+          <p>เอกสารการเงิน (PR/PO, เงินทดรอง, ค่าใช้จ่าย) ใช้ soft delete คือเปลี่ยนสถานะเป็น "ยกเลิก" แทนการลบจริง เพื่อเก็บ audit trail</p>
+        </div>
+        <div class="guide-block">
+          <h4>ตารางสิทธิ์ตาม Role</h4>
+          <table class="guide-table">
+            <tr><th>Role</th><th>สร้าง</th><th>แก้ไข</th><th>ลบ</th><th>อนุมัติ</th></tr>
+            <tr><td><strong>Executive</strong></td><td>ได้</td><td>ได้ทุกสถานะ</td><td>ได้</td><td>ได้ทุกระดับ</td></tr>
+            <tr><td><strong>Manager</strong></td><td>ได้</td><td>ได้ (Draft/Pending)</td><td>ได้ (Draft)</td><td>ได้ตาม tier</td></tr>
+            <tr><td><strong>PM</strong></td><td>ได้</td><td>ได้ (Draft)</td><td>ได้ (Draft)</td><td>ได้เฉพาะโปรเจคตัวเอง</td></tr>
+            <tr><td><strong>Finance</strong></td><td>ได้</td><td>ได้ (Draft)</td><td>ได้ (Draft)</td><td>ได้ตาม tier</td></tr>
+            <tr><td><strong>Staff</strong></td><td>ได้</td><td>ได้เฉพาะของตัวเอง (Draft)</td><td>ได้เฉพาะของตัวเอง (Draft)</td><td>ไม่ได้</td></tr>
+          </table>
+        </div>
+        <div class="tip-box">💡 ถ้าปุ่มแก้ไขหรือลบไม่ขึ้น แปลว่า role ของคุณไม่มีสิทธิ์กับรายการนั้น</div>
       </div>
     </div>
 
@@ -128,27 +177,27 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>รวมโปรเจคทั้งหมดของบริษัทไว้ที่นี่ ดูได้ว่าแต่ละโปรเจคมีใครรับผิดชอบ สถานะเป็นยังไง</p>
+          <p>รวมโปรเจคทั้งหมดของบริษัท ดูสถานะ ผู้รับผิดชอบ และความคืบหน้าได้จากหน้าเดียว</p>
         </div>
         <div class="guide-block">
           <h4>สถานะโปรเจค</h4>
-          <table class="guide-table">
-            <tr><th>สถานะ</th><th>ความหมาย</th></tr>
-            <tr><td>Planning</td><td>กำลังวางแผน ยังไม่ลงมือ</td></tr>
-            <tr><td>In Progress</td><td>เริ่มทำงานแล้ว</td></tr>
-            <tr><td>On Hold</td><td>พักไว้ก่อน</td></tr>
-            <tr><td>Completed</td><td>เสร็จแล้ว</td></tr>
-            <tr><td>Cancelled</td><td>ยกเลิกไป</td></tr>
-          </table>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Planning</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">In Progress</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">On Hold</span><span class="flow-arrow-sm">/</span>
+            <span class="flow-step-box">Completed</span><span class="flow-arrow-sm">/</span>
+            <span class="flow-step-box">Cancelled</span>
+          </div>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>กดที่การ์ดโปรเจคเพื่อเข้าไปดูรายละเอียด</li>
-            <li>ใช้ตัวกรองด้านบนเพื่อหาโปรเจคที่ต้องการ</li>
-            <li>กด <strong>+ New Project</strong> สร้างโปรเจคใหม่ได้ (เฉพาะ Admin กับ PM)</li>
+            <li>กดที่การ์ดโปรเจคเพื่อดูรายละเอียด</li>
+            <li>ใช้ตัวกรองด้านบนหาโปรเจคที่ต้องการ</li>
+            <li>กด <strong>+ New Project</strong> สร้างโปรเจคใหม่ (เฉพาะ Admin/PM)</li>
           </ul>
         </div>
+        <div class="tip-box">💡 กดชื่อโปรเจคเข้าไปจะเห็น Plan Project, งบ, เอกสาร ทุกอย่างในที่เดียว</div>
       </div>
     </div>
 
@@ -159,27 +208,27 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>หน้าจัดการงานแบบบอร์ด ลากการ์ดงานย้ายไปมาระหว่างช่องได้เลย ใช้ง่าย เห็นภาพชัด</p>
+          <p>จัดการงานแบบ Kanban ลากการ์ดย้ายคอลัมน์ได้เลย</p>
         </div>
         <div class="guide-block">
           <h4>คอลัมน์</h4>
-          <table class="guide-table">
-            <tr><th>คอลัมน์</th><th>คำอธิบาย</th></tr>
-            <tr><td>To Do</td><td>งานที่ยังไม่เริ่ม</td></tr>
-            <tr><td>In Progress</td><td>กำลังทำอยู่</td></tr>
-            <tr><td>Review</td><td>ทำเสร็จแล้ว รอตรวจสอบ</td></tr>
-            <tr><td>Done</td><td>เสร็จสิ้นและอนุมัติแล้ว</td></tr>
-          </table>
+          <div class="flow-diagram">
+            <span class="flow-step-box">To Do</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">In Progress</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Review</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Done</span>
+          </div>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>ลากการ์ดงานไปวางช่องอื่นได้เลย สถานะจะเปลี่ยนตาม</li>
-            <li>กดที่การ์ดงานเพื่อดูหรือแก้ไขรายละเอียด</li>
+            <li>ลากการ์ดไปวางช่องอื่น สถานะเปลี่ยนตาม</li>
+            <li>กดที่การ์ดเพื่อดูหรือแก้ไขรายละเอียด</li>
             <li>กด <strong>+ Add Task</strong> ด้านบนช่องเพื่อเพิ่มงานใหม่</li>
-            <li>กรองดูเฉพาะโปรเจค คน หรือลำดับความสำคัญที่สนใจ</li>
+            <li>กรองตามโปรเจค คน หรือลำดับความสำคัญ</li>
           </ul>
         </div>
+        <div class="tip-box">💡 ลาก drop ใช้ได้ทั้ง desktop และ mobile (กดค้างแล้วลาก)</div>
       </div>
     </div>
 
@@ -192,27 +241,82 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>ดูว่าแต่ละโปรเจคตั้งงบไว้เท่าไหร่ ใช้ไปเท่าไหร่แล้ว เหลือเท่าไหร่ แยกตามประเภทให้ดูง่าย</p>
+          <p>ดูงบแต่ละโปรเจค: ตั้งไว้เท่าไหร่ ใช้ไปเท่าไหร่ เหลือเท่าไหร่ แยกตามประเภท</p>
         </div>
         <div class="guide-block">
-          <h4>โครงสร้างงบประมาณ</h4>
+          <h4>โครงสร้างงบ</h4>
           <ul>
-            <li><strong>รายการงบ (Budget Line)</strong> — รายการงบแต่ละตัว เช่น "อุปกรณ์ Radar ฿350,000"</li>
+            <li><strong>รายการงบ (Budget Line)</strong> — เช่น "อุปกรณ์ Radar ฿350,000"</li>
             <li><strong>จัดสรร (Allocated)</strong> — งบที่วางแผนไว้</li>
-            <li><strong>ใช้ไป (Used)</strong> — ยอดที่ใช้จริง (จาก PR/PO/Expense)</li>
-            <li><strong>คงเหลือ (Remaining)</strong> — ยอดที่ยังเหลือใช้ได้</li>
+            <li><strong>ใช้ไป (Used)</strong> — ยอดจริงจาก PR/PO/Expense</li>
+            <li><strong>คงเหลือ (Remaining)</strong> — ยอดที่เหลือใช้ได้</li>
           </ul>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>เลือกโปรเจคเพื่อดูงบประมาณ</li>
-            <li>คลิก <strong>+ เพิ่มรายการงบ</strong> เพื่อเพิ่มรายการใหม่</li>
-            <li>แก้ไขจำนวนเงินได้โดยคลิกที่ตัวเลข</li>
-            <li>ดูเปอร์เซ็นต์การใช้งบและคำเตือนเกินงบ</li>
+            <li>เลือกโปรเจคเพื่อดูงบ</li>
+            <li>กด <strong>+ เพิ่มรายการงบ</strong> เพื่อเพิ่มรายการใหม่</li>
+            <li>คลิกที่ตัวเลขเพื่อแก้ไขจำนวนเงิน</li>
+            <li>ดู % การใช้งบและคำเตือนเกินงบ</li>
           </ul>
         </div>
-        <div class="tip-box">พอ PR/PO ได้รับอนุมัติ งบจะถูกหักให้อัตโนมัติ ไม่ต้องมานั่งกรอกเอง</div>
+        <div class="tip-box">💡 พอ PR/PO ได้รับอนุมัติ งบจะถูกหักอัตโนมัติ ไม่ต้องกรอกเอง</div>
+      </div>
+    </div>
+
+    <!-- ═══ การเงินราย Phase ═══ -->
+
+    <div class="guide-section" id="phase-finance">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        การเงินราย Phase (Phase Finance) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ดูรายรับ ต้นทุน และกำไรของโปรเจคแยกตาม Phase ได้ชัดเจน ช่วยให้รู้ว่า Phase ไหนกำไร Phase ไหนขาดทุน</p>
+        </div>
+
+        <div class="guide-block">
+          <h4>a) งวดรับเงิน (Payment Schedule)</h4>
+          <p>กำหนดว่าแต่ละ Phase ลูกค้าจ่ายเงินเมื่อไหร่ เท่าไหร่</p>
+          <ul>
+            <li>เข้าหน้า Plan Project แล้วกดแท็บ <strong>Payment Schedule</strong></li>
+            <li>กด <strong>+ เพิ่มงวด</strong> ระบุ Phase, จำนวนเงิน, วันครบกำหนด</li>
+            <li>เมื่อรับเงินแล้วกดเปลี่ยนสถานะเป็น "รับแล้ว"</li>
+            <li>ดูสรุปงวดค้างรับและงวดที่ใกล้ครบกำหนด</li>
+          </ul>
+          <div class="flow-diagram">
+            <span class="flow-step-box">กำหนดงวด</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">ส่งงาน</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">วางบิล</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">รับเงิน</span>
+          </div>
+        </div>
+
+        <div class="guide-block">
+          <h4>b) ต้นทุนราย Phase</h4>
+          <p>ดูต้นทุนที่เกิดขึ้นจริงในแต่ละ Phase โดยดึงจาก PR/PO ที่ลิงก์กับ Phase นั้น</p>
+          <ul>
+            <li>เข้าแท็บ <strong>Phase Cost</strong> เลือก Phase ที่ต้องการ</li>
+            <li>ดูรายการ PR/PO ที่ผูกกับ Phase พร้อมยอดเงิน</li>
+            <li>กดลิงก์เลขเอกสารเพื่อเปิด PR/PO ต้นทาง</li>
+            <li>ดู % ต้นทุนเทียบกับงบที่ตั้งไว้</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <h4>c) ภาพรวมกำไร-ขาดทุน</h4>
+          <p>สรุปรายรับ - ต้นทุน = กำไร ของแต่ละ Phase และภาพรวมทั้งโปรเจค</p>
+          <table class="guide-table">
+            <tr><th>คอลัมน์</th><th>คำอธิบาย</th></tr>
+            <tr><td>รายรับ (Revenue)</td><td>ยอดจาก Payment Schedule ที่รับแล้ว</td></tr>
+            <tr><td>ต้นทุน (Cost)</td><td>ยอดจาก PR/PO/Expense ที่ผูกกับ Phase</td></tr>
+            <tr><td>กำไร (Profit)</td><td>รายรับ - ต้นทุน (สีเขียว = กำไร, สีแดง = ขาดทุน)</td></tr>
+            <tr><td>Margin %</td><td>กำไร / รายรับ x 100</td></tr>
+          </table>
+        </div>
+        <div class="tip-box">💡 ดู Margin % ติดลบแปลว่า Phase นั้นขาดทุน ต้องทบทวนต้นทุนด่วน</div>
       </div>
     </div>
 
@@ -223,10 +327,10 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>ใช้สร้างใบขอซื้อ (PR) แล้วต่อเป็นใบสั่งซื้อ (PO) ได้ ดูแบบบอร์ดหรือตารางก็ได้ตามสะดวก</p>
+          <p>สร้างใบขอซื้อ (PR) แล้วต่อเป็นใบสั่งซื้อ (PO) ดูแบบบอร์ดหรือตารางก็ได้</p>
         </div>
         <div class="guide-block">
-          <h4>ขั้นตอนเอกสาร (Document Flow)</h4>
+          <h4>Document Flow</h4>
           <div class="flow-diagram">
             <span class="flow-step-box">PR (ใบขอซื้อ)</span><span class="flow-arrow-sm">&rarr;</span>
             <span class="flow-step-box">PO (ใบสั่งซื้อ)</span><span class="flow-arrow-sm">&rarr;</span>
@@ -236,61 +340,75 @@
         </div>
         <div class="guide-block">
           <h4>สถานะเอกสาร</h4>
-          <table class="guide-table">
-            <tr><th>สถานะ</th><th>คำอธิบาย</th></tr>
-            <tr><td>Draft (ร่าง)</td><td>สร้างแล้ว ยังไม่ส่งอนุมัติ</td></tr>
-            <tr><td>Pending Approval (รออนุมัติ)</td><td>ส่งแล้ว รอผู้จัดการ/การเงินอนุมัติ</td></tr>
-            <tr><td>Approved (อนุมัติแล้ว)</td><td>อนุมัติแล้ว พร้อมส่งเข้า SAP</td></tr>
-            <tr><td>Sent to SAP (ส่งเข้า SAP)</td><td>ส่งข้อมูลเข้าระบบ SAP B1 แล้ว</td></tr>
-            <tr><td>Received (ได้รับ)</td><td>SAP ยืนยันแล้ว แสดงเลขเอกสารจริง</td></tr>
-          </table>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Draft (ร่าง)</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Pending (รออนุมัติ)</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Approved (อนุมัติ)</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Sent to SAP</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Received</span>
+          </div>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>คลิก <strong>+ New PR</strong> หรือ <strong>+ New PO</strong> เพื่อสร้างเอกสาร</li>
+            <li>กด <strong>+ New PR</strong> หรือ <strong>+ New PO</strong> สร้างเอกสาร</li>
             <li>กรอก: โปรเจค, ผู้ขาย, รายการสินค้า (สินค้า, จำนวน, ราคา)</li>
-            <li>สลับมุมมองระหว่าง <strong>Kanban</strong> และ <strong>List</strong></li>
+            <li>สลับมุมมอง <strong>Kanban</strong> / <strong>List</strong> ได้</li>
             <li>คลิกเลขเอกสารเพื่อดูรายละเอียดและ Document Flow</li>
-            <li>สถานะเอกสารจะเปลี่ยนตามขั้นตอนอนุมัติ ไม่สามารถลากย้ายเองได้</li>
           </ul>
         </div>
-        <div class="info-box">พอ SAP รับเอกสารแล้ว จะได้เลขที่จริงจาก SAP กลับมาโชว์เป็น badge สีฟ้าในระบบ</div>
+        <div class="tip-box">💡 พอ SAP รับเอกสาร จะได้เลขที่จริงกลับมาเป็น badge สีฟ้าในระบบ</div>
       </div>
     </div>
 
     <div class="guide-section" id="advance">
       <div class="guide-section-header" onclick="toggleGuide(this)">
-        เงินทดรองจ่าย (Advance) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+        เงินทดรองจ่าย (Advance / Reimburse) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
       </div>
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>พนักงานจะขอเบิกเงินล่วงหน้าไปใช้จ่าย พอใช้เสร็จก็มาเคลียร์กับใบเสร็จ ถ้าเงินเหลือก็คืน ถ้าไม่พอบริษัทจ่ายเพิ่มให้</p>
+          <p>เงินทดรองมี 2 ประเภท: เบิกล่วงหน้า (บริษัทจ่ายก่อน) และเบิกคืน (พนักงานจ่ายก่อน) เลือกประเภทตอนสร้างเอกสาร</p>
         </div>
+
         <div class="guide-block">
-          <h4>ขั้นตอนการทำงาน</h4>
+          <h4>เบิกล่วงหน้า (Advance)</h4>
+          <p>บริษัทจ่ายเงินให้พนักงานก่อน พนักงานไปใช้จ่ายแล้วกลับมาเคลียร์ภายใน 7 วัน</p>
+          <ul>
+            <li>สร้างเอกสารเลือกประเภท <strong>เบิกล่วงหน้า</strong></li>
+            <li>ส่งอนุมัติ รอหัวหน้า/การเงินอนุมัติตาม tier</li>
+            <li>การเงินจ่ายเงินให้พนักงาน แนบสลิป</li>
+            <li>พนักงานเคลียร์ใบเสร็จภายใน 7 วัน (ดู countdown badge)</li>
+            <li>การเงินตรวจใบเสร็จแล้วกดเคลียร์</li>
+          </ul>
           <div class="flow-diagram">
-            <span class="flow-step-box">ขอเบิก</span><span class="flow-arrow-sm">&rarr;</span>
-            <span class="flow-step-box">อนุมัติ</span><span class="flow-arrow-sm">&rarr;</span>
-            <span class="flow-step-box">จ่ายเงิน</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">ฉบับร่าง</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">รออนุมัติ</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">อนุมัติแล้ว</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">จ่ายแล้ว</span><span class="flow-arrow-sm">&rarr;</span>
             <span class="flow-step-box">เคลียร์</span><span class="flow-arrow-sm">&rarr;</span>
-            <span class="flow-step-box">ปิด</span><span class="flow-arrow-sm">&rarr;</span>
-            <span class="flow-step-box">พนักงานยืนยัน</span>
+            <span class="flow-step-box">เคลียร์แล้ว</span>
+          </div>
+          <div class="info-box">ถ้าเกิน 7 วันไม่เคลียร์ badge จะเปลี่ยนเป็น "เกินกำหนด" และระบบล็อคไม่ให้สร้างเอกสารเบิกใหม่จนกว่าจะเคลียร์</div>
+        </div>
+
+        <div class="guide-block">
+          <h4>เบิกคืน (Reimburse)</h4>
+          <p>พนักงานจ่ายเงินตัวเองไปก่อน แล้วส่งใบเสร็จขอเบิกคืนจากบริษัท ไม่ต้องเคลียร์</p>
+          <ul>
+            <li>สร้างเอกสารเลือกประเภท <strong>เบิกคืน</strong></li>
+            <li>แนบใบเสร็จพร้อมยอดเงินที่จ่ายไป</li>
+            <li>ส่งอนุมัติ รอหัวหน้า/การเงินอนุมัติ</li>
+            <li>การเงินจ่ายเงินคืนให้พนักงาน จบ</li>
+          </ul>
+          <div class="flow-diagram">
+            <span class="flow-step-box">ฉบับร่าง</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">รออนุมัติ</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">อนุมัติแล้ว</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">จ่ายคืนแล้ว</span>
           </div>
         </div>
-        <div class="guide-block">
-          <h4>รายละเอียดแต่ละขั้นตอน</h4>
-          <table class="guide-table">
-            <tr><th>ขั้นตอน</th><th>ผู้ดำเนินการ</th><th>สิ่งที่ต้องทำ</th></tr>
-            <tr><td>1. ขอเบิก</td><td>พนักงาน</td><td>กรอกว่าจะเบิกเท่าไหร่ ไปทำอะไร</td></tr>
-            <tr><td>2. อนุมัติ</td><td>หัวหน้า / การเงิน</td><td>เช็คแล้วกดอนุมัติ (เงินเยอะต้องผ่านหลายคน)</td></tr>
-            <tr><td>3. จ่ายเงิน</td><td>การเงิน</td><td>โอนเงินหรือจ่ายสดให้พนักงาน แนบสลิปด้วย</td></tr>
-            <tr><td>4. เคลียร์</td><td>พนักงาน</td><td>ใช้เงินเสร็จแล้วเอาใบเสร็จมาเคลียร์</td></tr>
-            <tr><td>5. ตรวจสอบ</td><td>การเงิน</td><td>เช็คใบเสร็จ กดอนุมัติ ถ้ามีส่วนต่างก็จัดการคืน/จ่ายเพิ่ม</td></tr>
-            <tr><td>6. ยืนยัน</td><td>พนักงาน</td><td>กดยืนยันว่าได้รับเงินเพิ่มแล้ว (เฉพาะกรณีบริษัทจ่ายเพิ่ม)</td></tr>
-          </table>
-        </div>
+
         <div class="guide-block">
           <h4>ระดับการอนุมัติ</h4>
           <table class="guide-table">
@@ -300,34 +418,22 @@
             <tr><td>มากกว่า 100,000 บาท</td><td>ผู้จัดการ + การเงิน + ผู้บริหาร</td></tr>
           </table>
         </div>
+
         <div class="guide-block">
           <h4>บัญชี GL (สร้างอัตโนมัติ)</h4>
           <div class="gl-example">
-            <strong>จ่ายเงิน:</strong><br>
+            <strong>จ่ายเงิน (Advance):</strong><br>
             <span class="dr">Dr. 113103 ลูกหนี้พนักงาน (เงินทดรอง)</span><br>
             <span class="cr">Cr. 111201 บัญชีธนาคาร</span><br><br>
-            <strong>เคลียร์:</strong><br>
+            <strong>เคลียร์ (Advance):</strong><br>
             <span class="dr">Dr. 522xxx ค่าใช้จ่าย (ตามหมวด)</span><br>
-            <span class="cr">Cr. 113103 ลูกหนี้พนักงาน</span>
+            <span class="cr">Cr. 113103 ลูกหนี้พนักงาน</span><br><br>
+            <strong>จ่ายคืน (Reimburse):</strong><br>
+            <span class="dr">Dr. 522xxx ค่าใช้จ่าย (ตามหมวด)</span><br>
+            <span class="cr">Cr. 111201 บัญชีธนาคาร</span>
           </div>
         </div>
-        <div class="guide-block">
-          <h4>ผลลัพธ์การเคลียร์</h4>
-          <table class="guide-table">
-            <tr><th>กรณี</th><th>ตัวอย่าง</th><th>การจัดการ</th></tr>
-            <tr><td>ตรงพอดี</td><td>เบิก 10,000 ใช้ 10,000</td><td>ปิดอัตโนมัติ</td></tr>
-            <tr><td>พนักงานคืนเงิน</td><td>เบิก 10,000 ใช้ 8,000</td><td>พนักงานคืน 2,000 บาท</td></tr>
-            <tr><td>บริษัทจ่ายเพิ่ม</td><td>เบิก 10,000 ใช้ 12,000</td><td>บริษัทจ่ายเพิ่ม 2,000 พนักงานกดยืนยันรับเงิน</td></tr>
-          </table>
-        </div>
-        <div class="guide-block">
-          <h4>ดูรายละเอียดในการ์ด</h4>
-          <ul>
-            <li>คลิกที่การ์ดเพื่อขยายดูขั้นตอนทั้งหมด</li>
-            <li>คลิก <strong>4. จ่ายเงิน &#9660;</strong> เพื่อดูรายละเอียดการจ่าย + GL</li>
-            <li>คลิก <strong>5. เคลียร์ &#9660;</strong> เพื่อดูรายการค่าใช้จ่าย + เงินคืน/จ่ายเพิ่ม</li>
-          </ul>
-        </div>
+        <div class="tip-box">💡 เบิกล่วงหน้าต้องเคลียร์ภายใน 7 วัน ถ้าเลยกำหนดจะถูกล็อค เบิกคืนไม่ต้องเคลียร์</div>
       </div>
     </div>
 
@@ -338,10 +444,10 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>เงินสดย่อยที่เก็บไว้ในออฟฟิศสำหรับจ่ายค่าเบ็ดเตล็ดต่างๆ เช่น ค่าแท็กซี่ ค่ากาแฟ ค่าพัสดุ ระบบจะคอยดูแลยอดเงิน บัญชี และเตือนเมื่อเงินใกล้หมด</p>
+          <p>เงินสดในออฟฟิศสำหรับจ่ายค่าเบ็ดเตล็ด เช่น แท็กซี่ กาแฟ พัสดุ ระบบดูแลยอดและเตือนเมื่อเงินใกล้หมด</p>
         </div>
         <div class="guide-block">
-          <h4>ขั้นตอนการทำงาน</h4>
+          <h4>ขั้นตอน</h4>
           <div class="flow-diagram">
             <span class="flow-step-box">สร้างกองทุน</span><span class="flow-arrow-sm">&rarr;</span>
             <span class="flow-step-box">เบิกจ่าย</span><span class="flow-arrow-sm">&rarr;</span>
@@ -352,27 +458,26 @@
           </div>
         </div>
         <div class="guide-block">
-          <h4>รายละเอียดแต่ละขั้นตอน</h4>
-          <table class="guide-table">
-            <tr><th>ขั้นตอน</th><th>ผู้ดำเนินการ</th><th>สิ่งที่ต้องทำ</th></tr>
-            <tr><td>1. สร้างกองทุน</td><td>Admin / การเงิน</td><td>ตั้งชื่อ กำหนดวงเงิน เลือกคนดูแล</td></tr>
-            <tr><td>2. เบิกจ่าย</td><td>คนดูแล</td><td>จ่ายเงินสดให้พนักงาน ลงบันทึกว่าจ่ายใคร เท่าไหร่ ซื้ออะไร</td></tr>
-            <tr><td>3. ส่งใบเสร็จ</td><td>พนักงาน</td><td>เอาใบเสร็จมาส่ง ใส่ยอดจริง ถ้ามีเงินทอนระบบคำนวณให้</td></tr>
-            <tr><td>4. อนุมัติใบเสร็จ</td><td>คนดูแล / การเงิน</td><td>เช็คใบเสร็จแล้วกดอนุมัติ ระบบลงบัญชีให้เอง</td></tr>
-            <tr><td>5. เติมเงิน</td><td>คนดูแล</td><td>เงินใกล้หมดก็กดขอเติม การเงินอนุมัติแล้วโอนเงินเข้ามา</td></tr>
-            <tr><td>6. นับเงินปิดงวด</td><td>คนดูแล</td><td>นับเงินสดในกล่อง ใส่ยอดจริง ระบบเทียบให้ว่าตรงไหม</td></tr>
-          </table>
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li><strong>สร้างกองทุน</strong> — ตั้งชื่อ กำหนดวงเงิน เลือกคนดูแล</li>
+            <li><strong>เบิกจ่าย</strong> — จ่ายเงินสด ลงบันทึกว่าจ่ายใคร เท่าไหร่</li>
+            <li><strong>ส่งใบเสร็จ</strong> — พนักงานเอาใบเสร็จมาลง ระบบคำนวณเงินทอน</li>
+            <li><strong>อนุมัติ</strong> — คนดูแล/การเงินเช็คใบเสร็จแล้วกดอนุมัติ</li>
+            <li><strong>เติมเงิน</strong> — เงินใกล้หมดก็กดขอเติม</li>
+            <li><strong>นับเงินปิดงวด</strong> — นับเงินสดจริง ระบบเทียบให้ว่าตรงไหม</li>
+          </ul>
         </div>
         <div class="guide-block">
           <h4>หมวดค่าใช้จ่าย</h4>
           <table class="guide-table">
-            <tr><th>หมวด</th><th>บัญชี GL</th><th>ตัวอย่าง</th></tr>
-            <tr><td>ค่าเดินทาง (Travel)</td><td>522601</td><td>แท็กซี่, วินมอเตอร์ไซค์</td></tr>
-            <tr><td>ค่าอาหาร (Food)</td><td>522603</td><td>อาหารเลี้ยงประชุม, ของว่าง</td></tr>
-            <tr><td>อุปกรณ์สำนักงาน (Office)</td><td>522501</td><td>กระดาษ, หมึกพิมพ์, ปากกา</td></tr>
-            <tr><td>ค่าจัดส่ง (Delivery)</td><td>522701</td><td>ไปรษณีย์, Kerry</td></tr>
-            <tr><td>ซ่อมบำรุง (Maintenance)</td><td>523101</td><td>ซ่อมอุปกรณ์เล็กน้อย</td></tr>
-            <tr><td>เบ็ดเตล็ด (Misc)</td><td>522709</td><td>อื่นๆ</td></tr>
+            <tr><th>หมวด</th><th>GL</th><th>ตัวอย่าง</th></tr>
+            <tr><td>ค่าเดินทาง</td><td>522601</td><td>แท็กซี่, วินมอเตอร์ไซค์</td></tr>
+            <tr><td>ค่าอาหาร</td><td>522603</td><td>อาหารเลี้ยงประชุม</td></tr>
+            <tr><td>อุปกรณ์สำนักงาน</td><td>522501</td><td>กระดาษ, หมึกพิมพ์</td></tr>
+            <tr><td>ค่าจัดส่ง</td><td>522701</td><td>ไปรษณีย์, Kerry</td></tr>
+            <tr><td>ซ่อมบำรุง</td><td>523101</td><td>ซ่อมอุปกรณ์เล็กน้อย</td></tr>
+            <tr><td>เบ็ดเตล็ด</td><td>522709</td><td>อื่น ๆ</td></tr>
           </table>
         </div>
         <div class="guide-block">
@@ -392,17 +497,7 @@
             <span class="cr">Cr. 411901 เงินสดเกินบัญชี</span>
           </div>
         </div>
-        <div class="guide-block">
-          <h4>การ์ดสรุปด้านบน</h4>
-          <table class="guide-table">
-            <tr><th>การ์ด</th><th>คำอธิบาย</th></tr>
-            <tr><td>วงเงินรวม (Total Fund Limit)</td><td>ยอดรวมวงเงินทุกกองทุน</td></tr>
-            <tr><td>ยอดคงเหลือ (Current Balance)</td><td>เงินสดคงเหลือทั้งหมด</td></tr>
-            <tr><td>ใช้ไป (Used)</td><td>ยอดที่เบิกจ่ายไปแล้ว</td></tr>
-            <tr><td>ยอดต่ำ (Low Balance)</td><td>จำนวนกองทุนที่เหลือต่ำกว่าเกณฑ์ (ค่าเริ่มต้น 20%)</td></tr>
-          </table>
-        </div>
-        <div class="tip-box">พอเงินเหลือน้อยกว่าเกณฑ์ที่ตั้งไว้ กองทุนจะย้ายไปอยู่ในแท็บ "Low Balance" เตือนว่าต้องเติมแล้ว</div>
+        <div class="tip-box">💡 เงินเหลือน้อยกว่า 20% กองทุนจะย้ายไปแท็บ "Low Balance" เตือนว่าต้องเติมแล้ว</div>
       </div>
     </div>
 
@@ -413,18 +508,19 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>ลงค่าใช้จ่ายที่เกิดขึ้นในโปรเจค แนบใบเสร็จ ส่งขออนุมัติ พอผ่านแล้วจะไปหักงบโปรเจคให้เอง</p>
+          <p>ลงค่าใช้จ่ายโปรเจค แนบใบเสร็จ ส่งอนุมัติ ผ่านแล้วหักงบให้อัตโนมัติ</p>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>คลิก <strong>+ New Expense</strong> เพื่อสร้างรายการ</li>
+            <li>กด <strong>+ New Expense</strong> สร้างรายการ</li>
             <li>กรอก: โปรเจค, รายละเอียด, จำนวนเงิน, หมวดหมู่, ภาษี</li>
             <li>แนบรูปใบเสร็จ (ถ้ามี)</li>
-            <li>ส่งเพื่อขออนุมัติ</li>
-            <li>ค่าใช้จ่ายที่อนุมัติแล้วจะหักจากงบโปรเจคอัตโนมัติ</li>
+            <li>ส่งขออนุมัติ</li>
+            <li>อนุมัติแล้วระบบหักงบอัตโนมัติ</li>
           </ul>
         </div>
+        <div class="tip-box">💡 ใบเสร็จแนบได้ทั้งรูปภาพและ PDF</div>
       </div>
     </div>
 
@@ -437,25 +533,81 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>ดูรถทั้งหมดของบริษัท ว่างหรือไม่ ใครใช้อยู่ เอาไปจองให้โปรเจคได้</p>
+          <p>จัดการรถบริษัทครบวงจร: ข้อมูลรถ ประกัน เคลม ซ่อมบำรุง จองรถ และแจ้งเตือนอัตโนมัติ</p>
         </div>
+
         <div class="guide-block">
-          <h4>สถานะยานพาหนะ</h4>
-          <table class="guide-table">
-            <tr><th>สถานะ</th><th>ความหมาย</th></tr>
-            <tr><td>Available (พร้อมใช้)</td><td>ว่างอยู่ สามารถจองได้</td></tr>
-            <tr><td>In Use (กำลังใช้งาน)</td><td>ถูกมอบหมายให้ทริป/โปรเจคแล้ว</td></tr>
-            <tr><td>Maintenance (ซ่อมบำรุง)</td><td>อยู่ระหว่างซ่อมหรือเข้าศูนย์</td></tr>
-          </table>
-        </div>
-        <div class="guide-block">
-          <h4>วิธีใช้งาน</h4>
+          <h4>a) ข้อมูลรถ + สัญญาเช่า</h4>
+          <p>ดูข้อมูลรถแต่ละคัน: ยี่ห้อ รุ่น สี ทะเบียน เลขตัวถัง สัญญาเช่า</p>
           <ul>
-            <li>ดูรายการยานพาหนะทั้งหมดและสถานะปัจจุบัน</li>
-            <li>คลิกที่ยานพาหนะเพื่อดูรายละเอียดและประวัติการใช้งาน</li>
-            <li>มอบหมายยานพาหนะให้โปรเจคหรือทริปเดินทาง</li>
+            <li>กดที่การ์ดรถเพื่อเปิด modal รายละเอียด</li>
+            <li>ดูข้อมูลทั่วไป สัญญาเช่า วันหมดอายุ</li>
+            <li>กดปุ่มแก้ไขเพื่ออัปเดตข้อมูล (เฉพาะ Manager/Finance/Executive)</li>
           </ul>
         </div>
+
+        <div class="guide-block">
+          <h4>b) ประกันรถ</h4>
+          <p>จัดการกรมธรรม์ประกันของรถแต่ละคัน</p>
+          <ul>
+            <li>กดแท็บ <strong>Insurance</strong> ในหน้ารายละเอียดรถ</li>
+            <li>กด <strong>+ เพิ่มกรมธรรม์</strong> กรอกข้อมูลประกัน</li>
+            <li>Badge สี: เขียว = ยังไม่หมดอายุ, เหลือง = ใกล้หมด (30 วัน), แดง = หมดแล้ว</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <h4>c) แจ้งเคลม</h4>
+          <p>เกิดอุบัติเหตุหรือเสียหาย แจ้งเคลมผ่านระบบได้เลย</p>
+          <ul>
+            <li>กด <strong>+ แจ้งเคลม</strong> กรอกรายละเอียดเหตุการณ์</li>
+            <li>แนบรูปถ่ายความเสียหาย</li>
+            <li>ติดตามสถานะเคลมได้จากหน้ารายละเอียดรถ</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <h4>d) ซ่อมบำรุง + แจ้งปัญหา</h4>
+          <p>บันทึกประวัติซ่อมบำรุงและแจ้งปัญหาตอน check-in รถ</p>
+          <ul>
+            <li>กดแท็บ <strong>Maintenance</strong> ดูประวัติซ่อมทั้งหมด</li>
+            <li>กด <strong>+ บันทึกซ่อม</strong> ลงวันที่ รายการ ค่าใช้จ่าย</li>
+            <li>ตอน check-in รถ แจ้งปัญหาที่พบได้ทันที</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <h4>e) แจ้งเตือนอัตโนมัติ</h4>
+          <p>ระบบแจ้งเตือนเรื่องสำคัญให้อัตโนมัติ ไม่ต้องจำเอง</p>
+          <table class="guide-table">
+            <tr><th>ประเภท</th><th>แจ้งเตือนเมื่อ</th></tr>
+            <tr><td>ประกันรถ</td><td>ใกล้หมดอายุ 30 วัน</td></tr>
+            <tr><td>ทะเบียนรถ (พ.ร.บ.)</td><td>ใกล้หมดอายุ 30 วัน</td></tr>
+            <tr><td>สัญญาเช่า</td><td>ใกล้หมดอายุ 60 วัน</td></tr>
+            <tr><td>ซ่อมบำรุง (เลขไมล์)</td><td>ใกล้ถึงรอบเช็คระยะ</td></tr>
+            <tr><td>ซ่อมบำรุง (วันที่)</td><td>ถึงกำหนดเช็คตามรอบเวลา</td></tr>
+          </table>
+        </div>
+
+        <div class="guide-block">
+          <h4>f) ตารางรถว่าง</h4>
+          <p>ดูปฏิทินว่ารถคันไหนว่างวันไหน จองจากปฏิทินได้เลย</p>
+          <ul>
+            <li>เข้าแท็บ <strong>Calendar</strong> ดูตารางรถทั้งหมด</li>
+            <li>สีเขียว = ว่าง, สีฟ้า = จองแล้ว, สีเทา = ซ่อมบำรุง</li>
+            <li>คลิกช่องว่างบนปฏิทินเพื่อจองรถ</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <h4>สถานะยานพาหนะ</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Available (พร้อมใช้)</span>
+            <span class="flow-step-box">In Use (กำลังใช้)</span>
+            <span class="flow-step-box">Maintenance (ซ่อมบำรุง)</span>
+          </div>
+        </div>
+        <div class="tip-box">💡 แจ้งเตือนจะขึ้นที่ระฆังแจ้งเตือนและหน้า Dashboard อัตโนมัติ</div>
       </div>
     </div>
 
@@ -466,17 +618,18 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>ใช้ขอเดินทางไปทำงานนอกสถานที่ จะจองรถหรือขอเบิกเงินทดรองไปด้วยก็ได้</p>
+          <p>ขอเดินทางไปทำงานนอกสถานที่ จองรถหรือเบิกเงินทดรองไปด้วยก็ได้</p>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>คลิก <strong>+ New Travel</strong> เพื่อสร้างคำขอ</li>
+            <li>กด <strong>+ New Travel</strong> สร้างคำขอ</li>
             <li>กรอก: จุดหมาย, วันที่, ทีมงาน, ยานพาหนะ, วัตถุประสงค์</li>
-            <li>ส่งเพื่อขออนุมัติ</li>
+            <li>ส่งขออนุมัติ</li>
             <li>เชื่อมกับเงินทดรองจ่ายถ้าต้องการเบิกเงินสด</li>
           </ul>
         </div>
+        <div class="tip-box">💡 ถ้าเลือกรถจากปฏิทิน ระบบจะเช็คว่ารถว่างให้อัตโนมัติ</div>
       </div>
     </div>
 
@@ -487,7 +640,7 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>ลงขอทำ OT หรือทำงานวันหยุด ระบุวันเวลาและเหตุผล ส่งให้หัวหน้าอนุมัติ</p>
+          <p>ขอทำ OT หรือทำงานวันหยุด ระบุวันเวลาและเหตุผล ส่งหัวหน้าอนุมัติ</p>
         </div>
         <div class="guide-block">
           <h4>อัตราค่าล่วงเวลา</h4>
@@ -500,11 +653,12 @@
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>สร้างคำขอ OT โดยระบุวันที่ ชั่วโมง โปรเจค และเหตุผล</li>
-            <li>ส่งให้ผู้จัดการอนุมัติ</li>
+            <li>สร้างคำขอ OT ระบุวันที่ ชั่วโมง โปรเจค เหตุผล</li>
+            <li>ส่งผู้จัดการอนุมัติ</li>
             <li>ดูสรุป OT รายเดือนของแต่ละพนักงาน</li>
           </ul>
         </div>
+        <div class="tip-box">💡 OT ที่อนุมัติแล้วจะถูกรวมในรายงานสรุปรายเดือนอัตโนมัติ</div>
       </div>
     </div>
 
@@ -517,19 +671,20 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>รายการสินค้าและบริการที่บริษัทใช้บ่อย ตั้งไว้แล้วตอนสร้าง PR/PO จะเลือกได้เลย ไม่ต้องพิมพ์ใหม่ทุกครั้ง</p>
+          <p>รายการสินค้า/บริการที่ใช้บ่อย ตั้งไว้แล้วตอนสร้าง PR/PO เลือกได้เลย ไม่ต้องพิมพ์ใหม่</p>
         </div>
         <div class="guide-block">
-          <h4>ข้อมูลที่สำคัญ</h4>
+          <h4>ข้อมูลสำคัญ</h4>
           <table class="guide-table">
             <tr><th>ฟิลด์</th><th>คำอธิบาย</th></tr>
-            <tr><td>รหัสสินค้า (Item Code)</td><td>รหัสเฉพาะ เช่น MAT-001</td></tr>
-            <tr><td>ชื่อสินค้า (Item Name)</td><td>คำอธิบายภาษาอังกฤษ</td></tr>
-            <tr><td>หมวดหมู่ (Category)</td><td>อุปกรณ์, วัสดุ, บริการ ฯลฯ</td></tr>
-            <tr><td>หน่วยนับ (UoM)</td><td>EA (ชิ้น), M (เมตร), JOB (งาน), YR (ปี)</td></tr>
-            <tr><td>ราคาต่อหน่วย (Unit Price)</td><td>ราคาเริ่มต้น</td></tr>
+            <tr><td>รหัสสินค้า</td><td>รหัสเฉพาะ เช่น MAT-001</td></tr>
+            <tr><td>ชื่อสินค้า</td><td>คำอธิบายภาษาอังกฤษ</td></tr>
+            <tr><td>หมวดหมู่</td><td>อุปกรณ์, วัสดุ, บริการ ฯลฯ</td></tr>
+            <tr><td>หน่วยนับ</td><td>EA (ชิ้น), M (เมตร), JOB (งาน), YR (ปี)</td></tr>
+            <tr><td>ราคาต่อหน่วย</td><td>ราคาเริ่มต้น</td></tr>
           </table>
         </div>
+        <div class="tip-box">💡 เพิ่มสินค้าใหม่ได้ตอนสร้าง PR/PO เลย ไม่ต้องมาหน้านี้ก่อน</div>
       </div>
     </div>
 
@@ -540,16 +695,17 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>รายชื่อผู้ขายและลูกค้าที่บริษัททำงานด้วย ตั้งไว้แล้วใช้เลือกตอนสร้าง PR/PO ได้เลย</p>
+          <p>รายชื่อผู้ขาย/ลูกค้าที่ทำงานด้วย ตั้งไว้แล้วเลือกตอนสร้าง PR/PO ได้เลย</p>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
             <li>ดูรายการคู่ค้าทั้งหมด</li>
-            <li>ค้นหาตามชื่อ รหัส หรือเลขประจำตัวผู้เสียภาษี</li>
-            <li>เพิ่มผู้ขาย/ลูกค้าใหม่พร้อมข้อมูลติดต่อ</li>
+            <li>ค้นหาตามชื่อ รหัส หรือเลขผู้เสียภาษี</li>
+            <li>กด <strong>+ เพิ่มคู่ค้า</strong> เพิ่มผู้ขาย/ลูกค้าใหม่</li>
           </ul>
         </div>
+        <div class="tip-box">💡 เพิ่มคู่ค้าใหม่ได้ตอนสร้าง PR/PO โดยตรง</div>
       </div>
     </div>
 
@@ -560,30 +716,31 @@
       <div class="guide-section-body">
         <div class="guide-block">
           <h4>ภาพรวม</h4>
-          <p>ดูรายชื่อคนที่ใช้ระบบ กำหนดว่าใครมีสิทธิ์ทำอะไรได้บ้าง อยู่โปรเจคไหน</p>
+          <p>จัดการผู้ใช้ กำหนดบทบาท สิทธิ์ และโปรเจคที่เข้าถึงได้</p>
         </div>
         <div class="guide-block" id="roles">
           <h4>บทบาทผู้ใช้งาน</h4>
           <table class="guide-table">
-            <tr><th>บทบาท</th><th>สิทธิ์การเข้าถึง</th></tr>
-            <tr><td><strong>Executive (ผู้บริหาร)</strong></td><td>เห็นทุกอย่าง อนุมัติได้ทุกระดับ</td></tr>
-            <tr><td><strong>Admin (แอดมิน)</strong></td><td>ทำได้ทุกอย่าง จัดการคนและตั้งค่าระบบ</td></tr>
-            <tr><td><strong>PM (ผู้จัดการโปรเจค)</strong></td><td>ดูแลโปรเจคที่รับผิดชอบ อนุมัติงานของลูกทีม</td></tr>
-            <tr><td><strong>Finance (การเงิน)</strong></td><td>จ่ายเงิน อนุมัติเบิกจ่าย ดูแลงบ</td></tr>
-            <tr><td><strong>Accounting (บัญชี)</strong></td><td>ดูรายการบัญชี GL จัดการค่าใช้จ่าย</td></tr>
-            <tr><td><strong>Procurement (จัดซื้อ)</strong></td><td>สร้าง PR/PO ดูแลเรื่องผู้ขายและสินค้า</td></tr>
-            <tr><td><strong>Staff (พนักงานทั่วไป)</strong></td><td>ดูโปรเจคตัวเอง ส่งคำขอต่างๆ ได้</td></tr>
+            <tr><th>บทบาท</th><th>สิทธิ์</th></tr>
+            <tr><td><strong>Executive</strong></td><td>เห็นทุกอย่าง อนุมัติได้ทุกระดับ</td></tr>
+            <tr><td><strong>Admin</strong></td><td>ทำได้ทุกอย่าง จัดการคนและตั้งค่าระบบ</td></tr>
+            <tr><td><strong>PM</strong></td><td>ดูแลโปรเจคที่รับผิดชอบ อนุมัติงานลูกทีม</td></tr>
+            <tr><td><strong>Finance</strong></td><td>จ่ายเงิน อนุมัติเบิกจ่าย ดูแลงบ</td></tr>
+            <tr><td><strong>Accounting</strong></td><td>ดูรายการ GL จัดการค่าใช้จ่าย</td></tr>
+            <tr><td><strong>Procurement</strong></td><td>สร้าง PR/PO ดูแลผู้ขายและสินค้า</td></tr>
+            <tr><td><strong>Staff</strong></td><td>ดูโปรเจคตัวเอง ส่งคำขอต่าง ๆ</td></tr>
           </table>
         </div>
         <div class="guide-block">
           <h4>วิธีใช้งาน</h4>
           <ul>
-            <li>ดูรายชื่อผู้ใช้งานและบทบาท</li>
-            <li>คลิกที่ผู้ใช้เพื่อแก้ไขบทบาท โปรเจค และสถานะ</li>
-            <li>มอบหมายผู้ใช้ให้กับโปรเจคเฉพาะ</li>
-            <li><strong>สมัครสมาชิก</strong> — ผู้ใช้ใหม่สามารถสมัครได้ที่หน้า /register.html</li>
+            <li>ดูรายชื่อผู้ใช้และบทบาท</li>
+            <li>คลิกที่ผู้ใช้เพื่อแก้ไขบทบาท โปรเจค สถานะ</li>
+            <li>มอบหมายผู้ใช้ให้โปรเจค</li>
+            <li>ผู้ใช้ใหม่สมัครได้ที่หน้า /register.html</li>
           </ul>
         </div>
+        <div class="tip-box">💡 เปลี่ยน role แล้วสิทธิ์จะมีผลทันที ไม่ต้อง logout</div>
       </div>
     </div>
 
@@ -593,7 +750,7 @@
       </div>
       <div class="guide-section-body">
         <div class="guide-block">
-          <h4>เลขที่เอกสารอัตโนมัติ (Number Running)</h4>
+          <h4>เลขที่เอกสารอัตโนมัติ</h4>
           <p>เลขที่เอกสารรันอัตโนมัติตามรูปแบบนี้:</p>
           <table class="guide-table">
             <tr><th>Prefix</th><th>เอกสาร</th><th>ตัวอย่าง</th></tr>
@@ -612,7 +769,7 @@
         </div>
         <div class="guide-block">
           <h4>การเชื่อมต่อ SAP</h4>
-          <p>เอกสารที่สร้างในระบบนี้สามารถส่งเข้า SAP B1 ได้ พอ SAP รับแล้วจะส่งเลขที่จริงกลับมาโชว์ให้ดู</p>
+          <p>เอกสารในระบบส่งเข้า SAP B1 ได้ พอ SAP รับแล้วจะส่งเลขที่จริงกลับมา</p>
           <table class="guide-table">
             <tr><th>เอกสาร</th><th>SAP Object</th></tr>
             <tr><td>ใบขอซื้อ (PR)</td><td>OPRQ</td></tr>
@@ -621,6 +778,7 @@
             <tr><td>ใบแจ้งหนี้ (AP Invoice)</td><td>OPCH</td></tr>
           </table>
         </div>
+        <div class="tip-box">💡 เลขที่จาก SAP จะแสดงเป็น badge สีฟ้าติดกับเลขเอกสารในระบบ</div>
       </div>
     </div>
 
