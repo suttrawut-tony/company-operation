@@ -108,4 +108,49 @@ router.post('/:id/confirm', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// PUT /api/travel/:id — edit travel request (draft only, owner or pm/executive)
+router.put('/:id', async (req, res) => {
+  try {
+    const { rows: [travel] } = await db.query('SELECT * FROM travel_requests WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
+    if (!travel) return res.status(404).json({ error: 'Not found' });
+    if (travel.status !== 'draft') return res.status(400).json({ error: 'Can only edit draft requests' });
+    const role = req.user.role || '';
+    if (travel.created_by !== req.user.id && !['pm','manager','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const { destination, start_date, end_date, purpose, estimated_cost, advance_amount, project_id, members } = req.body;
+    const { rows: [updated] } = await db.query(
+      `UPDATE travel_requests SET destination=COALESCE($1,destination), start_date=COALESCE($2,start_date),
+       end_date=COALESCE($3,end_date), purpose=COALESCE($4,purpose), estimated_cost=COALESCE($5,estimated_cost),
+       advance_amount=COALESCE($6,advance_amount), project_id=COALESCE($7,project_id), updated_at=NOW()
+       WHERE id=$8 RETURNING *`,
+      [destination, start_date, end_date, purpose, estimated_cost, advance_amount, project_id, req.params.id]);
+    if (members) {
+      await db.query('DELETE FROM travel_members WHERE travel_id = $1', [req.params.id]);
+      for (const m of members) {
+        await db.query('INSERT INTO travel_members (travel_id, user_id, is_lead) VALUES ($1,$2,$3)',
+          [req.params.id, m.user_id, m.is_lead || false]);
+      }
+    }
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/travel/:id — cancel travel request (draft/pending only)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { rows: [travel] } = await db.query('SELECT * FROM travel_requests WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
+    if (!travel) return res.status(404).json({ error: 'Not found' });
+    if (!['draft','pending_manager','pending_executive'].includes(travel.status)) {
+      return res.status(400).json({ error: 'Can only cancel draft or pending requests' });
+    }
+    const role = req.user.role || '';
+    if (travel.created_by !== req.user.id && !['pm','manager','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    await db.query('UPDATE travel_requests SET status = $1, updated_at = NOW() WHERE id = $2', ['cancelled', req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

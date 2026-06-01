@@ -224,19 +224,40 @@
   <script src="assets/js/nav.js"></script>
   <script>
     /* ── State ── */
+    const userRole = (API.getUser()||{}).role||'';
+    const userId = (API.getUser()||{}).id||'';
     let allUsers = [];
     let selectedMembers = [];   // [{user_id, name, is_lead}]
     let projectsMap = {};       // id -> {code, name}
     let allTravelData = [];     // unfiltered travel rows
+    let editingTravelId = null; // null = create mode, id = edit mode
 
     /* ── Modal open/close ── */
-    function openTravelModal() {
-      document.getElementById('travel-modal').classList.remove('hidden');
+    function openTravelModal(editRow) {
+      editingTravelId = editRow ? editRow.id : null;
+      const modal = document.getElementById('travel-modal');
+      modal.classList.remove('hidden');
       resetForm();
       loadUsersForDropdown();
+      if (editRow) {
+        document.querySelector('#travel-modal .modal-header h2').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> แก้ไข Travel Request';
+        document.getElementById('trv-destination').value = editRow.destination || '';
+        document.getElementById('trv-start-date').value = editRow.start_date ? editRow.start_date.substring(0,10) : '';
+        document.getElementById('trv-end-date').value = editRow.end_date ? editRow.end_date.substring(0,10) : '';
+        document.getElementById('trv-project').value = editRow.project_id || '';
+        document.getElementById('trv-estimated-cost').value = editRow.estimated_cost || '';
+        document.getElementById('trv-advance-amount').value = editRow.advance_amount || '';
+        document.getElementById('trv-purpose').value = editRow.purpose || '';
+        const members = editRow.members || editRow.team_members || [];
+        selectedMembers = members.map(m => ({ user_id: m.user_id, name: m.name || (m.first_name + ' ' + (m.last_name||'')), is_lead: m.is_lead }));
+        renderTeamTags();
+      } else {
+        document.querySelector('#travel-modal .modal-header h2').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> New Travel Request';
+      }
     }
     function closeTravelModal() {
       document.getElementById('travel-modal').classList.add('hidden');
+      editingTravelId = null;
     }
 
     function resetForm() {
@@ -330,8 +351,8 @@
       }
     }
 
-    /* ── Submit travel ── */
-    async function submitTravel() {
+    /* ── Collect form data ── */
+    function collectTravelForm() {
       const destination = document.getElementById('trv-destination').value.trim();
       const start_date = document.getElementById('trv-start-date').value;
       const end_date = document.getElementById('trv-end-date').value;
@@ -339,21 +360,26 @@
       const estimated_cost = parseFloat(document.getElementById('trv-estimated-cost').value) || 0;
       const advance_amount = parseFloat(document.getElementById('trv-advance-amount').value) || 0;
       const purpose = document.getElementById('trv-purpose').value.trim();
+      return { destination, start_date, end_date, purpose, estimated_cost, advance_amount, project_id,
+        members: selectedMembers.map(m => ({ user_id: m.user_id, is_lead: m.is_lead })) };
+    }
 
-      if (!destination) { alert('Please enter a destination'); return; }
-      if (!start_date || !end_date) { alert('Please select start and end dates'); return; }
-
-      const data = {
-        destination, start_date, end_date, purpose,
-        estimated_cost, advance_amount, project_id,
-        members: selectedMembers.map(m => ({ user_id: m.user_id, is_lead: m.is_lead }))
-      };
+    /* ── Submit travel ── */
+    async function submitTravel() {
+      const data = collectTravelForm();
+      if (!data.destination) { alert('Please enter a destination'); return; }
+      if (!data.start_date || !data.end_date) { alert('Please select start and end dates'); return; }
 
       try {
-        const created = await API.createTravel(data);
-        // Auto-submit for approval
-        await API.submitTravel(created.id);
-        alert('Travel request submitted for approval!');
+        if (editingTravelId) {
+          await API.put('/travel/' + editingTravelId, data);
+          await API.submitTravel(editingTravelId);
+          alert('Travel request updated and submitted!');
+        } else {
+          const created = await API.createTravel(data);
+          await API.submitTravel(created.id);
+          alert('Travel request submitted for approval!');
+        }
         closeTravelModal();
         loadTravel();
       } catch (e) {
@@ -364,31 +390,41 @@
 
     /* ── Save draft ── */
     async function saveDraft() {
-      const destination = document.getElementById('trv-destination').value.trim();
-      const start_date = document.getElementById('trv-start-date').value;
-      const end_date = document.getElementById('trv-end-date').value;
-      const project_id = document.getElementById('trv-project').value || null;
-      const estimated_cost = parseFloat(document.getElementById('trv-estimated-cost').value) || 0;
-      const advance_amount = parseFloat(document.getElementById('trv-advance-amount').value) || 0;
-      const purpose = document.getElementById('trv-purpose').value.trim();
-
-      if (!destination) { alert('Please enter a destination'); return; }
-
-      const data = {
-        destination, start_date, end_date, purpose,
-        estimated_cost, advance_amount, project_id,
-        members: selectedMembers.map(m => ({ user_id: m.user_id, is_lead: m.is_lead }))
-      };
+      const data = collectTravelForm();
+      if (!data.destination) { alert('Please enter a destination'); return; }
 
       try {
-        await API.createTravel(data);
-        alert('Travel request saved as draft.');
+        if (editingTravelId) {
+          await API.put('/travel/' + editingTravelId, data);
+          alert('Travel request updated.');
+        } else {
+          await API.createTravel(data);
+          alert('Travel request saved as draft.');
+        }
         closeTravelModal();
         loadTravel();
       } catch (e) {
         console.error('Save draft failed:', e);
         alert('Save failed: ' + e.message);
       }
+    }
+
+    /* ── Edit travel ── */
+    function editTravel(id) {
+      event.stopPropagation();
+      const row = allTravelData.find(r => r.id === id);
+      if (!row) return;
+      openTravelModal(row);
+    }
+
+    /* ── Delete travel ── */
+    async function deleteTravel(id) {
+      event.stopPropagation();
+      if (!confirm('ยกเลิก Travel Request นี้?')) return;
+      try {
+        await API.del('/travel/' + id);
+        loadTravel();
+      } catch (e) { alert('Delete failed: ' + e.message); }
     }
 
     /* ── Helpers ── */
@@ -460,10 +496,15 @@
     /* ── Approval action buttons ── */
     function renderActionButtons(r) {
       const st = (r.status || '').toLowerCase();
-      const currentUser = API.getUser();
-      const role = currentUser ? (currentUser.role || '') : '';
+      const role = userRole;
+      const isOwner = r.created_by === userId;
+      const canManage = isOwner || ['pm','manager','executive','admin'].includes(role);
       let btns = '';
 
+      if (st === 'draft' && canManage) {
+        btns += `<button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editTravel(${r.id})" title="แก้ไข">&#9998; Edit</button>`;
+        btns += `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteTravel(${r.id})" title="ยกเลิก">&#10005; Delete</button>`;
+      }
       if (st === 'draft') {
         btns += `<button class="btn btn-sm btn-primary" onclick="submitTravelRequest(${r.id})">Submit</button>`;
       }

@@ -234,8 +234,75 @@
   <script src="assets/js/highlight.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
-    function openOTModal() { document.getElementById('ot-modal').classList.remove('hidden'); }
-    function closeOTModal() { document.getElementById('ot-modal').classList.add('hidden'); }
+    const userRole = (API.getUser()||{}).role||'';
+    const userId = (API.getUser()||{}).id||'';
+    let editingOTId = null;
+
+    function openOTModal(editRow) {
+      editingOTId = editRow ? editRow.id : null;
+      const modal = document.getElementById('ot-modal');
+      modal.classList.remove('hidden');
+      if (editRow) {
+        modal.querySelector('.modal-header h2').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> แก้ไข OT Request';
+        modal.querySelector('.modal-footer .btn-primary').textContent = 'อัปเดต';
+        modal.querySelector('.modal-footer .btn-primary').setAttribute('onclick', 'saveOT()');
+        modal.querySelector('.modal-body .form-input[type="date"]').value = editRow.ot_date ? editRow.ot_date.substring(0,10) : '';
+        const mult = parseFloat(editRow.multiplier) || 1.5;
+        document.getElementById('ot-type').value = mult === 3.0 ? '3.0' : mult === 2.0 ? '2.0' : '1.5';
+        document.getElementById('ot-hours').value = editRow.hours || 4;
+        modal.querySelector('.form-textarea').value = editRow.reason || '';
+      } else {
+        modal.querySelector('.modal-header h2').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> New OT Request';
+        modal.querySelector('.modal-footer .btn-primary').textContent = 'Submit for Approval';
+        modal.querySelector('.modal-footer .btn-primary').setAttribute('onclick', 'saveOT()');
+      }
+    }
+    function closeOTModal() { document.getElementById('ot-modal').classList.add('hidden'); editingOTId = null; }
+
+    async function saveOT() {
+      const modal = document.getElementById('ot-modal');
+      const ot_date = modal.querySelector('.modal-body .form-input[type="date"]').value;
+      const ot_type_val = document.getElementById('ot-type').value;
+      const ot_type = ot_type_val === '3.0' ? 'special' : ot_type_val === '2.0' ? 'holiday' : 'normal';
+      const hours = parseFloat(document.getElementById('ot-hours').value) || 0;
+      const reason = modal.querySelector('.form-textarea').value;
+      if (!ot_date || !hours) { alert('Fill date and hours'); return; }
+      const data = { ot_date, ot_type, hours, base_rate: 300, reason };
+      try {
+        if (editingOTId) {
+          await API.put('/ot/' + editingOTId, data);
+          alert('OT request updated.');
+        } else {
+          const created = await API.post('/ot', data);
+          await API.post('/ot/' + created.id + '/submit');
+          alert('OT request submitted!');
+        }
+        closeOTModal();
+        otData = await API.getOTs();
+        renderOTStats(otData);
+        renderOTSummary(otData);
+        renderOTList();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    function editOT(id) {
+      event.stopPropagation();
+      const row = otData.find(r => r.id === id);
+      if (!row) return;
+      openOTModal(row);
+    }
+
+    async function deleteOT(id) {
+      event.stopPropagation();
+      if (!confirm('ยกเลิก OT Request นี้?')) return;
+      try {
+        await API.del('/ot/' + id);
+        otData = await API.getOTs();
+        renderOTStats(otData);
+        renderOTSummary(otData);
+        renderOTList();
+      } catch (e) { alert('Delete failed: ' + e.message); }
+    }
 
     let otData = [];
 
@@ -255,9 +322,16 @@
 
     function otActionBtn(r) {
       const st = (r.status || 'draft').toLowerCase();
-      if (st === 'draft') return `<button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="otAction('submit',${r.id})">Submit</button>`;
-      if (st === 'pending_manager' || st === 'pending_executive') return `<button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="otAction('approve',${r.id})">Approve</button>`;
-      return '';
+      const isOwner = r.created_by === userId || r.user_id === userId;
+      const canManage = isOwner || ['pm','manager','executive','admin'].includes(userRole);
+      let btns = '';
+      if (st === 'draft' && canManage) {
+        btns += `<button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();editOT(${r.id})" title="แก้ไข">&#9998;</button>`;
+        btns += `<button class="btn btn-danger" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteOT(${r.id})" title="ยกเลิก">&#10005;</button>`;
+      }
+      if (st === 'draft') btns += `<button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="otAction('submit',${r.id})">Submit</button>`;
+      if (st === 'pending_manager' || st === 'pending_executive') btns += `<button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="otAction('approve',${r.id})">Approve</button>`;
+      return btns;
     }
 
     async function otAction(action, id) {

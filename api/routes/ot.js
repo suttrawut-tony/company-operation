@@ -62,12 +62,26 @@ router.post('/:id/submit', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { status } = req.body;
+    const { rows: [ot] } = await db.query('SELECT * FROM ot_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!ot) return res.status(404).json({ error: 'Not found' });
+    if (ot.status !== 'draft') return res.status(400).json({ error: 'Can only edit draft requests' });
+    const role = req.user.role || '';
+    if (ot.created_by !== req.user.id && !['pm','manager','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const { project_id, ot_date, ot_type, hours, base_rate, reason, status } = req.body;
+    const newType = ot_type || ot.ot_type;
+    const newHours = hours != null ? hours : ot.hours;
+    const newRate = base_rate != null ? base_rate : ot.base_rate;
+    const multiplier = newType === 'holiday' ? 2.0 : newType === 'special' ? 3.0 : 1.5;
+    const compensation = parseFloat(newRate) * multiplier * parseFloat(newHours);
     const { rows } = await db.query(
-      'UPDATE ot_requests SET status=COALESCE($1,status) WHERE id=$2 AND company_id=$3 RETURNING *',
-      [status, req.params.id, req.user.company_id]
+      `UPDATE ot_requests SET project_id=COALESCE($1,project_id), ot_date=COALESCE($2,ot_date),
+       ot_type=COALESCE($3,ot_type), hours=COALESCE($4,hours), base_rate=COALESCE($5,base_rate),
+       multiplier=$6, compensation=$7, reason=COALESCE($8,reason), status=COALESCE($9,status),
+       updated_at=NOW() WHERE id=$10 RETURNING *`,
+      [project_id, ot_date, ot_type, hours, base_rate, multiplier, compensation, reason, status, req.params.id]
     );
-    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -83,6 +97,23 @@ router.post('/:id/approve', async (req, res) => {
     else return res.status(400).json({ error: 'Cannot approve from status: ' + ot.status });
     const { rows } = await db.query('UPDATE ot_requests SET status=$1 WHERE id=$2 RETURNING *', [newStatus, req.params.id]);
     res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/ot/:id — cancel OT request (soft delete, draft/pending only)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { rows: [ot] } = await db.query('SELECT * FROM ot_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!ot) return res.status(404).json({ error: 'Not found' });
+    if (!['draft','pending_manager','pending_executive'].includes(ot.status)) {
+      return res.status(400).json({ error: 'Can only cancel draft or pending requests' });
+    }
+    const role = req.user.role || '';
+    if (ot.created_by !== req.user.id && !['pm','manager','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    await db.query('UPDATE ot_requests SET status=$1, updated_at=NOW() WHERE id=$2', ['cancelled', req.params.id]);
+    res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

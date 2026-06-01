@@ -434,6 +434,8 @@
     let expFilter = 'all'; // all, reimbursement, advance
 
     let allProjects = [];
+    const userRole = (API.getUser()||{}).role||'';
+    const userId = (API.getUser()||{}).id||'';
 
     async function loadExpenses() {
       try {
@@ -554,6 +556,8 @@
           <div class="exp-actions" onclick="event.stopPropagation();">
             ${e.status === 'draft' ? '<button class="btn btn-sm btn-primary" onclick="submitExpense(\''+e.id+'\')">Submit</button>' : ''}
             ${e.status.includes('pending') ? '<button class="btn btn-sm btn-success" onclick="approveExpense(\''+e.id+'\')">Approve</button>' : ''}
+            ${(e.status === 'draft' && (e.requester_id === userId || ['finance','executive'].includes(userRole))) ? '<a class="btn btn-sm btn-secondary" href="doc-detail.html?type=expense&id='+e.id+'&mode=edit" onclick="event.stopPropagation();" style="font-size:11px;">&#9998;</a>' : ''}
+            ${(e.status === 'draft' && (e.requester_id === userId || ['finance','executive'].includes(userRole))) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteExpense(\''+e.id+'\',\''+e.doc_number+'\')">&#128465;</button>' : ''}
           </div>
         </div>`;
       }).join('');
@@ -699,6 +703,15 @@
       const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
       a.download = 'expense_export_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+    }
+
+    // ═══ Delete Expense ═══
+    async function deleteExpense(expenseId, docNumber) {
+      if (!confirm('ยกเลิก Expense ' + (docNumber||'') + ' ?')) return;
+      try {
+        await API.del('/expense/' + expenseId);
+        await loadExpenses();
+      } catch(e) { alert('Error: ' + e.message); }
     }
 
     loadExpenses();

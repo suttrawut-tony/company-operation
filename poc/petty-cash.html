@@ -245,6 +245,8 @@
     let bankAccounts = [];
     let activeTab = 'all';
     const userRole = (API.getUser()||{}).role || 'viewer';
+    const userId = (API.getUser()||{}).id || '';
+    let editingFundId = null;
 
     const catLabels = { travel:'Travel', food:'Food', office:'Office Supplies', delivery:'Delivery', maintenance:'Maintenance', accommodation:'Accommodation', transport:'Transport', material:'Material', misc:'Misc' };
     const catAccounts = { travel:'522601', food:'522603', accommodation:'522602', transport:'522701', material:'511120', office:'522501', delivery:'522701', maintenance:'523101', misc:'522709' };
@@ -336,6 +338,7 @@
               <button class="btn btn-primary btn-sm" onclick="openDisbModal('${f.id}','${f.fund_name}',${bal})">+ Disburse</button>
               <button class="btn btn-secondary btn-sm" onclick="openReplModal('${f.id}',${limit},${bal})">Replenish</button>
               <button class="btn btn-secondary btn-sm" onclick="openCountModal('${f.id}',${bal})">Cash Count</button>
+              ${['finance','executive','admin'].includes(userRole) ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editFund('${f.id}')">&#9998; Edit Fund</button>` : ''}
             </div>
             <div id="detail-${f.id}"><div style="color:var(--text-muted);font-size:12px;">Loading...</div></div>
           </div>
@@ -370,11 +373,13 @@
             const approveBtn = d.receipt_status === 'submitted' && ['finance','executive'].includes(userRole)
               ? ' <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.preventDefault();approveDisb(\''+d.id+'\')">Approve</button>'
               : '';
+            const canDeleteDisb = ['draft','disbursed'].includes(d.status) && (d.created_by === userId || ['finance','executive','admin'].includes(userRole));
+            const deleteDisbBtn = canDeleteDisb ? ` <button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.stopPropagation();deleteDisb('${d.id}','${id}')">&#10005; Delete</button>` : '';
             html += `<div class="pc-item">
               <div class="dot" style="background:${dotColor};"></div>
               <div class="info">
                 <h5>${d.doc_number} — ${d.description}</h5>
-                <div class="sub">${d.recipient||''} | ${fmtDateShort(d.doc_date)} | <span style="padding:1px 6px;border-radius:10px;background:var(--bg-hover);font-size:9px;">${catLabels[d.category]||d.category}</span> ${receiptLabel}${approveBtn}</div>
+                <div class="sub">${d.recipient||''} | ${fmtDateShort(d.doc_date)} | <span style="padding:1px 6px;border-radius:10px;background:var(--bg-hover);font-size:9px;">${catLabels[d.category]||d.category}</span> ${receiptLabel}${approveBtn}${deleteDisbBtn}</div>
               </div>
               <div class="amount" style="color:var(--danger);">-฿${fmtNum(parseFloat(d.amount))}</div>
               <div>${d.change_amount > 0 ? '<span style="font-size:10px;color:var(--success);">Change: ฿'+fmtNum(parseFloat(d.change_amount))+'</span>' : ''}</div>
@@ -426,21 +431,65 @@
     }
 
     // ═══ Fund Modal ═══
-    function openNewFundModal() { document.getElementById('fund-modal').classList.add('show'); }
-    function closeFundModal() { document.getElementById('fund-modal').classList.remove('show'); }
+    function openNewFundModal() {
+      editingFundId = null;
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-limit').value = '5000';
+      document.getElementById('f-threshold').value = '20';
+      document.getElementById('f-custodian').value = '';
+      document.getElementById('f-project').value = '';
+      document.getElementById('f-gl').value = '111101';
+      document.querySelector('#fund-modal .modal-header h3').textContent = 'Create Petty Cash Fund';
+      document.querySelector('#fund-modal .modal-footer .btn-primary').textContent = 'Create Fund';
+      document.getElementById('fund-modal').classList.add('show');
+    }
+    function closeFundModal() { document.getElementById('fund-modal').classList.remove('show'); editingFundId = null; }
+
+    function editFund(id) {
+      const fund = allFunds.find(f => String(f.id) === String(id));
+      if (!fund) return;
+      editingFundId = id;
+      document.getElementById('f-name').value = fund.fund_name || '';
+      document.getElementById('f-limit').value = fund.fund_limit || 5000;
+      document.getElementById('f-threshold').value = fund.low_threshold || 20;
+      document.getElementById('f-custodian').value = fund.custodian_id || '';
+      document.getElementById('f-project').value = fund.project_id || '';
+      document.getElementById('f-gl').value = fund.gl_account || '111101';
+      document.querySelector('#fund-modal .modal-header h3').textContent = 'แก้ไข Petty Cash Fund';
+      document.querySelector('#fund-modal .modal-footer .btn-primary').textContent = 'อัปเดต';
+      document.getElementById('fund-modal').classList.add('show');
+    }
+
     async function saveFund() {
       const name = document.getElementById('f-name').value.trim();
       if (!name) { alert('Enter fund name'); return; }
+      const payload = {
+        fund_name: name,
+        fund_limit: parseFloat(document.getElementById('f-limit').value) || 5000,
+        low_threshold: parseFloat(document.getElementById('f-threshold').value) || 20,
+        custodian_id: document.getElementById('f-custodian').value || null,
+        project_id: document.getElementById('f-project').value || null,
+        gl_account: document.getElementById('f-gl').value || '111101'
+      };
       try {
-        await API.post('/petty-cash/funds', {
-          fund_name: name,
-          fund_limit: parseFloat(document.getElementById('f-limit').value) || 5000,
-          low_threshold: parseFloat(document.getElementById('f-threshold').value) || 20,
-          custodian_id: document.getElementById('f-custodian').value || null,
-          project_id: document.getElementById('f-project').value || null,
-          gl_account: document.getElementById('f-gl').value || '111101'
-        });
+        if (editingFundId) {
+          await API.put('/petty-cash/funds/' + editingFundId, payload);
+        } else {
+          await API.post('/petty-cash/funds', payload);
+        }
         closeFundModal(); await loadData();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Delete Disbursement ═══
+    async function deleteDisb(disbId, fundId) {
+      if (!confirm('ยกเลิก Disbursement นี้?')) return;
+      try {
+        await API.del('/petty-cash/disbursements/' + disbId);
+        await loadData();
+        // Re-expand the fund detail
+        const el = document.getElementById('expand-' + fundId);
+        if (el) { el.classList.add('show'); await loadFundDetail(fundId); }
       } catch(e) { alert('Error: '+e.message); }
     }
 

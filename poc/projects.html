@@ -240,6 +240,9 @@
   <script>
     let allProjects = [];
     let currentFilter = 'all';
+    const userRole = (API.getUser()||{}).role||'';
+    const userId = (API.getUser()||{}).id||'';
+    let editingProjectId = null;
 
     async function loadProjects() {
       try {
@@ -365,7 +368,11 @@
               <div class="avatar avatar-xs" style="background:var(--primary);">${(pm[0]||'?')}</div>
               <span>PM: ${pm}</span>
             </div>
-            <div class="proj-dates">${p.start_date ? new Date(p.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''} — ${p.end_date ? new Date(p.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="proj-dates">${p.start_date ? new Date(p.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''} — ${p.end_date ? new Date(p.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
+              ${(['executive','manager'].includes(userRole) || p.pm_user_id === userId) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();openEditProject(\''+p.id+'\')" title="Edit">&#9998; แก้ไข</button>' : ''}
+              ${userRole === 'executive' ? '<button class="btn-ret-edit" onclick="event.stopPropagation();deleteProject(\''+p.id+'\',\''+p.code+'\')" title="Delete" style="color:var(--danger);">&#128465; ลบ</button>' : ''}
+            </div>
           </div>
         </div>`;
       }).join('') || '<div class="empty-state"><h3>No projects found</h3></div>';
@@ -381,6 +388,11 @@
 
     // ═══ New Project Modal ═══
     async function openNewProject() {
+      editingProjectId = null;
+      document.querySelector('#proj-modal .modal-header h3').textContent = 'New Project';
+      const saveBtn = document.querySelector('#proj-modal .modal-footer .btn-primary');
+      saveBtn.textContent = 'Create';
+      saveBtn.setAttribute('onclick', 'saveNewProject()');
       document.getElementById('np-code').value = 'SDA-' + new Date().getFullYear() + '-' + String(allProjects.length + 1).padStart(3, '0');
       document.getElementById('np-name').value = '';
       document.getElementById('np-desc').value = '';
@@ -492,6 +504,64 @@
         btn.disabled = false;
         btn.textContent = 'บันทึก';
       }
+    }
+
+    // ═══ Edit Project ═══
+    async function openEditProject(projectId) {
+      const p = allProjects.find(x => x.id === projectId);
+      if (!p) return;
+      editingProjectId = projectId;
+      document.querySelector('#proj-modal .modal-header h3').textContent = 'แก้ไข Project — ' + p.code;
+      document.getElementById('np-code').value = p.code || '';
+      document.getElementById('np-name').value = p.name || '';
+      document.getElementById('np-desc').value = p.description || '';
+      document.getElementById('np-start').value = p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '';
+      document.getElementById('np-end').value = p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '';
+      document.getElementById('np-tor').value = p.tor_amount || '';
+      // Load PM dropdown
+      try {
+        const me = await API.getMe();
+        const sel = document.getElementById('np-pm');
+        sel.innerHTML = '<option value="">-- Select PM --</option>';
+        sel.innerHTML += '<option value="' + me.id + '">' + (me.first_name||'') + ' ' + (me.last_name||'') + '</option>';
+        if (p.pm_user_id && p.pm_user_id !== me.id) {
+          sel.innerHTML += '<option value="' + p.pm_user_id + '">' + (p.pm_name||'PM') + '</option>';
+        }
+        sel.value = p.pm_user_id || '';
+      } catch(e) {}
+      // Change save button
+      const saveBtn = document.querySelector('#proj-modal .modal-footer .btn-primary');
+      saveBtn.textContent = 'อัปเดต';
+      saveBtn.setAttribute('onclick', 'saveEditProject()');
+      document.getElementById('proj-modal').classList.add('show');
+    }
+
+    async function saveEditProject() {
+      if (!editingProjectId) return;
+      const code = document.getElementById('np-code').value.trim();
+      const name = document.getElementById('np-name').value.trim();
+      if (!code || !name) { alert('Please fill code and name'); return; }
+      try {
+        await API.put('/projects/' + editingProjectId, {
+          code, name,
+          description: document.getElementById('np-desc').value.trim(),
+          start_date: document.getElementById('np-start').value || null,
+          end_date: document.getElementById('np-end').value || null,
+          tor_amount: parseFloat(document.getElementById('np-tor').value) || 0,
+          pm_user_id: document.getElementById('np-pm').value || null,
+        });
+        closeProjModal();
+        await loadProjects();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ═══ Delete Project ═══
+    async function deleteProject(projectId, code) {
+      if (!confirm('ยกเลิก Project ' + code + ' ?')) return;
+      try {
+        await API.del('/projects/' + projectId);
+        await loadProjects();
+      } catch(e) { alert('Error: ' + e.message); }
     }
 
     // Close modal on ESC

@@ -311,4 +311,65 @@ router.get('/journal/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═══ EDIT ENDPOINTS ═══
+
+// PUT /api/petty-cash/funds/:id — edit fund (finance/executive only)
+router.put('/funds/:id', async (req, res) => {
+  try {
+    const role = req.user.role || '';
+    if (!['finance','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const { fund_name, fund_limit, custodian_id, project_id, gl_account, low_threshold } = req.body;
+    const { rows: [fund] } = await db.query(
+      `UPDATE petty_cash_funds SET fund_name=COALESCE($1,fund_name), fund_limit=COALESCE($2,fund_limit),
+       custodian_id=COALESCE($3,custodian_id), project_id=COALESCE($4,project_id),
+       gl_account=COALESCE($5,gl_account), low_threshold=COALESCE($6,low_threshold), updated_at=NOW()
+       WHERE id=$7 AND company_id=$8 RETURNING *`,
+      [fund_name, fund_limit, custodian_id, project_id, gl_account, low_threshold, req.params.id, req.user.company_id]);
+    if (!fund) return res.status(404).json({ error: 'Fund not found' });
+    res.json(fund);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/petty-cash/disbursements/:id — edit disbursement (draft/disbursed, owner only)
+router.put('/disbursements/:id', async (req, res) => {
+  try {
+    const { rows: [disb] } = await db.query(
+      'SELECT * FROM petty_cash_disbursements WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!disb) return res.status(404).json({ error: 'Not found' });
+    if (!['draft','disbursed'].includes(disb.status)) return res.status(400).json({ error: 'Can only edit draft/disbursed records' });
+    const role = req.user.role || '';
+    if (disb.created_by !== req.user.id && !['finance','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const { recipient, description, amount, category, remarks } = req.body;
+    const { rows: [updated] } = await db.query(
+      `UPDATE petty_cash_disbursements SET recipient=COALESCE($1,recipient), description=COALESCE($2,description),
+       amount=COALESCE($3,amount), category=COALESCE($4,category), remarks=COALESCE($5,remarks), updated_at=NOW()
+       WHERE id=$6 RETURNING *`,
+      [recipient, description, amount, category, remarks, req.params.id]);
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/petty-cash/disbursements/:id — cancel disbursement (draft/disbursed, owner)
+router.delete('/disbursements/:id', async (req, res) => {
+  try {
+    const { rows: [disb] } = await db.query(
+      'SELECT * FROM petty_cash_disbursements WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!disb) return res.status(404).json({ error: 'Not found' });
+    if (!['draft','disbursed'].includes(disb.status)) return res.status(400).json({ error: 'Can only cancel draft/disbursed records' });
+    const role = req.user.role || '';
+    if (disb.created_by !== req.user.id && !['finance','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    // Refund balance back to fund
+    await db.query('UPDATE petty_cash_funds SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
+      [parseFloat(disb.amount), disb.fund_id]);
+    await db.query('UPDATE petty_cash_disbursements SET status=$1, updated_at=NOW() WHERE id=$2', ['cancelled', req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

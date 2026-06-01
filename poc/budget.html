@@ -268,6 +268,8 @@
     let allBudgets = [];
     let allProjects = [];
     let currentTab = 'master';
+    const userRole = (API.getUser()||{}).role||'';
+    let editingBudgetId = null;
 
     // ═══ Helpers ═══
     function varianceBadge(budget, actual) {
@@ -377,6 +379,8 @@
             <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleRevisions('${b.id}','${uid}')" id="rev-btn-${uid}" style="font-size:11px;">
               ประวัติแก้ไข
             </button>
+            ${(st === 'draft' && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openEditBudget(\''+b.id+'\')" style="font-size:11px;">&#9998; แก้ไข</button>' : ''}
+            ${(st === 'draft' && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteBudget(\''+b.id+'\',\''+b.code+'\')">&#128465; ลบ</button>' : ''}
             ${controlBadge}
             ${b.reject_reason ? '<span style="font-size:11px;color:var(--danger);">Rejected: '+b.reject_reason+'</span>' : ''}
           </div>
@@ -610,7 +614,11 @@
 
     // ═══ New Budget Modal ═══
     function openNewBudget(projectId) {
+      editingBudgetId = null;
       document.getElementById('budget-modal-title').textContent = 'สร้าง Budget ใหม่';
+      const saveBtn = document.getElementById('bg-save-btn');
+      saveBtn.textContent = 'บันทึก';
+      saveBtn.setAttribute('onclick', 'saveBudget()');
       document.getElementById('bg-project').value = projectId || '';
       document.getElementById('bg-code').value = '';
       document.getElementById('bg-name').value = '';
@@ -620,6 +628,77 @@
       autoFillBudgetCode();
       updateLineTotal();
       document.getElementById('budget-modal').classList.add('show');
+    }
+
+    // ═══ Edit Budget ═══
+    async function openEditBudget(budgetId) {
+      const b = allBudgets.find(x => x.id === budgetId);
+      if (!b) return;
+      editingBudgetId = budgetId;
+      document.getElementById('budget-modal-title').textContent = 'แก้ไข Budget — ' + (b.code || '');
+      document.getElementById('bg-project').value = b.project_id || '';
+      document.getElementById('bg-code').value = b.code || '';
+      document.getElementById('bg-name').value = b.name || '';
+      document.getElementById('bg-year').value = b.fiscal_year || '2026';
+      // Load lines
+      document.getElementById('line-items-container').innerHTML = '';
+      try {
+        const detail = await API.getBudget(budgetId);
+        const lines = detail.lines || [];
+        if (lines.length) {
+          lines.forEach(l => {
+            addLineRow();
+            const rows = document.querySelectorAll('.line-row');
+            const row = rows[rows.length - 1];
+            row.querySelector('[data-ln-name]').value = l.name || l.category || '';
+            row.querySelector('[data-ln-tor]').value = l.tor_amount || 0;
+            row.querySelector('[data-ln-bud]').value = l.budget_amount || 0;
+          });
+        } else { addLineRow(); }
+      } catch(e) { addLineRow(); }
+      updateLineTotal();
+      const saveBtn = document.getElementById('bg-save-btn');
+      saveBtn.textContent = 'อัปเดต';
+      saveBtn.setAttribute('onclick', 'saveEditBudget()');
+      document.getElementById('budget-modal').classList.add('show');
+    }
+
+    async function saveEditBudget() {
+      if (!editingBudgetId) return;
+      const projectId = document.getElementById('bg-project').value;
+      const code = document.getElementById('bg-code').value.trim();
+      const name = document.getElementById('bg-name').value.trim();
+      const year = document.getElementById('bg-year').value;
+      if (!projectId || !code || !name) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+      const lines = [];
+      document.querySelectorAll('.line-row').forEach((row, i) => {
+        const ln = row.querySelector('[data-ln-name]').value.trim();
+        const tor = parseFloat(row.querySelector('[data-ln-tor]').value) || 0;
+        const bud = parseFloat(row.querySelector('[data-ln-bud]').value) || 0;
+        if (ln) lines.push({ name: ln, category: 'material', tor_amount: tor, budget_amount: bud, actual_amount: 0, sort_order: i+1 });
+      });
+      if (!lines.length) { alert('กรุณาเพิ่มรายการอย่างน้อย 1 รายการ'); return; }
+      const btn = document.getElementById('bg-save-btn');
+      btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+      try {
+        await API.put('/budget/' + editingBudgetId, { project_id: projectId, code, name, fiscal_year: parseInt(year), lines });
+        closeBudgetModal();
+        dataLoaded = false;
+        await loadMaster();
+        if (currentTab === 'project') loadProjectBudget();
+      } catch(err) { alert('Error: ' + err.message); }
+      finally { btn.disabled = false; btn.textContent = 'อัปเดต'; }
+    }
+
+    // ═══ Delete Budget ═══
+    async function deleteBudget(budgetId, code) {
+      if (!confirm('ยกเลิก Budget ' + (code||'') + ' ?')) return;
+      try {
+        await API.del('/budget/' + budgetId);
+        dataLoaded = false;
+        await loadMaster();
+        if (currentTab === 'project') loadProjectBudget();
+      } catch(e) { alert('Error: ' + e.message); }
     }
     function closeBudgetModal() { document.getElementById('budget-modal').classList.remove('show'); }
 
