@@ -51,23 +51,37 @@ router.post('/', async (req, res) => {
 // PUT /api/projects/:id
 router.put('/:id', async (req, res) => {
   try {
-    const { name, description, status, start_date, end_date, progress,
-            retention_rate, retention_due_date, retention_status } = req.body;
+    const allowedFields = ['name','description','status','start_date','end_date','progress','pm_user_id','tor_amount','budget_amount','retention_rate','retention_due_date','retention_status'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of allowedFields) {
+      if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); }
+    }
+    // Auto-calc retention_amount if retention_rate changed
+    if (req.body.retention_rate !== undefined) {
+      sets.push(`retention_amount = ROUND(tor_amount * $${idx-sets.length > 0 ? idx-1 : idx} / 100, 2)`);
+    }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.id); params.push(req.user.company_id);
     const { rows } = await db.query(
-      `UPDATE projects SET name=COALESCE($1,name), description=COALESCE($2,description),
-       status=COALESCE($3,status), start_date=COALESCE($4,start_date), end_date=COALESCE($5,end_date),
-       progress=COALESCE($6,progress),
-       retention_rate=COALESCE($9,retention_rate),
-       retention_due_date=COALESCE($10,retention_due_date),
-       retention_status=COALESCE($11,retention_status),
-       retention_amount=CASE WHEN $9 IS NOT NULL THEN ROUND(tor_amount * $9 / 100, 2) ELSE retention_amount END
-       WHERE id=$7 AND company_id=$8 RETURNING *`,
-      [name, description, status, start_date, end_date, progress, req.params.id, req.user.company_id,
-       retention_rate || null, retention_due_date || null, retention_status || null]
-    );
+      `UPDATE projects SET ${sets.join(', ')} WHERE id = $${idx++} AND company_id = $${idx} RETURNING *`, params);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
     req.broadcast('project_updated', { id: req.params.id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/projects/:id — Cancel project (soft delete, executive only)
+router.delete('/:id', async (req, res) => {
+  try {
+    if (!['executive'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'เฉพาะ executive เท่านั้น' });
+    }
+    const { rows } = await db.query(
+      "UPDATE projects SET status='cancelled', updated_at=NOW() WHERE id=$1 AND company_id=$2 RETURNING id, code, name, status",
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json({ cancelled: true, ...rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -261,4 +261,62 @@ router.get('/check/:projectId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═══ CRUD: Edit + Delete ═══
+
+// PUT /api/budget/:id — Edit budget (draft only)
+router.put('/:id', async (req, res) => {
+  try {
+    const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!b) return res.status(404).json({ error: 'Not found' });
+    if (b.status !== 'draft' && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'แก้ไขได้เฉพาะสถานะ draft' });
+    }
+    const fields = ['name','fiscal_year','notes','warn_threshold','block_threshold','control_mode'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.id);
+    const { rows } = await db.query(`UPDATE budgets SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/budget/:id — Cancel budget (draft only, soft delete)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!b) return res.status(404).json({ error: 'Not found' });
+    if (b.status !== 'draft' && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'ลบได้เฉพาะสถานะ draft' });
+    }
+    const { rows } = await db.query(
+      "UPDATE budgets SET status='rejected', reject_reason='Cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
+    res.json({ cancelled: true, ...rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/budget/lines/:lineId — Edit budget line
+router.put('/lines/:lineId', async (req, res) => {
+  try {
+    const fields = ['name','category','tor_amount','budget_amount','sap_account'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    params.push(req.params.lineId);
+    const { rows } = await db.query(`UPDATE budget_lines SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/budget/lines/:lineId — Delete budget line
+router.delete('/lines/:lineId', async (req, res) => {
+  try {
+    const { rows } = await db.query('DELETE FROM budget_lines WHERE id=$1 RETURNING id', [req.params.lineId]);
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json({ deleted: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

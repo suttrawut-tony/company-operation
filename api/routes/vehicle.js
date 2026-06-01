@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
-const { authenticate, getUserProjectIds } = require('../middleware/auth');
+const { authenticate, getUserProjectIds, checkPermission } = require('../middleware/auth');
 router.use(authenticate);
 
 // GET /api/vehicle — list fleet
@@ -302,6 +302,57 @@ router.get('/:id/schedule', async (req, res) => {
       `SELECT * FROM vehicle_maintenance WHERE vehicle_id=$1 AND status IN ('scheduled','in_progress')
        AND service_date <= $2 ORDER BY service_date`, [req.params.id, endStr]);
     res.json({ bookings, maintenance });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/vehicle/:id — Retire vehicle (soft delete)
+router.delete('/:id', checkPermission(['executive','manager']), async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      "UPDATE vehicles SET status='retired', updated_at=NOW() WHERE id=$1 AND company_id=$2 RETURNING id, name, status",
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json({ deleted: true, ...rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/vehicle/bookings/:id — Cancel booking (soft delete)
+router.delete('/bookings/:id', async (req, res) => {
+  try {
+    const { rows: [b] } = await db.query('SELECT * FROM vehicle_bookings WHERE id=$1', [req.params.id]);
+    if (!b) return res.status(404).json({ error: 'Not found' });
+    // Staff can only cancel own bookings
+    if (req.user.role === 'staff' && b.booked_by !== req.user.id) {
+      return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'คุณไม่มีสิทธิ์ยกเลิกการจองนี้' });
+    }
+    if (['checked_in','cancelled'].includes(b.status)) {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'ไม่สามารถยกเลิกการจองที่สถานะ ' + b.status });
+    }
+    const { rows } = await db.query(
+      "UPDATE vehicle_bookings SET status='cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/vehicle/bookings/:id — Edit booking
+router.put('/bookings/:id', async (req, res) => {
+  try {
+    const { rows: [b] } = await db.query('SELECT * FROM vehicle_bookings WHERE id=$1', [req.params.id]);
+    if (!b) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && b.booked_by !== req.user.id) {
+      return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'คุณไม่มีสิทธิ์แก้ไขการจองนี้' });
+    }
+    if (!['pending','approved'].includes(b.status)) {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'แก้ไขได้เฉพาะสถานะ pending/approved' });
+    }
+    const fields = ['vehicle_id','start_date','end_date','purpose','passengers','project_id'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.id);
+    const { rows } = await db.query(`UPDATE vehicle_bookings SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

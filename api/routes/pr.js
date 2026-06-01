@@ -69,17 +69,37 @@ router.get('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/pr/:id — Update PR status
+// PUT /api/pr/:id — Update PR (draft: full edit, other: status/remarks only)
 router.put('/:id', async (req, res) => {
   try {
-    const { status } = req.body;
-    const { rows } = await db.query(
-      'UPDATE purchase_requests SET status=COALESCE($1,status), updated_at=NOW() WHERE id=$2 AND company_id=$3 RETURNING *',
-      [status, req.params.id, req.user.company_id]
-    );
-    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    const { rows: [pr] } = await db.query('SELECT * FROM purchase_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!pr) return res.status(404).json({ error: 'Not found' });
+    const isDraft = pr.status === 'draft';
+    const fields = isDraft
+      ? ['vendor_code','vendor_name','remarks','project_id','total_amount','tax_code','tax_amount','status']
+      : ['remarks','status'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.id);
+    const { rows } = await db.query(`UPDATE purchase_requests SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
     res.json(rows[0]);
     req.broadcast('pr_updated', { id: req.params.id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/pr/:id — Cancel PR (soft delete)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { rows: [pr] } = await db.query('SELECT * FROM purchase_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!pr) return res.status(404).json({ error: 'Not found' });
+    if (!['draft','pending_manager'].includes(pr.status) && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'ยกเลิกได้เฉพาะสถานะ draft/pending' });
+    }
+    const { rows } = await db.query(
+      "UPDATE purchase_requests SET status='cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
+    res.json({ cancelled: true, ...rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

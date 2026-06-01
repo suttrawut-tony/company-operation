@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
-const { authenticate, getUserProjectIds } = require('../middleware/auth');
+const { authenticate, getUserProjectIds, checkPermission } = require('../middleware/auth');
 router.use(authenticate);
 
 // ═══ Static routes MUST come before /:id routes ═══
@@ -240,6 +240,45 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ ...adv, settlement });
     req.broadcast('advance_created', { doc_number: docNumber });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/advance/:id — Edit advance request (draft/pending only)
+router.put('/:id', async (req, res) => {
+  try {
+    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!adv) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && adv.created_by !== req.user.id) {
+      return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'คุณไม่มีสิทธิ์แก้ไขรายการนี้' });
+    }
+    if (!['draft','pending_manager','pending_finance','pending_executive'].includes(adv.status) && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'ไม่สามารถแก้ไขรายการที่สถานะ ' + adv.status });
+    }
+    const fields = ['description','amount','purpose','project_id','employee_id','remarks'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.id);
+    const { rows } = await db.query(`UPDATE advance_requests SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/advance/:id — Cancel advance (soft delete, draft only)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!adv) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && adv.created_by !== req.user.id) {
+      return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'คุณไม่มีสิทธิ์ลบรายการนี้' });
+    }
+    if (adv.status !== 'draft' && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'ลบได้เฉพาะสถานะ draft' });
+    }
+    const { rows } = await db.query(
+      "UPDATE advance_requests SET status='cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
+    res.json({ cancelled: true, ...rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

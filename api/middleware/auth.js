@@ -130,4 +130,39 @@ async function getUserProjectIds(user) {
   return rows.map(r => r.id);
 }
 
-module.exports = { authenticate, requireRole, requirePermission, projectAccessFilter, requireProjectAccess, getUserProjectIds, FULL_ACCESS_ROLES };
+/**
+ * checkPermission — reusable permission + status check for PUT/DELETE endpoints
+ * @param {string[]} allowedRoles — roles that can perform this action
+ * @param {object} options
+ *   ownerField: column name for record owner (e.g. 'created_by') — staff can edit own records
+ *   editableStatuses: statuses where edit/delete is allowed (default ['draft'])
+ *   softDelete: if true, DELETE sets status='cancelled' instead of actual delete
+ */
+function checkPermission(allowedRoles, options = {}) {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+    const role = req.user.role;
+    // Executive can always override
+    if (role === 'executive') return next();
+    // Check allowed roles
+    if (!allowedRoles.includes(role)) {
+      // Staff exception: can edit own records
+      if (role === 'staff' && options.ownerField) {
+        req._checkOwner = options.ownerField;
+        return next();
+      }
+      return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'คุณไม่มีสิทธิ์ดำเนินการนี้' });
+    }
+    next();
+  };
+}
+
+/**
+ * validateStatus — check if record status allows edit/delete
+ */
+function validateStatus(record, editableStatuses = ['draft']) {
+  if (!record || !record.status) return true;
+  return editableStatuses.includes(record.status);
+}
+
+module.exports = { authenticate, requireRole, requirePermission, projectAccessFilter, requireProjectAccess, getUserProjectIds, FULL_ACCESS_ROLES, checkPermission, validateStatus };
