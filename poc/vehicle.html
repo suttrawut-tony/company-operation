@@ -425,6 +425,7 @@
             <div class="booking-actions">
               ${statusBadge(b.status || 'pending')}
               ${actionBtn}
+              ${['pending','approved'].includes(st) ? '<button class="btn btn-sm" style="background:var(--danger);color:#fff;font-size:10px;" onclick="cancelBooking(\''+b.id+'\',event)">ยกเลิก</button>' : ''}
             </div>
           </div>
           <div id="checkout-form-${b.id}" class="checkout-form" style="display:none;"></div>
@@ -520,6 +521,13 @@
         console.error('Checkin failed:', e);
         alert('Check-in failed: ' + e.message);
       }
+    }
+
+    async function cancelBooking(id, event) {
+      if (event) event.stopPropagation();
+      if (!confirm('ยกเลิกการจองนี้?')) return;
+      try { await API.del('/vehicle/bookings/'+id); loadVehicles(); }
+      catch(e) { alert('Error: '+e.message); }
     }
 
     // ---- Calendar ----
@@ -793,7 +801,71 @@
         ${row('Registration Expiry', v.registration_expiry)}
         ${row('Ownership', v.ownership_type)}
         ${row('Status', v.status)}
-        ${v.notes ? '<div style="margin-top:12px;font-size:12px;color:var(--text-secondary);">Notes: '+v.notes+'</div>' : ''}`;
+        ${v.notes ? '<div style="margin-top:12px;font-size:12px;color:var(--text-secondary);">Notes: '+v.notes+'</div>' : ''}
+        ${canEditVehicle ? '<div style="margin-top:16px;display:flex;gap:6px;"><button class="btn btn-sm btn-primary" onclick="openEditVehicleModal(\''+v.id+'\')">แก้ไข</button><button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="retireVehicle(\''+v.id+'\',\''+v.name+'\')">ปลดระวาง</button></div>' : ''}`;
+    }
+
+    const canEditVehicle = ['executive','manager','finance'].includes((API.getUser()||{}).role||'');
+
+    async function retireVehicle(vid, name) {
+      if (!confirm('ปลดระวางรถ "'+name+'" ? (เปลี่ยนสถานะเป็น retired)')) return;
+      try {
+        await API.del('/vehicle/'+vid);
+        document.getElementById('vehicle-detail-modal').classList.add('hidden');
+        loadVehicles();
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    function openEditVehicleModal(vid) {
+      const v = allVehicles.find(x => x.id === vid);
+      if (!v) return;
+      document.getElementById('vehicle-detail-modal').classList.add('hidden');
+      openAddVehicleModal();
+      // Pre-fill after modal renders
+      setTimeout(() => {
+        document.getElementById('av-name').value = v.name||'';
+        document.getElementById('av-plate').value = v.plate_number||'';
+        document.getElementById('av-brand').value = v.brand||'';
+        document.getElementById('av-model').value = v.model||'';
+        document.getElementById('av-year').value = v.year||'';
+        document.getElementById('av-type').value = v.vehicle_type||'Sedan';
+        document.getElementById('av-seats').value = v.seats||5;
+        document.getElementById('av-color').value = v.color||'';
+        document.getElementById('av-vin').value = v.vin_number||'';
+        document.getElementById('av-engine').value = v.engine_number||'';
+        document.getElementById('av-reg-date').value = v.registration_date ? v.registration_date.slice(0,10) : '';
+        document.getElementById('av-reg-exp').value = v.registration_expiry ? v.registration_expiry.slice(0,10) : '';
+        document.getElementById('av-ownership').value = v.ownership_type||'owned';
+        document.getElementById('av-ownership').dispatchEvent(new Event('change'));
+        document.getElementById('av-lease-co').value = v.lease_company||'';
+        document.getElementById('av-lease-contract').value = v.lease_contract_number||'';
+        document.getElementById('av-lease-start').value = v.lease_start ? v.lease_start.slice(0,10) : '';
+        document.getElementById('av-lease-end').value = v.lease_end ? v.lease_end.slice(0,10) : '';
+        document.getElementById('av-lease-cost').value = v.lease_monthly_cost||'';
+        // Switch save button to update mode
+        const modal = document.getElementById('add-vehicle-modal');
+        modal.querySelector('h2').textContent = 'แก้ไขรถ — ' + v.name;
+        const saveBtn = modal.querySelector('.modal-footer .btn-primary');
+        saveBtn.textContent = 'อัปเดต';
+        saveBtn.onclick = async () => {
+          try {
+            await API.put('/vehicle/'+vid, {
+              name: document.getElementById('av-name').value, plate_number: document.getElementById('av-plate').value,
+              vehicle_type: document.getElementById('av-type').value, seats: parseInt(document.getElementById('av-seats').value)||5,
+              brand: document.getElementById('av-brand').value||null, model: document.getElementById('av-model').value||null,
+              year: parseInt(document.getElementById('av-year').value)||null, color: document.getElementById('av-color').value||null,
+              vin_number: document.getElementById('av-vin').value||null, engine_number: document.getElementById('av-engine').value||null,
+              registration_date: document.getElementById('av-reg-date').value||null, registration_expiry: document.getElementById('av-reg-exp').value||null,
+              ownership_type: document.getElementById('av-ownership').value,
+              lease_company: document.getElementById('av-lease-co').value||null, lease_contract_number: document.getElementById('av-lease-contract').value||null,
+              lease_start: document.getElementById('av-lease-start').value||null, lease_end: document.getElementById('av-lease-end').value||null,
+              lease_monthly_cost: parseFloat(document.getElementById('av-lease-cost').value)||null
+            });
+            document.getElementById('add-vehicle-modal').classList.add('hidden');
+            loadVehicles();
+          } catch(e) { alert('Error: '+e.message); }
+        };
+      }, 100);
     }
 
     function renderVDLease(v) {

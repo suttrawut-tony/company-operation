@@ -418,7 +418,12 @@
 
         // Action buttons based on status + role
         let actions = '';
-        if (a.status === 'draft') actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();submitAdv(\''+a.id+'\')">Submit</button>';
+        // Edit/Delete for draft
+        const canEdit = (a.status === 'draft' || a.status.includes('pending')) && (userRole === 'executive' || userRole === 'finance' || a.created_by === (API.getUser()||{}).id);
+        const canDelete = a.status === 'draft' && (userRole === 'executive' || userRole === 'finance' || a.created_by === (API.getUser()||{}).id);
+        if (canEdit) actions += '<button class="btn btn-sm btn-secondary" style="font-size:10px;" onclick="event.stopPropagation();editAdvance(\''+a.id+'\')">แก้ไข</button> ';
+        if (canDelete) actions += '<button class="btn btn-sm" style="font-size:10px;background:var(--danger);color:#fff;" onclick="event.stopPropagation();deleteAdvance(\''+a.id+'\',\''+a.doc_number+'\')">ลบ</button> ';
+        if (a.status === 'draft') actions += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();submitAdv(\''+a.id+'\')">Submit</button>';
         else if (a.status.includes('pending') && ['pm','finance','executive'].includes(userRole)) actions = '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveAdv(\''+a.id+'\')">Approve</button>';
         else if (a.status === 'approved' && ['finance','executive'].includes(userRole)) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPayModal(\''+a.id+'\','+parseFloat(a.amount)+')">Pay</button>';
         else if ((a.status === 'paid' || a.status === 'overdue') && !a.clear_status) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
@@ -723,6 +728,41 @@
           alert('ไม่สามารถสร้างรายการใหม่ได้ — มีเงินทดรองจ่ายเกินกำหนดเคลียร์อยู่ กรุณาเคลียร์ก่อน');
         } else { alert('Error: '+e.message); }
       }
+    }
+
+    // ═══ Edit/Delete Advance ═══
+    async function editAdvance(id) {
+      const a = allAdvances.find(x => x.id === id);
+      if (!a) return;
+      openNewModal();
+      setTimeout(() => {
+        document.querySelector('input[name="f-type"][value="'+a.advance_type+'"]').checked = true;
+        toggleAdvType();
+        document.getElementById('f-desc').value = a.description||'';
+        document.getElementById('f-amount').value = a.amount||'';
+        document.getElementById('f-purpose').value = a.purpose||'travel';
+        if (a.project_id) document.getElementById('f-project').value = a.project_id;
+        if (a.employee_id) document.getElementById('f-employee').value = a.employee_id;
+        // Switch to edit mode
+        const modal = document.getElementById('new-modal');
+        modal.querySelector('h3').textContent = 'แก้ไข — ' + a.doc_number;
+        const footer = modal.querySelector('.modal-footer');
+        footer.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="closeNewModal()">Cancel</button><button class="btn btn-primary btn-sm" id="adv-edit-save">อัปเดต</button>';
+        document.getElementById('adv-edit-save').onclick = async () => {
+          try {
+            const body = { description: document.getElementById('f-desc').value, purpose: document.getElementById('f-purpose').value, project_id: document.getElementById('f-project').value||null, employee_id: document.getElementById('f-employee').value||null };
+            if (a.advance_type === 'advance') body.amount = parseFloat(document.getElementById('f-amount').value);
+            await API.put('/advance/'+id, body);
+            closeNewModal(); await loadData();
+          } catch(e) { alert('Error: '+e.message); }
+        };
+      }, 100);
+    }
+
+    async function deleteAdvance(id, docNumber) {
+      if (!confirm('ยกเลิกรายการ '+docNumber+' ?')) return;
+      try { await API.del('/advance/'+id); await loadData(); }
+      catch(e) { alert('Error: '+e.message); }
     }
 
     // ═══ Payment Modal ═══
