@@ -144,6 +144,7 @@
         <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Vehicle Management</h1>
       </div>
       <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="openAddVehicleModal()">+ Add Vehicle</button>
         <button class="btn btn-primary" onclick="openBookingModal()">+ Book Vehicle</button>
       </div>
     </div>
@@ -972,6 +973,95 @@
         document.getElementById('maint-modal').classList.add('hidden');
         loadVDMaintenance(vid);
       } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Add Vehicle Modal ═══
+    function openAddVehicleModal() {
+      let m = document.getElementById('add-vehicle-modal');
+      if (!m) { m = document.createElement('div'); m.id = 'add-vehicle-modal'; m.className = 'modal-overlay hidden'; m.onclick = (e) => { if (e.target===m) m.classList.add('hidden'); }; document.body.appendChild(m); }
+      m.innerHTML = `<div class="modal" style="max-width:620px;max-height:90vh;overflow:auto;">
+        <div class="modal-header">
+          <h2>Add New Vehicle</h2>
+          <button class="btn btn-ghost" onclick="document.getElementById('add-vehicle-modal').classList.add('hidden')" style="font-size:18px;">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Name <span style="color:var(--danger);">*</span></label><input class="form-input" id="av-name" placeholder="e.g. Toyota Hilux Revo"></div>
+            <div class="form-group"><label class="form-label">Plate Number <span style="color:var(--danger);">*</span></label><input class="form-input" id="av-plate" placeholder="e.g. กก-1234 กทม"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Brand</label><input class="form-input" id="av-brand" placeholder="Toyota"></div>
+            <div class="form-group"><label class="form-label">Model</label><input class="form-input" id="av-model" placeholder="Hilux Revo"></div>
+            <div class="form-group"><label class="form-label">Year</label><input class="form-input" type="number" id="av-year" placeholder="2024"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="av-type"><option value="Sedan">Sedan</option><option value="Pickup">Pickup</option><option value="Van">Van</option><option value="SUV">SUV</option><option value="Truck">Truck</option></select></div>
+            <div class="form-group"><label class="form-label">Seats</label><input class="form-input" type="number" id="av-seats" value="5" min="1"></div>
+            <div class="form-group"><label class="form-label">Color</label><input class="form-input" id="av-color" placeholder="White"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">VIN Number</label><input class="form-input" id="av-vin" placeholder="Chassis number"></div>
+            <div class="form-group"><label class="form-label">Engine Number</label><input class="form-input" id="av-engine" placeholder="Engine number"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Registration Date</label><input class="form-input" type="date" id="av-reg-date"></div>
+            <div class="form-group"><label class="form-label">Registration Expiry</label><input class="form-input" type="date" id="av-reg-exp"></div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+          <div class="form-group"><label class="form-label">Ownership</label>
+            <select class="form-input" id="av-ownership" onchange="document.getElementById('av-lease-section').style.display=this.value==='owned'?'none':''">
+              <option value="owned">Owned (เป็นเจ้าของ)</option>
+              <option value="leased">Leased (ลีสซิ่ง)</option>
+              <option value="rented">Rented (เช่า)</option>
+            </select>
+          </div>
+          <div id="av-lease-section" style="display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group"><label class="form-label">Lease Company</label><input class="form-input" id="av-lease-co"></div>
+              <div class="form-group"><label class="form-label">Contract Number</label><input class="form-input" id="av-lease-contract"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+              <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" type="date" id="av-lease-start"></div>
+              <div class="form-group"><label class="form-label">End Date</label><input class="form-input" type="date" id="av-lease-end"></div>
+              <div class="form-group"><label class="form-label">Monthly Cost</label><input class="form-input" type="number" id="av-lease-cost" min="0"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="document.getElementById('add-vehicle-modal').classList.add('hidden')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveNewVehicle()">Create Vehicle</button>
+        </div>
+      </div>`;
+      m.classList.remove('hidden');
+    }
+
+    async function saveNewVehicle() {
+      const name = document.getElementById('av-name').value.trim();
+      const plate = document.getElementById('av-plate').value.trim();
+      if (!name || !plate) { alert('Name and Plate Number are required'); return; }
+      try {
+        await API.post('/vehicle', {
+          name, plate_number: plate,
+          vehicle_type: document.getElementById('av-type').value,
+          seats: parseInt(document.getElementById('av-seats').value) || 5,
+          brand: document.getElementById('av-brand').value || null,
+          model: document.getElementById('av-model').value || null,
+          year: parseInt(document.getElementById('av-year').value) || null,
+          color: document.getElementById('av-color').value || null,
+          vin_number: document.getElementById('av-vin').value || null,
+          engine_number: document.getElementById('av-engine').value || null,
+          registration_date: document.getElementById('av-reg-date').value || null,
+          registration_expiry: document.getElementById('av-reg-exp').value || null,
+          ownership_type: document.getElementById('av-ownership').value,
+          lease_company: document.getElementById('av-lease-co').value || null,
+          lease_contract_number: document.getElementById('av-lease-contract').value || null,
+          lease_start: document.getElementById('av-lease-start').value || null,
+          lease_end: document.getElementById('av-lease-end').value || null,
+          lease_monthly_cost: parseFloat(document.getElementById('av-lease-cost').value) || null
+        });
+        document.getElementById('add-vehicle-modal').classList.add('hidden');
+        loadVehicles();
+      } catch(e) { alert('Error: ' + e.message); }
     }
 
     loadVehicles();

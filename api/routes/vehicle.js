@@ -11,6 +11,19 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// POST /api/vehicle — create new vehicle
+router.post('/', async (req, res) => {
+  try {
+    const { name, plate_number, vehicle_type, seats, brand, model, year, color, vin_number, engine_number, registration_date, registration_expiry, ownership_type, lease_company, lease_start, lease_end, lease_monthly_cost, lease_contract_number } = req.body;
+    if (!name || !plate_number) return res.status(400).json({ error: 'Name and plate number are required' });
+    const { rows: [v] } = await db.query(
+      `INSERT INTO vehicles (company_id, name, plate_number, vehicle_type, seats, brand, model, year, color, vin_number, engine_number, registration_date, registration_expiry, ownership_type, lease_company, lease_start, lease_end, lease_monthly_cost, lease_contract_number)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
+      [req.user.company_id, name, plate_number, vehicle_type||'Sedan', seats||5, brand, model, year, color, vin_number, engine_number, registration_date||null, registration_expiry||null, ownership_type||'owned', lease_company, lease_start||null, lease_end||null, lease_monthly_cost, lease_contract_number]);
+    res.status(201).json(v);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/vehicle/bookings
 router.get('/bookings', async (req, res) => {
   try {
