@@ -9,20 +9,15 @@ router.get('/', async (req, res) => {
   try {
     const { project_id } = req.query;
     const projectIds = await getUserProjectIds(req.user);
-    let q = 'SELECT * FROM budgets WHERE company_id = $1';
+    let q = `SELECT b.*, COALESCE(bl.total_committed, 0) AS total_committed
+             FROM budgets b
+             LEFT JOIN (SELECT budget_id, SUM(committed_amount) AS total_committed FROM budget_lines GROUP BY budget_id) bl ON bl.budget_id = b.id
+             WHERE b.company_id = $1`;
     const params = [req.user.company_id];
-    if (project_id) { q += ` AND project_id = $${params.length + 1}`; params.push(project_id); }
-    if (projectIds !== null) { params.push(projectIds); params.push(req.user.id); q += ` AND (project_id = ANY($${params.length - 1}) OR created_by = $${params.length})`; }
-    q += ' ORDER BY created_at DESC';
+    if (project_id) { q += ` AND b.project_id = $${params.length + 1}`; params.push(project_id); }
+    if (projectIds !== null) { params.push(projectIds); params.push(req.user.id); q += ` AND (b.project_id = ANY($${params.length - 1}) OR b.created_by = $${params.length})`; }
+    q += ' ORDER BY b.created_at DESC';
     const { rows } = await db.query(q, params);
-    // Enrich with total_committed from budget_lines
-    for (const b of rows) {
-      try {
-        const { rows: [agg] } = await db.query(
-          'SELECT COALESCE(SUM(committed_amount), 0) AS total_committed FROM budget_lines WHERE budget_id = $1', [b.id]);
-        b.total_committed = agg.total_committed;
-      } catch(_) { b.total_committed = 0; }
-    }
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

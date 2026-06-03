@@ -119,7 +119,8 @@ router.get('/', async (req, res) => {
                THEN (a.due_date - CURRENT_DATE) ELSE NULL END AS days_remaining,
              CASE WHEN a.status = 'overdue' THEN true
                WHEN a.advance_type = 'advance' AND a.status = 'paid' AND a.due_date IS NOT NULL AND a.due_date < CURRENT_DATE THEN true
-               ELSE false END AS is_overdue
+               ELSE false END AS is_overdue,
+             (SELECT s.status FROM advance_settlements s WHERE s.advance_id = a.id ORDER BY s.created_at DESC LIMIT 1) AS clear_status
              FROM advance_requests a
              LEFT JOIN users u ON a.employee_id = u.id
              LEFT JOIN projects p ON a.project_id = p.id
@@ -133,12 +134,6 @@ router.get('/', async (req, res) => {
     if (req.query.status === 'overdue') { q += ` AND (a.status = 'overdue' OR (a.advance_type = 'advance' AND a.status = 'paid' AND a.due_date IS NOT NULL AND a.due_date < CURRENT_DATE))`; }
     q += ' ORDER BY a.created_at DESC';
     const { rows } = await db.query(q, params);
-    // Add settlement_approved flag
-    for (const a of rows) {
-      const { rows: setts } = await db.query(
-        "SELECT status FROM advance_settlements WHERE advance_id=$1 ORDER BY created_at DESC LIMIT 1", [a.id]);
-      a.clear_status = setts.length ? setts[0].status : null;
-    }
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
