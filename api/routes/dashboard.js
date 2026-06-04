@@ -76,4 +76,23 @@ router.get('/my-tasks', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/dashboard/my-tasks-all — All tasks for current user (with date range + done)
+router.get('/my-tasks-all', async (req, res) => {
+  try {
+    const { start_date, end_date } = req.query;
+    let q = `SELECT t.*, p.code AS project_code, p.name AS project_name,
+      u.first_name, u.last_name, u.first_name_th
+      FROM tasks t
+      LEFT JOIN projects p ON t.project_id = p.id
+      LEFT JOIN users u ON t.assigned_to = u.id
+      WHERE t.assigned_to = $1`;
+    const params = [req.user.id];
+    if (start_date) { params.push(start_date); q += ` AND (t.due_date >= $${params.length} OR t.start_date >= $${params.length})`; }
+    if (end_date) { params.push(end_date); q += ` AND (t.due_date <= $${params.length} OR t.start_date <= $${params.length})`; }
+    q += ` ORDER BY t.due_date ASC NULLS LAST, CASE t.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END`;
+    const { rows } = await db.query(q, params);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

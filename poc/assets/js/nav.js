@@ -43,7 +43,10 @@ const ICONS = {
 
 // Navigation groups — hardcode fallback if API fails
 const NAV_GROUPS_FALLBACK = [
-  { label: 'Main', items: [{ id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, href: 'dashboard.html' }] },
+  { label: 'Main', items: [
+    { id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, href: 'dashboard.html' },
+    { id: 'my-tasks', label: 'My Tasks', icon: ICONS.taskboard, href: 'my-tasks.html' },
+  ] },
   { label: 'Project', collapsible: true, items: [
     { id: 'projects', label: 'All Projects', icon: ICONS.allProjects, href: 'projects.html' },
     { id: 'overview', label: 'Project Detail', icon: ICONS.projectDetail, href: 'overview.html' },
