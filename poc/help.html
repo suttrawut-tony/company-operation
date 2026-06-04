@@ -768,17 +768,17 @@
           <p>บัญชีธนาคารบริษัทที่ใช้โอนจ่ายเงิน เลือกได้ตอนจ่ายเงินทดรอง เติมเงินสดย่อย ฯลฯ</p>
         </div>
         <div class="guide-block">
-          <h4>การเชื่อมต่อ SAP</h4>
-          <p>เอกสารในระบบส่งเข้า SAP B1 ได้ พอ SAP รับแล้วจะส่งเลขที่จริงกลับมา</p>
+          <h4>การเชื่อมต่อ SAP (เตรียมไว้)</h4>
+          <p>ระบบเตรียมโครงสร้างสำหรับเชื่อมต่อ SAP B1 Service Layer ไว้แล้ว แต่ยังไม่ได้เปิดใช้งาน ต้องตั้งค่า SAP credentials ใน .env ก่อน</p>
           <table class="guide-table">
-            <tr><th>เอกสาร</th><th>SAP Object</th></tr>
+            <tr><th>เอกสาร</th><th>SAP Object (เมื่อเชื่อมต่อแล้ว)</th></tr>
             <tr><td>ใบขอซื้อ (PR)</td><td>OPRQ</td></tr>
             <tr><td>ใบสั่งซื้อ (PO)</td><td>OPOR</td></tr>
             <tr><td>รับสินค้า (GRPO)</td><td>OPDN</td></tr>
             <tr><td>ใบแจ้งหนี้ (AP Invoice)</td><td>OPCH</td></tr>
           </table>
         </div>
-        <div class="tip-box">💡 เลขที่จาก SAP จะแสดงเป็น badge สีฟ้าติดกับเลขเอกสารในระบบ</div>
+        <div class="tip-box">💡 ระบบใช้งานได้เต็มที่โดยไม่ต้องเชื่อม SAP เมื่อพร้อมเชื่อมต่อจะเพิ่มปุ่ม Push to SAP</div>
       </div>
     </div>
 
