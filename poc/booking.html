@@ -380,7 +380,7 @@
         <button class="btn-sm btn-primary" onclick="toggleDropdown(this)">+ สร้าง Booking ▾</button>
         <div class="dropdown-menu" id="createDropdown">
           <button onclick="openModal('vehicle')">🚗 จองรถ</button>
-          <button onclick="openModal('solar')">👷 จองช่าง Solar Cell</button>
+          <button onclick="openModal('solar')">👷 จองช่าง</button>
           <button onclick="openModal('flight')">✈️ จองเครื่องบิน</button>
         </div>
       </div>
@@ -415,7 +415,7 @@
           </label>
           <label class="filter-item">
             <input type="checkbox" checked data-type="solar" onchange="applyFilters()">
-            <span class="filter-dot" style="background:#0f9d58"></span> ช่าง Solar
+            <span class="filter-dot" style="background:#0f9d58"></span> ช่าง
           </label>
           <label class="filter-item">
             <input type="checkbox" checked data-type="flight" onchange="applyFilters()">
@@ -520,11 +520,11 @@
     </div>
   </div>
 
-  <!-- Solar Technician Booking Modal -->
+  <!-- Technician Booking Modal -->
   <div class="modal-overlay" id="modalSolar" onclick="if(event.target===this)closeAllModals()">
     <div class="modal">
       <div class="modal-header">
-        <h3>👷 จองช่าง Solar Cell</h3>
+        <h3>👷 จองช่าง</h3>
         <button class="close-btn" onclick="closeAllModals()">&times;</button>
       </div>
       <div class="modal-body">
@@ -573,6 +573,20 @@
           <div class="form-group">
             <label>วันสิ้นสุด</label>
             <input type="date" id="solarEndDate">
+          </div>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="solarAllDay" onchange="toggleSolarTime()">
+          <label for="solarAllDay">ทั้งวัน</label>
+        </div>
+        <div class="form-row" id="solarTimeRow">
+          <div class="form-group">
+            <label>เวลาเริ่ม</label>
+            <input type="time" id="solarStartTime" value="08:00">
+          </div>
+          <div class="form-group">
+            <label>เวลาสิ้นสุด</label>
+            <input type="time" id="solarEndTime" value="17:00">
           </div>
         </div>
         <div class="form-group">
@@ -731,7 +745,7 @@
 
     const TYPE_COLORS = { vehicle: '#4285f4', solar: '#0f9d58', flight: '#db4437' };
     const TYPE_ICONS = { vehicle: '\u{1F697}', solar: '\u{1F477}', flight: '\u2708\uFE0F' };
-    const TYPE_LABELS = { vehicle: 'รถยนต์', solar: 'ช่าง Solar', flight: 'เครื่องบิน' };
+    const TYPE_LABELS = { vehicle: 'รถยนต์', solar: 'ช่าง', flight: 'เครื่องบิน' };
     const TH_DAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
     const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                         'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -880,7 +894,10 @@
 
       filteredBookings = allBookings.filter(ev => {
         if (!enabledTypes.has(ev.booking_type)) return false;
-        if (anyResChecked && ev.resource_id && !enabledRes.has(String(ev.resource_id))) return false;
+        if (anyResChecked) {
+          const rid = ev.vehicle_id || ev.technician_id;
+          if (rid && !enabledRes.has(String(rid))) return false;
+        }
         return true;
       });
       renderView();
@@ -1419,6 +1436,10 @@
       } else if (type === 'solar') {
         document.getElementById('solarStartDate').value = todayStr;
         document.getElementById('solarEndDate').value = todayStr;
+        document.getElementById('solarAllDay').checked = false;
+        document.getElementById('solarStartTime').value = '08:00';
+        document.getElementById('solarEndTime').value = '17:00';
+        toggleSolarTime();
         document.getElementById('solarSite').value = '';
         document.getElementById('solarCapacity').value = '';
         document.getElementById('solarDesc').value = '';
@@ -1449,6 +1470,11 @@
     function toggleVehTime() {
       const allDay = document.getElementById('vehAllDay').checked;
       document.getElementById('vehTimeRow').style.display = allDay ? 'none' : 'grid';
+    }
+
+    function toggleSolarTime() {
+      const allDay = document.getElementById('solarAllDay').checked;
+      document.getElementById('solarTimeRow').style.display = allDay ? 'none' : 'grid';
     }
 
     async function saveBooking(type) {
@@ -1482,6 +1508,9 @@
             safety_notes: document.getElementById('solarSafety').value,
             start_date: document.getElementById('solarStartDate').value,
             end_date: document.getElementById('solarEndDate').value,
+            all_day: document.getElementById('solarAllDay').checked,
+            start_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarStartTime').value,
+            end_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarEndTime').value,
             project_id: document.getElementById('solarProject').value || null,
             color: document.getElementById('solarColor').value,
             title: document.getElementById('solarJobType').value + ' - ' + document.getElementById('solarSite').value,
@@ -1561,6 +1590,10 @@
         document.getElementById('solarSafety').value = ev.safety_notes || '';
         document.getElementById('solarStartDate').value = (ev.start_date || '').slice(0, 10);
         document.getElementById('solarEndDate').value = (ev.end_date || ev.start_date || '').slice(0, 10);
+        document.getElementById('solarAllDay').checked = !!ev.all_day;
+        toggleSolarTime();
+        if (ev.start_time) document.getElementById('solarStartTime').value = ev.start_time.slice(0, 5);
+        if (ev.end_time) document.getElementById('solarEndTime').value = ev.end_time.slice(0, 5);
         document.getElementById('solarProject').value = ev.project_id || '';
         document.getElementById('solarColor').value = ev.color || '#0f9d58';
         document.getElementById('modalSolar').classList.add('show');
