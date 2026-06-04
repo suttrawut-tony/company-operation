@@ -41,59 +41,94 @@ const ICONS = {
   help:         icon('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
 };
 
-// Navigation groups
-const NAV_GROUPS = [
-  {
-    label: 'Main',
-    items: [
-      { id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, href: 'dashboard.html' },
-    ]
-  },
-  {
-    label: 'Project',
-    collapsible: true,
-    items: [
-      { id: 'projects',  label: 'All Projects', icon: ICONS.allProjects, href: 'projects.html' },
-      { id: 'overview',  label: 'Project Detail',  icon: ICONS.projectDetail,  href: 'overview.html' },
-      { id: 'phases',    label: 'Plan Project',  icon: ICONS.phases,    href: 'phases.html' },
-      { id: 'taskboard', label: 'Taskboard', icon: ICONS.taskboard, href: 'taskboard.html' },
-    ]
-  },
-  {
-    label: 'Document',
-    collapsible: true,
-    items: [
-      { id: 'budget',         label: 'Budget',         icon: ICONS.budget,    href: 'budget.html' },
-      { id: 'pr-po',          label: 'PR / PO',        icon: ICONS.prpo,      href: 'pr-po.html' },
-      { id: 'advance',        label: 'Advance',        icon: ICONS.advance,   href: 'advance.html' },
-      { id: 'petty-cash',     label: 'Petty Cash',     icon: ICONS.pettyCash, href: 'petty-cash.html' },
-      { id: 'expense',        label: 'Expense',        icon: ICONS.expense,   href: 'expense.html' },
-      { id: 'travel',         label: 'Travel',         icon: ICONS.travel,    href: 'travel.html' },
-    ]
-  },
-  {
-    label: 'Resource',
-    collapsible: true,
-    items: [
-      { id: 'vehicle',        label: 'Vehicle',        icon: ICONS.vehicle,   href: 'vehicle.html' },
-      { id: 'ot',             label: 'Holiday / OT',   icon: ICONS.ot,        href: 'ot.html' },
-    ]
-  },
-  {
-    label: 'System',
-    collapsible: true,
-    items: [
-      { id: 'items',          label: 'Item Master',     icon: ICONS.prpo,        href: 'item-master.html' },
-      { id: 'bp',             label: 'Business Partner',icon: ICONS.user,        href: 'bp-master.html' },
-      { id: 'number-running', label: 'Number Running', icon: ICONS.numberRun,   href: 'number-running.html' },
-      { id: 'reports',        label: 'Reports',        icon: ICONS.reports,     href: 'reports.html' },
-      { id: 'permissions',    label: 'User & Permission', icon: ICONS.permissions, href: 'user-permissions.html' },
-      { id: 'setup',          label: 'Setup',          icon: ICONS.setup,       href: 'setup.html' },
-      { id: 'changelog',      label: 'Change Log',     icon: ICONS.reports,     href: 'changelog.html' },
-      { id: 'help',            label: 'User Guide',    icon: ICONS.help,        href: 'help.html' },
-    ]
-  },
+// Navigation groups — hardcode fallback if API fails
+const NAV_GROUPS_FALLBACK = [
+  { label: 'Main', items: [{ id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, href: 'dashboard.html' }] },
+  { label: 'Project', collapsible: true, items: [
+    { id: 'projects', label: 'All Projects', icon: ICONS.allProjects, href: 'projects.html' },
+    { id: 'overview', label: 'Project Detail', icon: ICONS.projectDetail, href: 'overview.html' },
+    { id: 'phases', label: 'Plan Project', icon: ICONS.phases, href: 'phases.html' },
+    { id: 'taskboard', label: 'Taskboard', icon: ICONS.taskboard, href: 'taskboard.html' },
+  ]},
+  { label: 'Document', collapsible: true, items: [
+    { id: 'budget', label: 'Budget', icon: ICONS.budget, href: 'budget.html' },
+    { id: 'pr-po', label: 'PR / PO', icon: ICONS.prpo, href: 'pr-po.html' },
+    { id: 'advance', label: 'Advance', icon: ICONS.advance, href: 'advance.html' },
+    { id: 'petty-cash', label: 'Petty Cash', icon: ICONS.pettyCash, href: 'petty-cash.html' },
+    { id: 'expense', label: 'Expense', icon: ICONS.expense, href: 'expense.html' },
+    { id: 'travel', label: 'Travel', icon: ICONS.travel, href: 'travel.html' },
+  ]},
+  { label: 'Resource', collapsible: true, items: [
+    { id: 'vehicle', label: 'Vehicle', icon: ICONS.vehicle, href: 'vehicle.html' },
+    { id: 'ot', label: 'Holiday / OT', icon: ICONS.ot, href: 'ot.html' },
+  ]},
+  { label: 'System', collapsible: true, items: [
+    { id: 'items', label: 'Item Master', icon: ICONS.prpo, href: 'item-master.html' },
+    { id: 'bp', label: 'Business Partner', icon: ICONS.user, href: 'bp-master.html' },
+    { id: 'number-running', label: 'Number Running', icon: ICONS.numberRun, href: 'number-running.html' },
+    { id: 'reports', label: 'Reports', icon: ICONS.reports, href: 'reports.html' },
+    { id: 'permissions', label: 'User & Permission', icon: ICONS.permissions, href: 'user-permissions.html' },
+    { id: 'setup', label: 'Setup', icon: ICONS.setup, href: 'setup.html' },
+    { id: 'changelog', label: 'Change Log', icon: ICONS.reports, href: 'changelog.html' },
+    { id: 'help', label: 'User Guide', icon: ICONS.help, href: 'help.html' },
+  ]},
 ];
+
+let NAV_GROUPS = NAV_GROUPS_FALLBACK;
+let _enabledHrefs = null; // set after API load
+
+// Build NAV_GROUPS from API modules
+function buildNavFromModules(modules) {
+  const groupLabels = { main: 'Main', project: 'Project', document: 'Document', resource: 'Resource', system: 'System' };
+  const groups = {};
+  for (const m of modules) {
+    if (!m.is_enabled) continue;
+    const g = m.module_group || 'system';
+    if (!groups[g]) groups[g] = { label: groupLabels[g] || g, collapsible: g !== 'main', items: [] };
+    groups[g].items.push({ id: m.module_id, label: m.module_name, icon: ICONS[m.icon] || ICONS.reports, href: m.href });
+  }
+  const order = ['main','project','document','resource','system'];
+  const result = order.filter(g => groups[g]).map(g => groups[g]);
+  // Add any extra groups
+  Object.keys(groups).filter(g => !order.includes(g)).forEach(g => result.push(groups[g]));
+  return result;
+}
+
+async function loadModulesFromAPI() {
+  try {
+    const cached = sessionStorage.getItem('sda_modules');
+    if (cached) {
+      const data = JSON.parse(cached);
+      NAV_GROUPS = buildNavFromModules(data.modules || []);
+      _enabledHrefs = new Set((data.modules || []).filter(m => m.is_enabled).map(m => m.href));
+    }
+    // Fetch fresh in background
+    const token = localStorage.getItem('sda_token');
+    if (!token) return;
+    const resp = await fetch('/api/modules', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (resp.ok) {
+      const data = await resp.json();
+      sessionStorage.setItem('sda_modules', JSON.stringify(data));
+      NAV_GROUPS = buildNavFromModules(data.modules || []);
+      _enabledHrefs = new Set((data.modules || []).filter(m => m.is_enabled).map(m => m.href));
+      renderSidebar(); // re-render with fresh data
+    }
+  } catch(e) {
+    // Fallback — use hardcoded
+    NAV_GROUPS = NAV_GROUPS_FALLBACK;
+  }
+}
+
+// Check if current page module is disabled → redirect to dashboard
+function checkModuleAccess() {
+  if (!_enabledHrefs) return;
+  const page = location.pathname.split('/').pop();
+  if (!page || page === '' || page === 'login.html' || page === 'register.html' || page === 'reset-password.html' || page === 'change-password.html') return;
+  if (!_enabledHrefs.has(page)) {
+    if (typeof showToast === 'function') showToast('ไม่สามารถเข้าถึงหน้านี้ได้ Module ถูกปิดอยู่', 'warning');
+    location.href = 'dashboard.html';
+  }
+}
 
 // Current user
 function getCurrentUser() {
@@ -250,6 +285,7 @@ function handleLogout() {
   if (confirm('Logout from Company Operation?')) {
     localStorage.removeItem('sda_token');
     localStorage.removeItem('sda_user');
+    sessionStorage.removeItem('sda_modules');
     window.location = 'login.html';
   }
 }
@@ -378,11 +414,13 @@ window.markChangelogSeen = function() {
 };
 
 // Auto-render
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   checkAuth();
+  await loadModulesFromAPI();
   renderSidebar();
   renderTopNav();
   renderTabBar();
   loadNotifications();
   setTimeout(checkChangelogBadge, 500);
+  setTimeout(checkModuleAccess, 300);
 });

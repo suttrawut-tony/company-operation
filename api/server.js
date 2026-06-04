@@ -67,6 +67,7 @@ app.use('/api/dashboard',     require('./routes/dashboard'));
 app.use('/api/sap',           require('./routes/sap'));
 app.use('/api/quotes',        require('./routes/quotes'));
 app.use('/api/master',        require('./routes/masterdata'));
+app.use('/api/modules',       require('./routes/modules'));
 
 // Health check — includes a DB ping so monitoring sees real status
 app.get('/api/health', async (req, res) => {

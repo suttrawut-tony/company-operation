@@ -319,6 +319,7 @@
 <script>
 // ─── Settings Sections Definition ───
 const SECTIONS = [
+  { id: 'modules',        label: 'Module Management',    icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>' },
   { id: 'company',        label: 'Company Profile',      icon: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>' },
   { id: 'approval',       label: 'Approval Matrix',      icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
   { id: 'numbering',      label: 'Document Numbering',   icon: '<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>' },
@@ -355,12 +356,14 @@ function switchSection(id) {
   document.querySelector(`.settings-nav-item[onclick*="${id}"]`)?.classList.add('active');
   document.querySelectorAll('.setup-section').forEach(el => el.classList.remove('active'));
   document.getElementById(`section-${id}`)?.classList.add('active');
+  if (id === 'modules') loadModuleTable();
 }
 
 // ─── Build All Sections ───
 function renderSettingsContent() {
   const container = document.getElementById('settingsContent');
   container.innerHTML = `
+    ${renderModuleManagement()}
     ${renderCompanyProfile()}
     ${renderApprovalMatrix()}
     ${renderDocNumbering()}
@@ -375,13 +378,158 @@ function renderSettingsContent() {
 }
 
 // ═══════════════════════════════════════
+// 0. Module Management
+// ═══════════════════════════════════════
+function renderModuleManagement() {
+  return `
+  <div class="setup-section${activeSection === 'modules' ? ' active' : ''}" id="section-modules">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[0].icon, 20)} Module Management</h2>
+      <p>เปิด-ปิด Module ควบคุม Sidebar และสิทธิ์การเข้าถึง</p>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;">
+      <button class="btn btn-primary btn-sm" onclick="openAddModuleModal()">+ เพิ่ม Module</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadModuleTable()">Refresh</button>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <div class="table-container" id="module-table-container">
+          <div style="padding:20px;text-align:center;color:var(--text-muted);">Loading modules...</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+let allModulesAdmin = [];
+
+async function loadModuleTable() {
+  try {
+    const data = await API.get('/modules');
+    allModulesAdmin = data.modules || [];
+    renderModuleTable(allModulesAdmin);
+  } catch(e) { document.getElementById('module-table-container').innerHTML = '<div style="padding:20px;color:var(--danger);">Error: '+e.message+'</div>'; }
+}
+
+function renderModuleTable(modules) {
+  const groupColors = { main:'var(--primary)', project:'var(--success)', document:'var(--warning)', resource:'var(--info)', system:'var(--text-muted)' };
+  const roles = ['executive','admin','pm','finance','accounting','procurement','staff'];
+  let html = '<table><thead><tr><th>#</th><th>Module</th><th>Group</th><th>Enabled</th><th>Roles</th><th></th></tr></thead><tbody>';
+  modules.forEach((m, i) => {
+    const gColor = groupColors[m.module_group] || 'var(--text-muted)';
+    const toggleDisabled = m.is_core ? 'disabled title="Module หลัก ปิดไม่ได้"' : '';
+    const toggleChecked = m.is_enabled ? 'checked' : '';
+    const roleDisplay = m.allowed_roles ? m.allowed_roles.map(r => '<span class="badge badge-gray" style="font-size:9px;">'+r+'</span>').join(' ') : '<span style="font-size:10px;color:var(--text-muted);">ทุก role</span>';
+    html += `<tr style="opacity:${m.is_enabled?1:0.5};">
+      <td style="text-align:center;">${m.sort_order}</td>
+      <td><strong>${m.module_name}</strong><br><span style="font-size:10px;color:var(--text-muted);">${m.href}</span></td>
+      <td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:${gColor}20;color:${gColor};">${m.module_group}</span></td>
+      <td style="text-align:center;">
+        <label style="position:relative;display:inline-block;width:36px;height:20px;">
+          <input type="checkbox" ${toggleChecked} ${toggleDisabled} onchange="toggleModule('${m.module_id}',this.checked)" style="opacity:0;width:0;height:0;">
+          <span style="position:absolute;cursor:${m.is_core?'not-allowed':'pointer'};top:0;left:0;right:0;bottom:0;background:${m.is_enabled?'var(--success)':'var(--border)'};border-radius:10px;transition:0.2s;"></span>
+          <span style="position:absolute;height:16px;width:16px;left:${m.is_enabled?'18px':'2px'};bottom:2px;background:white;border-radius:50%;transition:0.2s;"></span>
+        </label>
+      </td>
+      <td>${roleDisplay}</td>
+      <td><button class="btn btn-sm btn-secondary" style="font-size:10px;" onclick="editModule('${m.module_id}')">แก้ไข</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('module-table-container').innerHTML = html;
+}
+
+async function toggleModule(moduleId, enabled) {
+  try {
+    await API.put('/modules/'+moduleId+'/toggle', { is_enabled: enabled });
+    sessionStorage.removeItem('sda_modules');
+    if (typeof showToast === 'function') showToast(enabled ? 'เปิด Module แล้ว' : 'ปิด Module แล้ว', 'success');
+    loadModuleTable();
+    // Re-render sidebar immediately
+    if (typeof loadModulesFromAPI === 'function') { await loadModulesFromAPI(); renderSidebar(); }
+  } catch(e) { alert('Error: '+e.message); loadModuleTable(); }
+}
+
+function editModule(moduleId) {
+  const m = allModulesAdmin.find(x => x.module_id === moduleId);
+  if (!m) return;
+  const roles = ['executive','admin','pm','finance','accounting','procurement','staff'];
+  const currentRoles = m.allowed_roles || [];
+  const roleChecks = roles.map(r => '<label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" data-erole="'+r+'" '+(currentRoles.length===0||currentRoles.includes(r)?'checked':'')+'>'+r+'</label>').join('');
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay show'; modal.id = 'edit-module-modal';
+  modal.onclick = (e) => { if (e.target===modal) modal.remove(); };
+  modal.innerHTML = `<div class="modal-box" style="width:400px;">
+    <div class="modal-header"><h3>แก้ไข Module — ${m.module_name}</h3><button class="modal-close" onclick="document.getElementById('edit-module-modal').remove()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">ชื่อ Module</label><input class="form-input" id="em-name" value="${m.module_name}"></div>
+      <div class="form-group"><label class="form-label">ลำดับ</label><input class="form-input" type="number" id="em-sort" value="${m.sort_order}"></div>
+      <div class="form-group"><label class="form-label">Roles ที่เห็น</label><div style="display:flex;flex-wrap:wrap;gap:8px;">${roleChecks}</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">ถ้าเลือกทุก role = ทุกคนเห็น</div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="document.getElementById('edit-module-modal').remove()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveModuleEdit('${moduleId}')">Save</button></div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function saveModuleEdit(moduleId) {
+  const name = document.getElementById('em-name').value.trim();
+  const sort = parseInt(document.getElementById('em-sort').value) || 0;
+  const checks = document.querySelectorAll('[data-erole]');
+  const selectedRoles = []; checks.forEach(c => { if (c.checked) selectedRoles.push(c.dataset.erole); });
+  const allRoles = ['executive','admin','pm','finance','accounting','procurement','staff'];
+  const allowed = selectedRoles.length === allRoles.length ? null : selectedRoles;
+  try {
+    await API.put('/modules/'+moduleId, { module_name: name, sort_order: sort, allowed_roles: allowed });
+    document.getElementById('edit-module-modal').remove();
+    sessionStorage.removeItem('sda_modules');
+    loadModuleTable();
+    if (typeof loadModulesFromAPI === 'function') { await loadModulesFromAPI(); renderSidebar(); }
+    if (typeof showToast === 'function') showToast('บันทึกแล้ว', 'success');
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+function openAddModuleModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay show'; modal.id = 'add-module-modal';
+  modal.onclick = (e) => { if (e.target===modal) modal.remove(); };
+  modal.innerHTML = `<div class="modal-box" style="width:420px;">
+    <div class="modal-header"><h3>เพิ่ม Module ใหม่</h3><button class="modal-close" onclick="document.getElementById('add-module-modal').remove()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Module ID</label><input class="form-input" id="am-id" placeholder="e.g. inventory"></div>
+      <div class="form-group"><label class="form-label">ชื่อ Module</label><input class="form-input" id="am-name" placeholder="e.g. Inventory"></div>
+      <div class="form-group"><label class="form-label">กลุ่ม</label><select class="form-input" id="am-group"><option value="main">Main</option><option value="project">Project</option><option value="document" selected>Document</option><option value="resource">Resource</option><option value="system">System</option></select></div>
+      <div class="form-group"><label class="form-label">ไฟล์ HTML</label><input class="form-input" id="am-href" placeholder="e.g. inventory.html"></div>
+      <div class="form-group"><label class="form-label">Icon</label><input class="form-input" id="am-icon" value="reports" placeholder="icon key from ICONS"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="document.getElementById('add-module-modal').remove()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveNewModule()">Create</button></div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function saveNewModule() {
+  const id = document.getElementById('am-id').value.trim();
+  const name = document.getElementById('am-name').value.trim();
+  const href = document.getElementById('am-href').value.trim();
+  if (!id || !name || !href) { alert('กรอกข้อมูลให้ครบ'); return; }
+  try {
+    await API.post('/modules', { module_id: id, module_name: name, module_group: document.getElementById('am-group').value, icon: document.getElementById('am-icon').value, href: href });
+    document.getElementById('add-module-modal').remove();
+    sessionStorage.removeItem('sda_modules');
+    loadModuleTable();
+    if (typeof loadModulesFromAPI === 'function') { await loadModulesFromAPI(); renderSidebar(); }
+    if (typeof showToast === 'function') showToast('เพิ่ม Module แล้ว', 'success');
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+// ═══════════════════════════════════════
 // 1. Company Profile
 // ═══════════════════════════════════════
 function renderCompanyProfile() {
   return `
   <div class="setup-section active" id="section-company">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[0].icon, 20)} Company Profile</h2>
+      <h2>${sIcon(SECTIONS[1].icon, 20)} Company Profile</h2>
       <p>General information about your organization</p>
     </div>
     <div class="card">
@@ -454,7 +602,7 @@ function renderApprovalMatrix() {
   return `
   <div class="setup-section" id="section-approval">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[1].icon, 20)} Approval Matrix</h2>
+      <h2>${sIcon(SECTIONS[2].icon, 20)} Approval Matrix</h2>
       <p>Configure approval workflows by document type and amount range</p>
     </div>
     ${docTypes.map(dt => `
@@ -514,7 +662,7 @@ function renderDocNumbering() {
   return `
   <div class="setup-section" id="section-numbering">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[2].icon, 20)} Document Numbering</h2>
+      <h2>${sIcon(SECTIONS[3].icon, 20)} Document Numbering</h2>
       <p>Number series configuration for each document type</p>
     </div>
     <div class="card">
@@ -595,7 +743,7 @@ function renderCOA() {
   return `
   <div class="setup-section" id="section-coa">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[3].icon, 20)} Chart of Accounts</h2>
+      <h2>${sIcon(SECTIONS[4].icon, 20)} Chart of Accounts</h2>
       <p>GL mapping reference from SAP Business One blueprint</p>
     </div>
     ${categories.map(cat => `
@@ -634,7 +782,7 @@ function renderSAPConnection() {
   return `
   <div class="setup-section" id="section-sap">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[4].icon, 20)} SAP B1 Connection</h2>
+      <h2>${sIcon(SECTIONS[5].icon, 20)} SAP B1 Connection</h2>
       <p>Service Layer integration settings</p>
     </div>
     <div class="card">
@@ -731,7 +879,7 @@ function renderTaxCodes() {
   return `
   <div class="setup-section" id="section-tax">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[5].icon, 20)} Tax Codes</h2>
+      <h2>${sIcon(SECTIONS[6].icon, 20)} Tax Codes</h2>
       <p>VAT and withholding tax codes from SAP Blueprint</p>
     </div>
     ${taxTable('Input Tax (VAT)', inputTax, 'info')}
@@ -759,7 +907,7 @@ function renderWarehouses() {
   return `
   <div class="setup-section" id="section-warehouse">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[6].icon, 20)} Warehouses</h2>
+      <h2>${sIcon(SECTIONS[7].icon, 20)} Warehouses</h2>
       <p>Warehouse locations configured in SAP Business One</p>
     </div>
     <div class="card">
@@ -802,7 +950,7 @@ function renderPaymentTerms() {
   return `
   <div class="setup-section" id="section-payment">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[7].icon, 20)} Payment Terms</h2>
+      <h2>${sIcon(SECTIONS[8].icon, 20)} Payment Terms</h2>
       <p>Standard payment terms for vendor and customer transactions</p>
     </div>
     <div class="card">
@@ -840,7 +988,7 @@ function renderOTRatePolicy() {
   return `
   <div class="setup-section" id="section-ot-rate">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[8].icon, 20)} OT Rate Policy</h2>
+      <h2>${sIcon(SECTIONS[9].icon, 20)} OT Rate Policy</h2>
       <p>Overtime calculation multipliers and daily limits</p>
     </div>
     <div class="card">
@@ -882,7 +1030,7 @@ function renderNotifications() {
   return `
   <div class="setup-section" id="section-notifications">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[9].icon, 20)} Notifications</h2>
+      <h2>${sIcon(SECTIONS[10].icon, 20)} Notifications</h2>
       <p>Configure notification channels and integrations</p>
     </div>
 
