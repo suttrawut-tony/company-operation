@@ -189,6 +189,15 @@ const API = {
   async getVehicleAvailability(params) { const q = new URLSearchParams(params).toString(); return this.get(`/vehicle/availability${q ? '?' + q : ''}`); },
   async getVehicleSchedule(vid, months) { return this.get(`/vehicle/${vid}/schedule?months=${months||3}`); },
   async getVehicleAlerts() { return this.get('/vehicle/alerts'); },
+  // ─── Bookings (Unified) ───
+  async getBookings(params) { const q = new URLSearchParams(params).toString(); return this.get(`/bookings${q ? '?' + q : ''}`); },
+  async createBooking(data) { return this.post('/bookings', data); },
+  async updateBooking(id, data) { return this.put(`/bookings/${id}`, data); },
+  async deleteBooking(id) { return this.del(`/bookings/${id}`); },
+  async approveBooking(id) { return this.post(`/bookings/${id}/approve`); },
+  async getTechnicians() { return this.get('/technicians'); },
+  async createTechnician(data) { return this.post('/technicians', data); },
+  async updateTechnician(id, data) { return this.put(`/technicians/${id}`, data); },
 
   // ─── Travel ───
   async getTravels() { return this.get('/travel'); },

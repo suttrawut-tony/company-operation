@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Booking</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ── Layout ── */
+    .booking-layout { display: flex; gap: 0; min-height: calc(100vh - 160px); }
+    .booking-sidebar {
+      width: 250px; flex-shrink: 0; border-right: 1px solid var(--border);
+      background: var(--bg-white); padding: 16px; overflow-y: auto;
+    }
+    .booking-main { flex: 1; min-width: 0; padding: 0; }
+
+    /* ── Header bar ── */
+    .bk-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+    }
+    .bk-header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .bk-nav {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; border-bottom: 1px solid var(--border-light);
+      background: var(--bg-white);
+    }
+    .bk-nav-arrows { display: flex; align-items: center; gap: 4px; }
+    .bk-nav-arrows button {
+      background: none; border: 1px solid var(--border); border-radius: var(--radius);
+      width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: var(--text-secondary);
+    }
+    .bk-nav-arrows button:hover { background: var(--bg-hover); }
+    .bk-nav .month-label { font-size: 16px; font-weight: 600; min-width: 180px; text-align: center; }
+    .bk-nav .today-btn {
+      font-size: 12px; padding: 4px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--bg-white); cursor: pointer; font-weight: 600;
+    }
+    .bk-nav .today-btn:hover { background: var(--bg-hover); }
+    .view-toggle { display: flex; gap: 0; margin-left: auto; }
+    .view-toggle button {
+      font-size: 12px; padding: 6px 14px; border: 1px solid var(--border);
+      background: var(--bg-white); cursor: pointer; font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .view-toggle button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+    .view-toggle button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+    .view-toggle button:not(:first-child) { border-left: none; }
+    .view-toggle button.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* ── Dropdown ── */
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-menu {
+      display: none; position: absolute; right: 0; top: 100%; margin-top: 4px;
+      background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow-md); min-width: 200px; z-index: 100; overflow: hidden;
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-menu button {
+      display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 16px;
+      border: none; background: none; cursor: pointer; font-size: 13px; text-align: left;
+    }
+    .dropdown-menu button:hover { background: var(--bg-hover); }
+
+    /* ── Mini calendar ── */
+    .mini-cal { margin-bottom: 20px; }
+    .mini-cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px; font-size: 13px; font-weight: 600;
+    }
+    .mini-cal-header button {
+      background: none; border: none; cursor: pointer; color: var(--text-secondary);
+      font-size: 16px; padding: 2px 6px; border-radius: var(--radius);
+    }
+    .mini-cal-header button:hover { background: var(--bg-hover); }
+    .mini-cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; text-align: center;
+    }
+    .mini-cal-grid .dow { font-size: 10px; color: var(--text-muted); font-weight: 600; padding: 4px 0; }
+    .mini-cal-grid .mday {
+      font-size: 11px; padding: 4px 0; cursor: pointer; border-radius: var(--radius-full);
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto;
+    }
+    .mini-cal-grid .mday:hover { background: var(--bg-hover); }
+    .mini-cal-grid .mday.today { background: var(--primary); color: white; font-weight: 700; }
+    .mini-cal-grid .mday.selected { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+    .mini-cal-grid .mday.other { color: var(--text-muted); opacity: 0.4; }
+
+    /* ── Sidebar filters ── */
+    .filter-section { margin-bottom: 16px; }
+    .filter-section h4 {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;
+    }
+    .filter-item {
+      display: flex; align-items: center; gap: 8px; padding: 4px 0;
+      font-size: 12px; cursor: pointer;
+    }
+    .filter-item input[type="checkbox"] { margin: 0; cursor: pointer; }
+    .filter-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Month View ── */
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;
+      border: 1px solid var(--border-light); border-top: none;
+    }
+    .cal-grid .cal-dow {
+      background: var(--bg-light); padding: 8px 12px; text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-light);
+      border-right: 1px solid var(--border-light);
+    }
+    .cal-grid .cal-dow:last-child { border-right: none; }
+    .cal-cell {
+      min-height: 100px; padding: 4px; background: var(--bg-white);
+      border-bottom: 1px solid var(--border-light);
+      border-right: 1px solid var(--border-light);
+      position: relative; cursor: pointer; transition: background 0.1s;
+      overflow: hidden;
+    }
+    .cal-cell:nth-child(7n) { border-right: none; }
+    .cal-cell:hover { background: var(--bg-hover); }
+    .cal-cell.other-month { background: var(--bg-light); }
+    .cal-cell.other-month .cell-date { color: var(--text-muted); opacity: 0.5; }
+    .cal-cell.weekend { background: #fafafa; }
+    .cal-cell .cell-date {
+      font-size: 12px; font-weight: 600; color: var(--text-primary);
+      margin-bottom: 2px; padding: 2px 4px; display: inline-block;
+    }
+    .cal-cell .cell-date.today {
+      background: var(--primary); color: white; border-radius: 50%;
+      width: 24px; height: 24px; display: flex; align-items: center;
+      justify-content: center; font-size: 11px;
+    }
+    .cal-event {
+      font-size: 10px; padding: 2px 6px; border-radius: 4px;
+      margin-bottom: 2px; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; font-weight: 500; cursor: pointer;
+      display: block;
+    }
+    .cal-event:hover { filter: brightness(0.9); }
+    .cal-event.cancelled { opacity: 0.4; text-decoration: line-through; }
+    .cal-more {
+      font-size: 10px; color: var(--primary); padding: 2px 6px;
+      cursor: pointer; font-weight: 600;
+    }
+    .cal-more:hover { text-decoration: underline; }
+
+    /* Multi-day event spanning */
+    .cal-event.span-start { border-radius: 4px 0 0 4px; margin-right: -4px; }
+    .cal-event.span-mid { border-radius: 0; margin-left: -4px; margin-right: -4px; }
+    .cal-event.span-end { border-radius: 0 4px 4px 0; margin-left: -4px; }
+
+    /* ── Week View ── */
+    .week-view { overflow-x: auto; }
+    .week-header {
+      display: grid; grid-template-columns: 60px repeat(7, 1fr);
+      border-bottom: 1px solid var(--border-light); background: var(--bg-light);
+    }
+    .week-header .wh-blank { border-right: 1px solid var(--border-light); }
+    .week-header .wh-day {
+      text-align: center; padding: 8px 4px; font-size: 11px; font-weight: 600;
+      color: var(--text-secondary); border-right: 1px solid var(--border-light);
+    }
+    .week-header .wh-day:last-child { border-right: none; }
+    .week-header .wh-day.today { color: var(--primary); }
+    .week-header .wh-day .day-num {
+      font-size: 20px; font-weight: 700; display: block; line-height: 1.2;
+    }
+    .week-header .wh-day.today .day-num {
+      background: var(--primary); color: white; border-radius: 50%;
+      width: 36px; height: 36px; display: inline-flex; align-items: center;
+      justify-content: center;
+    }
+    .week-allday {
+      display: grid; grid-template-columns: 60px repeat(7, 1fr);
+      border-bottom: 2px solid var(--border); min-height: 30px;
+    }
+    .week-allday .wa-label {
+      font-size: 10px; color: var(--text-muted); padding: 4px 8px;
+      border-right: 1px solid var(--border-light);
+    }
+    .week-allday .wa-cell {
+      border-right: 1px solid var(--border-light); padding: 2px; position: relative;
+    }
+    .week-allday .wa-cell:last-child { border-right: none; }
+    .week-grid {
+      display: grid; grid-template-columns: 60px repeat(7, 1fr);
+      position: relative;
+    }
+    .wg-time {
+      font-size: 10px; color: var(--text-muted); text-align: right; padding: 0 8px 0 0;
+      height: 48px; border-right: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light); position: relative;
+    }
+    .wg-time span { position: absolute; top: -7px; right: 8px; }
+    .wg-cell {
+      height: 48px; border-right: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light); position: relative;
+    }
+    .wg-cell:last-child { border-right: none; }
+    .week-event {
+      position: absolute; left: 2px; right: 2px; border-radius: 4px;
+      font-size: 10px; padding: 2px 6px; overflow: hidden; cursor: pointer;
+      z-index: 2; font-weight: 500; line-height: 1.3;
+    }
+    .week-event:hover { filter: brightness(0.9); z-index: 3; }
+    .week-event.cancelled { opacity: 0.4; text-decoration: line-through; }
+
+    /* Today red line */
+    .now-line {
+      position: absolute; left: 60px; right: 0; height: 2px;
+      background: #ea4335; z-index: 10; pointer-events: none;
+    }
+    .now-line::before {
+      content: ''; position: absolute; left: -5px; top: -4px;
+      width: 10px; height: 10px; border-radius: 50%; background: #ea4335;
+    }
+
+    /* ── Day View ── */
+    .day-view { overflow-x: auto; }
+    .day-header {
+      padding: 12px 20px; background: var(--bg-light);
+      border-bottom: 1px solid var(--border-light);
+      font-size: 16px; font-weight: 700;
+    }
+    .day-header .today-label { color: var(--primary); }
+    .day-grid { display: grid; grid-template-columns: 60px 1fr; position: relative; }
+    .day-event {
+      position: absolute; left: 4px; right: 4px; border-radius: 4px;
+      font-size: 11px; padding: 4px 8px; overflow: hidden; cursor: pointer;
+      z-index: 2; font-weight: 500;
+    }
+    .day-event:hover { filter: brightness(0.9); z-index: 3; }
+    .day-event.cancelled { opacity: 0.4; text-decoration: line-through; }
+
+    /* ── List View ── */
+    .list-view { padding: 0; }
+    .list-view table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .list-view th {
+      background: var(--bg-light); padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-muted); border-bottom: 1px solid var(--border);
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    .list-view th:hover { color: var(--text-primary); }
+    .list-view th .sort-arrow { font-size: 10px; margin-left: 4px; }
+    .list-view td {
+      padding: 10px 16px; border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+    .list-view tr:hover td { background: var(--bg-hover); }
+    .list-view .type-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: var(--radius-full);
+      font-weight: 600; white-space: nowrap;
+    }
+    .list-view .status-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+    .list-view tr.cancelled td { opacity: 0.4; }
+    .list-view tr.cancelled .ev-title { text-decoration: line-through; }
+
+    /* ── Event popup ── */
+    .event-popup-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+      z-index: 500; align-items: center; justify-content: center;
+    }
+    .event-popup-overlay.show { display: flex; }
+    .event-popup {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 400px; max-width: 90vw;
+      max-height: 80vh; overflow-y: auto;
+    }
+    .event-popup-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .event-popup-header h3 { font-size: 15px; font-weight: 700; }
+    .event-popup-body { padding: 16px 20px; }
+    .event-popup-body .ep-row {
+      display: flex; gap: 8px; margin-bottom: 10px; font-size: 13px;
+    }
+    .event-popup-body .ep-label { color: var(--text-muted); min-width: 80px; font-size: 12px; }
+    .event-popup-body .ep-val { font-weight: 500; }
+    .event-popup-footer {
+      padding: 12px 20px; border-top: 1px solid var(--border-light);
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 600; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 600px; max-width: 95vw;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      padding: 12px 20px; border-top: 1px solid var(--border-light);
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 13px; background: var(--bg-white);
+      box-sizing: border-box;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-group .color-input { display: flex; align-items: center; gap: 8px; }
+    .form-group .color-input input[type="color"] {
+      width: 36px; height: 36px; padding: 2px; cursor: pointer; border-radius: var(--radius);
+    }
+    .form-check { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .form-check input { margin: 0; }
+    .form-check label { font-size: 13px; margin-bottom: 0; }
+    .optional-section {
+      border: 1px dashed var(--border); border-radius: var(--radius);
+      padding: 12px; margin-top: 8px;
+    }
+    .optional-section summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+
+    /* ── Buttons ── */
+    .btn-sm {
+      font-size: 12px; padding: 6px 14px; border-radius: var(--radius);
+      border: 1px solid var(--border); cursor: pointer; font-weight: 600;
+      background: var(--bg-white); color: var(--text-primary);
+    }
+    .btn-sm:hover { background: var(--bg-hover); }
+    .btn-primary {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    .btn-primary:hover { filter: brightness(0.9); }
+    .btn-danger { background: var(--danger); color: white; border-color: var(--danger); }
+    .btn-danger:hover { filter: brightness(0.9); }
+    .btn-success { background: var(--success, #0f9d58); color: white; border-color: var(--success, #0f9d58); }
+    .btn-success:hover { filter: brightness(0.9); }
+    .close-btn {
+      background: none; border: none; cursor: pointer; font-size: 20px;
+      color: var(--text-muted); line-height: 1;
+    }
+    .close-btn:hover { color: var(--text-primary); }
+
+    @media (max-width: 768px) {
+      .booking-sidebar { display: none; }
+      .cal-grid { overflow-x: auto; min-width: 700px; }
+      .bk-header { flex-wrap: wrap; gap: 8px; }
+      .bk-nav { flex-wrap: wrap; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <!-- Header -->
+    <div class="bk-header">
+      <h1>📅 Booking</h1>
+      <div class="dropdown">
+        <button class="btn-sm btn-primary" onclick="toggleDropdown(this)">+ สร้าง Booking ▾</button>
+        <div class="dropdown-menu" id="createDropdown">
+          <button onclick="openModal('vehicle')">🚗 จองรถ</button>
+          <button onclick="openModal('solar')">👷 จองช่าง Solar Cell</button>
+          <button onclick="openModal('flight')">✈️ จองเครื่องบิน</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation bar -->
+    <div class="bk-nav">
+      <div class="bk-nav-arrows">
+        <button onclick="navPrev()">◀</button>
+        <button onclick="navNext()">▶</button>
+      </div>
+      <span class="month-label" id="monthLabel"></span>
+      <button class="today-btn" onclick="goToday()">วันนี้</button>
+      <div class="view-toggle">
+        <button data-view="month" class="active" onclick="setView('month')">เดือน</button>
+        <button data-view="week" onclick="setView('week')">สัปดาห์</button>
+        <button data-view="day" onclick="setView('day')">วัน</button>
+        <button data-view="list" onclick="setView('list')">ตาราง</button>
+      </div>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="booking-layout">
+      <!-- Left Sidebar -->
+      <div class="booking-sidebar">
+        <div class="mini-cal" id="miniCal"></div>
+        <div class="filter-section">
+          <h4>ประเภท</h4>
+          <label class="filter-item">
+            <input type="checkbox" checked data-type="vehicle" onchange="applyFilters()">
+            <span class="filter-dot" style="background:#4285f4"></span> รถยนต์
+          </label>
+          <label class="filter-item">
+            <input type="checkbox" checked data-type="solar" onchange="applyFilters()">
+            <span class="filter-dot" style="background:#0f9d58"></span> ช่าง Solar
+          </label>
+          <label class="filter-item">
+            <input type="checkbox" checked data-type="flight" onchange="applyFilters()">
+            <span class="filter-dot" style="background:#db4437"></span> เครื่องบิน
+          </label>
+        </div>
+        <div class="filter-section" id="resourceFilters">
+          <h4>ทรัพยากร</h4>
+          <div id="vehicleFilters"></div>
+          <div id="techFilters"></div>
+        </div>
+      </div>
+
+      <!-- Main Calendar Area -->
+      <div class="booking-main" id="calendarArea"></div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Event Popup -->
+  <div class="event-popup-overlay" id="eventPopup" onclick="if(event.target===this)closePopup()">
+    <div class="event-popup">
+      <div class="event-popup-header">
+        <h3 id="popupTitle"></h3>
+        <button class="close-btn" onclick="closePopup()">&times;</button>
+      </div>
+      <div class="event-popup-body" id="popupBody"></div>
+      <div class="event-popup-footer" id="popupFooter"></div>
+    </div>
+  </div>
+
+  <!-- Vehicle Booking Modal -->
+  <div class="modal-overlay" id="modalVehicle" onclick="if(event.target===this)closeAllModals()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🚗 จองรถ</h3>
+        <button class="close-btn" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>รถ</label>
+          <select id="vehSelect"></select>
+        </div>
+        <div class="form-group">
+          <label>ชื่อการจอง</label>
+          <input type="text" id="vehTitle" placeholder="เช่น เดินทางไปหน้างาน Site A">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>วันเริ่มต้น</label>
+            <input type="date" id="vehStartDate">
+          </div>
+          <div class="form-group">
+            <label>วันสิ้นสุด</label>
+            <input type="date" id="vehEndDate">
+          </div>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="vehAllDay" onchange="toggleVehTime()">
+          <label for="vehAllDay">ทั้งวัน</label>
+        </div>
+        <div class="form-row" id="vehTimeRow">
+          <div class="form-group">
+            <label>เวลาเริ่ม</label>
+            <input type="time" id="vehStartTime" value="08:00">
+          </div>
+          <div class="form-group">
+            <label>เวลาสิ้นสุด</label>
+            <input type="time" id="vehEndTime" value="17:00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>โปรเจกต์</label>
+          <select id="vehProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
+        </div>
+        <div class="form-group">
+          <label>วัตถุประสงค์</label>
+          <input type="text" id="vehPurpose" placeholder="ระบุวัตถุประสงค์">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>สถานที่</label>
+            <input type="text" id="vehLocation" placeholder="ปลายทาง">
+          </div>
+          <div class="form-group">
+            <label>จำนวนผู้โดยสาร</label>
+            <input type="number" id="vehPassengers" min="1" value="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>สี</label>
+          <div class="color-input">
+            <input type="color" id="vehColor" value="#4285f4">
+            <span style="font-size:12px;color:var(--text-muted)">สีแสดงบนปฏิทิน</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="closeAllModals()">ยกเลิก</button>
+        <button class="btn-sm btn-primary" onclick="saveBooking('vehicle')">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solar Technician Booking Modal -->
+  <div class="modal-overlay" id="modalSolar" onclick="if(event.target===this)closeAllModals()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>👷 จองช่าง Solar Cell</h3>
+        <button class="close-btn" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>ช่าง</label>
+          <select id="solarTech"></select>
+        </div>
+        <div class="form-group">
+          <label>ประเภทงาน</label>
+          <select id="solarJobType">
+            <option value="installation">Installation (ติดตั้ง)</option>
+            <option value="maintenance">Maintenance (บำรุงรักษา)</option>
+            <option value="inspection">Inspection (ตรวจสอบ)</option>
+            <option value="repair">Repair (ซ่อม)</option>
+            <option value="survey">Survey (สำรวจ)</option>
+            <option value="commissioning">Commissioning</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ชื่อไซต์งาน</label>
+            <input type="text" id="solarSite" placeholder="ชื่อไซต์">
+          </div>
+          <div class="form-group">
+            <label>ขนาดระบบ (kWp)</label>
+            <input type="number" id="solarCapacity" step="0.1" placeholder="เช่น 10.5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>รายละเอียดงาน</label>
+          <textarea id="solarDesc" placeholder="รายละเอียดงานที่ต้องทำ"></textarea>
+        </div>
+        <div class="form-group">
+          <label>เครื่องมือที่ต้องใช้</label>
+          <input type="text" id="solarTools" placeholder="เช่น Multimeter, Clamp meter">
+        </div>
+        <div class="form-group">
+          <label>หมายเหตุความปลอดภัย</label>
+          <input type="text" id="solarSafety" placeholder="เช่น ทำงานบนหลังคา ต้องมี Harness">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>วันเริ่มต้น</label>
+            <input type="date" id="solarStartDate">
+          </div>
+          <div class="form-group">
+            <label>วันสิ้นสุด</label>
+            <input type="date" id="solarEndDate">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>โปรเจกต์</label>
+          <select id="solarProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
+        </div>
+        <div class="form-group">
+          <label>สี</label>
+          <div class="color-input">
+            <input type="color" id="solarColor" value="#0f9d58">
+            <span style="font-size:12px;color:var(--text-muted)">สีแสดงบนปฏิทิน</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="closeAllModals()">ยกเลิก</button>
+        <button class="btn-sm btn-primary" onclick="saveBooking('solar')">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flight Booking Modal -->
+  <div class="modal-overlay" id="modalFlight" onclick="if(event.target===this)closeAllModals()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>✈️ จองเครื่องบิน</h3>
+        <button class="close-btn" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>สายการบิน</label>
+            <input type="text" id="flightAirline" placeholder="เช่น Thai AirAsia">
+          </div>
+          <div class="form-group">
+            <label>เลขที่เที่ยวบิน</label>
+            <input type="text" id="flightNumber" placeholder="เช่น FD3030">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>สนามบินต้นทาง</label>
+            <select id="flightDepAirport">
+              <option value="DMK">DMK — ดอนเมือง</option>
+              <option value="BKK">BKK — สุวรรณภูมิ</option>
+              <option value="CNX">CNX — เชียงใหม่</option>
+              <option value="HKT">HKT — ภูเก็ต</option>
+              <option value="HDY">HDY — หาดใหญ่</option>
+              <option value="USM">USM — สมุย</option>
+              <option value="KKC">KKC — ขอนแก่น</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>สนามบินปลายทาง</label>
+            <select id="flightArrAirport">
+              <option value="DMK">DMK — ดอนเมือง</option>
+              <option value="BKK">BKK — สุวรรณภูมิ</option>
+              <option value="CNX">CNX — เชียงใหม่</option>
+              <option value="HKT">HKT — ภูเก็ต</option>
+              <option value="HDY">HDY — หาดใหญ่</option>
+              <option value="USM">USM — สมุย</option>
+              <option value="KKC">KKC — ขอนแก่น</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>วันเวลาออกเดินทาง</label>
+            <input type="datetime-local" id="flightDepTime">
+          </div>
+          <div class="form-group">
+            <label>วันเวลาถึง</label>
+            <input type="datetime-local" id="flightArrTime">
+          </div>
+        </div>
+        <details class="optional-section">
+          <summary>เที่ยวบินกลับ (ไม่บังคับ)</summary>
+          <div style="margin-top:12px">
+            <div class="form-group">
+              <label>เลขที่เที่ยวบินกลับ</label>
+              <input type="text" id="flightReturnNumber" placeholder="เช่น FD3031">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>วันเวลาออก (ขากลับ)</label>
+                <input type="datetime-local" id="flightReturnDep">
+              </div>
+              <div class="form-group">
+                <label>วันเวลาถึง (ขากลับ)</label>
+                <input type="datetime-local" id="flightReturnArr">
+              </div>
+            </div>
+          </div>
+        </details>
+        <div class="form-group" style="margin-top:14px">
+          <label>ชื่อผู้โดยสาร</label>
+          <input type="text" id="flightPassengers" placeholder="คั่นด้วย comma เช่น สมชาย, สมหญิง">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>รหัสการจอง (PNR)</label>
+            <input type="text" id="flightPNR" placeholder="เช่น ABC123">
+          </div>
+          <div class="form-group">
+            <label>ราคาตั๋ว (บาท)</label>
+            <input type="number" id="flightCost" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ช่องทางจอง</label>
+            <select id="flightChannel">
+              <option value="direct">จองตรงกับสายการบิน</option>
+              <option value="agent">ผ่านตัวแทน/Travel Agent</option>
+              <option value="online">ผ่านเว็บไซต์ OTA</option>
+              <option value="other">อื่น ๆ</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>โปรเจกต์</label>
+            <select id="flightProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>สี</label>
+          <div class="color-input">
+            <input type="color" id="flightColor" value="#db4437">
+            <span style="font-size:12px;color:var(--text-muted)">สีแสดงบนปฏิทิน</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="closeAllModals()">ยกเลิก</button>
+        <button class="btn-sm btn-primary" onclick="saveBooking('flight')">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    // ── State ──
+    let currentView = 'month';
+    let currentDate = new Date();
+    let allBookings = [];
+    let filteredBookings = [];
+    let vehicles = [];
+    let technicians = [];
+    let projects = [];
+    let editingId = null;
+    let listSortCol = 'start_date';
+    let listSortAsc = true;
+
+    const TYPE_COLORS = { vehicle: '#4285f4', solar: '#0f9d58', flight: '#db4437' };
+    const TYPE_ICONS = { vehicle: '\u{1F697}', solar: '\u{1F477}', flight: '\u2708\uFE0F' };
+    const TYPE_LABELS = { vehicle: 'รถยนต์', solar: 'ช่าง Solar', flight: 'เครื่องบิน' };
+    const TH_DAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+    const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                        'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+    // ── Helpers ──
+    function fmt(d) { return d.toISOString().slice(0, 10); }
+    function fmtTime(d) { return d.toTimeString().slice(0, 5); }
+    function parseDate(s) { return s ? new Date(s) : null; }
+    function sameDay(a, b) { return fmt(a) === fmt(b); }
+    function isToday(d) { return sameDay(d, new Date()); }
+    function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+    function startOfWeek(d) {
+      const r = new Date(d); r.setDate(r.getDate() - r.getDay()); return r;
+    }
+    function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+
+    function evColor(ev) { return ev.color || TYPE_COLORS[ev.booking_type] || '#4285f4'; }
+    function evTextColor(hex) {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return (r*0.299 + g*0.587 + b*0.114) > 150 ? '#333' : '#fff';
+    }
+    function evBg(hex) {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return `rgba(${r},${g},${b},0.15)`;
+    }
+    function isCancelled(ev) { return ev.status === 'cancelled' || ev.status === 'rejected'; }
+
+    // ── Dropdown ──
+    function toggleDropdown(btn) {
+      const menu = btn.nextElementSibling;
+      menu.classList.toggle('show');
+      setTimeout(() => {
+        document.addEventListener('click', function handler(e) {
+          if (!menu.contains(e.target) && e.target !== btn) {
+            menu.classList.remove('show');
+            document.removeEventListener('click', handler);
+          }
+        });
+      }, 0);
+    }
+
+    // ── Navigation ──
+    function updateLabel() {
+      const el = document.getElementById('monthLabel');
+      if (currentView === 'month') {
+        el.textContent = TH_MONTHS[currentDate.getMonth()] + ' ' + (currentDate.getFullYear() + 543);
+      } else if (currentView === 'week') {
+        const ws = startOfWeek(currentDate), we = addDays(ws, 6);
+        el.textContent = `${ws.getDate()} - ${we.getDate()} ${TH_MONTHS[we.getMonth()]} ${we.getFullYear() + 543}`;
+      } else if (currentView === 'day') {
+        el.textContent = `${currentDate.getDate()} ${TH_MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear() + 543}`;
+      } else {
+        el.textContent = TH_MONTHS[currentDate.getMonth()] + ' ' + (currentDate.getFullYear() + 543);
+      }
+    }
+
+    function navPrev() {
+      if (currentView === 'month') currentDate.setMonth(currentDate.getMonth() - 1);
+      else if (currentView === 'week') currentDate.setDate(currentDate.getDate() - 7);
+      else if (currentView === 'day') currentDate.setDate(currentDate.getDate() - 1);
+      else currentDate.setMonth(currentDate.getMonth() - 1);
+      refreshAll();
+    }
+
+    function navNext() {
+      if (currentView === 'month') currentDate.setMonth(currentDate.getMonth() + 1);
+      else if (currentView === 'week') currentDate.setDate(currentDate.getDate() + 7);
+      else if (currentView === 'day') currentDate.setDate(currentDate.getDate() + 1);
+      else currentDate.setMonth(currentDate.getMonth() + 1);
+      refreshAll();
+    }
+
+    function goToday() {
+      currentDate = new Date();
+      refreshAll();
+    }
+
+    function setView(v) {
+      currentView = v;
+      document.querySelectorAll('.view-toggle button').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === v);
+      });
+      refreshAll();
+    }
+
+    // ── Mini Calendar ──
+    function renderMiniCal() {
+      const el = document.getElementById('miniCal');
+      const y = currentDate.getFullYear(), m = currentDate.getMonth();
+      const firstDay = new Date(y, m, 1).getDay();
+      const dim = daysInMonth(y, m);
+      const today = new Date();
+
+      let html = `<div class="mini-cal-header">
+        <button onclick="miniCalNav(-1)">◀</button>
+        <span>${TH_MONTHS[m]} ${y + 543}</span>
+        <button onclick="miniCalNav(1)">▶</button>
+      </div>`;
+      html += '<div class="mini-cal-grid">';
+      TH_DAYS.forEach(d => { html += `<span class="dow">${d}</span>`; });
+
+      // Previous month fill
+      const prevDim = daysInMonth(y, m - 1);
+      for (let i = 0; i < firstDay; i++) {
+        const day = prevDim - firstDay + i + 1;
+        html += `<span class="mday other">${day}</span>`;
+      }
+      // Current month
+      for (let d = 1; d <= dim; d++) {
+        const dt = new Date(y, m, d);
+        const cls = [];
+        if (isToday(dt)) cls.push('today');
+        if (sameDay(dt, currentDate)) cls.push('selected');
+        html += `<span class="mday ${cls.join(' ')}" onclick="miniCalClick(${y},${m},${d})">${d}</span>`;
+      }
+      // Next month fill
+      const totalCells = firstDay + dim;
+      const remaining = (7 - (totalCells % 7)) % 7;
+      for (let i = 1; i <= remaining; i++) {
+        html += `<span class="mday other">${i}</span>`;
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function miniCalNav(dir) {
+      currentDate.setMonth(currentDate.getMonth() + dir);
+      refreshAll();
+    }
+
+    function miniCalClick(y, m, d) {
+      currentDate = new Date(y, m, d);
+      refreshAll();
+    }
+
+    // ── Filters ──
+    function applyFilters() {
+      const typeChecks = document.querySelectorAll('[data-type]');
+      const enabledTypes = new Set();
+      typeChecks.forEach(cb => { if (cb.checked) enabledTypes.add(cb.dataset.type); });
+
+      const resChecks = document.querySelectorAll('[data-res]');
+      const enabledRes = new Set();
+      let anyResChecked = false;
+      resChecks.forEach(cb => { if (cb.checked) { enabledRes.add(cb.dataset.res); anyResChecked = true; } });
+
+      filteredBookings = allBookings.filter(ev => {
+        if (!enabledTypes.has(ev.booking_type)) return false;
+        if (anyResChecked && ev.resource_id && !enabledRes.has(String(ev.resource_id))) return false;
+        return true;
+      });
+      renderView();
+    }
+
+    function renderResourceFilters() {
+      let vhtml = '';
+      vehicles.forEach(v => {
+        vhtml += `<label class="filter-item">
+          <input type="checkbox" checked data-res="${v.id}" onchange="applyFilters()">
+          <span class="filter-dot" style="background:#4285f4"></span> ${v.plate_number || v.name || 'Vehicle #'+v.id}
+        </label>`;
+      });
+      document.getElementById('vehicleFilters').innerHTML = vhtml;
+
+      let thtml = '';
+      technicians.forEach(t => {
+        thtml += `<label class="filter-item">
+          <input type="checkbox" checked data-res="${t.id}" onchange="applyFilters()">
+          <span class="filter-dot" style="background:#0f9d58"></span> ${t.name || t.first_name + ' ' + t.last_name}
+        </label>`;
+      });
+      document.getElementById('techFilters').innerHTML = thtml;
+    }
+
+    // ── Data Loading ──
+    async function loadResources() {
+      try {
+        const [vRes, pRes] = await Promise.all([
+          API.getVehicles(),
+          API.getProjects()
+        ]);
+        vehicles = vRes.vehicles || vRes || [];
+        projects = pRes.projects || pRes || [];
+      } catch(e) { console.warn('Failed to load vehicles/projects', e); }
+
+      try {
+        const tRes = await API.get('/technicians');
+        technicians = tRes.technicians || tRes || [];
+      } catch(e) { technicians = []; }
+
+      populateSelects();
+      renderResourceFilters();
+    }
+
+    function populateSelects() {
+      // Vehicles
+      const vs = document.getElementById('vehSelect');
+      vs.innerHTML = '<option value="">-- เลือกรถ --</option>';
+      vehicles.forEach(v => {
+        const label = (v.plate_number || '') + ' ' + (v.name || v.model || '');
+        const disabled = v.status === 'maintenance' || v.status === 'retired' ? ' disabled' : '';
+        vs.innerHTML += `<option value="${v.id}"${disabled}>${label.trim()}${disabled ? ' (ไม่พร้อมใช้)' : ''}</option>`;
+      });
+
+      // Technicians
+      const ts = document.getElementById('solarTech');
+      ts.innerHTML = '<option value="">-- เลือกช่าง --</option>';
+      technicians.forEach(t => {
+        const label = t.name || ((t.first_name || '') + ' ' + (t.last_name || '')).trim();
+        ts.innerHTML += `<option value="${t.id}">${label}</option>`;
+      });
+
+      // Projects in all 3 modals
+      ['vehProject', 'solarProject', 'flightProject'].forEach(id => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = '<option value="">-- เลือกโปรเจกต์ --</option>';
+        projects.forEach(p => {
+          sel.innerHTML += `<option value="${p.id}">${p.project_code || ''} ${p.name || p.project_name || ''}</option>`;
+        });
+      });
+    }
+
+    async function fetchBookings() {
+      let startDate, endDate;
+      const y = currentDate.getFullYear(), m = currentDate.getMonth();
+      if (currentView === 'month' || currentView === 'list') {
+        startDate = fmt(new Date(y, m - 1, 1));
+        endDate = fmt(new Date(y, m + 2, 0));
+      } else if (currentView === 'week') {
+        const ws = startOfWeek(currentDate);
+        startDate = fmt(addDays(ws, -7));
+        endDate = fmt(addDays(ws, 14));
+      } else {
+        startDate = fmt(addDays(currentDate, -1));
+        endDate = fmt(addDays(currentDate, 2));
+      }
+
+      try {
+        const res = await API.get(`/bookings?start_date=${startDate}&end_date=${endDate}`);
+        allBookings = res.bookings || res || [];
+      } catch(e) {
+        console.warn('Failed to load bookings', e);
+        allBookings = [];
+      }
+      applyFilters();
+    }
+
+    // ── Render Router ──
+    function renderView() {
+      updateLabel();
+      renderMiniCal();
+      const area = document.getElementById('calendarArea');
+      if (currentView === 'month') renderMonthView(area);
+      else if (currentView === 'week') renderWeekView(area);
+      else if (currentView === 'day') renderDayView(area);
+      else renderListView(area);
+    }
+
+    function refreshAll() {
+      fetchBookings();
+    }
+
+    // ══════════════════════════════════
+    //  MONTH VIEW
+    // ══════════════════════════════════
+    function renderMonthView(area) {
+      const y = currentDate.getFullYear(), m = currentDate.getMonth();
+      const firstDay = new Date(y, m, 1).getDay();
+      const dim = daysInMonth(y, m);
+      const today = new Date();
+
+      let html = '<div class="cal-grid">';
+      // Day-of-week headers
+      TH_DAYS.forEach(d => { html += `<div class="cal-dow">${d}</div>`; });
+
+      // Build calendar cells
+      const totalCells = Math.ceil((firstDay + dim) / 7) * 7;
+      for (let i = 0; i < totalCells; i++) {
+        const dayNum = i - firstDay + 1;
+        const dt = new Date(y, m, dayNum);
+        const inMonth = dayNum >= 1 && dayNum <= dim;
+        const weekend = dt.getDay() === 0 || dt.getDay() === 6;
+        const cls = [];
+        if (!inMonth) cls.push('other-month');
+        if (weekend && inMonth) cls.push('weekend');
+
+        html += `<div class="cal-cell ${cls.join(' ')}" data-date="${fmt(dt)}" onclick="cellClick('${fmt(dt)}')">`;
+        const dateCls = isToday(dt) ? 'cell-date today' : 'cell-date';
+        html += `<div class="${dateCls}">${dt.getDate()}</div>`;
+
+        // Events for this day
+        const dayEvents = getEventsForDay(dt);
+        const maxShow = 3;
+        dayEvents.slice(0, maxShow).forEach(ev => {
+          const c = evColor(ev);
+          const cancelled = isCancelled(ev) ? ' cancelled' : '';
+          const spanCls = getSpanClass(ev, dt);
+          html += `<div class="cal-event${cancelled} ${spanCls}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c}" onclick="event.stopPropagation();showEventPopup(${ev.id})" title="${ev.title || ''}">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || 'Untitled'}</div>`;
+        });
+        if (dayEvents.length > maxShow) {
+          html += `<div class="cal-more" onclick="event.stopPropagation();showDayEvents('${fmt(dt)}')">+${dayEvents.length - maxShow} more</div>`;
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+      area.innerHTML = html;
+    }
+
+    function getEventsForDay(dt) {
+      const ds = fmt(dt);
+      return filteredBookings.filter(ev => {
+        const s = (ev.start_date || '').slice(0, 10);
+        const e = (ev.end_date || ev.start_date || '').slice(0, 10);
+        return ds >= s && ds <= e;
+      });
+    }
+
+    function getSpanClass(ev, dt) {
+      const s = (ev.start_date || '').slice(0, 10);
+      const e = (ev.end_date || ev.start_date || '').slice(0, 10);
+      if (s === e) return '';
+      const ds = fmt(dt);
+      if (ds === s) return 'span-start';
+      if (ds === e) return 'span-end';
+      return 'span-mid';
+    }
+
+    function cellClick(dateStr) {
+      currentDate = new Date(dateStr + 'T00:00:00');
+      setView('day');
+    }
+
+    function showDayEvents(dateStr) {
+      currentDate = new Date(dateStr + 'T00:00:00');
+      setView('day');
+    }
+
+    // ══════════════════════════════════
+    //  WEEK VIEW
+    // ══════════════════════════════════
+    function renderWeekView(area) {
+      const ws = startOfWeek(currentDate);
+      const days = [];
+      for (let i = 0; i < 7; i++) days.push(addDays(ws, i));
+      const today = new Date();
+
+      let html = '<div class="week-view">';
+      // Header
+      html += '<div class="week-header"><div class="wh-blank"></div>';
+      days.forEach(d => {
+        const todayCls = isToday(d) ? ' today' : '';
+        html += `<div class="wh-day${todayCls}">
+          <span style="font-size:11px">${TH_DAYS[d.getDay()]}</span>
+          <span class="day-num">${d.getDate()}</span>
+        </div>`;
+      });
+      html += '</div>';
+
+      // All-day row
+      html += '<div class="week-allday"><div class="wa-label">ทั้งวัน</div>';
+      days.forEach(d => {
+        html += '<div class="wa-cell">';
+        const dayEvts = getEventsForDay(d).filter(ev => ev.all_day);
+        dayEvts.forEach(ev => {
+          const c = evColor(ev);
+          const cancelled = isCancelled(ev) ? ' cancelled' : '';
+          html += `<div class="cal-event${cancelled}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c};margin-bottom:2px" onclick="showEventPopup(${ev.id})">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</div>`;
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // Time grid
+      html += '<div class="week-grid" style="position:relative">';
+      for (let h = 6; h <= 22; h++) {
+        const hStr = String(h).padStart(2, '0') + ':00';
+        html += `<div class="wg-time"><span>${hStr}</span></div>`;
+        days.forEach((d, di) => {
+          html += `<div class="wg-cell" data-day="${di}" data-hour="${h}"></div>`;
+        });
+      }
+      html += '</div>'; // week-grid
+
+      // Now line
+      if (days.some(d => isToday(d))) {
+        const now = new Date();
+        const minSince6 = (now.getHours() - 6) * 60 + now.getMinutes();
+        if (minSince6 >= 0 && minSince6 <= 16 * 60) {
+          const top = (minSince6 / 30) * 48;
+          html += `<div class="now-line" style="position:relative;top:${-((22-6+1)*48) + top}px;margin-bottom:${-(2)}px"></div>`;
+        }
+      }
+      html += '</div>'; // week-view
+      area.innerHTML = html;
+
+      // Position timed events
+      positionWeekEvents(days);
+    }
+
+    function positionWeekEvents(days) {
+      days.forEach((d, di) => {
+        const dayEvts = getEventsForDay(d).filter(ev => !ev.all_day);
+        dayEvts.forEach(ev => {
+          const startH = getEventHour(ev, 'start');
+          const endH = getEventHour(ev, 'end');
+          const topMin = Math.max((startH - 6) * 60, 0);
+          const botMin = Math.min((endH - 6) * 60, 16 * 60);
+          const duration = Math.max(botMin - topMin, 30);
+          const top = (topMin / 30) * 48;
+          const height = (duration / 30) * 48;
+
+          const c = evColor(ev);
+          const cancelled = isCancelled(ev) ? ' cancelled' : '';
+          const cell = document.querySelector(`.wg-cell[data-day="${di}"][data-hour="${Math.floor(startH)}"]`);
+          if (!cell) return;
+          // Find the grid wrapper
+          const grid = cell.closest('.week-grid');
+          if (!grid) return;
+
+          const evEl = document.createElement('div');
+          evEl.className = 'week-event' + cancelled;
+          evEl.style.cssText = `top:${top}px;height:${height}px;background:${evBg(c)};color:${c};border-left:3px solid ${c};`;
+          // Position within correct column
+          const cols = 7;
+          const colWidth = (100 / cols);
+          evEl.style.left = `calc(60px + ${di * colWidth}% + 2px)`;
+          evEl.style.width = `calc(${colWidth}% - 6px)`;
+          evEl.style.position = 'absolute';
+          evEl.innerHTML = `${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}<br><small>${formatTimeRange(ev)}</small>`;
+          evEl.onclick = () => showEventPopup(ev.id);
+          grid.appendChild(evEl);
+        });
+      });
+
+      // Now line (re-render properly)
+      renderNowLine();
+    }
+
+    function renderNowLine() {
+      const existing = document.querySelector('.now-line');
+      if (existing) existing.remove();
+
+      const grid = document.querySelector('.week-grid');
+      if (!grid) return;
+      const now = new Date();
+      const ws = startOfWeek(currentDate);
+      const days = [];
+      for (let i = 0; i < 7; i++) days.push(addDays(ws, i));
+      if (!days.some(d => isToday(d))) return;
+
+      const minSince6 = (now.getHours() - 6) * 60 + now.getMinutes();
+      if (minSince6 < 0 || minSince6 > 16 * 60) return;
+      const top = (minSince6 / 30) * 48;
+      const line = document.createElement('div');
+      line.className = 'now-line';
+      line.style.cssText = `position:absolute;top:${top}px;left:60px;right:0;`;
+      grid.appendChild(line);
+    }
+
+    function getEventHour(ev, which) {
+      const timeField = which === 'start' ? (ev.start_time || ev.start_date) : (ev.end_time || ev.end_date);
+      if (!timeField) return which === 'start' ? 8 : 17;
+      const d = new Date(timeField);
+      if (isNaN(d.getTime())) {
+        // Try parsing HH:MM
+        const parts = String(timeField).match(/(\d{1,2}):(\d{2})/);
+        if (parts) return parseInt(parts[1]) + parseInt(parts[2]) / 60;
+        return which === 'start' ? 8 : 17;
+      }
+      return d.getHours() + d.getMinutes() / 60;
+    }
+
+    function formatTimeRange(ev) {
+      const sh = getEventHour(ev, 'start');
+      const eh = getEventHour(ev, 'end');
+      const sf = String(Math.floor(sh)).padStart(2,'0') + ':' + String(Math.round((sh % 1) * 60)).padStart(2,'0');
+      const ef = String(Math.floor(eh)).padStart(2,'0') + ':' + String(Math.round((eh % 1) * 60)).padStart(2,'0');
+      return sf + ' - ' + ef;
+    }
+
+    // ══════════════════════════════════
+    //  DAY VIEW
+    // ══════════════════════════════════
+    function renderDayView(area) {
+      const d = currentDate;
+      const todayCls = isToday(d) ? ' today-label' : '';
+
+      let html = '<div class="day-view">';
+      html += `<div class="day-header"><span class="${todayCls}">${TH_DAYS[d.getDay()]} ${d.getDate()} ${TH_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}</span></div>`;
+
+      // All-day events
+      const allDayEvts = getEventsForDay(d).filter(ev => ev.all_day);
+      if (allDayEvts.length) {
+        html += '<div style="padding:8px 20px;border-bottom:1px solid var(--border-light);background:var(--bg-light)">';
+        html += '<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">ทั้งวัน</div>';
+        allDayEvts.forEach(ev => {
+          const c = evColor(ev);
+          const cancelled = isCancelled(ev) ? ' cancelled' : '';
+          html += `<div class="cal-event${cancelled}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c};margin-bottom:4px;padding:6px 10px" onclick="showEventPopup(${ev.id})">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</div>`;
+        });
+        html += '</div>';
+      }
+
+      // Time grid
+      html += '<div class="day-grid" style="position:relative">';
+      for (let h = 6; h <= 22; h++) {
+        const hStr = String(h).padStart(2, '0') + ':00';
+        html += `<div class="wg-time"><span>${hStr}</span></div>`;
+        html += `<div class="wg-cell" data-hour="${h}"></div>`;
+      }
+      html += '</div>';
+      html += '</div>';
+      area.innerHTML = html;
+
+      // Position timed events
+      const timedEvts = getEventsForDay(d).filter(ev => !ev.all_day);
+      const grid = area.querySelector('.day-grid');
+      timedEvts.forEach(ev => {
+        const startH = getEventHour(ev, 'start');
+        const endH = getEventHour(ev, 'end');
+        const topMin = Math.max((startH - 6) * 60, 0);
+        const botMin = Math.min((endH - 6) * 60, 16 * 60);
+        const duration = Math.max(botMin - topMin, 30);
+        const top = (topMin / 30) * 48;
+        const height = (duration / 30) * 48;
+
+        const c = evColor(ev);
+        const cancelled = isCancelled(ev) ? ' cancelled' : '';
+        const evEl = document.createElement('div');
+        evEl.className = 'day-event' + cancelled;
+        evEl.style.cssText = `position:absolute;top:${top}px;left:64px;right:8px;height:${height}px;background:${evBg(c)};color:${c};border-left:3px solid ${c};`;
+        evEl.innerHTML = `<strong>${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</strong><br><small>${formatTimeRange(ev)}</small>`;
+        evEl.onclick = () => showEventPopup(ev.id);
+        grid.appendChild(evEl);
+      });
+
+      // Now line
+      if (isToday(d)) {
+        const now = new Date();
+        const minSince6 = (now.getHours() - 6) * 60 + now.getMinutes();
+        if (minSince6 >= 0 && minSince6 <= 16 * 60) {
+          const top = (minSince6 / 30) * 48;
+          const line = document.createElement('div');
+          line.className = 'now-line';
+          line.style.cssText = `position:absolute;top:${top}px;left:60px;right:0;`;
+          grid.appendChild(line);
+        }
+      }
+    }
+
+    // ══════════════════════════════════
+    //  LIST / TABLE VIEW
+    // ══════════════════════════════════
+    function renderListView(area) {
+      const sorted = [...filteredBookings].sort((a, b) => {
+        let va = a[listSortCol] || '', vb = b[listSortCol] || '';
+        if (listSortCol === 'start_date' || listSortCol === 'end_date') {
+          va = new Date(va || 0).getTime();
+          vb = new Date(vb || 0).getTime();
+        } else {
+          va = String(va).toLowerCase();
+          vb = String(vb).toLowerCase();
+        }
+        return listSortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+      });
+
+      const arrow = col => listSortCol === col ? (listSortAsc ? ' ▲' : ' ▼') : '';
+
+      let html = '<div class="list-view"><table>';
+      html += `<thead><tr>
+        <th onclick="sortList('start_date')">วันที่${arrow('start_date')}</th>
+        <th onclick="sortList('booking_type')">ประเภท${arrow('booking_type')}</th>
+        <th onclick="sortList('title')">ชื่อ${arrow('title')}</th>
+        <th onclick="sortList('resource_name')">ทรัพยากร${arrow('resource_name')}</th>
+        <th onclick="sortList('project_name')">โปรเจกต์${arrow('project_name')}</th>
+        <th onclick="sortList('status')">สถานะ${arrow('status')}</th>
+        <th onclick="sortList('booked_by')">ผู้จอง${arrow('booked_by')}</th>
+      </tr></thead><tbody>`;
+
+      if (sorted.length === 0) {
+        html += '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">ไม่มีรายการจอง</td></tr>';
+      }
+
+      sorted.forEach(ev => {
+        const rowCls = isCancelled(ev) ? ' class="cancelled"' : '';
+        const c = evColor(ev);
+        const statusColors = {
+          pending: 'background:#fff3cd;color:#856404',
+          confirmed: 'background:#d4edda;color:#155724',
+          approved: 'background:#d4edda;color:#155724',
+          cancelled: 'background:#f8d7da;color:#721c24',
+          rejected: 'background:#f8d7da;color:#721c24',
+          completed: 'background:#e2e3e5;color:#383d41',
+        };
+        const sc = statusColors[ev.status] || 'background:#e2e3e5;color:#383d41';
+        html += `<tr${rowCls} style="cursor:pointer" onclick="showEventPopup(${ev.id})">
+          <td>${(ev.start_date || '').slice(0,10)}</td>
+          <td><span class="type-badge" style="background:${evBg(c)};color:${c}">${TYPE_ICONS[ev.booking_type] || ''} ${TYPE_LABELS[ev.booking_type] || ev.booking_type}</span></td>
+          <td class="ev-title">${ev.title || '-'}</td>
+          <td>${ev.resource_name || '-'}</td>
+          <td>${ev.project_name || '-'}</td>
+          <td><span class="status-badge" style="${sc}">${ev.status || '-'}</span></td>
+          <td>${ev.booked_by || ev.created_by_name || '-'}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+      area.innerHTML = html;
+    }
+
+    function sortList(col) {
+      if (listSortCol === col) listSortAsc = !listSortAsc;
+      else { listSortCol = col; listSortAsc = true; }
+      renderView();
+    }
+
+    // ══════════════════════════════════
+    //  EVENT POPUP
+    // ══════════════════════════════════
+    function showEventPopup(id) {
+      const ev = allBookings.find(e => e.id === id);
+      if (!ev) return;
+      document.getElementById('popupTitle').textContent = (TYPE_ICONS[ev.booking_type] || '') + ' ' + (ev.title || 'Booking #' + ev.id);
+
+      let body = '';
+      body += row('ประเภท', TYPE_LABELS[ev.booking_type] || ev.booking_type);
+      body += row('วันที่', (ev.start_date || '').slice(0,10) + ' → ' + (ev.end_date || ev.start_date || '').slice(0,10));
+      if (ev.start_time || ev.end_time) body += row('เวลา', formatTimeRange(ev));
+      if (ev.resource_name) body += row('ทรัพยากร', ev.resource_name);
+      if (ev.project_name) body += row('โปรเจกต์', ev.project_name);
+      if (ev.status) body += row('สถานะ', ev.status);
+      if (ev.location) body += row('สถานที่', ev.location);
+      if (ev.purpose) body += row('วัตถุประสงค์', ev.purpose);
+      if (ev.airline) body += row('สายการบิน', ev.airline);
+      if (ev.flight_number) body += row('เที่ยวบิน', ev.flight_number);
+      if (ev.departure_airport) body += row('ต้นทาง', ev.departure_airport);
+      if (ev.arrival_airport) body += row('ปลายทาง', ev.arrival_airport);
+      if (ev.job_type) body += row('ประเภทงาน', ev.job_type);
+      if (ev.site_name) body += row('ไซต์', ev.site_name);
+      if (ev.system_capacity) body += row('ขนาดระบบ', ev.system_capacity + ' kWp');
+      if (ev.passengers) body += row('ผู้โดยสาร', ev.passengers);
+      if (ev.pnr) body += row('PNR', ev.pnr);
+      if (ev.ticket_cost) body += row('ราคาตั๋ว', Number(ev.ticket_cost).toLocaleString() + ' บาท');
+      if (ev.booked_by || ev.created_by_name) body += row('ผู้จอง', ev.booked_by || ev.created_by_name);
+      if (ev.description) body += row('รายละเอียด', ev.description);
+      document.getElementById('popupBody').innerHTML = body;
+
+      let footer = '';
+      footer += `<button class="btn-sm" onclick="editBooking(${ev.id})">แก้ไข</button>`;
+      footer += `<button class="btn-sm btn-danger" onclick="deleteBooking(${ev.id})">ลบ</button>`;
+      if (ev.status === 'pending') {
+        footer += `<button class="btn-sm btn-success" onclick="approveBooking(${ev.id})">อนุมัติ</button>`;
+      }
+      document.getElementById('popupFooter').innerHTML = footer;
+      document.getElementById('eventPopup').classList.add('show');
+    }
+
+    function row(label, val) {
+      return `<div class="ep-row"><span class="ep-label">${label}</span><span class="ep-val">${val}</span></div>`;
+    }
+
+    function closePopup() {
+      document.getElementById('eventPopup').classList.remove('show');
+    }
+
+    // ══════════════════════════════════
+    //  MODALS (CREATE / EDIT)
+    // ══════════════════════════════════
+    function openModal(type) {
+      closeAllModals();
+      document.getElementById('createDropdown').classList.remove('show');
+      editingId = null;
+      // Set default dates
+      const todayStr = fmt(new Date());
+      if (type === 'vehicle') {
+        document.getElementById('vehStartDate').value = todayStr;
+        document.getElementById('vehEndDate').value = todayStr;
+        document.getElementById('vehTitle').value = '';
+        document.getElementById('vehPurpose').value = '';
+        document.getElementById('vehLocation').value = '';
+        document.getElementById('vehPassengers').value = '1';
+        document.getElementById('vehColor').value = '#4285f4';
+        document.getElementById('vehAllDay').checked = false;
+        toggleVehTime();
+        document.getElementById('modalVehicle').classList.add('show');
+      } else if (type === 'solar') {
+        document.getElementById('solarStartDate').value = todayStr;
+        document.getElementById('solarEndDate').value = todayStr;
+        document.getElementById('solarSite').value = '';
+        document.getElementById('solarCapacity').value = '';
+        document.getElementById('solarDesc').value = '';
+        document.getElementById('solarTools').value = '';
+        document.getElementById('solarSafety').value = '';
+        document.getElementById('solarColor').value = '#0f9d58';
+        document.getElementById('modalSolar').classList.add('show');
+      } else if (type === 'flight') {
+        document.getElementById('flightAirline').value = '';
+        document.getElementById('flightNumber').value = '';
+        document.getElementById('flightDepTime').value = '';
+        document.getElementById('flightArrTime').value = '';
+        document.getElementById('flightReturnNumber').value = '';
+        document.getElementById('flightReturnDep').value = '';
+        document.getElementById('flightReturnArr').value = '';
+        document.getElementById('flightPassengers').value = '';
+        document.getElementById('flightPNR').value = '';
+        document.getElementById('flightCost').value = '';
+        document.getElementById('flightColor').value = '#db4437';
+        document.getElementById('modalFlight').classList.add('show');
+      }
+    }
+
+    function closeAllModals() {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+    }
+
+    function toggleVehTime() {
+      const allDay = document.getElementById('vehAllDay').checked;
+      document.getElementById('vehTimeRow').style.display = allDay ? 'none' : 'grid';
+    }
+
+    async function saveBooking(type) {
+      let data = {};
+      try {
+        if (type === 'vehicle') {
+          data = {
+            booking_type: 'vehicle',
+            resource_id: document.getElementById('vehSelect').value || null,
+            title: document.getElementById('vehTitle').value,
+            start_date: document.getElementById('vehStartDate').value,
+            end_date: document.getElementById('vehEndDate').value,
+            all_day: document.getElementById('vehAllDay').checked,
+            start_time: document.getElementById('vehAllDay').checked ? null : document.getElementById('vehStartTime').value,
+            end_time: document.getElementById('vehAllDay').checked ? null : document.getElementById('vehEndTime').value,
+            project_id: document.getElementById('vehProject').value || null,
+            purpose: document.getElementById('vehPurpose').value,
+            location: document.getElementById('vehLocation').value,
+            passengers: document.getElementById('vehPassengers').value,
+            color: document.getElementById('vehColor').value,
+          };
+        } else if (type === 'solar') {
+          data = {
+            booking_type: 'solar',
+            resource_id: document.getElementById('solarTech').value || null,
+            job_type: document.getElementById('solarJobType').value,
+            site_name: document.getElementById('solarSite').value,
+            system_capacity: document.getElementById('solarCapacity').value || null,
+            description: document.getElementById('solarDesc').value,
+            tools_required: document.getElementById('solarTools').value,
+            safety_notes: document.getElementById('solarSafety').value,
+            start_date: document.getElementById('solarStartDate').value,
+            end_date: document.getElementById('solarEndDate').value,
+            project_id: document.getElementById('solarProject').value || null,
+            color: document.getElementById('solarColor').value,
+            title: document.getElementById('solarJobType').value + ' - ' + document.getElementById('solarSite').value,
+          };
+        } else if (type === 'flight') {
+          const depTime = document.getElementById('flightDepTime').value;
+          const arrTime = document.getElementById('flightArrTime').value;
+          data = {
+            booking_type: 'flight',
+            airline: document.getElementById('flightAirline').value,
+            flight_number: document.getElementById('flightNumber').value,
+            departure_airport: document.getElementById('flightDepAirport').value,
+            arrival_airport: document.getElementById('flightArrAirport').value,
+            start_date: depTime ? depTime.slice(0, 10) : '',
+            end_date: arrTime ? arrTime.slice(0, 10) : '',
+            start_time: depTime ? depTime.slice(11, 16) : '',
+            end_time: arrTime ? arrTime.slice(11, 16) : '',
+            return_flight_number: document.getElementById('flightReturnNumber').value || null,
+            return_departure_time: document.getElementById('flightReturnDep').value || null,
+            return_arrival_time: document.getElementById('flightReturnArr').value || null,
+            passengers: document.getElementById('flightPassengers').value,
+            pnr: document.getElementById('flightPNR').value,
+            ticket_cost: document.getElementById('flightCost').value || null,
+            booking_channel: document.getElementById('flightChannel').value,
+            project_id: document.getElementById('flightProject').value || null,
+            color: document.getElementById('flightColor').value,
+            title: (document.getElementById('flightNumber').value || 'Flight') + ' ' +
+                   document.getElementById('flightDepAirport').value + '→' +
+                   document.getElementById('flightArrAirport').value,
+          };
+        }
+
+        if (editingId) {
+          await API.put('/bookings/' + editingId, data);
+          if (typeof showToast === 'function') showToast('อัปเดตการจองสำเร็จ', 'success');
+        } else {
+          await API.post('/bookings', data);
+          if (typeof showToast === 'function') showToast('สร้างการจองสำเร็จ', 'success');
+        }
+        closeAllModals();
+        editingId = null;
+        refreshAll();
+      } catch(e) {
+        if (typeof showToast === 'function') showToast(e.message || 'เกิดข้อผิดพลาด', 'error');
+        else alert(e.message || 'Error');
+      }
+    }
+
+    function editBooking(id) {
+      closePopup();
+      const ev = allBookings.find(e => e.id === id);
+      if (!ev) return;
+      editingId = id;
+
+      if (ev.booking_type === 'vehicle') {
+        document.getElementById('vehSelect').value = ev.resource_id || '';
+        document.getElementById('vehTitle').value = ev.title || '';
+        document.getElementById('vehStartDate').value = (ev.start_date || '').slice(0, 10);
+        document.getElementById('vehEndDate').value = (ev.end_date || ev.start_date || '').slice(0, 10);
+        document.getElementById('vehAllDay').checked = !!ev.all_day;
+        toggleVehTime();
+        if (ev.start_time) document.getElementById('vehStartTime').value = ev.start_time.slice(0, 5);
+        if (ev.end_time) document.getElementById('vehEndTime').value = ev.end_time.slice(0, 5);
+        document.getElementById('vehProject').value = ev.project_id || '';
+        document.getElementById('vehPurpose').value = ev.purpose || '';
+        document.getElementById('vehLocation').value = ev.location || '';
+        document.getElementById('vehPassengers').value = ev.passengers || '1';
+        document.getElementById('vehColor').value = ev.color || '#4285f4';
+        document.getElementById('modalVehicle').classList.add('show');
+      } else if (ev.booking_type === 'solar') {
+        document.getElementById('solarTech').value = ev.resource_id || '';
+        document.getElementById('solarJobType').value = ev.job_type || 'installation';
+        document.getElementById('solarSite').value = ev.site_name || '';
+        document.getElementById('solarCapacity').value = ev.system_capacity || '';
+        document.getElementById('solarDesc').value = ev.description || '';
+        document.getElementById('solarTools').value = ev.tools_required || '';
+        document.getElementById('solarSafety').value = ev.safety_notes || '';
+        document.getElementById('solarStartDate').value = (ev.start_date || '').slice(0, 10);
+        document.getElementById('solarEndDate').value = (ev.end_date || ev.start_date || '').slice(0, 10);
+        document.getElementById('solarProject').value = ev.project_id || '';
+        document.getElementById('solarColor').value = ev.color || '#0f9d58';
+        document.getElementById('modalSolar').classList.add('show');
+      } else if (ev.booking_type === 'flight') {
+        document.getElementById('flightAirline').value = ev.airline || '';
+        document.getElementById('flightNumber').value = ev.flight_number || '';
+        document.getElementById('flightDepAirport').value = ev.departure_airport || 'DMK';
+        document.getElementById('flightArrAirport').value = ev.arrival_airport || 'DMK';
+        if (ev.start_date && ev.start_time) {
+          document.getElementById('flightDepTime').value = ev.start_date.slice(0,10) + 'T' + ev.start_time.slice(0,5);
+        }
+        if (ev.end_date && ev.end_time) {
+          document.getElementById('flightArrTime').value = ev.end_date.slice(0,10) + 'T' + ev.end_time.slice(0,5);
+        }
+        document.getElementById('flightReturnNumber').value = ev.return_flight_number || '';
+        document.getElementById('flightReturnDep').value = ev.return_departure_time || '';
+        document.getElementById('flightReturnArr').value = ev.return_arrival_time || '';
+        document.getElementById('flightPassengers').value = ev.passengers || '';
+        document.getElementById('flightPNR').value = ev.pnr || '';
+        document.getElementById('flightCost').value = ev.ticket_cost || '';
+        document.getElementById('flightChannel').value = ev.booking_channel || 'direct';
+        document.getElementById('flightProject').value = ev.project_id || '';
+        document.getElementById('flightColor').value = ev.color || '#db4437';
+        document.getElementById('modalFlight').classList.add('show');
+      }
+    }
+
+    async function deleteBooking(id) {
+      if (!confirm('ต้องการลบการจองนี้หรือไม่?')) return;
+      try {
+        await API.del('/bookings/' + id);
+        if (typeof showToast === 'function') showToast('ลบการจองสำเร็จ', 'success');
+        closePopup();
+        refreshAll();
+      } catch(e) {
+        if (typeof showToast === 'function') showToast(e.message || 'เกิดข้อผิดพลาด', 'error');
+      }
+    }
+
+    async function approveBooking(id) {
+      try {
+        await API.post('/bookings/' + id + '/approve');
+        if (typeof showToast === 'function') showToast('อนุมัติสำเร็จ', 'success');
+        closePopup();
+        refreshAll();
+      } catch(e) {
+        if (typeof showToast === 'function') showToast(e.message || 'เกิดข้อผิดพลาด', 'error');
+      }
+    }
+
+    // ── Init ──
+    if (API.requireAuth()) {
+      loadResources();
+      refreshAll();
+    }
+  </script>
+</body>
+</html>

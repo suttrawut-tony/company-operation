@@ -59,7 +59,8 @@ const NAV_GROUPS_FALLBACK = [
     { id: 'travel', label: 'Travel', icon: ICONS.travel, href: 'travel.html' },
   ]},
   { label: 'Resource', collapsible: true, items: [
-    { id: 'vehicle', label: 'Vehicle', icon: ICONS.vehicle, href: 'vehicle.html' },
+    { id: 'booking', label: 'Booking', icon: ICONS.vehicle, href: 'booking.html' },
+    { id: 'vehicle', label: 'Vehicles', icon: ICONS.vehicle, href: 'vehicle.html' },
     { id: 'ot', label: 'Holiday / OT', icon: ICONS.ot, href: 'ot.html' },
   ]},
   { label: 'System', collapsible: true, items: [
@@ -409,7 +410,7 @@ window.icon = icon;
 // Contextual Help — map page to help section
 function openContextHelp() {
   const page = location.pathname.split('/').pop().replace('.html','');
-  const map = { vehicle:'vehicle', advance:'advance', phases:'phases', budget:'budget', 'pr-po':'prpo', 'pr-create':'prpo', 'pr-detail':'prpo', projects:'projects', 'petty-cash':'petty-cash', travel:'travel', ot:'ot', dashboard:'dashboard', 'item-master':'item-master', 'bp-master':'bp-master', 'user-permissions':'user-permission', overview:'projects' };
+  const map = { vehicle:'vehicle', booking:'vehicle', advance:'advance', phases:'phases', budget:'budget', 'pr-po':'prpo', 'pr-create':'prpo', 'pr-detail':'prpo', projects:'projects', 'petty-cash':'petty-cash', travel:'travel', ot:'ot', dashboard:'dashboard', 'item-master':'item-master', 'bp-master':'bp-master', 'user-permissions':'user-permission', overview:'projects' };
   const section = map[page] || '';
   window.open('help.html' + (section ? '#' + section : ''), '_blank');
 }
