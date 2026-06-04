@@ -6,48 +6,97 @@
   <title>Company Operation — Booking</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
-    /* ── Layout ── */
-    .booking-layout { display: flex; gap: 0; min-height: calc(100vh - 160px); }
+    /* ── Layout (Google Calendar style) ── */
+    .booking-layout { display: flex; gap: 0; min-height: calc(100vh - 120px); }
     .booking-sidebar {
-      width: 250px; flex-shrink: 0; border-right: 1px solid var(--border);
-      background: var(--bg-white); padding: 16px; overflow-y: auto;
+      width: 256px; flex-shrink: 0; border-right: 1px solid var(--border-light);
+      background: var(--bg-white); padding: 0; overflow-y: auto;
     }
     .booking-main { flex: 1; min-width: 0; padding: 0; }
 
-    /* ── Header bar ── */
-    .bk-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+    /* ── Google Calendar Header ── */
+    .gc-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 8px 16px; border-bottom: 1px solid var(--border-light);
+      background: var(--bg-white); height: 48px;
     }
-    .bk-header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .bk-nav {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 20px; border-bottom: 1px solid var(--border-light);
-      background: var(--bg-white);
+    .gc-header .gc-logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 400; color: var(--text-secondary); }
+    .gc-header .gc-logo svg { color: var(--primary); }
+    .gc-header .gc-today {
+      padding: 6px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); cursor: pointer; font-size: 13px; font-weight: 500;
     }
-    .bk-nav-arrows { display: flex; align-items: center; gap: 4px; }
-    .bk-nav-arrows button {
-      background: none; border: 1px solid var(--border); border-radius: var(--radius);
-      width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center;
-      justify-content: center; color: var(--text-secondary);
-    }
-    .bk-nav-arrows button:hover { background: var(--bg-hover); }
-    .bk-nav .month-label { font-size: 16px; font-weight: 600; min-width: 180px; text-align: center; }
-    .bk-nav .today-btn {
-      font-size: 12px; padding: 4px 12px; border: 1px solid var(--border);
-      border-radius: var(--radius); background: var(--bg-white); cursor: pointer; font-weight: 600;
-    }
-    .bk-nav .today-btn:hover { background: var(--bg-hover); }
-    .view-toggle { display: flex; gap: 0; margin-left: auto; }
-    .view-toggle button {
-      font-size: 12px; padding: 6px 14px; border: 1px solid var(--border);
-      background: var(--bg-white); cursor: pointer; font-weight: 500;
+    .gc-header .gc-today:hover { background: var(--bg-hover); }
+    .gc-nav-btn {
+      width: 32px; height: 32px; border: none; background: none; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
       color: var(--text-secondary);
     }
-    .view-toggle button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
-    .view-toggle button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
-    .view-toggle button:not(:first-child) { border-left: none; }
-    .view-toggle button.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .gc-nav-btn:hover { background: var(--bg-hover); }
+    .gc-header .gc-month { font-size: 20px; font-weight: 400; color: var(--text-primary); min-width: 200px; }
+    .gc-header .gc-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .gc-view-select {
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); font-size: 13px; cursor: pointer;
+    }
+
+    /* ── Sidebar Create Button (Google style) ── */
+    .gc-create-btn {
+      margin: 16px 16px 12px; padding: 12px 24px 12px 16px; display: inline-flex;
+      align-items: center; gap: 10px; border-radius: 24px; border: none;
+      background: var(--bg-white); box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+      cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-primary);
+      transition: box-shadow 0.2s;
+    }
+    .gc-create-btn:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.16); }
+    .gc-create-btn svg { width: 28px; height: 28px; }
+    .gc-create-btn .plus-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+    .gc-create-btn .plus-icon svg { stroke: none; }
+
+    /* Sidebar Sections */
+    .sb-section { padding: 0 12px; margin-bottom: 8px; }
+    .sb-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted);
+    }
+    .sb-section-header .sb-add {
+      width: 24px; height: 24px; border: none; background: none; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 16px;
+    }
+    .sb-section-header .sb-add:hover { background: var(--bg-hover); color: var(--primary); }
+    .sb-cal-item {
+      display: flex; align-items: center; gap: 8px; padding: 4px; font-size: 12px;
+      cursor: pointer; border-radius: var(--radius);
+    }
+    .sb-cal-item:hover { background: var(--bg-hover); }
+    .sb-cal-item input[type="checkbox"] { margin: 0; cursor: pointer; width: 14px; height: 14px; accent-color: var(--cal-color, var(--primary)); }
+    .sb-cal-item .sb-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .sb-search {
+      margin: 8px 12px; padding: 8px 12px 8px 32px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 12px; width: calc(100% - 24px);
+      box-sizing: border-box; background: var(--bg-light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") 10px center no-repeat;
+    }
+    .sb-search:focus { outline: none; border-color: var(--primary); background-color: var(--bg-white); }
+
+    /* Create popup (add technician/vehicle) */
+    .sb-create-popup {
+      display: none; position: absolute; left: 12px; right: 12px; z-index: 50;
+      background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); padding: 16px; animation: slideDown 0.15s ease;
+    }
+    .sb-create-popup.show { display: block; }
+    .sb-create-popup h4 { font-size: 13px; font-weight: 700; margin: 0 0 12px; }
+    .sb-create-popup .sbf { margin-bottom: 8px; }
+    .sb-create-popup .sbf label { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); margin-bottom: 2px; }
+    .sb-create-popup .sbf input, .sb-create-popup .sbf select { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; box-sizing: border-box; }
+    .sb-create-popup .sbf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sb-create-popup .sbf-footer { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; }
+
+    /* Hide old header/nav — replaced by gc-header */
+    .bk-header { display: none; }
+    .bk-nav { display: none; }
 
     /* ── Dropdown ── */
     .dropdown { position: relative; display: inline-block; }
@@ -148,7 +197,26 @@
     }
     .cal-more:hover { text-decoration: underline; }
 
-    /* Multi-day event spanning */
+    /* Multi-day bar (Google Calendar style) */
+    .cal-event-bar {
+      border-left: none !important; border-radius: 4px; padding: 2px 8px;
+      font-size: 11px; font-weight: 500;
+    }
+    .cal-event-bar.span-start { border-radius: 4px 0 0 4px; margin-right: -4px; }
+    .cal-event-bar.span-mid { border-radius: 0; margin-left: -4px; margin-right: -4px; }
+    .cal-event-bar.span-end { border-radius: 0 4px 4px 0; margin-left: -4px; }
+
+    /* Single-day dot event (Google Calendar style) */
+    .cal-event-dot {
+      background: none !important; border-left: none !important; color: var(--text-primary) !important;
+      display: flex; align-items: center; gap: 4px; padding: 1px 4px;
+    }
+    .cal-event-dot .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .cal-event-dot .ev-time { font-size: 10px; color: var(--text-secondary); font-weight: 500; }
+    .cal-event-dot .ev-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+    .cal-event-dot:hover { background: var(--bg-hover) !important; border-radius: 4px; }
+
+    /* Legacy spanning (keep for backwards compat) */
     .cal-event.span-start { border-radius: 4px 0 0 4px; margin-right: -4px; }
     .cal-event.span-mid { border-radius: 0; margin-left: -4px; margin-right: -4px; }
     .cal-event.span-end { border-radius: 0 4px 4px 0; margin-left: -4px; }
@@ -399,6 +467,93 @@
       display: inline-flex; vertical-align: middle;
     }
     .jo-badge svg { width: 14px; height: 14px; }
+
+    /* ── Quick Popup (Google Calendar style) ── */
+    .qp-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 400;
+    }
+    .qp-backdrop.show { display: block; }
+    .qp {
+      position: fixed; z-index: 401; width: 320px;
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+      animation: qpIn 0.15s ease;
+      overflow: hidden;
+    }
+    @keyframes qpIn { from { opacity:0; transform:scale(0.95) translateY(-4px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    .qp-header {
+      padding: 14px 16px 10px; display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .qp-header h4 { font-size: 14px; font-weight: 700; margin: 0; flex: 1; }
+    .qp-close {
+      background: none; border: none; cursor: pointer; font-size: 18px;
+      color: var(--text-muted); line-height: 1; padding: 0 0 0 8px;
+    }
+    .qp-close:hover { color: var(--text-primary); }
+    .qp-body { padding: 0 16px 12px; }
+    .qp-body .qp-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px;
+    }
+    .qp-body .qp-row .qp-label { color: var(--text-muted); min-width: 60px; }
+    .qp-body .qp-row .qp-val { font-weight: 500; }
+    .qp-footer {
+      padding: 10px 16px; border-top: 1px solid var(--border-light);
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+    .qp-status {
+      font-size: 10px; padding: 2px 8px; border-radius: var(--radius-full); font-weight: 600;
+    }
+    /* Quick-create form */
+    .qp-create .qp-input {
+      width: 100%; padding: 10px 12px; border: none; border-bottom: 2px solid var(--primary);
+      font-size: 15px; font-weight: 500; outline: none; background: transparent;
+      margin-bottom: 12px; box-sizing: border-box;
+    }
+    .qp-create .qp-input::placeholder { color: var(--text-muted); font-weight: 400; }
+    .qp-create .qp-type-row {
+      display: flex; gap: 6px; margin-bottom: 12px;
+    }
+    .qp-type-btn {
+      flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); cursor: pointer; font-size: 11px; font-weight: 600;
+      text-align: center; transition: all 0.15s; display: flex; align-items: center;
+      justify-content: center; gap: 4px;
+    }
+    .qp-type-btn:hover { border-color: var(--primary); }
+    .qp-type-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .qp-type-btn svg { width: 14px; height: 14px; }
+    .qp-date-display {
+      font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;
+      margin-bottom: 8px;
+    }
+    .qp-date-display svg { width: 14px; height: 14px; }
+    /* Detail popup toolbar (Google Calendar style) */
+    .qp-detail { max-width: 400px; }
+    .qp-detail-toolbar {
+      display: flex; justify-content: flex-end; align-items: center; gap: 2px;
+      padding: 8px 8px 0;
+    }
+    .qp-tool-btn {
+      width: 32px; height: 32px; border: none; background: none; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary); transition: background 0.15s;
+    }
+    .qp-tool-btn:hover { background: var(--bg-hover); }
+    .qp-tool-btn svg { width: 16px; height: 16px; }
+    .qp-detail-title {
+      padding: 4px 16px 8px; font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .qp-detail-title .qp-color-dot {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+    }
+    .qp-detail .qp-body { padding: 0 16px 14px; }
+    .qp-detail .qp-row { margin-bottom: 6px; }
+    .qp-type-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: var(--radius-full);
+      font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .qp-type-badge svg { width: 12px; height: 12px; }
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
@@ -502,62 +657,125 @@
   <nav id="topnav"></nav>
   <div id="tabbar"></div>
 
-  <main class="page fade-in">
-    <!-- Header -->
-    <div class="bk-header">
-      <h1><span class="page-icon" id="hdrIcon"></span> Booking</h1>
-      <div class="dropdown">
-        <button class="btn-sm btn-primary" onclick="toggleDropdown(this)">+ สร้าง Booking ▾</button>
-        <div class="dropdown-menu" id="createDropdown">
-          <button onclick="openModal('vehicle')"><span class="dd-icon" data-icon="car"></span> จองรถ</button>
-          <button onclick="openModal('solar')"><span class="dd-icon" data-icon="user"></span> จองช่าง</button>
-          <button onclick="openModal('flight')"><span class="dd-icon" data-icon="plane"></span> จองเครื่องบิน</button>
-        </div>
+  <main class="page fade-in" style="padding:0">
+    <!-- Google Calendar Header -->
+    <div class="gc-header">
+      <div class="gc-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+        Calendar
+      </div>
+      <button class="gc-today" onclick="goToday()">วันนี้</button>
+      <button class="gc-nav-btn" onclick="navPrev()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="gc-nav-btn" onclick="navNext()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+      <span class="gc-month" id="monthLabel"></span>
+      <div class="gc-right">
+        <select class="gc-view-select" id="viewSelect" onchange="setView(this.value)">
+          <option value="month">เดือน</option>
+          <option value="week">สัปดาห์</option>
+          <option value="day">วัน</option>
+          <option value="list">ตาราง</option>
+          <option value="resources">ทรัพยากร</option>
+          <option value="board">บอร์ด</option>
+        </select>
       </div>
     </div>
 
-    <!-- Navigation bar -->
-    <div class="bk-nav">
-      <div class="bk-nav-arrows">
-        <button onclick="navPrev()">◀</button>
-        <button onclick="navNext()">▶</button>
-      </div>
-      <span class="month-label" id="monthLabel"></span>
-      <button class="today-btn" onclick="goToday()">วันนี้</button>
-      <div class="view-toggle">
-        <button data-view="month" class="active" onclick="setView('month')">เดือน</button>
-        <button data-view="week" onclick="setView('week')">สัปดาห์</button>
-        <button data-view="day" onclick="setView('day')">วัน</button>
-        <button data-view="list" onclick="setView('list')">ตาราง</button>
-        <button data-view="resources" onclick="setView('resources')">ทรัพยากร</button>
-        <button data-view="board" onclick="setView('board')">บอร์ด</button>
-      </div>
-    </div>
+    <!-- Hidden old elements kept for compatibility -->
+    <div class="bk-header" style="display:none"><h1></h1><div class="dropdown"><button></button><div class="dropdown-menu" id="createDropdown"></div></div></div>
+    <div class="bk-nav" style="display:none"><div class="view-toggle"></div></div>
 
     <!-- Two-column layout -->
     <div class="booking-layout">
-      <!-- Left Sidebar -->
-      <div class="booking-sidebar">
-        <div class="mini-cal" id="miniCal"></div>
-        <div class="filter-section">
-          <h4>ประเภท</h4>
-          <label class="filter-item">
-            <input type="checkbox" checked data-type="vehicle" onchange="applyFilters()">
-            <span class="filter-dot" style="background:#4285f4"></span> รถยนต์
-          </label>
-          <label class="filter-item">
-            <input type="checkbox" checked data-type="solar" onchange="applyFilters()">
-            <span class="filter-dot" style="background:#0f9d58"></span> ช่าง
-          </label>
-          <label class="filter-item">
-            <input type="checkbox" checked data-type="flight" onchange="applyFilters()">
-            <span class="filter-dot" style="background:#db4437"></span> เครื่องบิน
-          </label>
+      <!-- Left Sidebar (Google Calendar style) -->
+      <div class="booking-sidebar" style="position:relative">
+        <!-- Create Button -->
+        <button class="gc-create-btn" onclick="toggleGCCreate()">
+          <span class="plus-icon"><svg width="36" height="36" viewBox="0 0 36 36"><path d="M18 12v12M12 18h12" stroke="none" fill="none"/><circle cx="18" cy="18" r="16" fill="none" stroke="var(--primary)" stroke-width="1.5"/><path d="M18 12v12" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/><path d="M12 18h12" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/></svg></span>
+          สร้าง
+        </button>
+        <!-- Create dropdown -->
+        <div class="sb-create-popup" id="gcCreateMenu">
+          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('solar')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="user" class="dd-icon"></span> จองช่าง</button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('vehicle')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="car" class="dd-icon"></span> จองรถ</button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('flight')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="plane" class="dd-icon"></span> จองเครื่องบิน</button>
+          <hr style="border:none;border-top:1px solid var(--border-light);margin:4px 0">
+          <button class="dropdown-menu-item" onclick="closeGCCreate();showAddTechPopup()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)">+ เพิ่มช่าง/พนักงาน</button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();showAddVehiclePopup()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)">+ เพิ่มรถ</button>
         </div>
-        <div class="filter-section" id="resourceFilters">
-          <h4>ทรัพยากร</h4>
-          <div id="vehicleFilters"></div>
-          <div id="techFilters"></div>
+
+        <!-- Mini Calendar -->
+        <div style="padding:0 12px"><div class="mini-cal" id="miniCal"></div></div>
+
+        <!-- Search -->
+        <input class="sb-search" placeholder="ค้นหาคน..." id="sbSearch" oninput="filterSidebar()">
+
+        <!-- My Calendars (Technicians) -->
+        <div class="sb-section">
+          <div class="sb-section-header">
+            <span>ช่าง / พนักงาน</span>
+            <button class="sb-add" onclick="showAddTechPopup()" title="เพิ่มช่าง">+</button>
+          </div>
+          <div id="sbTechList"></div>
+        </div>
+
+        <!-- Add Tech Popup -->
+        <div class="sb-create-popup" id="addTechPopup">
+          <h4>เพิ่มช่าง/พนักงาน</h4>
+          <div class="sbf-row">
+            <div class="sbf"><label>ชื่อ</label><input id="atFirstName" placeholder="ชื่อ"></div>
+            <div class="sbf"><label>นามสกุล</label><input id="atLastName" placeholder="นามสกุล"></div>
+          </div>
+          <div class="sbf-row">
+            <div class="sbf"><label>ชื่อเล่น</label><input id="atNickname" placeholder="ชื่อเล่น"></div>
+            <div class="sbf"><label>เบอร์โทร</label><input id="atPhone" placeholder="08x-xxx-xxxx"></div>
+          </div>
+          <div class="sbf-row">
+            <div class="sbf"><label>ความชำนาญ</label>
+              <select id="atSpecialization"><option value="installation">ติดตั้ง</option><option value="repair">ซ่อม</option><option value="survey">สำรวจ</option><option value="general">ทั่วไป</option></select>
+            </div>
+            <div class="sbf"><label>สี</label><input type="color" id="atColor" value="#0f9d58" style="height:32px;padding:2px"></div>
+          </div>
+          <div class="sbf-footer">
+            <button class="btn-sm" onclick="hideAddTechPopup()">ยกเลิก</button>
+            <button class="btn-sm btn-primary" onclick="saveTechnician()">บันทึก</button>
+          </div>
+        </div>
+
+        <!-- Resources (Vehicles) -->
+        <div class="sb-section">
+          <div class="sb-section-header">
+            <span>รถยนต์</span>
+            <button class="sb-add" onclick="showAddVehiclePopup()" title="เพิ่มรถ">+</button>
+          </div>
+          <div id="sbVehicleList"></div>
+        </div>
+
+        <!-- Add Vehicle Popup -->
+        <div class="sb-create-popup" id="addVehiclePopup">
+          <h4>เพิ่มรถ</h4>
+          <div class="sbf-row">
+            <div class="sbf"><label>ชื่อรถ</label><input id="avName" placeholder="เช่น Toyota Hilux"></div>
+            <div class="sbf"><label>ทะเบียน</label><input id="avPlate" placeholder="กก-1234 กทม"></div>
+          </div>
+          <div class="sbf-row">
+            <div class="sbf"><label>ประเภท</label>
+              <select id="avType"><option value="Pickup">Pickup</option><option value="Sedan">Sedan</option><option value="Van">Van</option><option value="SUV">SUV</option></select>
+            </div>
+            <div class="sbf"><label>สี</label><input type="color" id="avColor" value="#4285f4" style="height:32px;padding:2px"></div>
+          </div>
+          <div class="sbf-footer">
+            <button class="btn-sm" onclick="hideAddVehiclePopup()">ยกเลิก</button>
+            <button class="btn-sm btn-primary" onclick="saveVehicle()">บันทึก</button>
+          </div>
+        </div>
+
+        <!-- Flights -->
+        <div class="sb-section">
+          <div class="sb-section-header"><span>เครื่องบิน</span></div>
+          <label class="sb-cal-item">
+            <input type="checkbox" checked data-type="flight" onchange="applyFilters()" style="--cal-color:#db4437">
+            <span class="sb-dot" style="background:#db4437"></span> เที่ยวบินทั้งหมด
+          </label>
         </div>
       </div>
 
@@ -567,7 +785,36 @@
   </main>
   </div>
 
-  <!-- Event Popup -->
+  <!-- Quick-Create Popup (Google Calendar style) -->
+  <div class="qp-backdrop" id="qpBackdrop" onclick="closeQuickPopup()"></div>
+  <div class="qp qp-create" id="qpCreate" style="display:none">
+    <div class="qp-header">
+      <h4>สร้าง Booking</h4>
+      <button class="qp-close" onclick="closeQuickPopup()">&times;</button>
+    </div>
+    <div class="qp-body">
+      <input class="qp-input" id="qpTitle" placeholder="ชื่อการจอง..." autocomplete="off">
+      <div class="qp-type-row">
+        <button class="qp-type-btn active" data-qptype="vehicle" onclick="setQPType('vehicle')"><span class="qp-type-icon" data-icon="car"></span> รถ</button>
+        <button class="qp-type-btn" data-qptype="solar" onclick="setQPType('solar')"><span class="qp-type-icon" data-icon="user"></span> ช่าง</button>
+        <button class="qp-type-btn" data-qptype="flight" onclick="setQPType('flight')"><span class="qp-type-icon" data-icon="plane"></span> บิน</button>
+      </div>
+      <div class="qp-date-display" id="qpDateDisplay"></div>
+    </div>
+    <div class="qp-footer">
+      <button class="btn-sm" onclick="qpMoreOptions()">ตัวเลือกเพิ่มเติม</button>
+      <button class="btn-sm btn-primary" onclick="qpSave()">บันทึก</button>
+    </div>
+  </div>
+
+  <!-- Quick-Detail Popup (click existing event — Google Calendar style) -->
+  <div class="qp qp-detail" id="qpDetail" style="display:none">
+    <div class="qp-detail-toolbar" id="qpDetailToolbar"></div>
+    <div class="qp-detail-title" id="qpDetailTitle"></div>
+    <div class="qp-body" id="qpDetailBody"></div>
+  </div>
+
+  <!-- Legacy center popup (kept for list/board views) -->
   <div class="event-popup-overlay" id="eventPopup" onclick="if(event.target===this)closePopup()">
     <div class="event-popup">
       <div class="event-popup-header">
@@ -803,20 +1050,33 @@
             </div>
           </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ขั้นตอน</label>
+            <select id="solarPhase" onchange="onPhaseChange()">
+              <option value="survey">สำรวจ (Survey)</option>
+              <option value="installation">ติดตั้ง (Installation)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ประเภทงาน</label>
+            <select id="solarJobType">
+              <option value="survey">Survey (สำรวจ)</option>
+              <option value="installation">Installation (ติดตั้ง)</option>
+              <option value="maintenance">Maintenance (บำรุงรักษา)</option>
+              <option value="inspection">Inspection (ตรวจสอบ)</option>
+              <option value="repair">Repair (ซ่อม)</option>
+              <option value="commissioning">Commissioning</option>
+            </select>
+          </div>
+        </div>
         <div class="form-group">
-          <label>ช่าง</label>
+          <label>ช่างหลัก</label>
           <select id="solarTech"></select>
         </div>
         <div class="form-group">
-          <label>ประเภทงาน</label>
-          <select id="solarJobType">
-            <option value="installation">Installation (ติดตั้ง)</option>
-            <option value="maintenance">Maintenance (บำรุงรักษา)</option>
-            <option value="inspection">Inspection (ตรวจสอบ)</option>
-            <option value="repair">Repair (ซ่อม)</option>
-            <option value="survey">Survey (สำรวจ)</option>
-            <option value="commissioning">Commissioning</option>
-          </select>
+          <label>ทีมช่างสำรวจ (เลือกหลายคนได้)</label>
+          <div id="solarTeamCheckboxes" style="max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px"></div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -874,6 +1134,108 @@
             <input type="color" id="solarColor" value="#0f9d58">
             <span style="font-size:12px;color:var(--text-muted)">สีแสดงบนปฏิทิน</span>
           </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div style="border-top:2px dashed var(--border);margin:16px 0;padding-top:16px">
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)">ข้อมูลลูกค้า</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>ชื่อลูกค้า</label>
+              <input type="text" id="solarCustName" placeholder="ชื่อ-นามสกุล">
+            </div>
+            <div class="form-group">
+              <label>เบอร์โทร</label>
+              <input type="text" id="solarCustPhone" placeholder="08x-xxx-xxxx">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>ที่อยู่</label>
+            <textarea id="solarCustAddr" rows="2" placeholder="ที่อยู่ลูกค้า"></textarea>
+          </div>
+        </div>
+
+        <!-- Survey Data (show after survey) -->
+        <div id="solarSurveySection" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px">
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)">ข้อมูลสำรวจ</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>พื้นที่หลังคา (sqm)</label>
+              <input type="number" id="solarRoofArea" step="0.1" placeholder="เช่น 50">
+            </div>
+            <div class="form-group">
+              <label>ประเภทหลังคา</label>
+              <select id="solarRoofType">
+                <option value="">-- เลือก --</option>
+                <option value="metal_sheet">เมทัลชีท</option>
+                <option value="tile">กระเบื้อง</option>
+                <option value="concrete">คอนกรีต</option>
+                <option value="other">อื่นๆ</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>ทิศทางหลังคา</label>
+              <select id="solarOrientation">
+                <option value="">-- เลือก --</option>
+                <option value="south">ใต้ (South)</option>
+                <option value="east">ตะวันออก (East)</option>
+                <option value="west">ตะวันตก (West)</option>
+                <option value="north">เหนือ (North)</option>
+                <option value="flat">แบนราบ (Flat)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ขนาดระบบแนะนำ (kWp)</label>
+              <input type="number" id="solarRecKwp" step="0.1" placeholder="เช่น 10">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>สภาพไฟฟ้าเดิม</label>
+            <input type="text" id="solarElecInfo" placeholder="เช่น 3 เฟส 30A, มิเตอร์ TOU">
+          </div>
+          <div class="form-group">
+            <label>รูปถ่ายสำรวจ (URLs)</label>
+            <input type="text" id="solarPhotos" placeholder="URL รูปถ่าย คั่นด้วย comma">
+          </div>
+          <div class="form-group">
+            <label>หมายเหตุสำรวจ</label>
+            <textarea id="solarSurveyNotes" rows="2" placeholder="หมายเหตุจากการสำรวจ"></textarea>
+          </div>
+        </div>
+
+        <!-- Items Section (after survey_completed) -->
+        <div id="solarItemsSection" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px">
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)">รายการอุปกรณ์</h4>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <select id="solarItemSelect" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px">
+              <option value="">-- เลือกอุปกรณ์ --</option>
+            </select>
+            <input type="number" id="solarItemQty" value="1" min="1" style="width:60px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px" placeholder="จำนวน">
+            <button class="btn-sm btn-primary" onclick="addBookingItem()" style="white-space:nowrap">เพิ่ม</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px" id="solarItemsTable">
+            <thead><tr>
+              <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border);font-size:10px">รหัส</th>
+              <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border);font-size:10px">รายการ</th>
+              <th style="text-align:right;padding:6px;border-bottom:1px solid var(--border);font-size:10px">จำนวน</th>
+              <th style="text-align:right;padding:6px;border-bottom:1px solid var(--border);font-size:10px">ราคา</th>
+              <th style="text-align:right;padding:6px;border-bottom:1px solid var(--border);font-size:10px">รวม</th>
+              <th style="padding:6px;border-bottom:1px solid var(--border)"></th>
+            </tr></thead>
+            <tbody id="solarItemsBody"></tbody>
+            <tfoot><tr><td colspan="4" style="text-align:right;padding:8px;font-weight:700">รวมทั้งหมด</td><td style="text-align:right;padding:8px;font-weight:700;font-family:monospace" id="solarItemsTotal">0</td><td></td></tr></tfoot>
+          </table>
+        </div>
+
+        <!-- Status Actions -->
+        <div id="solarStatusActions" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px;text-align:center"></div>
+
+        <!-- Convert to SQ button -->
+        <div id="solarConvertSection" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px;text-align:center">
+          <button class="btn-sm btn-primary" onclick="convertToSQ()" style="padding:10px 24px;font-size:13px">แปลงเป็นใบเสนอราคา (Convert to SQ)</button>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:8px">สร้าง Sales Quotation + Project อัตโนมัติ</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -1140,8 +1502,8 @@
       if (!jo) return;
 
       if (type === 'vehicle') {
-        if (jo.planned_start) document.getElementById('vehStartDate').value = jo.planned_start.slice(0,10);
-        if (jo.planned_end) document.getElementById('vehEndDate').value = jo.planned_end.slice(0,10);
+        if (jo.planned_start) document.getElementById('vehStartDate').value = toLocalDate(jo.planned_start);
+        if (jo.planned_end) document.getElementById('vehEndDate').value = toLocalDate(jo.planned_end);
         if (jo.project_id) document.getElementById('vehProject').value = jo.project_id;
         if (jo.description) document.getElementById('vehPurpose').value = jo.description;
         if (jo.location) document.getElementById('vehLocation').value = jo.location;
@@ -1149,12 +1511,12 @@
         if (jo.job_type) document.getElementById('solarJobType').value = jo.job_type;
         if (jo.site_name) document.getElementById('solarSite').value = jo.site_name;
         if (jo.description) document.getElementById('solarDesc').value = jo.description;
-        if (jo.planned_start) document.getElementById('solarStartDate').value = jo.planned_start.slice(0,10);
-        if (jo.planned_end) document.getElementById('solarEndDate').value = jo.planned_end.slice(0,10);
+        if (jo.planned_start) document.getElementById('solarStartDate').value = toLocalDate(jo.planned_start);
+        if (jo.planned_end) document.getElementById('solarEndDate').value = toLocalDate(jo.planned_end);
         if (jo.project_id) document.getElementById('solarProject').value = jo.project_id;
       } else if (type === 'flight') {
-        if (jo.planned_start) document.getElementById('flightDepTime').value = jo.planned_start.slice(0,10)+'T08:00';
-        if (jo.planned_end) document.getElementById('flightArrTime').value = jo.planned_end.slice(0,10)+'T17:00';
+        if (jo.planned_start) document.getElementById('flightDepTime').value = toLocalDate(jo.planned_start)+'T08:00';
+        if (jo.planned_end) document.getElementById('flightArrTime').value = toLocalDate(jo.planned_end)+'T17:00';
         if (jo.project_id) document.getElementById('flightProject').value = jo.project_id;
       }
       document.getElementById(prefix + 'JOForm').classList.remove('show');
@@ -1198,6 +1560,24 @@
     }
 
     const TYPE_COLORS = { vehicle: '#4285f4', solar: '#0f9d58', flight: '#db4437' };
+
+    // Shared status config — color + Thai label for every status in the workflow
+    const STATUS_CONFIG = {
+      pending:           { bg: '#fff3cd', color: '#856404', label: 'รออนุมัติ' },
+      approved:          { bg: '#dbeafe', color: '#1d4ed8', label: 'อนุมัติแล้ว' },
+      surveying:         { bg: '#fef3c7', color: '#d97706', label: 'กำลังสำรวจ' },
+      survey_completed:  { bg: '#fce7f3', color: '#be185d', label: 'สำรวจเสร็จ' },
+      confirmed:         { bg: '#d1fae5', color: '#065f46', label: 'ยืนยันแล้ว' },
+      quotation_sent:    { bg: '#e0e7ff', color: '#4338ca', label: 'ส่ง SQ แล้ว' },
+      checked_out:       { bg: '#dbeafe', color: '#1d4ed8', label: 'กำลังใช้' },
+      checked_in:        { bg: '#d1fae5', color: '#065f46', label: 'คืนแล้ว' },
+      completed:         { bg: '#d1fae5', color: '#065f46', label: 'เสร็จสิ้น' },
+      cancelled:         { bg: '#f8d7da', color: '#721c24', label: 'ยกเลิก' },
+      rejected:          { bg: '#f8d7da', color: '#721c24', label: 'ปฏิเสธ' },
+      in_progress:       { bg: '#fef3c7', color: '#d97706', label: 'กำลังดำเนินการ' },
+    };
+    function statusStyle(s) { const c = STATUS_CONFIG[s]; return c ? `background:${c.bg};color:${c.color}` : 'background:#e2e3e5;color:#383d41'; }
+    function statusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || '-'; }
     const TYPE_ICONS = {
       vehicle: (typeof I !== 'undefined' ? I.car : '\u{1F697}'),
       solar: (typeof I !== 'undefined' ? I.user : '\u{1F477}'),
@@ -1209,7 +1589,15 @@
                         'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
     // ── Helpers ──
-    function fmt(d) { return d.toISOString().slice(0, 10); }
+    function fmt(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+    function toLocalDate(s) {
+      if (!s) return '';
+      // If already YYYY-MM-DD (10 chars, no T), return as-is
+      if (typeof s === 'string' && s.length === 10 && s[4] === '-') return s;
+      // Parse as Date and format local
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? String(s).slice(0,10) : fmt(d);
+    }
     function fmtTime(d) { return d.toTimeString().slice(0, 5); }
     function parseDate(s) { return s ? new Date(s) : null; }
     function sameDay(a, b) { return fmt(a) === fmt(b); }
@@ -1286,6 +1674,8 @@
       document.querySelectorAll('.view-toggle button').forEach(b => {
         b.classList.toggle('active', b.dataset.view === v);
       });
+      const sel = document.getElementById('viewSelect');
+      if (sel) sel.value = v;
       refreshAll();
     }
 
@@ -1341,44 +1731,62 @@
 
     // ── Filters ──
     function applyFilters() {
+      // Collect enabled types from sidebar
       const typeChecks = document.querySelectorAll('[data-type]');
       const enabledTypes = new Set();
       typeChecks.forEach(cb => { if (cb.checked) enabledTypes.add(cb.dataset.type); });
+      // If no type checkboxes found, enable all
+      if (!enabledTypes.size) { enabledTypes.add('vehicle'); enabledTypes.add('solar'); enabledTypes.add('flight'); }
 
+      // Collect enabled resources (technicians + vehicles)
       const resChecks = document.querySelectorAll('[data-res]');
       const enabledRes = new Set();
-      let anyResChecked = false;
-      resChecks.forEach(cb => { if (cb.checked) { enabledRes.add(cb.dataset.res); anyResChecked = true; } });
+      resChecks.forEach(cb => { if (cb.checked) enabledRes.add(cb.dataset.res); });
 
       filteredBookings = allBookings.filter(ev => {
-        if (!enabledTypes.has(ev.booking_type)) return false;
-        if (anyResChecked) {
-          const rid = ev.vehicle_id || ev.technician_id;
-          if (rid && !enabledRes.has(String(rid))) return false;
-        }
+        // Flight type filter
+        if (ev.booking_type === 'flight' && !enabledTypes.has('flight')) return false;
+        // Resource filter (technician or vehicle)
+        const rid = ev.vehicle_id || ev.technician_id;
+        if (rid && resChecks.length > 0 && !enabledRes.has(String(rid))) return false;
         return true;
       });
       renderView();
     }
 
-    function renderResourceFilters() {
-      let vhtml = '';
-      vehicles.forEach(v => {
-        vhtml += `<label class="filter-item">
-          <input type="checkbox" checked data-res="${v.id}" onchange="applyFilters()">
-          <span class="filter-dot" style="background:#4285f4"></span> ${v.plate_number || v.name || 'Vehicle #'+v.id}
-        </label>`;
-      });
-      document.getElementById('vehicleFilters').innerHTML = vhtml;
+    // Google Calendar-style palette
+    const CAL_COLORS = ['#4285f4','#0f9d58','#f4b400','#db4437','#ab47bc','#00acc1','#ff7043','#7cb342','#e91e63','#3949ab'];
 
-      let thtml = '';
-      technicians.forEach(t => {
-        thtml += `<label class="filter-item">
-          <input type="checkbox" checked data-res="${t.id}" onchange="applyFilters()">
-          <span class="filter-dot" style="background:#0f9d58"></span> ${t.name || t.first_name + ' ' + t.last_name}
-        </label>`;
-      });
-      document.getElementById('techFilters').innerHTML = thtml;
+    function renderResourceFilters() {
+      // Technicians → sidebar "My Calendars"
+      const techDiv = document.getElementById('sbTechList');
+      if (techDiv) {
+        techDiv.innerHTML = technicians.map((t, i) => {
+          const name = t.nickname || t.name || ((t.first_name||'')+' '+(t.last_name||'')).trim();
+          const color = t.color || CAL_COLORS[(i + 1) % CAL_COLORS.length];
+          return `<label class="sb-cal-item">
+            <input type="checkbox" checked data-res="${t.id}" onchange="applyFilters()" style="--cal-color:${color}">
+            <span class="sb-dot" style="background:${color}"></span> ${name}
+          </label>`;
+        }).join('');
+      }
+      // Vehicles → sidebar "Resources"
+      const vehDiv = document.getElementById('sbVehicleList');
+      if (vehDiv) {
+        vehDiv.innerHTML = vehicles.map((v, i) => {
+          const color = v.color || CAL_COLORS[i % CAL_COLORS.length];
+          const label = (v.plate_number||'') + ' ' + (v.name||'');
+          return `<label class="sb-cal-item">
+            <input type="checkbox" checked data-res="${v.id}" onchange="applyFilters()" style="--cal-color:${color}">
+            <span class="sb-dot" style="background:${color}"></span> ${label.trim()}
+          </label>`;
+        }).join('');
+      }
+      // Legacy filters (keep for backwards compat but hidden)
+      const vf = document.getElementById('vehicleFilters');
+      if (vf) vf.innerHTML = '';
+      const tf = document.getElementById('techFilters');
+      if (tf) tf.innerHTML = '';
     }
 
     // ── Data Loading ──
@@ -1400,6 +1808,7 @@
       populateSelects();
       renderResourceFilters();
       await loadJobOrders();
+      await loadMasterItems();
     }
 
     function populateSelects() {
@@ -1419,6 +1828,16 @@
         const label = t.name || ((t.first_name || '') + ' ' + (t.last_name || '')).trim();
         ts.innerHTML += `<option value="${t.id}">${label}</option>`;
       });
+      // Team checkboxes
+      const teamDiv = document.getElementById('solarTeamCheckboxes');
+      if (teamDiv) {
+        teamDiv.innerHTML = technicians.map(t => {
+          const label = t.nickname || t.name || ((t.first_name||'')+' '+(t.last_name||'')).trim();
+          return `<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;cursor:pointer">
+            <input type="checkbox" value="${t.id}" class="solar-team-cb"> ${label}
+          </label>`;
+        }).join('');
+      }
 
       // Projects in all 3 modals
       ['vehProject', 'solarProject', 'flightProject'].forEach(id => {
@@ -1478,17 +1897,32 @@
     // ══════════════════════════════════
     //  MONTH VIEW
     // ══════════════════════════════════
+    function getResourceColor(ev) {
+      if (ev.booking_type === 'flight') return '#db4437';
+      if (ev.technician_id) {
+        const idx = technicians.findIndex(t => t.id === ev.technician_id);
+        if (idx >= 0) return technicians[idx].color || CAL_COLORS[(idx+1) % CAL_COLORS.length];
+      }
+      if (ev.vehicle_id) {
+        const idx = vehicles.findIndex(v => v.id === ev.vehicle_id);
+        if (idx >= 0) return vehicles[idx].color || CAL_COLORS[idx % CAL_COLORS.length];
+      }
+      return ev.color || TYPE_COLORS[ev.booking_type] || '#4285f4';
+    }
+
+    function isMultiDay(ev) {
+      const s = toLocalDate(ev.start_date), e = toLocalDate(ev.end_date||ev.start_date);
+      return s !== e;
+    }
+
     function renderMonthView(area) {
       const y = currentDate.getFullYear(), m = currentDate.getMonth();
       const firstDay = new Date(y, m, 1).getDay();
       const dim = daysInMonth(y, m);
-      const today = new Date();
 
       let html = '<div class="cal-grid">';
-      // Day-of-week headers
       TH_DAYS.forEach(d => { html += `<div class="cal-dow">${d}</div>`; });
 
-      // Build calendar cells
       const totalCells = Math.ceil((firstDay + dim) / 7) * 7;
       for (let i = 0; i < totalCells; i++) {
         const dayNum = i - firstDay + 1;
@@ -1499,19 +1933,26 @@
         if (!inMonth) cls.push('other-month');
         if (weekend && inMonth) cls.push('weekend');
 
-        html += `<div class="cal-cell ${cls.join(' ')}" data-date="${fmt(dt)}" onclick="cellClick('${fmt(dt)}')">`;
+        html += `<div class="cal-cell ${cls.join(' ')}" data-date="${fmt(dt)}" onclick="cellClick('${fmt(dt)}',event)">`;
         const dateCls = isToday(dt) ? 'cell-date today' : 'cell-date';
         html += `<div class="${dateCls}">${dt.getDate()}</div>`;
 
-        // Events for this day
         const dayEvents = getEventsForDay(dt);
         const maxShow = 3;
         dayEvents.slice(0, maxShow).forEach(ev => {
-          const c = evColor(ev);
+          const c = getResourceColor(ev);
           const cancelled = isCancelled(ev) ? ' cancelled' : '';
-          const spanCls = getSpanClass(ev, dt);
-          const joLabel = ev.job_order_number ? `[${ev.job_order_number.replace('JO-','')}] ` : '';
-          html += `<div class="cal-event${cancelled} ${spanCls}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c}" onclick="event.stopPropagation();showEventPopup(${ev.id})" title="${ev.title || ''}">${TYPE_ICONS[ev.booking_type] || ''} ${joLabel}${ev.title || 'Untitled'}</div>`;
+          const multi = isMultiDay(ev);
+
+          if (multi) {
+            // Multi-day: colored bar
+            const spanCls = getSpanClass(ev, dt);
+            html += `<div class="cal-event cal-event-bar${cancelled} ${spanCls}" style="background:${c};color:#fff" onclick="event.stopPropagation();showQuickDetail('${ev.id}',event)" title="${ev.title || ''}">${ev.title || 'Untitled'}</div>`;
+          } else {
+            // Single day: dot + time + title (Google Calendar style)
+            const timeStr = ev.start_time ? ev.start_time.slice(0,5) : '';
+            html += `<div class="cal-event cal-event-dot${cancelled}" onclick="event.stopPropagation();showQuickDetail('${ev.id}',event)" title="${ev.title || ''}"><span class="ev-dot" style="background:${c}"></span>${timeStr ? '<span class="ev-time">'+timeStr+'</span>' : ''}<span class="ev-label">${ev.title || 'Untitled'}</span></div>`;
+          }
         });
         if (dayEvents.length > maxShow) {
           html += `<div class="cal-more" onclick="event.stopPropagation();showDayEvents('${fmt(dt)}')">+${dayEvents.length - maxShow} more</div>`;
@@ -1525,15 +1966,15 @@
     function getEventsForDay(dt) {
       const ds = fmt(dt);
       return filteredBookings.filter(ev => {
-        const s = (ev.start_date || '').slice(0, 10);
-        const e = (ev.end_date || ev.start_date || '').slice(0, 10);
+        const s = toLocalDate(ev.start_date);
+        const e = toLocalDate(ev.end_date || ev.start_date);
         return ds >= s && ds <= e;
       });
     }
 
     function getSpanClass(ev, dt) {
-      const s = (ev.start_date || '').slice(0, 10);
-      const e = (ev.end_date || ev.start_date || '').slice(0, 10);
+      const s = toLocalDate(ev.start_date);
+      const e = toLocalDate(ev.end_date || ev.start_date);
       if (s === e) return '';
       const ds = fmt(dt);
       if (ds === s) return 'span-start';
@@ -1541,9 +1982,13 @@
       return 'span-mid';
     }
 
-    function cellClick(dateStr) {
-      currentDate = new Date(dateStr + 'T00:00:00');
-      setView('day');
+    function cellClick(dateStr, e) {
+      if (!e) { currentDate = new Date(dateStr + 'T00:00:00'); setView('day'); return; }
+      // Only open create popup if the click target is the cell itself or the date number — not an event
+      const target = e.target;
+      if (target.closest('.cal-event') || target.closest('.cal-more')) return;
+      e.stopPropagation();
+      showQuickCreate(dateStr, e);
     }
 
     function showDayEvents(dateStr) {
@@ -1580,7 +2025,7 @@
         dayEvts.forEach(ev => {
           const c = evColor(ev);
           const cancelled = isCancelled(ev) ? ' cancelled' : '';
-          html += `<div class="cal-event${cancelled}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c};margin-bottom:2px" onclick="showEventPopup(${ev.id})">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</div>`;
+          html += `<div class="cal-event${cancelled}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c};margin-bottom:2px" onclick="event.stopPropagation();showQuickDetail('${ev.id}',event)">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</div>`;
         });
         html += '</div>';
       });
@@ -1643,7 +2088,7 @@
           evEl.style.width = `calc(${colWidth}% - 6px)`;
           evEl.style.position = 'absolute';
           evEl.innerHTML = `${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}<br><small>${formatTimeRange(ev)}</small>`;
-          evEl.onclick = () => showEventPopup(ev.id);
+          evEl.onclick = (e) => { e.stopPropagation(); showQuickDetail(ev.id, e); };
           grid.appendChild(evEl);
         });
       });
@@ -1712,7 +2157,7 @@
         allDayEvts.forEach(ev => {
           const c = evColor(ev);
           const cancelled = isCancelled(ev) ? ' cancelled' : '';
-          html += `<div class="cal-event${cancelled}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c};margin-bottom:4px;padding:6px 10px" onclick="showEventPopup(${ev.id})">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</div>`;
+          html += `<div class="cal-event${cancelled}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c};margin-bottom:4px;padding:6px 10px" onclick="event.stopPropagation();showQuickDetail('${ev.id}',event)">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</div>`;
         });
         html += '</div>';
       }
@@ -1746,7 +2191,7 @@
         evEl.className = 'day-event' + cancelled;
         evEl.style.cssText = `position:absolute;top:${top}px;left:64px;right:8px;height:${height}px;background:${evBg(c)};color:${c};border-left:3px solid ${c};`;
         evEl.innerHTML = `<strong>${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || ''}</strong><br><small>${formatTimeRange(ev)}</small>`;
-        evEl.onclick = () => showEventPopup(ev.id);
+        evEl.onclick = (e) => { e.stopPropagation(); showQuickDetail(ev.id, e); };
         grid.appendChild(evEl);
       });
 
@@ -1801,23 +2246,15 @@
       sorted.forEach(ev => {
         const rowCls = isCancelled(ev) ? ' class="cancelled"' : '';
         const c = evColor(ev);
-        const statusColors = {
-          pending: 'background:#fff3cd;color:#856404',
-          confirmed: 'background:#d4edda;color:#155724',
-          approved: 'background:#d4edda;color:#155724',
-          cancelled: 'background:#f8d7da;color:#721c24',
-          rejected: 'background:#f8d7da;color:#721c24',
-          completed: 'background:#e2e3e5;color:#383d41',
-        };
-        const sc = statusColors[ev.status] || 'background:#e2e3e5;color:#383d41';
-        html += `<tr${rowCls} style="cursor:pointer" onclick="showEventPopup(${ev.id})">
-          <td>${(ev.start_date || '').slice(0,10)}</td>
+        const sc = statusStyle(ev.status);
+        html += `<tr${rowCls} style="cursor:pointer" onclick="showEventPopup('${ev.id}')">
+          <td>${toLocalDate(ev.start_date)}</td>
           <td><span class="type-badge" style="background:${evBg(c)};color:${c}">${TYPE_ICONS[ev.booking_type] || ''} ${TYPE_LABELS[ev.booking_type] || ev.booking_type}</span></td>
           <td class="ev-title">${ev.title || '-'}</td>
           <td>${ev.resource_name || '-'}</td>
           <td>${ev.project_name || '-'}</td>
           <td>${ev.job_order_number ? '<span class="jo-badge">'+I.clipboardList+' '+ev.job_order_number+'</span>' : '-'}</td>
-          <td><span class="status-badge" style="${sc}">${ev.status || '-'}</span></td>
+          <td><span class="status-badge" style="${sc}">${statusLabel(ev.status)}</span></td>
           <td>${ev.booked_by || ev.created_by_name || '-'}</td>
         </tr>`;
       });
@@ -1842,11 +2279,11 @@
       let body = '';
       body += row('ประเภท', TYPE_LABELS[ev.booking_type] || ev.booking_type);
       if (ev.job_order_number) body += row('ใบสั่งงาน', ev.job_order_number + ' — ' + (ev.job_order_title || ''));
-      body += row('วันที่', (ev.start_date || '').slice(0,10) + ' → ' + (ev.end_date || ev.start_date || '').slice(0,10));
+      body += row('วันที่', toLocalDate(ev.start_date) + ' → ' + toLocalDate(ev.end_date || ev.start_date));
       if (ev.start_time || ev.end_time) body += row('เวลา', formatTimeRange(ev));
       if (ev.resource_name) body += row('ทรัพยากร', ev.resource_name);
       if (ev.project_name) body += row('โปรเจกต์', ev.project_name);
-      if (ev.status) body += row('สถานะ', ev.status);
+      if (ev.status) body += row('สถานะ', `<span style="padding:2px 8px;border-radius:var(--radius-full);font-size:11px;font-weight:600;${statusStyle(ev.status)}">${statusLabel(ev.status)}</span>`);
       if (ev.location) body += row('สถานที่', ev.location);
       if (ev.purpose) body += row('วัตถุประสงค์', ev.purpose);
       if (ev.airline) body += row('สายการบิน', ev.airline);
@@ -1864,10 +2301,10 @@
       document.getElementById('popupBody').innerHTML = body;
 
       let footer = '';
-      footer += `<button class="btn-sm" onclick="editBooking(${ev.id})">แก้ไข</button>`;
-      footer += `<button class="btn-sm btn-danger" onclick="deleteBooking(${ev.id})">ลบ</button>`;
+      footer += `<button class="btn-sm" onclick="editBooking('${ev.id}')">แก้ไข</button>`;
+      footer += `<button class="btn-sm btn-danger" onclick="deleteBooking('${ev.id}')">ลบ</button>`;
       if (ev.status === 'pending') {
-        footer += `<button class="btn-sm btn-success" onclick="approveBooking(${ev.id})">อนุมัติ</button>`;
+        footer += `<button class="btn-sm btn-success" onclick="approveBooking('${ev.id}')">อนุมัติ</button>`;
       }
       document.getElementById('popupFooter').innerHTML = footer;
       document.getElementById('eventPopup').classList.add('show');
@@ -1884,15 +2321,16 @@
     // ══════════════════════════════════
     //  MODALS (CREATE / EDIT)
     // ══════════════════════════════════
-    function openModal(type) {
+    // FIX: openModal accepts optional dateStr so qpMoreOptions can pre-fill clicked date
+    function openModal(type, dateStr) {
       closeAllModals();
       document.getElementById('createDropdown').classList.remove('show');
       editingId = null;
-      // Set default dates
-      const todayStr = fmt(new Date());
+      // FIX: Use provided date or fallback to today
+      const defaultDate = dateStr || fmt(new Date());
       if (type === 'vehicle') {
-        document.getElementById('vehStartDate').value = todayStr;
-        document.getElementById('vehEndDate').value = todayStr;
+        document.getElementById('vehStartDate').value = defaultDate;
+        document.getElementById('vehEndDate').value = defaultDate;
         document.getElementById('vehTitle').value = '';
         document.getElementById('vehPurpose').value = '';
         document.getElementById('vehLocation').value = '';
@@ -1904,13 +2342,15 @@
         document.getElementById('vehJOForm').classList.remove('show');
         document.getElementById('modalVehicle').classList.add('show');
       } else if (type === 'solar') {
-        document.getElementById('solarStartDate').value = todayStr;
-        document.getElementById('solarEndDate').value = todayStr;
+        document.getElementById('solarStartDate').value = defaultDate;
+        document.getElementById('solarEndDate').value = defaultDate;
         document.getElementById('solarAllDay').checked = false;
         document.getElementById('solarStartTime').value = '08:00';
         document.getElementById('solarEndTime').value = '17:00';
         toggleSolarTime();
+        document.getElementById('solarPhase').value = 'survey';
         document.getElementById('solarSite').value = '';
+        document.querySelectorAll('.solar-team-cb').forEach(cb => cb.checked = false);
         document.getElementById('solarCapacity').value = '';
         document.getElementById('solarDesc').value = '';
         document.getElementById('solarTools').value = '';
@@ -1918,6 +2358,12 @@
         document.getElementById('solarColor').value = '#0f9d58';
         document.getElementById('solarJobOrder').value = '';
         document.getElementById('solarJOForm').classList.remove('show');
+        document.getElementById('solarCustName').value = '';
+        document.getElementById('solarCustPhone').value = '';
+        document.getElementById('solarCustAddr').value = '';
+        solarItems = [];
+        renderBookingItems();
+        showSolarSections('');
         document.getElementById('modalSolar').classList.add('show');
       } else if (type === 'flight') {
         document.getElementById('flightAirline').value = '';
@@ -1951,14 +2397,26 @@
       document.getElementById('solarTimeRow').style.display = allDay ? 'none' : 'grid';
     }
 
+    function onPhaseChange() {
+      const phase = document.getElementById('solarPhase').value;
+      document.getElementById('solarJobType').value = phase === 'survey' ? 'survey' : 'installation';
+    }
+
+    function getSelectedTeam() {
+      return [...document.querySelectorAll('.solar-team-cb:checked')].map(cb => cb.value);
+    }
+
+    // FIX: Add validation + double-submit protection
+    let _saving = false;
     async function saveBooking(type) {
+      if (_saving) return;
       let data = {};
       try {
         if (type === 'vehicle') {
           data = {
             booking_type: 'vehicle',
             job_order_id: document.getElementById('vehJobOrder').value || null,
-            resource_id: document.getElementById('vehSelect').value || null,
+            vehicle_id: document.getElementById('vehSelect').value || null,
             title: document.getElementById('vehTitle').value,
             start_date: document.getElementById('vehStartDate').value,
             end_date: document.getElementById('vehEndDate').value,
@@ -1972,10 +2430,12 @@
             color: document.getElementById('vehColor').value,
           };
         } else if (type === 'solar') {
+          const phase = document.getElementById('solarPhase').value;
           data = {
             booking_type: 'solar',
+            phase: phase,
             job_order_id: document.getElementById('solarJobOrder').value || null,
-            resource_id: document.getElementById('solarTech').value || null,
+            technician_id: document.getElementById('solarTech').value || null,
             job_type: document.getElementById('solarJobType').value,
             site_name: document.getElementById('solarSite').value,
             system_capacity: document.getElementById('solarCapacity').value || null,
@@ -1988,8 +2448,19 @@
             start_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarStartTime').value,
             end_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarEndTime').value,
             project_id: document.getElementById('solarProject').value || null,
-            color: document.getElementById('solarColor').value,
-            title: document.getElementById('solarJobType').value + ' - ' + document.getElementById('solarSite').value,
+            color: phase === 'survey' ? '#ff9800' : '#0f9d58',
+            title: document.getElementById('solarJobType').value + ' - ' + (document.getElementById('solarCustName').value || document.getElementById('solarSite').value),
+            customer_name: document.getElementById('solarCustName').value || null,
+            customer_phone: document.getElementById('solarCustPhone').value || null,
+            customer_address: document.getElementById('solarCustAddr').value || null,
+            roof_area: document.getElementById('solarRoofArea').value || null,
+            roof_type: document.getElementById('solarRoofType').value || null,
+            orientation: document.getElementById('solarOrientation').value || null,
+            recommended_kwp: document.getElementById('solarRecKwp').value || null,
+            survey_photos: document.getElementById('solarPhotos').value || null,
+            survey_notes: document.getElementById('solarSurveyNotes').value || null,
+            electrical_info: document.getElementById('solarElecInfo').value || null,
+            participants: getSelectedTeam().map(id => ({ user_id: null, name: (technicians.find(t=>t.id===id)||{}).nickname || '', role: 'technician' })),
           };
         } else if (type === 'flight') {
           const depTime = document.getElementById('flightDepTime').value;
@@ -2020,6 +2491,17 @@
           };
         }
 
+        // FIX: Validate required fields
+        if (!data.start_date || !data.end_date) {
+          typeof showToast === 'function' ? showToast('กรุณาระบุวันที่', 'error') : alert('กรุณาระบุวันที่');
+          return;
+        }
+        if (data.start_date > data.end_date) {
+          typeof showToast === 'function' ? showToast('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด', 'error') : alert('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด');
+          return;
+        }
+
+        _saving = true;
         if (editingId) {
           await API.put('/bookings/' + editingId, data);
           if (typeof showToast === 'function') showToast('อัปเดตการจองสำเร็จ', 'success');
@@ -2031,8 +2513,12 @@
         editingId = null;
         refreshAll();
       } catch(e) {
-        if (typeof showToast === 'function') showToast(e.message || 'เกิดข้อผิดพลาด', 'error');
-        else alert(e.message || 'Error');
+        // FIX: Show backend error message clearly (conflict, validation, etc.)
+        const msg = e.message || 'เกิดข้อผิดพลาด';
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else alert(msg);
+      } finally {
+        _saving = false;
       }
     }
 
@@ -2043,10 +2529,11 @@
       editingId = id;
 
       if (ev.booking_type === 'vehicle') {
-        document.getElementById('vehSelect').value = ev.resource_id || '';
+        // FIX: use vehicle_id not resource_id (resource_id doesn't exist in API response)
+        document.getElementById('vehSelect').value = ev.vehicle_id || '';
         document.getElementById('vehTitle').value = ev.title || '';
-        document.getElementById('vehStartDate').value = (ev.start_date || '').slice(0, 10);
-        document.getElementById('vehEndDate').value = (ev.end_date || ev.start_date || '').slice(0, 10);
+        document.getElementById('vehStartDate').value = toLocalDate(ev.start_date);
+        document.getElementById('vehEndDate').value = toLocalDate(ev.end_date || ev.start_date);
         document.getElementById('vehAllDay').checked = !!ev.all_day;
         toggleVehTime();
         if (ev.start_time) document.getElementById('vehStartTime').value = ev.start_time.slice(0, 5);
@@ -2059,15 +2546,17 @@
         document.getElementById('vehJobOrder').value = ev.job_order_id || '';
         document.getElementById('modalVehicle').classList.add('show');
       } else if (ev.booking_type === 'solar') {
-        document.getElementById('solarTech').value = ev.resource_id || '';
-        document.getElementById('solarJobType').value = ev.job_type || 'installation';
+        // FIX: use technician_id not resource_id
+        document.getElementById('solarTech').value = ev.technician_id || '';
+        document.getElementById('solarPhase').value = ev.phase || 'survey';
+        document.getElementById('solarJobType').value = ev.job_type || 'survey';
         document.getElementById('solarSite').value = ev.site_name || '';
         document.getElementById('solarCapacity').value = ev.system_capacity || '';
         document.getElementById('solarDesc').value = ev.description || '';
         document.getElementById('solarTools').value = ev.tools_required || '';
         document.getElementById('solarSafety').value = ev.safety_notes || '';
-        document.getElementById('solarStartDate').value = (ev.start_date || '').slice(0, 10);
-        document.getElementById('solarEndDate').value = (ev.end_date || ev.start_date || '').slice(0, 10);
+        document.getElementById('solarStartDate').value = toLocalDate(ev.start_date);
+        document.getElementById('solarEndDate').value = toLocalDate(ev.end_date || ev.start_date);
         document.getElementById('solarAllDay').checked = !!ev.all_day;
         toggleSolarTime();
         if (ev.start_time) document.getElementById('solarStartTime').value = ev.start_time.slice(0, 5);
@@ -2075,6 +2564,20 @@
         document.getElementById('solarProject').value = ev.project_id || '';
         document.getElementById('solarColor').value = ev.color || '#0f9d58';
         document.getElementById('solarJobOrder').value = ev.job_order_id || '';
+        // Customer info
+        document.getElementById('solarCustName').value = ev.customer_name || '';
+        document.getElementById('solarCustPhone').value = ev.customer_phone || '';
+        document.getElementById('solarCustAddr').value = ev.customer_address || '';
+        // Survey data
+        document.getElementById('solarRoofArea').value = ev.roof_area || '';
+        document.getElementById('solarRoofType').value = ev.roof_type || '';
+        document.getElementById('solarOrientation').value = ev.orientation || '';
+        document.getElementById('solarRecKwp').value = ev.recommended_kwp || '';
+        document.getElementById('solarElecInfo').value = ev.electrical_info || '';
+        document.getElementById('solarPhotos').value = ev.survey_photos || '';
+        document.getElementById('solarSurveyNotes').value = ev.survey_notes || '';
+        showSolarSections(ev.status || '');
+        loadBookingItems(ev.id);
         document.getElementById('modalSolar').classList.add('show');
       } else if (ev.booking_type === 'flight') {
         document.getElementById('flightAirline').value = ev.airline || '';
@@ -2082,10 +2585,10 @@
         document.getElementById('flightDepAirport').value = ev.departure_airport || 'DMK';
         document.getElementById('flightArrAirport').value = ev.arrival_airport || 'DMK';
         if (ev.start_date && ev.start_time) {
-          document.getElementById('flightDepTime').value = ev.start_date.slice(0,10) + 'T' + ev.start_time.slice(0,5);
+          document.getElementById('flightDepTime').value = toLocalDate(ev.start_date) + 'T' + ev.start_time.slice(0,5);
         }
         if (ev.end_date && ev.end_time) {
-          document.getElementById('flightArrTime').value = ev.end_date.slice(0,10) + 'T' + ev.end_time.slice(0,5);
+          document.getElementById('flightArrTime').value = toLocalDate(ev.end_date) + 'T' + ev.end_time.slice(0,5);
         }
         document.getElementById('flightReturnNumber').value = ev.return_flight_number || '';
         document.getElementById('flightReturnDep').value = ev.return_departure_time || '';
@@ -2138,7 +2641,7 @@
         html += '<div class="res-cards">';
         vehicles.forEach(v => {
           const vBookings = allBookings.filter(b => b.vehicle_id === v.id);
-          const upcoming = vBookings.filter(b => (b.start_date||'').slice(0,10) >= todayStr && !isCancelled(b)).length;
+          const upcoming = vBookings.filter(b => toLocalDate(b.start_date) >= todayStr && !isCancelled(b)).length;
           const completed = vBookings.filter(b => b.status === 'completed' || b.status === 'checked_in').length;
           const statusColor = v.status === 'available' ? 'var(--success)' : v.status === 'maintenance' ? 'var(--danger)' : 'var(--warning)';
           html += `<div class="res-card" onclick="filterByResource('vehicle',${v.id})">
@@ -2172,7 +2675,7 @@
           const tName = t.name || ((t.first_name||'') + ' ' + (t.last_name||'')).trim();
           const tNick = t.nickname || t.first_name || '';
           const tBookings = allBookings.filter(b => b.technician_id === t.id);
-          const upcoming = tBookings.filter(b => (b.start_date||'').slice(0,10) >= todayStr && !isCancelled(b)).length;
+          const upcoming = tBookings.filter(b => toLocalDate(b.start_date) >= todayStr && !isCancelled(b)).length;
           const completed = tBookings.filter(b => b.status === 'completed').length;
           const statusColor = t.status === 'available' ? 'var(--success)' : t.status === 'on_job' ? 'var(--warning)' : 'var(--text-muted)';
           html += `<div class="res-card" onclick="filterByResource('solar',${t.id})">
@@ -2203,7 +2706,7 @@
         html += '<div class="res-section">';
         html += '<div class="res-section-header">' + I.plane + ' เที่ยวบิน</div>';
         html += '<div class="res-cards">';
-        const upcomingF = flightBookings.filter(b => (b.start_date||'').slice(0,10) >= todayStr && !isCancelled(b)).length;
+        const upcomingF = flightBookings.filter(b => toLocalDate(b.start_date) >= todayStr && !isCancelled(b)).length;
         const completedF = flightBookings.filter(b => b.status === 'completed').length;
         html += `<div class="res-card" onclick="filterByType('flight')">
           <div class="res-card-top">
@@ -2247,35 +2750,31 @@
     // ══════════════════════════════════
     function renderBoardView(area) {
       const columns = [
-        { key: 'checked_out', label: 'กำลังใช้', color: 'var(--primary)' },
-        { key: 'pending', label: 'รออนุมัติ', color: 'var(--warning, #f59e0b)' },
-        { key: 'approved', label: 'อนุมัติแล้ว', color: 'var(--info, #3b82f6)' },
-        { key: 'completed', label: 'เสร็จสิ้น', color: 'var(--success, #0f9d58)' },
+        { key: 'pending', label: statusLabel('pending'), color: STATUS_CONFIG.pending.color, match: s => s === 'pending' },
+        { key: 'approved', label: statusLabel('approved'), color: STATUS_CONFIG.approved.color, match: s => ['approved','surveying'].includes(s) },
+        { key: 'survey_completed', label: statusLabel('survey_completed'), color: STATUS_CONFIG.survey_completed.color, match: s => ['survey_completed','confirmed'].includes(s) },
+        { key: 'quotation_sent', label: statusLabel('quotation_sent'), color: STATUS_CONFIG.quotation_sent.color, match: s => ['quotation_sent','checked_out','completed','checked_in'].includes(s) },
       ];
 
       // Stats
       const total = filteredBookings.length;
-      const inUse = filteredBookings.filter(b => b.status === 'checked_out').length;
       const pending = filteredBookings.filter(b => b.status === 'pending').length;
-      const approved = filteredBookings.filter(b => b.status === 'approved' || b.status === 'confirmed').length;
-      const done = filteredBookings.filter(b => b.status === 'completed' || b.status === 'checked_in').length;
+      const inProgress = filteredBookings.filter(b => ['approved','surveying'].includes(b.status)).length;
+      const surveyed = filteredBookings.filter(b => ['survey_completed','confirmed'].includes(b.status)).length;
+      const done = filteredBookings.filter(b => ['quotation_sent','completed','checked_in'].includes(b.status)).length;
 
       let html = '<div class="bk-stats">';
       html += `<div class="bk-stat"><div class="val">${total}</div><div class="lbl">ทั้งหมด</div></div>`;
-      html += `<div class="bk-stat"><div class="val" style="color:var(--primary)">${inUse}</div><div class="lbl">กำลังใช้</div></div>`;
-      html += `<div class="bk-stat"><div class="val" style="color:var(--warning,#f59e0b)">${pending}</div><div class="lbl">รออนุมัติ</div></div>`;
-      html += `<div class="bk-stat"><div class="val" style="color:var(--info,#3b82f6)">${approved}</div><div class="lbl">อนุมัติแล้ว</div></div>`;
-      html += `<div class="bk-stat"><div class="val" style="color:var(--success,#0f9d58)">${done}</div><div class="lbl">เสร็จสิ้น</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:${STATUS_CONFIG.pending.color}">${pending}</div><div class="lbl">${statusLabel('pending')}</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:${STATUS_CONFIG.approved.color}">${inProgress}</div><div class="lbl">${statusLabel('approved')}</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:${STATUS_CONFIG.survey_completed.color}">${surveyed}</div><div class="lbl">${statusLabel('survey_completed')}</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:${STATUS_CONFIG.quotation_sent.color}">${done}</div><div class="lbl">${statusLabel('quotation_sent')}</div></div>`;
       html += '</div>';
 
       // Kanban columns
       html += '<div class="bk-board">';
       columns.forEach(col => {
-        const colItems = filteredBookings.filter(b => {
-          if (col.key === 'completed') return b.status === 'completed' || b.status === 'checked_in';
-          if (col.key === 'approved') return b.status === 'approved' || b.status === 'confirmed';
-          return b.status === col.key;
-        });
+        const colItems = filteredBookings.filter(b => col.match(b.status));
 
         html += `<div class="bk-col">
           <div class="bk-col-header">
@@ -2290,7 +2789,7 @@
           colItems.forEach(ev => {
             const c = evColor(ev);
             const dateRange = fmtThaiShort(ev.start_date) + ' - ' + fmtThaiShort(ev.end_date);
-            html += `<div class="bk-card" style="border-left:3px solid ${c}" onclick="showEventPopup(${ev.id})">
+            html += `<div class="bk-card" style="border-left:3px solid ${c}" onclick="showEventPopup('${ev.id}')">
               <div class="bk-card-title">${TYPE_ICONS[ev.booking_type]||''} ${ev.title || 'Untitled'}</div>
               <div class="bk-card-res">${ev.resource_name || '-'}</div>
               <div class="bk-card-meta">
@@ -2316,7 +2815,411 @@
       return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
     }
 
+    // ══════════════════════════════════
+    //  SOLAR WORKFLOW — Items + Convert
+    // ══════════════════════════════════
+    let solarItems = [];
+    let masterItems = [];
+
+    async function loadMasterItems() {
+      try {
+        const res = await API.get('/master/items?category=Solar Cell Equipment');
+        masterItems = Array.isArray(res) ? res : (res.items || []);
+      } catch(e) {
+        try { const res = await API.get('/master/items'); masterItems = Array.isArray(res) ? res : (res.items || []); }
+        catch(e2) { masterItems = []; }
+      }
+      const sel = document.getElementById('solarItemSelect');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">-- เลือกอุปกรณ์ --</option>';
+      masterItems.forEach(it => {
+        const code = it.item_code || it.code || '';
+        const name = it.item_name || it.name || '';
+        const unit = it.uom || it.unit || 'EA';
+        const price = it.unit_price || 0;
+        sel.innerHTML += `<option value="${it.id}" data-code="${code}" data-name="${name}" data-unit="${unit}" data-price="${price}">${code} — ${name} (฿${Number(price).toLocaleString()})</option>`;
+      });
+    }
+
+    function addBookingItem() {
+      const sel = document.getElementById('solarItemSelect');
+      const opt = sel.selectedOptions[0];
+      if (!opt || !opt.value) return;
+      const qty = parseFloat(document.getElementById('solarItemQty').value) || 1;
+      const price = parseFloat(opt.dataset.price) || 0;
+      solarItems.push({
+        item_id: opt.value, item_code: opt.dataset.code, item_name: opt.dataset.name,
+        qty, unit: opt.dataset.unit, unit_price: price, total: qty * price
+      });
+      sel.value = '';
+      document.getElementById('solarItemQty').value = '1';
+      renderBookingItems();
+    }
+
+    function removeBookingItem(idx) {
+      solarItems.splice(idx, 1);
+      renderBookingItems();
+    }
+
+    function renderBookingItems() {
+      const tbody = document.getElementById('solarItemsBody');
+      if (!tbody) return;
+      let total = 0;
+      tbody.innerHTML = solarItems.map((it, i) => {
+        const price = parseFloat(it.unit_price) || 0;
+        const qty = parseFloat(it.qty) || 0;
+        const lineTotal = parseFloat(it.total) || (qty * price);
+        it.total = lineTotal; // fix stored value
+        total += lineTotal;
+        return `<tr>
+          <td style="padding:4px 6px">${it.item_code||'-'}</td>
+          <td style="padding:4px 6px">${it.item_name}</td>
+          <td style="text-align:right;padding:4px 6px">${qty}</td>
+          <td style="text-align:right;padding:4px 6px;font-family:monospace">${price.toLocaleString()}</td>
+          <td style="text-align:right;padding:4px 6px;font-family:monospace">${lineTotal.toLocaleString()}</td>
+          <td style="padding:4px 6px"><button style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:14px" onclick="removeBookingItem(${i})">x</button></td>
+        </tr>`;
+      }).join('');
+      document.getElementById('solarItemsTotal').textContent = total.toLocaleString();
+    }
+
+    function showSolarSections(status) {
+      const surveySection = document.getElementById('solarSurveySection');
+      const itemsSection = document.getElementById('solarItemsSection');
+      const convertSection = document.getElementById('solarConvertSection');
+      const statusActions = document.getElementById('solarStatusActions');
+      if (!surveySection) return;
+
+      // Survey section: always show when editing (so user can fill survey data)
+      const showSurvey = !!status && status !== 'pending';
+      surveySection.style.display = showSurvey ? 'block' : 'none';
+
+      // Items section: show after survey completed
+      const showItems = ['survey_completed','confirmed','quotation_sent'].includes(status);
+      itemsSection.style.display = showItems ? 'block' : 'none';
+
+      // Convert: only when has items + confirmed
+      convertSection.style.display = (status === 'confirmed' && solarItems.length > 0) ? 'block' : 'none';
+
+      // Status action buttons
+      let actions = '';
+      if (status === 'approved') {
+        actions = `<button class="btn-sm" style="background:${STATUS_CONFIG.surveying.color};color:white;border-color:${STATUS_CONFIG.surveying.color};padding:8px 20px" onclick="changeSolarStatus('surveying')">${statusLabel('surveying')}</button>`;
+      } else if (status === 'surveying') {
+        actions = `<button class="btn-sm" style="background:${STATUS_CONFIG.survey_completed.color};color:white;border-color:${STATUS_CONFIG.survey_completed.color};padding:8px 20px" onclick="changeSolarStatus('survey_completed')">${statusLabel('survey_completed')}</button>`;
+      } else if (status === 'survey_completed') {
+        actions = `<button class="btn-sm" style="background:${STATUS_CONFIG.confirmed.color};color:white;border-color:${STATUS_CONFIG.confirmed.color};padding:8px 20px" onclick="changeSolarStatus('confirmed')">${statusLabel('confirmed')} + เลือกอุปกรณ์</button>`;
+      }
+      statusActions.innerHTML = actions;
+      statusActions.style.display = actions ? 'block' : 'none';
+    }
+
+    async function changeSolarStatus(newStatus) {
+      if (!editingId) { alert('กรุณาบันทึก Booking ก่อน'); return; }
+      try {
+        await API.put('/bookings/' + editingId, { status: newStatus });
+        typeof showToast === 'function' && showToast('อัปเดตสถานะสำเร็จ', 'success');
+        // Reload and re-show
+        const res = await API.get('/bookings?start_date=2020-01-01&end_date=2030-12-31');
+        allBookings = res.bookings || res || [];
+        const ev = allBookings.find(b => b.id === editingId);
+        if (ev) {
+          showSolarSections(newStatus);
+          if (newStatus === 'survey_completed') loadBookingItems(editingId);
+        }
+      } catch(e) {
+        typeof showToast === 'function' ? showToast(e.message||'Error','error') : alert(e.message);
+      }
+    }
+
+    async function loadBookingItems(bookingId) {
+      solarItems = [];
+      if (!bookingId) { renderBookingItems(); return; }
+      try {
+        const items = await API.get('/bookings/' + bookingId + '/items');
+        solarItems = Array.isArray(items) ? items : [];
+      } catch(e) { solarItems = []; }
+      renderBookingItems();
+    }
+
+    async function saveBookingItems(bookingId) {
+      if (!bookingId || !solarItems.length) return;
+      // Delete existing, re-add
+      try {
+        const existing = await API.get('/bookings/' + bookingId + '/items');
+        for (const it of (Array.isArray(existing) ? existing : [])) {
+          await API.del('/bookings/' + bookingId + '/items/' + it.id);
+        }
+      } catch(e) {}
+      for (const it of solarItems) {
+        await API.post('/bookings/' + bookingId + '/items', it);
+      }
+    }
+
+    async function convertToSQ() {
+      if (!editingId) { alert('กรุณาบันทึก Booking ก่อน'); return; }
+      if (!solarItems.length) { alert('กรุณาเพิ่มรายการอุปกรณ์ก่อน'); return; }
+      if (!confirm('ยืนยันแปลงเป็นใบเสนอราคา?\nจะสร้าง Sales Quotation + Project อัตโนมัติ')) return;
+      try {
+        // Save items first
+        await saveBookingItems(editingId);
+        // Convert (backend reads booking data directly from DB — no need to saveBooking)
+        const result = await API.post('/bookings/' + editingId + '/convert-to-sq');
+        typeof showToast === 'function' && showToast(
+          'สร้าง ' + (result.sq_number || 'SQ') + ' + ' + (result.project_code || 'Project') + ' สำเร็จ', 'success');
+        closeAllModals();
+        refreshAll();
+      } catch(e) {
+        typeof showToast === 'function' ? showToast(e.message || 'Error', 'error') : alert(e.message);
+      }
+    }
+
+    // ══════════════════════════════════
+    //  QUICK POPUPS (Google Calendar style)
+    // ══════════════════════════════════
+    let qpSelectedType = 'vehicle';
+    let qpSelectedDate = '';
+
+    function positionPopup(el, e) {
+      el.style.display = 'block';
+      const rect = el.getBoundingClientRect();
+      const vw = window.innerWidth, vh = window.innerHeight;
+      let x = e.clientX - 160; // center on click
+      let y = e.clientY + 8;   // below click
+      // Flip up if not enough space below
+      if (y + rect.height > vh - 16) y = e.clientY - rect.height - 8;
+      // Keep within viewport
+      if (x < 8) x = 8;
+      if (x + rect.width > vw - 8) x = vw - rect.width - 8;
+      if (y < 8) y = 8;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+    }
+
+    function closeQuickPopup() {
+      document.getElementById('qpCreate').style.display = 'none';
+      document.getElementById('qpDetail').style.display = 'none';
+      document.getElementById('qpBackdrop').classList.remove('show');
+    }
+
+    // ── Quick Create ──
+    function showQuickCreate(dateStr, e) {
+      closeQuickPopup();
+      closePopup();
+      qpSelectedDate = dateStr;
+      qpSelectedType = 'vehicle';
+      document.getElementById('qpTitle').value = '';
+      // Update type buttons
+      document.querySelectorAll('.qp-type-btn').forEach(b => b.classList.toggle('active', b.dataset.qptype === 'vehicle'));
+      // Show date
+      const d = new Date(dateStr + 'T00:00:00');
+      const dateLabel = `${TH_DAYS[d.getDay()]} ${d.getDate()} ${TH_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+      document.getElementById('qpDateDisplay').innerHTML = (typeof I !== 'undefined' ? I.calendar : '') + ' ' + dateLabel;
+      // Position & show
+      document.getElementById('qpBackdrop').classList.add('show');
+      const el = document.getElementById('qpCreate');
+      positionPopup(el, e);
+      // Init icons in popup
+      el.querySelectorAll('[data-icon]').forEach(span => { if (typeof I !== 'undefined' && I[span.dataset.icon]) span.innerHTML = I[span.dataset.icon]; });
+      setTimeout(() => document.getElementById('qpTitle').focus(), 50);
+    }
+
+    function setQPType(type) {
+      qpSelectedType = type;
+      document.querySelectorAll('.qp-type-btn').forEach(b => b.classList.toggle('active', b.dataset.qptype === type));
+    }
+
+    async function qpSave() {
+      const title = document.getElementById('qpTitle').value.trim();
+      if (!title) { document.getElementById('qpTitle').focus(); return; }
+      try {
+        await API.post('/bookings', {
+          booking_type: qpSelectedType,
+          title: title,
+          start_date: qpSelectedDate,
+          end_date: qpSelectedDate,
+          all_day: true,
+        });
+        typeof showToast === 'function' && showToast('สร้างการจองสำเร็จ', 'success');
+        closeQuickPopup();
+        refreshAll();
+      } catch(e) {
+        typeof showToast === 'function' ? showToast(e.message || 'Error', 'error') : alert(e.message);
+      }
+    }
+
+    // FIX: Pass qpSelectedDate to openModal so it uses clicked date, not today
+    function qpMoreOptions() {
+      const title = document.getElementById('qpTitle').value.trim();
+      closeQuickPopup();
+      openModal(qpSelectedType, qpSelectedDate);
+      // Pre-fill title + flight times (openModal already set dates)
+      if (qpSelectedType === 'vehicle' && title) {
+        document.getElementById('vehTitle').value = title;
+      } else if (qpSelectedType === 'flight') {
+        document.getElementById('flightDepTime').value = qpSelectedDate + 'T08:00';
+        document.getElementById('flightArrTime').value = qpSelectedDate + 'T17:00';
+      }
+    }
+
+    // Handle Enter key in quick-create
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && document.getElementById('qpCreate').style.display !== 'none') {
+        e.preventDefault(); qpSave();
+      }
+      if (e.key === 'Escape') closeQuickPopup();
+    });
+
+    // ── Quick Detail (Google Calendar style) ──
+    function showQuickDetail(id, e) {
+      if (e) e.stopPropagation();
+      closeQuickPopup();
+      closePopup();
+      const ev = allBookings.find(b => b.id === id);
+      if (!ev) return;
+
+      const c = evColor(ev);
+      const typeIcon = TYPE_ICONS[ev.booking_type] || '';
+
+      // Toolbar: edit (pencil) / delete (trash) / close (x)
+      const editIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>';
+      const trashIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+      const closeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+      // FIX: Add approve button when status=pending
+      const checkIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      let toolbar = '';
+      if (ev.status === 'pending') {
+        toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup();approveBooking('${ev.id}')" title="อนุมัติ" style="color:var(--success,#0f9d58)">${checkIcon}</button>`;
+      }
+      toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup();editBooking('${ev.id}')" title="แก้ไข">${editIcon}</button>`;
+      toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup();deleteBooking('${ev.id}')" title="ลบ">${trashIcon}</button>`;
+      toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup()" title="ปิด">${closeIcon}</button>`;
+      document.getElementById('qpDetailToolbar').innerHTML = toolbar;
+
+      // Title with color dot
+      document.getElementById('qpDetailTitle').innerHTML =
+        `<span class="qp-color-dot" style="background:${c}"></span>${ev.title || 'Booking #' + ev.id}`;
+
+      const sc = statusStyle(ev.status);
+
+      let body = '';
+      // Type badge
+      body += `<div class="qp-row"><span class="qp-type-badge" style="background:${evBg(c)};color:${c}">${typeIcon} ${TYPE_LABELS[ev.booking_type] || ev.booking_type}</span>`;
+      body += ` <span class="qp-status" style="${sc}">${statusLabel(ev.status)}</span></div>`;
+      // Date & time
+      const sDate = toLocalDate(ev.start_date);
+      const eDate = toLocalDate(ev.end_date);
+      const dateIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>';
+      let dateLine = sDate;
+      if (eDate && eDate !== sDate) dateLine += ' → ' + eDate;
+      if (ev.start_time || ev.end_time) dateLine += '  ' + formatTimeRange(ev);
+      body += `<div class="qp-row" style="display:flex;align-items:center;gap:8px">${dateIcon} <span class="qp-val">${dateLine}</span></div>`;
+      // Resource
+      if (ev.resource_name) {
+        const resIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+        body += `<div class="qp-row" style="display:flex;align-items:center;gap:8px">${resIcon} <span class="qp-val">${ev.resource_name}</span></div>`;
+      }
+      // Location
+      if (ev.location) {
+        const locIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+        body += `<div class="qp-row" style="display:flex;align-items:center;gap:8px">${locIcon} <span class="qp-val">${ev.location}</span></div>`;
+      }
+      // Purpose
+      if (ev.purpose) {
+        body += `<div class="qp-row" style="font-size:12px;color:var(--text-secondary);margin-top:4px">${ev.purpose}</div>`;
+      }
+      // Project
+      if (ev.project_name) {
+        body += `<div class="qp-row"><span class="qp-label">โปรเจกต์</span><span class="qp-val">${ev.project_name}</span></div>`;
+      }
+      // JO
+      if (ev.job_order_number) {
+        body += `<div class="qp-row"><span class="qp-label">ใบสั่งงาน</span><span class="qp-val"><span class="jo-badge">${typeof I !== 'undefined' ? I.clipboardList : ''} ${ev.job_order_number}</span></span></div>`;
+      }
+      // Booked by
+      if (ev.booked_by_name || ev.booked_by) {
+        body += `<div class="qp-row"><span class="qp-label">ผู้จอง</span><span class="qp-val">${ev.booked_by_name || ev.booked_by}</span></div>`;
+      }
+      document.getElementById('qpDetailBody').innerHTML = body;
+
+      // Position & show
+      document.getElementById('qpBackdrop').classList.add('show');
+      positionPopup(document.getElementById('qpDetail'), e);
+    }
+
     // ── Init ──
+    // ══════════════════════════════════
+    //  SIDEBAR CRUD (Google Calendar style)
+    // ══════════════════════════════════
+    function toggleGCCreate() {
+      const menu = document.getElementById('gcCreateMenu');
+      menu.classList.toggle('show');
+      if (menu.classList.contains('show')) {
+        setTimeout(() => document.addEventListener('click', closeGCCreateOnClick), 0);
+      }
+    }
+    function closeGCCreate() { document.getElementById('gcCreateMenu').classList.remove('show'); document.removeEventListener('click', closeGCCreateOnClick); }
+    function closeGCCreateOnClick(e) { if (!document.getElementById('gcCreateMenu').contains(e.target)) closeGCCreate(); }
+
+    function showAddTechPopup() { document.getElementById('addTechPopup').classList.add('show'); }
+    function hideAddTechPopup() { document.getElementById('addTechPopup').classList.remove('show'); }
+    function showAddVehiclePopup() { document.getElementById('addVehiclePopup').classList.add('show'); }
+    function hideAddVehiclePopup() { document.getElementById('addVehiclePopup').classList.remove('show'); }
+
+    async function saveTechnician() {
+      const data = {
+        first_name: document.getElementById('atFirstName').value,
+        last_name: document.getElementById('atLastName').value,
+        nickname: document.getElementById('atNickname').value,
+        phone: document.getElementById('atPhone').value,
+        specialization: document.getElementById('atSpecialization').value,
+        color: document.getElementById('atColor').value,
+      };
+      if (!data.first_name) { alert('กรุณากรอกชื่อ'); return; }
+      try {
+        await API.post('/technicians', data);
+        typeof showToast === 'function' && showToast('เพิ่มช่างสำเร็จ', 'success');
+        hideAddTechPopup();
+        document.getElementById('atFirstName').value = '';
+        document.getElementById('atLastName').value = '';
+        document.getElementById('atNickname').value = '';
+        document.getElementById('atPhone').value = '';
+        // Reload
+        const tRes = await API.get('/technicians');
+        technicians = tRes.technicians || tRes || [];
+        populateSelects(); renderResourceFilters();
+      } catch(e) { alert(e.message); }
+    }
+
+    async function saveVehicle() {
+      const data = {
+        name: document.getElementById('avName').value,
+        plate_number: document.getElementById('avPlate').value,
+        vehicle_type: document.getElementById('avType').value,
+        color: document.getElementById('avColor').value,
+      };
+      if (!data.name || !data.plate_number) { alert('กรุณากรอกชื่อและทะเบียน'); return; }
+      try {
+        await API.post('/vehicle', data);
+        typeof showToast === 'function' && showToast('เพิ่มรถสำเร็จ', 'success');
+        hideAddVehiclePopup();
+        document.getElementById('avName').value = '';
+        document.getElementById('avPlate').value = '';
+        // Reload
+        const vRes = await API.getVehicles();
+        vehicles = vRes.vehicles || vRes || [];
+        populateSelects(); renderResourceFilters();
+      } catch(e) { alert(e.message); }
+    }
+
+    function filterSidebar() {
+      const q = (document.getElementById('sbSearch').value || '').toLowerCase();
+      document.querySelectorAll('.sb-cal-item').forEach(el => {
+        el.style.display = !q || el.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
     function initIcons() {
       if (typeof I === 'undefined') return;
       // Page header

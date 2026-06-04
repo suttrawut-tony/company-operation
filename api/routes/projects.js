@@ -133,12 +133,12 @@ router.get('/:id/tasks', requireProjectAccess, async (req, res) => {
 // POST /api/projects/:id/tasks — Create task
 router.post('/:id/tasks', requireProjectAccess, async (req, res) => {
   try {
-    const { title, description, priority, assigned_to, due_date, phase_id } = req.body;
+    const { title, description, priority, assigned_to, due_date, start_date, phase_id } = req.body;
     const { rows } = await db.query(
-      `INSERT INTO tasks (project_id, title, description, priority, assigned_to, due_date, phase_id, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      `INSERT INTO tasks (project_id, title, description, priority, assigned_to, due_date, start_date, phase_id, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
       [req.params.id, title, description || null, priority || 'medium',
-       assigned_to || null, due_date || null, phase_id || null, req.user.id]
+       assigned_to || null, due_date || null, start_date || null, phase_id || null, req.user.id]
     );
     res.status(201).json(rows[0]);
     req.broadcast('task_created', { project_id: req.params.id });
@@ -148,15 +148,16 @@ router.post('/:id/tasks', requireProjectAccess, async (req, res) => {
 // PUT /api/projects/:id/tasks/:taskId — Update task
 router.put('/:id/tasks/:taskId', requireProjectAccess, async (req, res) => {
   try {
-    const { title, description, status, priority, assigned_to, due_date } = req.body;
+    const { title, description, status, priority, assigned_to, due_date, start_date } = req.body;
     const { rows } = await db.query(
       `UPDATE tasks SET title=COALESCE($1,title), description=COALESCE($2,description),
        status=COALESCE($3,status), priority=COALESCE($4,priority),
        assigned_to=COALESCE($5,assigned_to), due_date=COALESCE($6,due_date),
+       start_date=COALESCE($7,start_date),
        completed_at=CASE WHEN $3='done' THEN NOW() ELSE completed_at END,
        updated_at=NOW()
-       WHERE id=$7 AND project_id=$8 RETURNING *`,
-      [title, description, status, priority, assigned_to, due_date, req.params.taskId, req.params.id]
+       WHERE id=$8 AND project_id=$9 RETURNING *`,
+      [title, description, status, priority, assigned_to, due_date, start_date, req.params.taskId, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Task not found' });
     res.json(rows[0]);

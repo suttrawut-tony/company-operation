@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Quotation</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .sq-stats { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 20px; }
+    .sq-stat { background: var(--bg-white); border:1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; text-align: center; }
+    .sq-stat .val { font-size: 22px; font-weight: 800; }
+    .sq-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .sq-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sq-table th { background:var(--bg-light); padding:10px 14px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-table td { padding:10px 14px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .sq-table tr:hover td { background:var(--bg-hover); }
+    .sq-table tr { cursor:pointer; }
+    .sq-badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; }
+    .sq-amount { font-weight:700; font-family:monospace; }
+    .sq-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; }
+    .sq-modal-overlay.show { display:flex; }
+    .sq-modal { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .sq-modal-header { padding:16px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
+    .sq-modal-header h3 { font-size:16px; font-weight:700; }
+    .sq-modal-body { padding:20px; }
+    .sq-modal-footer { padding:12px 20px; border-top:1px solid var(--border-light); display:flex; gap:8px; justify-content:flex-end; }
+    .sq-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .sq-fg { margin-bottom:10px; }
+    .sq-fg label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    .sq-fg input, .sq-fg select, .sq-fg textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; background:var(--bg-white); }
+    .sq-fg input:focus, .sq-fg select:focus, .sq-fg textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .sq-items-table { width:100%; border-collapse:collapse; font-size:12px; margin:12px 0; }
+    .sq-items-table th { background:var(--bg-light); padding:8px 10px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-items-table td { padding:6px 10px; border-bottom:1px solid var(--border-light); }
+    .sq-items-table .amt { text-align:right; font-family:monospace; }
+    .sq-items-table input[type="number"] { width:70px; padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; text-align:right; }
+    .sq-totals { width:300px; margin-left:auto; margin-top:12px; font-size:13px; }
+    .sq-totals .trow { display:flex; justify-content:space-between; padding:4px 0; }
+    .sq-totals .trow.grand { font-size:16px; font-weight:800; border-top:2px solid var(--border); padding-top:8px; margin-top:4px; color:var(--primary); }
+    .item-add-row { display:flex; gap:8px; margin-bottom:12px; align-items:flex-end; }
+    .item-add-row select { flex:1; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; }
+    .item-add-row input { width:70px; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-muted); line-height:1; }
+    .close-btn:hover { color:var(--text-primary); }
+    .btn-sm { font-size:12px; padding:6px 14px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); color:var(--text-primary); }
+    .btn-sm:hover { background:var(--bg-hover); }
+    .btn-primary { background:var(--primary); color:white; border-color:var(--primary); }
+    .btn-primary:hover { filter:brightness(0.9); }
+    .btn-danger { background:var(--danger); color:white; border-color:var(--danger); }
+    .btn-success { background:var(--success,#0f9d58); color:white; border-color:var(--success,#0f9d58); }
+    .del-btn { border:none; background:none; color:var(--danger); cursor:pointer; font-size:16px; }
+    @media print { body > *:not(.print-area) { display:none!important; } .print-area { display:block!important; } }
+    @media (max-width:768px) { .sq-stats { grid-template-columns: repeat(3,1fr); } .sq-info-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1 id="pgIcon"></h1></div>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ สร้างใบเสนอราคา</button>
+    </div>
+    <div class="sq-stats" id="stats"></div>
+    <div class="card">
+      <div class="card-header">
+        <h2>รายการใบเสนอราคา</h2>
+        <select class="form-select" id="filterStatus" style="font-size:12px;padding:4px 8px;" onchange="loadData()">
+          <option value="">ทุกสถานะ</option>
+          <option value="draft">Draft</option><option value="sent">Sent</option>
+          <option value="accepted">Accepted</option><option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Detail/Edit/Create Modal -->
+  <div class="sq-modal-overlay" id="sqModal" onclick="if(event.target===this)closeModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="modalTitle"></h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="modalBody"></div>
+      <div class="sq-modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Print area (hidden, shown only when printing) -->
+  <div class="print-area" id="printArea" style="display:none"></div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allSQ = [];
+    let editSQ = null;
+    let editItems = [];
+    let masterItems = [];
+
+    async function loadData() {
+      try {
+        const status = document.getElementById('filterStatus').value;
+        allSQ = await API.get('/quotations' + (status ? '?status='+status : ''));
+        if (!Array.isArray(allSQ)) allSQ = [];
+      } catch(e) { allSQ = []; }
+      renderStats();
+      renderTable();
+    }
+
+    async function loadMasterItems() {
+      try {
+        const res = await API.get('/master/items');
+        masterItems = Array.isArray(res) ? res : (res.items || []);
+      } catch(e) { masterItems = []; }
+    }
+
+    function renderStats() {
+      const t = allSQ.length, d = allSQ.filter(q=>q.status==='draft').length;
+      const s = allSQ.filter(q=>q.status==='sent').length, a = allSQ.filter(q=>q.status==='accepted').length;
+      const amt = allSQ.reduce((s,q)=>s+parseFloat(q.grand_total||0),0);
+      document.getElementById('stats').innerHTML = `
+        <div class="sq-stat"><div class="val">${t}</div><div class="lbl">ทั้งหมด</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--text-muted)">${d}</div><div class="lbl">Draft</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--primary)">${s}</div><div class="lbl">Sent</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success,#0f9d58)">${a}</div><div class="lbl">Accepted</div></div>
+        <div class="sq-stat"><div class="val sq-amount">${fmtNum(amt)}</div><div class="lbl">มูลค่ารวม (฿)</div></div>`;
+    }
+
+    function renderTable() {
+      const ss = s => ({draft:'background:#e2e3e5;color:#383d41',sent:'background:#dbeafe;color:#1d4ed8',accepted:'background:#d4edda;color:#155724',rejected:'background:#f8d7da;color:#721c24'}[s]||'background:#e2e3e5;color:#383d41');
+      if (!allSQ.length) { document.getElementById('tableWrap').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">ไม่มีรายการ</div>'; return; }
+      let h='<table class="sq-table"><thead><tr><th>SQ Number</th><th>ลูกค้า</th><th>โปรเจกต์</th><th>ขนาด</th><th>ยอดรวม</th><th>สถานะ</th><th>วันที่</th></tr></thead><tbody>';
+      allSQ.forEach(q=>{
+        h+=`<tr onclick="showDetail('${q.id}')"><td style="font-weight:600;color:var(--primary)">${q.sq_number||'-'}</td><td>${q.customer_name||'-'}</td><td>${q.project_code?q.project_code:'−'}</td><td>${q.system_capacity?q.system_capacity+'kWp':'−'}</td><td class="sq-amount">${fmtNum(q.grand_total||0)}</td><td><span class="sq-badge" style="${ss(q.status)}">${q.status||'-'}</span></td><td>${q.created_at?new Date(q.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'}):'-'}</td></tr>`;
+      });
+      h+='</tbody></table>';
+      document.getElementById('tableWrap').innerHTML=h;
+    }
+
+    // ════════════════════════════════
+    //  DETAIL + EDIT MODAL
+    // ════════════════════════════════
+    async function showDetail(id) {
+      try {
+        editSQ = await API.get('/quotations/'+id);
+        editItems = (editSQ.items||[]).map(it=>({...it}));
+        renderEditModal(false);
+        document.getElementById('sqModal').classList.add('show');
+      } catch(e) { alert(e.message); }
+    }
+
+    function openCreateModal() {
+      editSQ = { status:'draft', vat_pct:7, discount_pct:0, validity_days:30 };
+      editItems = [];
+      renderEditModal(true);
+      document.getElementById('sqModal').classList.add('show');
+    }
+
+    function renderEditModal(isNew) {
+      const sq = editSQ;
+      const title = isNew ? 'สร้างใบเสนอราคาใหม่' : (sq.sq_number||'') + ' — ' + (sq.customer_name||'Quotation');
+      document.getElementById('modalTitle').textContent = title;
+
+      let h = '<div class="sq-info-grid"><div>';
+      h += fg('ชื่อลูกค้า', 'text', 'sqCustName', sq.customer_name||'');
+      h += fg('เบอร์โทร', 'text', 'sqCustPhone', sq.customer_phone||'');
+      h += fg('ที่อยู่', 'text', 'sqCustAddr', sq.customer_address||'');
+      h += '</div><div>';
+      h += fg('ไซต์', 'text', 'sqSiteName', sq.site_name||'');
+      h += fg('ขนาดระบบ (kWp)', 'number', 'sqCapacity', sq.system_capacity||'');
+      h += `<div class="sq-fg"><label>ประเภทหลังคา</label><select id="sqRoofType"><option value="">-</option><option value="metal_sheet" ${sq.roof_type==='metal_sheet'?'selected':''}>เมทัลชีท</option><option value="tile" ${sq.roof_type==='tile'?'selected':''}>กระเบื้อง</option><option value="concrete" ${sq.roof_type==='concrete'?'selected':''}>คอนกรีต</option></select></div>`;
+      h += fg('พื้นที่หลังคา (sqm)', 'number', 'sqRoofArea', sq.roof_area||'');
+      h += '</div></div>';
+
+      // Items
+      h += '<h4 style="font-size:13px;font-weight:700;margin:16px 0 8px">รายการอุปกรณ์</h4>';
+      h += `<div class="item-add-row">
+        <select id="sqItemPicker"><option value="">-- เลือกอุปกรณ์ --</option>${masterItems.map(it=>`<option value="${it.id}" data-code="${it.item_code||''}" data-name="${it.item_name||''}" data-unit="${it.uom||'EA'}" data-price="${it.unit_price||0}">${it.item_code||''} — ${it.item_name||''}</option>`).join('')}</select>
+        <input type="number" id="sqItemQty" value="1" min="1" placeholder="จำนวน">
+        <button class="btn-sm btn-primary" onclick="sqAddItem()">เพิ่ม</button>
+      </div>`;
+      h += '<table class="sq-items-table"><thead><tr><th>#</th><th>รหัส</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th class="amt">ราคา/หน่วย</th><th class="amt">รวม</th><th></th></tr></thead><tbody id="sqItemsBody"></tbody></table>';
+
+      // Totals + discount
+      h += '<div style="display:flex;gap:20px;align-items:flex-start;margin-top:12px">';
+      h += '<div style="flex:1">';
+      h += fg('ส่วนลด (%)', 'number', 'sqDiscPct', sq.discount_pct||0, 'onchange="sqRecalc()"');
+      h += fg('เงื่อนไข', 'text', 'sqTerms', sq.terms||'');
+      h += fg('หมายเหตุ', 'text', 'sqNotes', sq.notes||'');
+      h += fg('มีผลภายใน (วัน)', 'number', 'sqValidity', sq.validity_days||30);
+      h += '</div>';
+      h += '<div class="sq-totals" id="sqTotals"></div>';
+      h += '</div>';
+
+      document.getElementById('modalBody').innerHTML = h;
+      renderSQItems();
+      sqRecalc();
+
+      // Footer
+      let f = '';
+      if (!isNew && sq.status === 'draft') f += `<button class="btn-sm btn-primary" onclick="updateStatus('${sq.id}','sent')">ส่งใบเสนอราคา</button>`;
+      if (!isNew && sq.status === 'sent') {
+        f += `<button class="btn-sm btn-success" onclick="updateStatus('${sq.id}','accepted')">ลูกค้ายอมรับ</button>`;
+        f += `<button class="btn-sm btn-danger" onclick="updateStatus('${sq.id}','rejected')">ลูกค้าปฏิเสธ</button>`;
+      }
+      if (!isNew) f += `<button class="btn-sm" onclick="printSQ('${sq.id}')">พิมพ์</button>`;
+      f += `<button class="btn-sm btn-primary" onclick="saveSQ(${isNew})">${isNew?'สร้าง':'บันทึก'}</button>`;
+      f += `<button class="btn-sm" onclick="closeModal()">ปิด</button>`;
+      document.getElementById('modalFooter').innerHTML = f;
+    }
+
+    function fg(label, type, id, val, extra='') {
+      return `<div class="sq-fg"><label>${label}</label><input type="${type}" id="${id}" value="${val||''}" ${extra}></div>`;
+    }
+
+    function sqAddItem() {
+      const sel = document.getElementById('sqItemPicker');
+      const opt = sel.selectedOptions[0];
+      if (!opt||!opt.value) return;
+      const qty = parseFloat(document.getElementById('sqItemQty').value)||1;
+      const price = parseFloat(opt.dataset.price)||0;
+      editItems.push({ item_id:opt.value, item_code:opt.dataset.code, item_name:opt.dataset.name, qty, unit:opt.dataset.unit, unit_price:price, total:qty*price });
+      sel.value=''; document.getElementById('sqItemQty').value='1';
+      renderSQItems(); sqRecalc();
+    }
+
+    function sqRemoveItem(i) { editItems.splice(i,1); renderSQItems(); sqRecalc(); }
+
+    function sqUpdateQty(i, val) {
+      const qty = parseFloat(val)||0;
+      editItems[i].qty = qty;
+      editItems[i].total = qty * parseFloat(editItems[i].unit_price);
+      renderSQItems(); sqRecalc();
+    }
+
+    function renderSQItems() {
+      const tbody = document.getElementById('sqItemsBody');
+      if (!tbody) return;
+      tbody.innerHTML = editItems.map((it,i) =>
+        `<tr><td>${i+1}</td><td>${it.item_code||'-'}</td><td>${it.item_name}</td>
+         <td><input type="number" value="${it.qty}" min="0" onchange="sqUpdateQty(${i},this.value)"></td>
+         <td>${it.unit}</td><td class="amt">${fmtNum(it.unit_price)}</td><td class="amt">${fmtNum(it.total)}</td>
+         <td><button class="del-btn" onclick="sqRemoveItem(${i})">x</button></td></tr>`
+      ).join('');
+    }
+
+    // SAP B1 calculation: subtotal → discount → vat → grand_total
+    function sqRecalc() {
+      const subtotal = editItems.reduce((s,it)=>s+parseFloat(it.total||0),0);
+      const discPct = parseFloat(document.getElementById('sqDiscPct')?.value)||0;
+      const discAmt = Math.round(subtotal * discPct / 100 * 100)/100;
+      const afterDisc = subtotal - discAmt;
+      const vatPct = 7;
+      const vatAmt = Math.round(afterDisc * vatPct / 100 * 100)/100;
+      const grand = afterDisc + vatAmt;
+      const el = document.getElementById('sqTotals');
+      if (!el) return;
+      el.innerHTML = `
+        <div class="trow"><span>Subtotal</span><span>${fmtNum(subtotal)}</span></div>
+        ${discAmt ? `<div class="trow"><span>ส่วนลด ${discPct}%</span><span>-${fmtNum(discAmt)}</span></div>` : ''}
+        <div class="trow"><span>VAT 7%</span><span>${fmtNum(vatAmt)}</span></div>
+        <div class="trow grand"><span>Grand Total</span><span>฿${fmtNum(grand)}</span></div>`;
+    }
+
+    async function saveSQ(isNew) {
+      const subtotal = editItems.reduce((s,it)=>s+parseFloat(it.total||0),0);
+      const discPct = parseFloat(document.getElementById('sqDiscPct').value)||0;
+      const discAmt = Math.round(subtotal*discPct/100*100)/100;
+      const vatPct = 7;
+      const vatAmt = Math.round((subtotal-discAmt)*vatPct/100*100)/100;
+      const grand = subtotal - discAmt + vatAmt;
+
+      const data = {
+        customer_name: document.getElementById('sqCustName').value||null,
+        customer_phone: document.getElementById('sqCustPhone').value||null,
+        customer_address: document.getElementById('sqCustAddr').value||null,
+        site_name: document.getElementById('sqSiteName').value||null,
+        system_capacity: document.getElementById('sqCapacity').value||null,
+        roof_type: document.getElementById('sqRoofType').value||null,
+        roof_area: document.getElementById('sqRoofArea').value||null,
+        subtotal, discount_pct:discPct, discount_amt:discAmt, vat_pct:vatPct, vat_amt:vatAmt, grand_total:grand,
+        terms: document.getElementById('sqTerms').value||null,
+        notes: document.getElementById('sqNotes').value||null,
+        validity_days: parseInt(document.getElementById('sqValidity').value)||30,
+        items: editItems,
+      };
+
+      try {
+        if (isNew) {
+          await API.post('/quotations', data);
+          typeof showToast==='function' && showToast('สร้างใบเสนอราคาสำเร็จ','success');
+        } else {
+          await API.put('/quotations/'+editSQ.id, data);
+          typeof showToast==='function' && showToast('บันทึกสำเร็จ','success');
+        }
+        closeModal(); loadData();
+      } catch(e) { alert(e.message); }
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        await API.put('/quotations/'+id, { status });
+        typeof showToast==='function' && showToast('อัปเดตสำเร็จ','success');
+        closeModal(); loadData();
+      } catch(e) { alert(e.message); }
+    }
+
+    function printSQ(id) {
+      const sq = editSQ;
+      const items = editItems;
+      const subtotal = items.reduce((s,it)=>s+parseFloat(it.total||0),0);
+      const discAmt = parseFloat(sq.discount_amt)||0;
+      const vatAmt = parseFloat(sq.vat_amt)||0;
+      const grand = parseFloat(sq.grand_total)||0;
+
+      let h = `<div style="max-width:800px;margin:0 auto;padding:40px;font-family:sans-serif;font-size:14px">
+        <div style="text-align:center;margin-bottom:30px">
+          <h1 style="font-size:20px;margin:0">ใบเสนอราคา / Sales Quotation</h1>
+          <p style="font-size:13px;color:#666;margin:4px 0">${sq.sq_number||''}</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;font-size:13px">
+          <div><strong>ลูกค้า:</strong> ${sq.customer_name||'-'}<br><strong>เบอร์:</strong> ${sq.customer_phone||'-'}<br><strong>ที่อยู่:</strong> ${sq.customer_address||'-'}</div>
+          <div style="text-align:right"><strong>ไซต์:</strong> ${sq.site_name||'-'}<br><strong>ขนาด:</strong> ${sq.system_capacity||'-'} kWp<br><strong>มีผล:</strong> ${sq.validity_days||30} วัน</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">
+          <thead><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left;border-bottom:2px solid #333">#</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">รหัส</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">รายการ</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">จำนวน</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">หน่วย</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">ราคา</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">รวม</th></tr></thead>
+          <tbody>${items.map((it,i)=>`<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${i+1}</td><td style="padding:6px 8px;border-bottom:1px solid #eee">${it.item_code||''}</td><td style="padding:6px 8px;border-bottom:1px solid #eee">${it.item_name}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">${it.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee">${it.unit}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">${Number(it.unit_price).toLocaleString()}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">${Number(it.total).toLocaleString()}</td></tr>`).join('')}</tbody>
+        </table>
+        <div style="width:300px;margin-left:auto;font-size:13px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Subtotal</span><span>${Number(subtotal).toLocaleString()}</span></div>
+          ${discAmt?`<div style="display:flex;justify-content:space-between;padding:4px 0"><span>ส่วนลด</span><span>-${Number(discAmt).toLocaleString()}</span></div>`:''}
+          <div style="display:flex;justify-content:space-between;padding:4px 0"><span>VAT 7%</span><span>${Number(vatAmt).toLocaleString()}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #333;font-size:16px;font-weight:800"><span>Grand Total</span><span>฿${Number(grand).toLocaleString()}</span></div>
+        </div>
+        ${sq.terms?`<div style="margin-top:20px;font-size:12px;color:#666"><strong>เงื่อนไข:</strong> ${sq.terms}</div>`:''}
+      </div>`;
+
+      const printArea = document.getElementById('printArea');
+      printArea.innerHTML = h;
+      printArea.style.display = 'block';
+      window.print();
+      setTimeout(()=>{ printArea.style.display='none'; }, 500);
+    }
+
+    function closeModal() { document.getElementById('sqModal').classList.remove('show'); }
+
+    // Init
+    if (API.requireAuth()) {
+      loadData();
+      loadMasterItems();
+      if (typeof I!=='undefined') document.getElementById('pgIcon').innerHTML = I.fileText+' Quotation (ใบเสนอราคา)';
+      else document.getElementById('pgIcon').textContent = 'Quotation (ใบเสนอราคา)';
+
+      // Auto-open if URL has ?id=xxx
+      const urlId = new URLSearchParams(location.search).get('id');
+      if (urlId) setTimeout(()=>showDetail(urlId), 500);
+    }
+  </script>
+</body>
+</html>

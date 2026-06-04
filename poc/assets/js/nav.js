@@ -53,6 +53,7 @@ const NAV_GROUPS_FALLBACK = [
   { label: 'Document', collapsible: true, items: [
     { id: 'budget', label: 'Budget', icon: ICONS.budget, href: 'budget.html' },
     { id: 'pr-po', label: 'PR / PO', icon: ICONS.prpo, href: 'pr-po.html' },
+    { id: 'quotation', label: 'Quotation', icon: ICONS.expense, href: 'quotation.html' },
     { id: 'advance', label: 'Advance', icon: ICONS.advance, href: 'advance.html' },
     { id: 'petty-cash', label: 'Petty Cash', icon: ICONS.pettyCash, href: 'petty-cash.html' },
     { id: 'expense', label: 'Expense', icon: ICONS.expense, href: 'expense.html' },
