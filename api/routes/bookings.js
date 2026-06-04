@@ -11,12 +11,14 @@ router.get('/', async (req, res) => {
       v.name AS vehicle_name, v.plate_number,
       t.first_name AS tech_first, t.last_name AS tech_last, t.nickname AS tech_nickname,
       u.first_name || ' ' || u.last_name AS booked_by_name,
-      p.code AS project_code, p.name AS project_name
+      p.code AS project_code, p.name AS project_name,
+      jo.job_order_number, jo.title AS job_order_title
       FROM bookings b
       LEFT JOIN vehicles v ON b.vehicle_id = v.id
       LEFT JOIN technicians t ON b.technician_id = t.id
       LEFT JOIN users u ON b.booked_by = u.id
       LEFT JOIN projects p ON b.project_id = p.id
+      LEFT JOIN job_orders jo ON b.job_order_id = jo.id
       WHERE b.company_id = $1`;
     const params = [req.user.company_id];
     if (type) { params.push(type); q += ` AND b.booking_type = $${params.length}`; }
@@ -101,8 +103,8 @@ router.post('/', async (req, res) => {
     }
 
     const defaultColor = { vehicle: '#4285f4', technician: '#0f9d58', flight: '#db4437' }[b.booking_type] || '#4285f4';
-    const fields = ['company_id','booking_type','project_id','travel_id','vehicle_id','technician_id','start_date','start_time','end_date','end_time','all_day','title','purpose','location','remarks','color','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','e_ticket_url','booked_by'];
-    const vals = [req.user.company_id, b.booking_type, b.project_id||null, b.travel_id||null, b.vehicle_id||null, b.technician_id||null, b.start_date, b.start_time||null, b.end_date, b.end_time||null, b.all_day !== false, b.title||null, b.purpose||null, b.location||null, b.remarks||null, b.color||defaultColor, b.passengers||null, b.job_type||null, b.site_name||null, b.system_capacity||null, b.job_description||null, b.tools_required||null, b.safety_notes||null, b.airline||null, b.flight_number||null, b.departure_airport||null, b.arrival_airport||null, b.departure_time||null, b.arrival_time||null, b.return_flight_number||null, b.return_departure_time||null, b.return_arrival_time||null, b.passenger_names||null, b.booking_reference||null, b.ticket_cost||null, b.booking_channel||null, b.e_ticket_url||null, req.user.id];
+    const fields = ['company_id','booking_type','project_id','travel_id','job_order_id','vehicle_id','technician_id','start_date','start_time','end_date','end_time','all_day','title','purpose','location','remarks','color','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','e_ticket_url','booked_by'];
+    const vals = [req.user.company_id, b.booking_type, b.project_id||null, b.travel_id||null, b.job_order_id||null, b.vehicle_id||null, b.technician_id||null, b.start_date, b.start_time||null, b.end_date, b.end_time||null, b.all_day !== false, b.title||null, b.purpose||null, b.location||null, b.remarks||null, b.color||defaultColor, b.passengers||null, b.job_type||null, b.site_name||null, b.system_capacity||null, b.job_description||null, b.tools_required||null, b.safety_notes||null, b.airline||null, b.flight_number||null, b.departure_airport||null, b.arrival_airport||null, b.departure_time||null, b.arrival_time||null, b.return_flight_number||null, b.return_departure_time||null, b.return_arrival_time||null, b.passenger_names||null, b.booking_reference||null, b.ticket_cost||null, b.booking_channel||null, b.e_ticket_url||null, req.user.id];
     const placeholders = vals.map((_, i) => `$${i+1}`).join(',');
     const { rows: [booking] } = await db.query(
       `INSERT INTO bookings (${fields.join(',')}) VALUES (${placeholders}) RETURNING *`, vals);
@@ -126,7 +128,7 @@ router.put('/:id', async (req, res) => {
     if (!['pending','approved','confirmed'].includes(existing.status) && req.user.role !== 'executive') {
       return res.status(400).json({ error: 'Cannot edit booking with status ' + existing.status });
     }
-    const allowed = ['title','purpose','location','remarks','color','start_date','end_date','start_time','end_time','all_day','project_id','vehicle_id','technician_id','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','status','job_status','job_report'];
+    const allowed = ['title','purpose','location','remarks','color','start_date','end_date','start_time','end_time','all_day','project_id','job_order_id','vehicle_id','technician_id','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','status','job_status','job_report'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });

@@ -357,11 +357,141 @@
     }
     .close-btn:hover { color: var(--text-primary); }
 
+    /* ── Job Order inline ── */
+    .jo-section {
+      margin-bottom: 16px; padding-bottom: 16px;
+      border-bottom: 2px dashed var(--border);
+    }
+    .jo-select-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .jo-select-row select { flex: 1; }
+    .jo-select-row .jo-add-btn {
+      width: 36px; height: 36px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--bg-white);
+      cursor: pointer; font-size: 18px; display: flex;
+      align-items: center; justify-content: center;
+      color: var(--primary); flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .jo-select-row .jo-add-btn:hover {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    .jo-inline-form {
+      display: none; margin-top: 12px; padding: 16px;
+      background: var(--bg-light); border: 1px solid var(--border);
+      border-radius: var(--radius); animation: slideDown 0.2s ease;
+    }
+    .jo-inline-form.show { display: block; }
+    .jo-inline-form h4 {
+      font-size: 13px; font-weight: 700; margin-bottom: 12px;
+      color: var(--primary); display: flex; align-items: center; gap: 6px;
+    }
+    .jo-inline-footer {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;
+    }
+    .jo-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full);
+      background: #e8f5e9; color: #2e7d32; font-weight: 600;
+    }
+    .page-icon, .dd-icon, .modal-icon, .jo-icon {
+      display: inline-flex; vertical-align: middle;
+    }
+    .jo-badge svg { width: 14px; height: 14px; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Resource Cards View ── */
+    .res-section { margin-bottom: 24px; }
+    .res-section-header {
+      font-size: 14px; font-weight: 700; padding: 12px 20px;
+      border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 8px;
+    }
+    .res-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 16px 20px;
+    }
+    .res-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xs);
+      transition: all 0.2s; cursor: pointer;
+    }
+    .res-card:hover { box-shadow: var(--shadow-sm); border-color: var(--primary); }
+    .res-card-top { padding: 16px; display: flex; align-items: center; gap: 14px; }
+    .res-card-icon {
+      width: 48px; height: 48px; border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .res-card-info h3 { font-size: 14px; font-weight: 700; margin: 0; }
+    .res-card-info .identifier {
+      font-size: 12px; font-weight: 600; color: var(--primary);
+      background: var(--primary-light); padding: 1px 8px;
+      border-radius: var(--radius-full); display: inline-block; margin-top: 4px;
+    }
+    .res-card-status {
+      padding: 8px 16px; border-top: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between; font-size: 12px;
+    }
+    .res-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .res-card-stats {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
+      border-top: 1px solid var(--border-light); text-align: center;
+    }
+    .res-card-stats .rs { padding: 10px 4px; }
+    .res-card-stats .rs:not(:last-child) { border-right: 1px solid var(--border-light); }
+    .res-card-stats .rs .val { font-size: 16px; font-weight: 700; }
+    .res-card-stats .rs .lbl { font-size: 10px; color: var(--text-muted); }
+
+    /* ── Board / Kanban View ── */
+    .bk-stats {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+      padding: 16px 20px;
+    }
+    .bk-stat {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px; text-align: center;
+    }
+    .bk-stat .val { font-size: 24px; font-weight: 800; }
+    .bk-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .bk-board {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      padding: 0 20px 20px; min-height: 300px;
+    }
+    .bk-col {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .bk-col-header {
+      padding: 12px 16px; font-size: 13px; font-weight: 700;
+      border-bottom: 2px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .bk-col-header .col-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .bk-col-body { padding: 8px; min-height: 120px; }
+    .bk-card {
+      background: var(--bg-light); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 12px; margin-bottom: 8px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .bk-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .bk-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .bk-card-res { font-size: 11px; color: var(--text-secondary); }
+    .bk-card-meta {
+      font-size: 11px; color: var(--text-muted); margin-top: 6px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+
     @media (max-width: 768px) {
       .booking-sidebar { display: none; }
       .cal-grid { overflow-x: auto; min-width: 700px; }
       .bk-header { flex-wrap: wrap; gap: 8px; }
       .bk-nav { flex-wrap: wrap; gap: 6px; }
+      .res-cards { grid-template-columns: 1fr; }
+      .bk-board { grid-template-columns: 1fr 1fr; }
+      .bk-stats { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
@@ -375,13 +505,13 @@
   <main class="page fade-in">
     <!-- Header -->
     <div class="bk-header">
-      <h1>📅 Booking</h1>
+      <h1><span class="page-icon" id="hdrIcon"></span> Booking</h1>
       <div class="dropdown">
         <button class="btn-sm btn-primary" onclick="toggleDropdown(this)">+ สร้าง Booking ▾</button>
         <div class="dropdown-menu" id="createDropdown">
-          <button onclick="openModal('vehicle')">🚗 จองรถ</button>
-          <button onclick="openModal('solar')">👷 จองช่าง</button>
-          <button onclick="openModal('flight')">✈️ จองเครื่องบิน</button>
+          <button onclick="openModal('vehicle')"><span class="dd-icon" data-icon="car"></span> จองรถ</button>
+          <button onclick="openModal('solar')"><span class="dd-icon" data-icon="user"></span> จองช่าง</button>
+          <button onclick="openModal('flight')"><span class="dd-icon" data-icon="plane"></span> จองเครื่องบิน</button>
         </div>
       </div>
     </div>
@@ -399,6 +529,8 @@
         <button data-view="week" onclick="setView('week')">สัปดาห์</button>
         <button data-view="day" onclick="setView('day')">วัน</button>
         <button data-view="list" onclick="setView('list')">ตาราง</button>
+        <button data-view="resources" onclick="setView('resources')">ทรัพยากร</button>
+        <button data-view="board" onclick="setView('board')">บอร์ด</button>
       </div>
     </div>
 
@@ -451,10 +583,81 @@
   <div class="modal-overlay" id="modalVehicle" onclick="if(event.target===this)closeAllModals()">
     <div class="modal">
       <div class="modal-header">
-        <h3>🚗 จองรถ</h3>
+        <h3><span class="modal-icon" data-icon="car"></span> จองรถ</h3>
         <button class="close-btn" onclick="closeAllModals()">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="jo-section">
+          <div class="form-group" style="margin-bottom:8px">
+            <label><span class="jo-icon" data-icon="clipboardList"></span> ใบสั่งงาน (Job Order)</label>
+            <div class="jo-select-row">
+              <select id="vehJobOrder" onchange="onJOSelect('vehicle')">
+                <option value="">-- เลือกใบสั่งงาน --</option>
+              </select>
+              <button type="button" class="jo-add-btn" onclick="toggleJOForm('vehicle')" title="สร้างใบสั่งงานใหม่">+</button>
+            </div>
+          </div>
+          <div class="jo-inline-form" id="vehJOForm">
+            <h4><span class="jo-icon" data-icon="clipboardList"></span> สร้างใบสั่งงานใหม่</h4>
+            <div class="form-group">
+              <label>ชื่องาน *</label>
+              <input type="text" id="vehJOTitle" placeholder="เช่น เดินทางไป Site ลำพูน">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>ประเภทงาน</label>
+                <select id="vehJOType">
+                  <option value="travel">เดินทาง (Travel)</option>
+                  <option value="delivery">ขนส่ง (Delivery)</option>
+                  <option value="installation">ติดตั้ง (Installation)</option>
+                  <option value="survey">สำรวจ (Survey)</option>
+                  <option value="other">อื่นๆ</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>ความสำคัญ</label>
+                <select id="vehJOPriority">
+                  <option value="normal">ปกติ</option>
+                  <option value="high">สูง</option>
+                  <option value="urgent">เร่งด่วน</option>
+                  <option value="low">ต่ำ</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>สถานที่</label>
+                <input type="text" id="vehJOLocation" placeholder="ปลายทาง">
+              </div>
+              <div class="form-group">
+                <label>ชื่อไซต์</label>
+                <input type="text" id="vehJOSite" placeholder="ชื่อไซต์งาน">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>รายละเอียด</label>
+              <textarea id="vehJODesc" rows="2" placeholder="รายละเอียดงาน"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>วันเริ่มต้น</label>
+                <input type="date" id="vehJOStart">
+              </div>
+              <div class="form-group">
+                <label>วันสิ้นสุด</label>
+                <input type="date" id="vehJOEnd">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>โปรเจกต์</label>
+              <select id="vehJOProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
+            </div>
+            <div class="jo-inline-footer">
+              <button class="btn-sm" onclick="toggleJOForm('vehicle')">ยกเลิก</button>
+              <button class="btn-sm btn-primary" onclick="saveInlineJO('vehicle')">บันทึกใบสั่งงาน</button>
+            </div>
+          </div>
+        </div>
         <div class="form-group">
           <label>รถ</label>
           <select id="vehSelect"></select>
@@ -524,10 +727,82 @@
   <div class="modal-overlay" id="modalSolar" onclick="if(event.target===this)closeAllModals()">
     <div class="modal">
       <div class="modal-header">
-        <h3>👷 จองช่าง</h3>
+        <h3><span class="modal-icon" data-icon="user"></span> จองช่าง</h3>
         <button class="close-btn" onclick="closeAllModals()">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="jo-section">
+          <div class="form-group" style="margin-bottom:8px">
+            <label><span class="jo-icon" data-icon="clipboardList"></span> ใบสั่งงาน (Job Order)</label>
+            <div class="jo-select-row">
+              <select id="solarJobOrder" onchange="onJOSelect('solar')">
+                <option value="">-- เลือกใบสั่งงาน --</option>
+              </select>
+              <button type="button" class="jo-add-btn" onclick="toggleJOForm('solar')" title="สร้างใบสั่งงานใหม่">+</button>
+            </div>
+          </div>
+          <div class="jo-inline-form" id="solarJOForm">
+            <h4><span class="jo-icon" data-icon="clipboardList"></span> สร้างใบสั่งงานใหม่</h4>
+            <div class="form-group">
+              <label>ชื่องาน *</label>
+              <input type="text" id="solarJOTitle" placeholder="เช่น ติดตั้ง Solar Site ลำพูน">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>ประเภทงาน</label>
+                <select id="solarJOType">
+                  <option value="installation">ติดตั้ง (Installation)</option>
+                  <option value="maintenance">บำรุงรักษา (Maintenance)</option>
+                  <option value="inspection">ตรวจสอบ (Inspection)</option>
+                  <option value="repair">ซ่อม (Repair)</option>
+                  <option value="survey">สำรวจ (Survey)</option>
+                  <option value="other">อื่นๆ</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>ความสำคัญ</label>
+                <select id="solarJOPriority">
+                  <option value="normal">ปกติ</option>
+                  <option value="high">สูง</option>
+                  <option value="urgent">เร่งด่วน</option>
+                  <option value="low">ต่ำ</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>สถานที่</label>
+                <input type="text" id="solarJOLocation" placeholder="ปลายทาง">
+              </div>
+              <div class="form-group">
+                <label>ชื่อไซต์</label>
+                <input type="text" id="solarJOSite" placeholder="ชื่อไซต์งาน">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>รายละเอียด</label>
+              <textarea id="solarJODesc" rows="2" placeholder="รายละเอียดงาน"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>วันเริ่มต้น</label>
+                <input type="date" id="solarJOStart">
+              </div>
+              <div class="form-group">
+                <label>วันสิ้นสุด</label>
+                <input type="date" id="solarJOEnd">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>โปรเจกต์</label>
+              <select id="solarJOProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
+            </div>
+            <div class="jo-inline-footer">
+              <button class="btn-sm" onclick="toggleJOForm('solar')">ยกเลิก</button>
+              <button class="btn-sm btn-primary" onclick="saveInlineJO('solar')">บันทึกใบสั่งงาน</button>
+            </div>
+          </div>
+        </div>
         <div class="form-group">
           <label>ช่าง</label>
           <select id="solarTech"></select>
@@ -612,10 +887,80 @@
   <div class="modal-overlay" id="modalFlight" onclick="if(event.target===this)closeAllModals()">
     <div class="modal">
       <div class="modal-header">
-        <h3>✈️ จองเครื่องบิน</h3>
+        <h3><span class="modal-icon" data-icon="plane"></span> จองเครื่องบิน</h3>
         <button class="close-btn" onclick="closeAllModals()">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="jo-section">
+          <div class="form-group" style="margin-bottom:8px">
+            <label><span class="jo-icon" data-icon="clipboardList"></span> ใบสั่งงาน (Job Order)</label>
+            <div class="jo-select-row">
+              <select id="flightJobOrder" onchange="onJOSelect('flight')">
+                <option value="">-- เลือกใบสั่งงาน --</option>
+              </select>
+              <button type="button" class="jo-add-btn" onclick="toggleJOForm('flight')" title="สร้างใบสั่งงานใหม่">+</button>
+            </div>
+          </div>
+          <div class="jo-inline-form" id="flightJOForm">
+            <h4><span class="jo-icon" data-icon="clipboardList"></span> สร้างใบสั่งงานใหม่</h4>
+            <div class="form-group">
+              <label>ชื่องาน *</label>
+              <input type="text" id="flightJOTitle" placeholder="เช่น เดินทางไปประชุม กทม-เชียงใหม่">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>ประเภทงาน</label>
+                <select id="flightJOType">
+                  <option value="travel">เดินทาง (Travel)</option>
+                  <option value="survey">สำรวจ (Survey)</option>
+                  <option value="installation">ติดตั้ง (Installation)</option>
+                  <option value="other">อื่นๆ</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>ความสำคัญ</label>
+                <select id="flightJOPriority">
+                  <option value="normal">ปกติ</option>
+                  <option value="high">สูง</option>
+                  <option value="urgent">เร่งด่วน</option>
+                  <option value="low">ต่ำ</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>สถานที่</label>
+                <input type="text" id="flightJOLocation" placeholder="ปลายทาง">
+              </div>
+              <div class="form-group">
+                <label>ชื่อไซต์</label>
+                <input type="text" id="flightJOSite" placeholder="ชื่อไซต์งาน">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>รายละเอียด</label>
+              <textarea id="flightJODesc" rows="2" placeholder="รายละเอียดงาน"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>วันเริ่มต้น</label>
+                <input type="date" id="flightJOStart">
+              </div>
+              <div class="form-group">
+                <label>วันสิ้นสุด</label>
+                <input type="date" id="flightJOEnd">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>โปรเจกต์</label>
+              <select id="flightJOProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
+            </div>
+            <div class="jo-inline-footer">
+              <button class="btn-sm" onclick="toggleJOForm('flight')">ยกเลิก</button>
+              <button class="btn-sm btn-primary" onclick="saveInlineJO('flight')">บันทึกใบสั่งงาน</button>
+            </div>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label>สายการบิน</label>
@@ -743,8 +1088,121 @@
     let listSortCol = 'start_date';
     let listSortAsc = true;
 
+    // ── Job Order State ──
+    let approvedJobOrders = [];
+
+    async function loadJobOrders() {
+      try {
+        const res = await API.get('/job-orders/approved');
+        approvedJobOrders = res || [];
+        populateJOSelects();
+      } catch(e) { approvedJobOrders = []; }
+    }
+
+    function populateJOSelects() {
+      ['vehJobOrder','solarJobOrder','flightJobOrder'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">-- เลือกใบสั่งงาน --</option>';
+        approvedJobOrders.forEach(jo => {
+          const extra = jo.project_code ? ` (${jo.project_code})` : '';
+          sel.innerHTML += `<option value="${jo.id}">${jo.job_order_number} — ${jo.title}${extra}</option>`;
+        });
+        if (cur) sel.value = cur;
+      });
+      ['vehJOProject','solarJOProject','flightJOProject'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '<option value="">-- เลือกโปรเจกต์ --</option>';
+        projects.forEach(p => {
+          sel.innerHTML += `<option value="${p.id}">${p.project_code||''} ${p.name||p.project_name||''}</option>`;
+        });
+      });
+    }
+
+    function toggleJOForm(type) {
+      const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
+      const form = document.getElementById(prefix + 'JOForm');
+      form.classList.toggle('show');
+      if (form.classList.contains('show')) {
+        const todayStr = fmt(new Date());
+        document.getElementById(prefix + 'JOStart').value = todayStr;
+        document.getElementById(prefix + 'JOEnd').value = todayStr;
+      }
+    }
+
+    function onJOSelect(type) {
+      const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
+      const joId = document.getElementById(prefix + 'JobOrder').value;
+      if (!joId) return;
+      const jo = approvedJobOrders.find(j => j.id === joId);
+      if (!jo) return;
+
+      if (type === 'vehicle') {
+        if (jo.planned_start) document.getElementById('vehStartDate').value = jo.planned_start.slice(0,10);
+        if (jo.planned_end) document.getElementById('vehEndDate').value = jo.planned_end.slice(0,10);
+        if (jo.project_id) document.getElementById('vehProject').value = jo.project_id;
+        if (jo.description) document.getElementById('vehPurpose').value = jo.description;
+        if (jo.location) document.getElementById('vehLocation').value = jo.location;
+      } else if (type === 'solar') {
+        if (jo.job_type) document.getElementById('solarJobType').value = jo.job_type;
+        if (jo.site_name) document.getElementById('solarSite').value = jo.site_name;
+        if (jo.description) document.getElementById('solarDesc').value = jo.description;
+        if (jo.planned_start) document.getElementById('solarStartDate').value = jo.planned_start.slice(0,10);
+        if (jo.planned_end) document.getElementById('solarEndDate').value = jo.planned_end.slice(0,10);
+        if (jo.project_id) document.getElementById('solarProject').value = jo.project_id;
+      } else if (type === 'flight') {
+        if (jo.planned_start) document.getElementById('flightDepTime').value = jo.planned_start.slice(0,10)+'T08:00';
+        if (jo.planned_end) document.getElementById('flightArrTime').value = jo.planned_end.slice(0,10)+'T17:00';
+        if (jo.project_id) document.getElementById('flightProject').value = jo.project_id;
+      }
+      document.getElementById(prefix + 'JOForm').classList.remove('show');
+    }
+
+    async function saveInlineJO(type) {
+      const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
+      const title = document.getElementById(prefix + 'JOTitle').value.trim();
+      if (!title) { typeof showToast === 'function' ? showToast('กรุณากรอกชื่องาน','error') : alert('กรุณากรอกชื่องาน'); return; }
+
+      const data = {
+        title,
+        job_type: document.getElementById(prefix + 'JOType').value,
+        priority: document.getElementById(prefix + 'JOPriority').value,
+        location: document.getElementById(prefix + 'JOLocation').value,
+        site_name: document.getElementById(prefix + 'JOSite').value,
+        description: document.getElementById(prefix + 'JODesc').value,
+        planned_start: document.getElementById(prefix + 'JOStart').value,
+        planned_end: document.getElementById(prefix + 'JOEnd').value,
+        project_id: document.getElementById(prefix + 'JOProject').value || null,
+        needs_vehicle: type === 'vehicle',
+        needs_technician: type === 'solar',
+        needs_flight: type === 'flight',
+      };
+      if (!data.planned_start || !data.planned_end) {
+        typeof showToast === 'function' ? showToast('กรุณาระบุวันเริ่ม-สิ้นสุด','error') : alert('กรุณาระบุวัน');
+        return;
+      }
+      try {
+        const jo = await API.post('/job-orders', data);
+        typeof showToast === 'function' && showToast('สร้าง ' + (jo.job_order_number||'') + ' สำเร็จ', 'success');
+        await loadJobOrders();
+        document.getElementById(prefix + 'JobOrder').value = jo.id;
+        onJOSelect(type);
+        document.getElementById(prefix + 'JOTitle').value = '';
+        document.getElementById(prefix + 'JODesc').value = '';
+        document.getElementById(prefix + 'JOForm').classList.remove('show');
+      } catch(e) {
+        typeof showToast === 'function' ? showToast(e.message||'Error','error') : alert(e.message);
+      }
+    }
+
     const TYPE_COLORS = { vehicle: '#4285f4', solar: '#0f9d58', flight: '#db4437' };
-    const TYPE_ICONS = { vehicle: '\u{1F697}', solar: '\u{1F477}', flight: '\u2708\uFE0F' };
+    const TYPE_ICONS = {
+      vehicle: (typeof I !== 'undefined' ? I.car : '\u{1F697}'),
+      solar: (typeof I !== 'undefined' ? I.user : '\u{1F477}'),
+      flight: (typeof I !== 'undefined' ? I.plane : '\u2708\uFE0F')
+    };
     const TYPE_LABELS = { vehicle: 'รถยนต์', solar: 'ช่าง', flight: 'เครื่องบิน' };
     const TH_DAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
     const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
@@ -941,6 +1399,7 @@
 
       populateSelects();
       renderResourceFilters();
+      await loadJobOrders();
     }
 
     function populateSelects() {
@@ -974,7 +1433,10 @@
     async function fetchBookings() {
       let startDate, endDate;
       const y = currentDate.getFullYear(), m = currentDate.getMonth();
-      if (currentView === 'month' || currentView === 'list') {
+      if (currentView === 'resources' || currentView === 'board') {
+        startDate = fmt(new Date(y - 1, m, 1));
+        endDate = fmt(new Date(y + 1, m, 0));
+      } else if (currentView === 'month' || currentView === 'list') {
         startDate = fmt(new Date(y, m - 1, 1));
         endDate = fmt(new Date(y, m + 2, 0));
       } else if (currentView === 'week') {
@@ -1004,6 +1466,8 @@
       if (currentView === 'month') renderMonthView(area);
       else if (currentView === 'week') renderWeekView(area);
       else if (currentView === 'day') renderDayView(area);
+      else if (currentView === 'resources') renderResourcesView(area);
+      else if (currentView === 'board') renderBoardView(area);
       else renderListView(area);
     }
 
@@ -1046,7 +1510,8 @@
           const c = evColor(ev);
           const cancelled = isCancelled(ev) ? ' cancelled' : '';
           const spanCls = getSpanClass(ev, dt);
-          html += `<div class="cal-event${cancelled} ${spanCls}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c}" onclick="event.stopPropagation();showEventPopup(${ev.id})" title="${ev.title || ''}">${TYPE_ICONS[ev.booking_type] || ''} ${ev.title || 'Untitled'}</div>`;
+          const joLabel = ev.job_order_number ? `[${ev.job_order_number.replace('JO-','')}] ` : '';
+          html += `<div class="cal-event${cancelled} ${spanCls}" style="background:${evBg(c)};color:${c};border-left:3px solid ${c}" onclick="event.stopPropagation();showEventPopup(${ev.id})" title="${ev.title || ''}">${TYPE_ICONS[ev.booking_type] || ''} ${joLabel}${ev.title || 'Untitled'}</div>`;
         });
         if (dayEvents.length > maxShow) {
           html += `<div class="cal-more" onclick="event.stopPropagation();showDayEvents('${fmt(dt)}')">+${dayEvents.length - maxShow} more</div>`;
@@ -1324,12 +1789,13 @@
         <th onclick="sortList('title')">ชื่อ${arrow('title')}</th>
         <th onclick="sortList('resource_name')">ทรัพยากร${arrow('resource_name')}</th>
         <th onclick="sortList('project_name')">โปรเจกต์${arrow('project_name')}</th>
+        <th onclick="sortList('job_order_number')">ใบสั่งงาน${arrow('job_order_number')}</th>
         <th onclick="sortList('status')">สถานะ${arrow('status')}</th>
         <th onclick="sortList('booked_by')">ผู้จอง${arrow('booked_by')}</th>
       </tr></thead><tbody>`;
 
       if (sorted.length === 0) {
-        html += '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">ไม่มีรายการจอง</td></tr>';
+        html += '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">ไม่มีรายการจอง</td></tr>';
       }
 
       sorted.forEach(ev => {
@@ -1350,6 +1816,7 @@
           <td class="ev-title">${ev.title || '-'}</td>
           <td>${ev.resource_name || '-'}</td>
           <td>${ev.project_name || '-'}</td>
+          <td>${ev.job_order_number ? '<span class="jo-badge">'+I.clipboardList+' '+ev.job_order_number+'</span>' : '-'}</td>
           <td><span class="status-badge" style="${sc}">${ev.status || '-'}</span></td>
           <td>${ev.booked_by || ev.created_by_name || '-'}</td>
         </tr>`;
@@ -1374,6 +1841,7 @@
 
       let body = '';
       body += row('ประเภท', TYPE_LABELS[ev.booking_type] || ev.booking_type);
+      if (ev.job_order_number) body += row('ใบสั่งงาน', ev.job_order_number + ' — ' + (ev.job_order_title || ''));
       body += row('วันที่', (ev.start_date || '').slice(0,10) + ' → ' + (ev.end_date || ev.start_date || '').slice(0,10));
       if (ev.start_time || ev.end_time) body += row('เวลา', formatTimeRange(ev));
       if (ev.resource_name) body += row('ทรัพยากร', ev.resource_name);
@@ -1432,6 +1900,8 @@
         document.getElementById('vehColor').value = '#4285f4';
         document.getElementById('vehAllDay').checked = false;
         toggleVehTime();
+        document.getElementById('vehJobOrder').value = '';
+        document.getElementById('vehJOForm').classList.remove('show');
         document.getElementById('modalVehicle').classList.add('show');
       } else if (type === 'solar') {
         document.getElementById('solarStartDate').value = todayStr;
@@ -1446,6 +1916,8 @@
         document.getElementById('solarTools').value = '';
         document.getElementById('solarSafety').value = '';
         document.getElementById('solarColor').value = '#0f9d58';
+        document.getElementById('solarJobOrder').value = '';
+        document.getElementById('solarJOForm').classList.remove('show');
         document.getElementById('modalSolar').classList.add('show');
       } else if (type === 'flight') {
         document.getElementById('flightAirline').value = '';
@@ -1459,6 +1931,8 @@
         document.getElementById('flightPNR').value = '';
         document.getElementById('flightCost').value = '';
         document.getElementById('flightColor').value = '#db4437';
+        document.getElementById('flightJobOrder').value = '';
+        document.getElementById('flightJOForm').classList.remove('show');
         document.getElementById('modalFlight').classList.add('show');
       }
     }
@@ -1483,6 +1957,7 @@
         if (type === 'vehicle') {
           data = {
             booking_type: 'vehicle',
+            job_order_id: document.getElementById('vehJobOrder').value || null,
             resource_id: document.getElementById('vehSelect').value || null,
             title: document.getElementById('vehTitle').value,
             start_date: document.getElementById('vehStartDate').value,
@@ -1499,6 +1974,7 @@
         } else if (type === 'solar') {
           data = {
             booking_type: 'solar',
+            job_order_id: document.getElementById('solarJobOrder').value || null,
             resource_id: document.getElementById('solarTech').value || null,
             job_type: document.getElementById('solarJobType').value,
             site_name: document.getElementById('solarSite').value,
@@ -1520,6 +1996,7 @@
           const arrTime = document.getElementById('flightArrTime').value;
           data = {
             booking_type: 'flight',
+            job_order_id: document.getElementById('flightJobOrder').value || null,
             airline: document.getElementById('flightAirline').value,
             flight_number: document.getElementById('flightNumber').value,
             departure_airport: document.getElementById('flightDepAirport').value,
@@ -1579,6 +2056,7 @@
         document.getElementById('vehLocation').value = ev.location || '';
         document.getElementById('vehPassengers').value = ev.passengers || '1';
         document.getElementById('vehColor').value = ev.color || '#4285f4';
+        document.getElementById('vehJobOrder').value = ev.job_order_id || '';
         document.getElementById('modalVehicle').classList.add('show');
       } else if (ev.booking_type === 'solar') {
         document.getElementById('solarTech').value = ev.resource_id || '';
@@ -1596,6 +2074,7 @@
         if (ev.end_time) document.getElementById('solarEndTime').value = ev.end_time.slice(0, 5);
         document.getElementById('solarProject').value = ev.project_id || '';
         document.getElementById('solarColor').value = ev.color || '#0f9d58';
+        document.getElementById('solarJobOrder').value = ev.job_order_id || '';
         document.getElementById('modalSolar').classList.add('show');
       } else if (ev.booking_type === 'flight') {
         document.getElementById('flightAirline').value = ev.airline || '';
@@ -1617,6 +2096,7 @@
         document.getElementById('flightChannel').value = ev.booking_channel || 'direct';
         document.getElementById('flightProject').value = ev.project_id || '';
         document.getElementById('flightColor').value = ev.color || '#db4437';
+        document.getElementById('flightJobOrder').value = ev.job_order_id || '';
         document.getElementById('modalFlight').classList.add('show');
       }
     }
@@ -1644,10 +2124,215 @@
       }
     }
 
+    // ══════════════════════════════════
+    //  RESOURCE CARDS VIEW
+    // ══════════════════════════════════
+    function renderResourcesView(area) {
+      const todayStr = fmt(new Date());
+      let html = '';
+
+      // Vehicle section
+      if (vehicles.length) {
+        html += '<div class="res-section">';
+        html += '<div class="res-section-header">' + I.car + ' รถยนต์</div>';
+        html += '<div class="res-cards">';
+        vehicles.forEach(v => {
+          const vBookings = allBookings.filter(b => b.vehicle_id === v.id);
+          const upcoming = vBookings.filter(b => (b.start_date||'').slice(0,10) >= todayStr && !isCancelled(b)).length;
+          const completed = vBookings.filter(b => b.status === 'completed' || b.status === 'checked_in').length;
+          const statusColor = v.status === 'available' ? 'var(--success)' : v.status === 'maintenance' ? 'var(--danger)' : 'var(--warning)';
+          html += `<div class="res-card" onclick="filterByResource('vehicle',${v.id})">
+            <div class="res-card-top">
+              <div class="res-card-icon" style="background:rgba(66,133,244,0.1)">${I.car}</div>
+              <div class="res-card-info">
+                <h3>${v.name || '-'}</h3>
+                <span class="identifier">${v.plate_number || '-'}</span>
+              </div>
+            </div>
+            <div class="res-card-status">
+              <span><span class="res-status-dot" style="background:${statusColor}"></span>${(v.status || 'unknown').replace(/_/g,' ')}</span>
+              <span style="color:var(--text-muted)">${v.vehicle_type || ''}</span>
+            </div>
+            <div class="res-card-stats">
+              <div class="rs"><div class="val">${vBookings.length}</div><div class="lbl">ทั้งหมด</div></div>
+              <div class="rs"><div class="val" style="color:var(--primary)">${upcoming}</div><div class="lbl">กำลังมา</div></div>
+              <div class="rs"><div class="val" style="color:var(--success)">${completed}</div><div class="lbl">เสร็จสิ้น</div></div>
+            </div>
+          </div>`;
+        });
+        html += '</div></div>';
+      }
+
+      // Technician section
+      if (technicians.length) {
+        html += '<div class="res-section">';
+        html += '<div class="res-section-header">' + I.user + ' ช่าง</div>';
+        html += '<div class="res-cards">';
+        technicians.forEach(t => {
+          const tName = t.name || ((t.first_name||'') + ' ' + (t.last_name||'')).trim();
+          const tNick = t.nickname || t.first_name || '';
+          const tBookings = allBookings.filter(b => b.technician_id === t.id);
+          const upcoming = tBookings.filter(b => (b.start_date||'').slice(0,10) >= todayStr && !isCancelled(b)).length;
+          const completed = tBookings.filter(b => b.status === 'completed').length;
+          const statusColor = t.status === 'available' ? 'var(--success)' : t.status === 'on_job' ? 'var(--warning)' : 'var(--text-muted)';
+          html += `<div class="res-card" onclick="filterByResource('solar',${t.id})">
+            <div class="res-card-top">
+              <div class="res-card-icon" style="background:rgba(15,157,88,0.1)">${I.user}</div>
+              <div class="res-card-info">
+                <h3>${tName}</h3>
+                <span class="identifier">${tNick}</span>
+              </div>
+            </div>
+            <div class="res-card-status">
+              <span><span class="res-status-dot" style="background:${statusColor}"></span>${(t.status || 'unknown').replace(/_/g,' ')}</span>
+              <span style="color:var(--text-muted)">${t.specialization || ''}</span>
+            </div>
+            <div class="res-card-stats">
+              <div class="rs"><div class="val">${tBookings.length}</div><div class="lbl">ทั้งหมด</div></div>
+              <div class="rs"><div class="val" style="color:var(--primary)">${upcoming}</div><div class="lbl">กำลังมา</div></div>
+              <div class="rs"><div class="val" style="color:var(--success)">${completed}</div><div class="lbl">เสร็จสิ้น</div></div>
+            </div>
+          </div>`;
+        });
+        html += '</div></div>';
+      }
+
+      // Flight section (summary card)
+      const flightBookings = allBookings.filter(b => b.booking_type === 'flight');
+      if (flightBookings.length) {
+        html += '<div class="res-section">';
+        html += '<div class="res-section-header">' + I.plane + ' เที่ยวบิน</div>';
+        html += '<div class="res-cards">';
+        const upcomingF = flightBookings.filter(b => (b.start_date||'').slice(0,10) >= todayStr && !isCancelled(b)).length;
+        const completedF = flightBookings.filter(b => b.status === 'completed').length;
+        html += `<div class="res-card" onclick="filterByType('flight')">
+          <div class="res-card-top">
+            <div class="res-card-icon" style="background:rgba(219,68,55,0.1)">${I.plane}</div>
+            <div class="res-card-info">
+              <h3>เที่ยวบินทั้งหมด</h3>
+              <span class="identifier">Flights</span>
+            </div>
+          </div>
+          <div class="res-card-stats">
+            <div class="rs"><div class="val">${flightBookings.length}</div><div class="lbl">ทั้งหมด</div></div>
+            <div class="rs"><div class="val" style="color:var(--primary)">${upcomingF}</div><div class="lbl">กำลังมา</div></div>
+            <div class="rs"><div class="val" style="color:var(--success)">${completedF}</div><div class="lbl">เสร็จสิ้น</div></div>
+          </div>
+        </div>`;
+        html += '</div></div>';
+      }
+
+      if (!vehicles.length && !technicians.length && !flightBookings.length) {
+        html = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted)">ไม่มีทรัพยากร</div>';
+      }
+      area.innerHTML = html;
+    }
+
+    function filterByResource(type, resId) {
+      // Uncheck all type filters, check only matching type
+      document.querySelectorAll('[data-type]').forEach(cb => { cb.checked = cb.dataset.type === type; });
+      // Uncheck all resource filters, check only matching resource
+      document.querySelectorAll('[data-res]').forEach(cb => { cb.checked = String(cb.dataset.res) === String(resId); });
+      setView('month');
+    }
+
+    function filterByType(type) {
+      document.querySelectorAll('[data-type]').forEach(cb => { cb.checked = cb.dataset.type === type; });
+      document.querySelectorAll('[data-res]').forEach(cb => { cb.checked = true; });
+      setView('month');
+    }
+
+    // ══════════════════════════════════
+    //  BOARD / KANBAN VIEW
+    // ══════════════════════════════════
+    function renderBoardView(area) {
+      const columns = [
+        { key: 'checked_out', label: 'กำลังใช้', color: 'var(--primary)' },
+        { key: 'pending', label: 'รออนุมัติ', color: 'var(--warning, #f59e0b)' },
+        { key: 'approved', label: 'อนุมัติแล้ว', color: 'var(--info, #3b82f6)' },
+        { key: 'completed', label: 'เสร็จสิ้น', color: 'var(--success, #0f9d58)' },
+      ];
+
+      // Stats
+      const total = filteredBookings.length;
+      const inUse = filteredBookings.filter(b => b.status === 'checked_out').length;
+      const pending = filteredBookings.filter(b => b.status === 'pending').length;
+      const approved = filteredBookings.filter(b => b.status === 'approved' || b.status === 'confirmed').length;
+      const done = filteredBookings.filter(b => b.status === 'completed' || b.status === 'checked_in').length;
+
+      let html = '<div class="bk-stats">';
+      html += `<div class="bk-stat"><div class="val">${total}</div><div class="lbl">ทั้งหมด</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:var(--primary)">${inUse}</div><div class="lbl">กำลังใช้</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:var(--warning,#f59e0b)">${pending}</div><div class="lbl">รออนุมัติ</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:var(--info,#3b82f6)">${approved}</div><div class="lbl">อนุมัติแล้ว</div></div>`;
+      html += `<div class="bk-stat"><div class="val" style="color:var(--success,#0f9d58)">${done}</div><div class="lbl">เสร็จสิ้น</div></div>`;
+      html += '</div>';
+
+      // Kanban columns
+      html += '<div class="bk-board">';
+      columns.forEach(col => {
+        const colItems = filteredBookings.filter(b => {
+          if (col.key === 'completed') return b.status === 'completed' || b.status === 'checked_in';
+          if (col.key === 'approved') return b.status === 'approved' || b.status === 'confirmed';
+          return b.status === col.key;
+        });
+
+        html += `<div class="bk-col">
+          <div class="bk-col-header">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="col-dot" style="background:${col.color}"></div> ${col.label}
+            </div>
+            <span style="font-size:12px;color:var(--text-muted)">${colItems.length}</span>
+          </div>
+          <div class="bk-col-body">`;
+
+        if (colItems.length) {
+          colItems.forEach(ev => {
+            const c = evColor(ev);
+            const dateRange = fmtThaiShort(ev.start_date) + ' - ' + fmtThaiShort(ev.end_date);
+            html += `<div class="bk-card" style="border-left:3px solid ${c}" onclick="showEventPopup(${ev.id})">
+              <div class="bk-card-title">${TYPE_ICONS[ev.booking_type]||''} ${ev.title || 'Untitled'}</div>
+              <div class="bk-card-res">${ev.resource_name || '-'}</div>
+              <div class="bk-card-meta">
+                <span>${dateRange}</span>
+                ${ev.booked_by_name || ev.booked_by ? '<span>' + (ev.booked_by_name || ev.booked_by) + '</span>' : ''}
+                ${ev.purpose ? '<span style="color:var(--text-muted);font-size:10px">' + ev.purpose + '</span>' : ''}
+              </div>
+            </div>`;
+          });
+        } else {
+          html += '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">ไม่มีรายการ</div>';
+        }
+        html += '</div></div>';
+      });
+      html += '</div>';
+      area.innerHTML = html;
+    }
+
+    function fmtThaiShort(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+    }
+
     // ── Init ──
+    function initIcons() {
+      if (typeof I === 'undefined') return;
+      // Page header
+      const hdr = document.getElementById('hdrIcon');
+      if (hdr) hdr.innerHTML = I.calendar;
+      // data-icon placeholders
+      document.querySelectorAll('[data-icon]').forEach(el => {
+        const key = el.dataset.icon;
+        if (I[key]) el.innerHTML = I[key];
+      });
+    }
+
     if (API.requireAuth()) {
       loadResources();
       refreshAll();
+      initIcons();
     }
   </script>
 </body>

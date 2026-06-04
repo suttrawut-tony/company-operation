@@ -70,6 +70,7 @@ app.use('/api/master',        require('./routes/masterdata'));
 app.use('/api/modules',       require('./routes/modules'));
 app.use('/api/subscription',  require('./routes/subscription'));
 app.use('/api/bookings',      require('./routes/bookings'));
+app.use('/api/job-orders',    require('./routes/job-orders'));
 app.use('/api/technicians',   require('./routes/technicians'));
 app.use('/api/admin',         require('./routes/admin'));
 
