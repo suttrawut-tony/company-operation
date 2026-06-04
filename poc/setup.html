@@ -319,6 +319,7 @@
 <script>
 // ─── Settings Sections Definition ───
 const SECTIONS = [
+  { id: 'subscription',   label: 'Subscription & Billing',icon: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>' },
   { id: 'modules',        label: 'Module Management',    icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>' },
   { id: 'company',        label: 'Company Profile',      icon: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>' },
   { id: 'approval',       label: 'Approval Matrix',      icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
@@ -356,6 +357,7 @@ function switchSection(id) {
   document.querySelector(`.settings-nav-item[onclick*="${id}"]`)?.classList.add('active');
   document.querySelectorAll('.setup-section').forEach(el => el.classList.remove('active'));
   document.getElementById(`section-${id}`)?.classList.add('active');
+  if (id === 'subscription') loadSubscriptionUI();
   if (id === 'modules') loadModuleTable();
 }
 
@@ -363,6 +365,7 @@ function switchSection(id) {
 function renderSettingsContent() {
   const container = document.getElementById('settingsContent');
   container.innerHTML = `
+    ${renderSubscriptionSection()}
     ${renderModuleManagement()}
     ${renderCompanyProfile()}
     ${renderApprovalMatrix()}
@@ -378,13 +381,110 @@ function renderSettingsContent() {
 }
 
 // ═══════════════════════════════════════
+// Subscription & Billing
+// ═══════════════════════════════════════
+function renderSubscriptionSection() {
+  return `
+  <div class="setup-section${activeSection === 'subscription' ? ' active' : ''}" id="section-subscription">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS[0].icon, 20)} Subscription & Billing</h2>
+      <p>จัดการแพลน การชำระเงิน และดูการใช้งาน</p>
+    </div>
+    <div id="sub-content"><div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div></div>
+  </div>`;
+}
+
+async function loadSubscriptionUI() {
+  const el = document.getElementById('sub-content');
+  if (!el) return;
+  try {
+    const data = await API.get('/subscription');
+    const sub = data.subscription;
+    if (!sub) { el.innerHTML = '<div style="padding:20px;color:var(--text-muted);">No subscription</div>'; return; }
+
+    const usage = data.usage || {};
+    const usageBar = (label, u) => {
+      if (!u) return '';
+      const pct = u.limit ? Math.min(100, Math.round(u.current / u.limit * 100)) : 0;
+      const color = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warning)' : 'var(--success)';
+      return `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>${label}</span><span style="font-weight:600;">${u.current}${u.limit ? '/'+u.limit : ''}</span></div><div style="height:8px;background:var(--bg-hover);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${color};border-radius:4px;"></div></div></div>`;
+    };
+
+    const statusBadge = (s) => {
+      const c = {active:'success',trial:'primary',past_due:'warning',cancelled:'danger',suspended:'danger',expired:'danger'}[s]||'gray';
+      return '<span class="badge badge-'+c+'" style="font-size:11px;">'+s+'</span>';
+    };
+
+    let trialInfo = '';
+    if (sub.status === 'trial' && sub.trial_ends_at) {
+      const days = Math.max(0, Math.ceil((new Date(sub.trial_ends_at) - new Date()) / 86400000));
+      trialInfo = '<div style="background:var(--primary-light);padding:12px;border-radius:var(--radius);margin-bottom:16px;font-size:13px;color:var(--primary);font-weight:600;">ทดลองใช้ฟรี — เหลืออีก '+days+' วัน</div>';
+    }
+
+    el.innerHTML = `
+      ${trialInfo}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="card"><div class="card-body">
+          <div style="font-size:12px;color:var(--text-muted);">แพลนปัจจุบัน</div>
+          <div style="font-size:20px;font-weight:800;margin:4px 0;">${sub.plan_display || sub.plan_name}</div>
+          ${statusBadge(sub.status)}
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">
+            ${sub.billing_cycle === 'yearly' ? 'รายปี' : 'รายเดือน'} — ฿${Number(sub.amount||0).toLocaleString()}
+            ${sub.next_billing_date ? '<br>ต่ออายุ: '+sub.next_billing_date : ''}
+          </div>
+          <div style="margin-top:12px;display:flex;gap:6px;">
+            <button class="btn btn-primary btn-sm" onclick="window.open('pricing.html','_blank')">อัปเกรด</button>
+            ${sub.status==='active'||sub.status==='trial' ? '<button class="btn btn-sm" style="background:var(--danger-bg);color:var(--danger);" onclick="cancelSub()">ยกเลิก</button>' : ''}
+            ${sub.cancelled_at ? '<button class="btn btn-sm btn-success" onclick="reactivateSub()">เปิดใช้อีกครั้ง</button>' : ''}
+          </div>
+        </div></div>
+        <div class="card"><div class="card-body">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">การใช้งาน</div>
+          ${usageBar('ผู้ใช้', usage.users)}
+          ${usageBar('โปรเจกต์', usage.projects)}
+          ${usageBar('พื้นที่', usage.storage_mb ? {current: Math.round(usage.storage_mb.current/1024*10)/10, limit: Math.round(usage.storage_mb.limit/1024)} : null)}
+        </div></div>
+      </div>
+      <div class="card"><div class="card-header"><h2>ประวัติบิล</h2></div><div class="card-body" style="padding:0;">
+        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+          <thead><tr style="background:var(--bg-light);"><th style="padding:8px;text-align:left;">Invoice</th><th>รอบบิล</th><th style="text-align:right;">ยอด</th><th>สถานะ</th></tr></thead>
+          <tbody>${(data.invoices||[]).map(inv => `<tr style="border-bottom:1px solid var(--border-light);">
+            <td style="padding:6px 8px;font-weight:600;">${inv.invoice_number||'-'}</td>
+            <td style="padding:6px;">${inv.billing_period_start||''} — ${inv.billing_period_end||''}</td>
+            <td style="padding:6px;text-align:right;">฿${Number(inv.total||0).toLocaleString()}</td>
+            <td style="padding:6px;">${statusBadge(inv.status)}</td>
+          </tr>`).join('') || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text-muted);">ยังไม่มีบิล</td></tr>'}</tbody>
+        </table>
+      </div></div>`;
+  } catch(e) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Error: '+e.message+'</div>'; }
+}
+
+async function cancelSub() {
+  const reason = prompt('เหตุผลที่ยกเลิก (ไม่บังคับ):');
+  if (reason === null) return;
+  try {
+    await API.post('/subscription/cancel', { reason });
+    loadSubscriptionUI();
+    if (typeof showToast === 'function') showToast('ยกเลิกแล้ว', 'warning');
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+async function reactivateSub() {
+  try {
+    await API.post('/subscription/reactivate');
+    loadSubscriptionUI();
+    if (typeof showToast === 'function') showToast('เปิดใช้งานอีกครั้งแล้ว', 'success');
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+// ═══════════════════════════════════════
 // 0. Module Management
 // ═══════════════════════════════════════
 function renderModuleManagement() {
   return `
   <div class="setup-section${activeSection === 'modules' ? ' active' : ''}" id="section-modules">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[0].icon, 20)} Module Management</h2>
+      <h2>${sIcon(SECTIONS[1].icon, 20)} Module Management</h2>
       <p>เปิด-ปิด Module ควบคุม Sidebar และสิทธิ์การเข้าถึง</p>
     </div>
     <div style="margin-bottom:12px;display:flex;gap:8px;">
@@ -529,7 +629,7 @@ function renderCompanyProfile() {
   return `
   <div class="setup-section active" id="section-company">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[1].icon, 20)} Company Profile</h2>
+      <h2>${sIcon(SECTIONS[2].icon, 20)} Company Profile</h2>
       <p>General information about your organization</p>
     </div>
     <div class="card">
@@ -602,7 +702,7 @@ function renderApprovalMatrix() {
   return `
   <div class="setup-section" id="section-approval">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[2].icon, 20)} Approval Matrix</h2>
+      <h2>${sIcon(SECTIONS[3].icon, 20)} Approval Matrix</h2>
       <p>Configure approval workflows by document type and amount range</p>
     </div>
     ${docTypes.map(dt => `
@@ -662,7 +762,7 @@ function renderDocNumbering() {
   return `
   <div class="setup-section" id="section-numbering">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[3].icon, 20)} Document Numbering</h2>
+      <h2>${sIcon(SECTIONS[4].icon, 20)} Document Numbering</h2>
       <p>Number series configuration for each document type</p>
     </div>
     <div class="card">
@@ -743,7 +843,7 @@ function renderCOA() {
   return `
   <div class="setup-section" id="section-coa">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[4].icon, 20)} Chart of Accounts</h2>
+      <h2>${sIcon(SECTIONS[5].icon, 20)} Chart of Accounts</h2>
       <p>GL mapping reference from SAP Business One blueprint</p>
     </div>
     ${categories.map(cat => `
@@ -782,7 +882,7 @@ function renderSAPConnection() {
   return `
   <div class="setup-section" id="section-sap">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[5].icon, 20)} SAP B1 Connection</h2>
+      <h2>${sIcon(SECTIONS[6].icon, 20)} SAP B1 Connection</h2>
       <p>Service Layer integration settings</p>
     </div>
     <div class="card">
@@ -879,7 +979,7 @@ function renderTaxCodes() {
   return `
   <div class="setup-section" id="section-tax">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[6].icon, 20)} Tax Codes</h2>
+      <h2>${sIcon(SECTIONS[7].icon, 20)} Tax Codes</h2>
       <p>VAT and withholding tax codes from SAP Blueprint</p>
     </div>
     ${taxTable('Input Tax (VAT)', inputTax, 'info')}
@@ -907,7 +1007,7 @@ function renderWarehouses() {
   return `
   <div class="setup-section" id="section-warehouse">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[7].icon, 20)} Warehouses</h2>
+      <h2>${sIcon(SECTIONS[8].icon, 20)} Warehouses</h2>
       <p>Warehouse locations configured in SAP Business One</p>
     </div>
     <div class="card">
@@ -950,7 +1050,7 @@ function renderPaymentTerms() {
   return `
   <div class="setup-section" id="section-payment">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[8].icon, 20)} Payment Terms</h2>
+      <h2>${sIcon(SECTIONS[9].icon, 20)} Payment Terms</h2>
       <p>Standard payment terms for vendor and customer transactions</p>
     </div>
     <div class="card">
@@ -988,7 +1088,7 @@ function renderOTRatePolicy() {
   return `
   <div class="setup-section" id="section-ot-rate">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[9].icon, 20)} OT Rate Policy</h2>
+      <h2>${sIcon(SECTIONS[10].icon, 20)} OT Rate Policy</h2>
       <p>Overtime calculation multipliers and daily limits</p>
     </div>
     <div class="card">
@@ -1030,7 +1130,7 @@ function renderNotifications() {
   return `
   <div class="setup-section" id="section-notifications">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[10].icon, 20)} Notifications</h2>
+      <h2>${sIcon(SECTIONS[11].icon, 20)} Notifications</h2>
       <p>Configure notification channels and integrations</p>
     </div>
 

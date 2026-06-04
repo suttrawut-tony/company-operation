@@ -251,6 +251,33 @@ function renderTopNav() {
 }
 
 // Hide old tabbar
+// Subscription warning banners
+async function checkSubscriptionBanner() {
+  try {
+    const token = localStorage.getItem('sda_token');
+    if (!token) return;
+    const resp = await fetch('/api/subscription', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const sub = data.subscription;
+    if (!sub) return;
+    let banner = document.getElementById('sub-banner');
+    if (!banner) { banner = document.createElement('div'); banner.id = 'sub-banner'; document.body.prepend(banner); }
+
+    if (sub.status === 'trial' && sub.trial_ends_at) {
+      const days = Math.max(0, Math.ceil((new Date(sub.trial_ends_at) - new Date()) / 86400000));
+      banner.style.cssText = 'background:var(--primary);color:white;text-align:center;padding:8px;font-size:12px;font-weight:600;';
+      banner.innerHTML = `ทดลองใช้ฟรี — เหลืออีก ${days} วัน <a href="setup.html#subscription" style="color:white;text-decoration:underline;margin-left:8px;">เลือกแพลน</a>`;
+    } else if (sub.status === 'past_due') {
+      banner.style.cssText = 'background:var(--danger);color:white;text-align:center;padding:8px;font-size:12px;font-weight:600;';
+      banner.innerHTML = `มียอดค้างชำระ กรุณาชำระเงิน <a href="setup.html#subscription" style="color:white;text-decoration:underline;margin-left:8px;">ชำระเงิน</a>`;
+    } else if (sub.status === 'expired') {
+      banner.style.cssText = 'background:var(--danger);color:white;text-align:center;padding:8px;font-size:12px;font-weight:600;';
+      banner.innerHTML = `Subscription หมดอายุ <a href="setup.html#subscription" style="color:white;text-decoration:underline;margin-left:8px;">ต่ออายุ</a>`;
+    } else { banner.style.display = 'none'; }
+  } catch(e) {}
+}
+
 function renderTabBar() {
   const el = document.getElementById('tabbar');
   if (el) el.style.display = 'none';
@@ -423,4 +450,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadNotifications();
   setTimeout(checkChangelogBadge, 500);
   setTimeout(checkModuleAccess, 300);
+  setTimeout(checkSubscriptionBanner, 600);
 });

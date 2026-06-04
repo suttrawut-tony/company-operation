@@ -68,6 +68,8 @@ app.use('/api/sap',           require('./routes/sap'));
 app.use('/api/quotes',        require('./routes/quotes'));
 app.use('/api/master',        require('./routes/masterdata'));
 app.use('/api/modules',       require('./routes/modules'));
+app.use('/api/subscription',  require('./routes/subscription'));
+app.use('/api/admin',         require('./routes/admin'));
 
 // Health check — includes a DB ping so monitoring sees real status
 app.get('/api/health', async (req, res) => {
@@ -175,11 +177,15 @@ const { runAll: runMigrations } = require('./migrate');
   const cron = require('node-cron');
   const { checkAdvanceOverdue } = require('./cron/advance-overdue');
   const { checkVehicleAlerts } = require('./cron/vehicle-alerts');
+  const { checkSubscriptions } = require('./cron/subscription');
   cron.schedule('3 8 * * *', () => {
     checkAdvanceOverdue().catch(err => console.error('[cron] advance-overdue failed:', err.message));
   }, { timezone: 'Asia/Bangkok' });
   cron.schedule('5 8 * * *', () => {
     checkVehicleAlerts().catch(err => console.error('[cron] vehicle-alerts failed:', err.message));
   }, { timezone: 'Asia/Bangkok' });
-  console.log('[boot] cron: advance-overdue 08:03, vehicle-alerts 08:05 (Asia/Bangkok)');
+  cron.schedule('1 0 * * *', () => {
+    checkSubscriptions().catch(err => console.error('[cron] subscription failed:', err.message));
+  }, { timezone: 'Asia/Bangkok' });
+  console.log('[boot] cron: subscription 00:01, advance-overdue 08:03, vehicle-alerts 08:05 (Asia/Bangkok)');
 })();
