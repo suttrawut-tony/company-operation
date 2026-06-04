@@ -67,6 +67,8 @@ const NAV_GROUPS = [
       { id: 'pr-po',          label: 'PR / PO',        icon: ICONS.prpo,      href: 'pr-po.html' },
       { id: 'advance',        label: 'Advance',        icon: ICONS.advance,   href: 'advance.html' },
       { id: 'petty-cash',     label: 'Petty Cash',     icon: ICONS.pettyCash, href: 'petty-cash.html' },
+      { id: 'expense',        label: 'Expense',        icon: ICONS.expense,   href: 'expense.html' },
+      { id: 'travel',         label: 'Travel',         icon: ICONS.travel,    href: 'travel.html' },
     ]
   },
   {
