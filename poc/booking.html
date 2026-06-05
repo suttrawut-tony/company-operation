@@ -467,6 +467,14 @@
       display: inline-flex; vertical-align: middle;
     }
     .jo-badge svg { width: 14px; height: 14px; }
+    /* Team chips */
+    .team-chip { display:inline-flex; align-items:center; gap:4px; background:var(--bg-light); border:1px solid var(--border); border-radius:999px; padding:4px 8px 4px 6px; font-size:12px; font-weight:500; }
+    .team-chip-lead { background:var(--primary-light); border-color:var(--primary); color:var(--primary); }
+    .team-chip-star { cursor:pointer; font-size:13px; line-height:1; color:var(--text-muted); }
+    .team-chip-lead .team-chip-star { color:#f59e0b; }
+    .team-chip-name { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .team-chip-remove { border:none; background:none; font-size:15px; line-height:1; cursor:pointer; color:var(--text-muted); padding:0 2px; border-radius:50%; }
+    .team-chip-remove:hover { color:var(--danger); background:rgba(239,68,68,0.1); }
 
     /* ── Quick Popup (Google Calendar style) ── */
     .qp-backdrop {
@@ -892,16 +900,7 @@
               <label>อุปกรณ์/เครื่องมือที่ต้องใช้</label>
               <input type="text" id="vehJOTools" placeholder="เช่น Multimeter, Clamp meter, สว่าน">
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>วันเริ่มต้น</label>
-                <input type="date" id="vehJOStart">
-              </div>
-              <div class="form-group">
-                <label>วันสิ้นสุด</label>
-                <input type="date" id="vehJOEnd">
-              </div>
-            </div>
+            <div class="form-group" style="background:var(--bg-light);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border-light)"><span style="font-size:12px;color:var(--text-secondary)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>วันที่ใช้ตามวันที่จอง (Booking) ด้านล่าง</span></div>
             <div class="jo-inline-footer">
               <button class="btn-sm" onclick="toggleJOForm('vehicle')">ยกเลิก</button>
               <button class="btn-sm btn-primary" onclick="saveInlineJO('vehicle')">บันทึกใบสั่งงาน</button>
@@ -1039,16 +1038,7 @@
               <label>อุปกรณ์/เครื่องมือที่ต้องใช้</label>
               <input type="text" id="solarJOTools" placeholder="เช่น Multimeter, Clamp meter, สว่าน">
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>วันเริ่มต้น</label>
-                <input type="date" id="solarJOStart">
-              </div>
-              <div class="form-group">
-                <label>วันสิ้นสุด</label>
-                <input type="date" id="solarJOEnd">
-              </div>
-            </div>
+            <div class="form-group" style="background:var(--bg-light);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border-light)"><span style="font-size:12px;color:var(--text-secondary)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>วันที่ใช้ตามวันที่จอง (Booking) ด้านล่าง</span></div>
             <div class="jo-inline-footer">
               <button class="btn-sm" onclick="toggleJOForm('solar')">ยกเลิก</button>
               <button class="btn-sm btn-primary" onclick="saveInlineJO('solar')">บันทึกใบสั่งงาน</button>
@@ -1076,12 +1066,12 @@
           </div>
         </div>
         <div class="form-group">
-          <label>ช่างหลัก</label>
-          <select id="solarTech"></select>
-        </div>
-        <div class="form-group">
-          <label>ทีมช่างสำรวจ (เลือกหลายคนได้)</label>
-          <div id="solarTeamCheckboxes" style="max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px"></div>
+          <label>ทีมงาน</label>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <select id="solarTechSelect" style="flex:1"><option value="">-- เลือกช่าง/พนักงาน --</option></select>
+            <button type="button" class="btn-sm btn-primary" onclick="addTeamMember()" style="white-space:nowrap;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> เพิ่ม</button>
+          </div>
+          <div id="solarTeamChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"><span style="font-size:12px;color:var(--text-muted);padding:4px 0">ยังไม่ได้เลือกทีมงาน</span></div>
         </div>
         <!-- REMOVED: solarSite, solarCapacity, solarTools, solarSafety — moved to JO form -->
         <div class="form-group">
@@ -1297,16 +1287,7 @@
               <label>อุปกรณ์/เครื่องมือที่ต้องใช้</label>
               <input type="text" id="flightJOTools" placeholder="เช่น Multimeter, Clamp meter, สว่าน">
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>วันเริ่มต้น</label>
-                <input type="date" id="flightJOStart">
-              </div>
-              <div class="form-group">
-                <label>วันสิ้นสุด</label>
-                <input type="date" id="flightJOEnd">
-              </div>
-            </div>
+            <div class="form-group" style="background:var(--bg-light);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border-light)"><span style="font-size:12px;color:var(--text-secondary)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>วันที่ใช้ตามวันที่จอง (Booking) ด้านล่าง</span></div>
             <div class="jo-inline-footer">
               <button class="btn-sm" onclick="toggleJOForm('flight')">ยกเลิก</button>
               <button class="btn-sm btn-primary" onclick="saveInlineJO('flight')">บันทึกใบสั่งงาน</button>
@@ -1481,11 +1462,7 @@
       const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
       const form = document.getElementById(prefix + 'JOForm');
       form.classList.toggle('show');
-      if (form.classList.contains('show')) {
-        const todayStr = fmt(new Date());
-        document.getElementById(prefix + 'JOStart').value = todayStr;
-        document.getElementById(prefix + 'JOEnd').value = todayStr;
-      }
+      // JO dates auto-synced from booking — no date fields to fill
     }
 
     async function approveJO(type) {
@@ -1545,14 +1522,14 @@
         required_tools: document.getElementById(prefix + 'JOTools').value,
         latitude: document.getElementById(prefix + 'JOLat').value || null,
         longitude: document.getElementById(prefix + 'JOLng').value || null,
-        planned_start: document.getElementById(prefix + 'JOStart').value,
-        planned_end: document.getElementById(prefix + 'JOEnd').value,
+        planned_start: getBookingDate(type, 'start'),
+        planned_end: getBookingDate(type, 'end'),
         needs_vehicle: type === 'vehicle',
         needs_technician: type === 'solar',
         needs_flight: type === 'flight',
       };
       if (!data.planned_start || !data.planned_end) {
-        typeof showToast === 'function' ? showToast('กรุณาระบุวันเริ่ม-สิ้นสุด','error') : alert('กรุณาระบุวัน');
+        typeof showToast === 'function' ? showToast('กรุณาระบุวันที่จองด้านล่างก่อน','error') : alert('กรุณาระบุวันที่จองก่อน');
         return;
       }
       try {
@@ -1832,22 +1809,14 @@
         vs.innerHTML += `<option value="${v.id}"${disabled}>${label.trim()}${disabled ? ' (ไม่พร้อมใช้)' : ''}</option>`;
       });
 
-      // Technicians
-      const ts = document.getElementById('solarTech');
-      ts.innerHTML = '<option value="">-- เลือกช่าง --</option>';
-      technicians.forEach(t => {
-        const label = t.name || ((t.first_name || '') + ' ' + (t.last_name || '')).trim();
-        ts.innerHTML += `<option value="${t.id}">${label}</option>`;
-      });
-      // Team checkboxes
-      const teamDiv = document.getElementById('solarTeamCheckboxes');
-      if (teamDiv) {
-        teamDiv.innerHTML = technicians.map(t => {
+      // Technicians — single dropdown for chip-based team selection
+      const ts = document.getElementById('solarTechSelect');
+      if (ts) {
+        ts.innerHTML = '<option value="">-- เลือกช่าง/พนักงาน --</option>';
+        technicians.forEach(t => {
           const label = t.nickname || t.name || ((t.first_name||'')+' '+(t.last_name||'')).trim();
-          return `<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;cursor:pointer">
-            <input type="checkbox" value="${t.id}" class="solar-team-cb"> ${label}
-          </label>`;
-        }).join('');
+          ts.innerHTML += `<option value="${t.id}">${label}</option>`;
+        });
       }
 
       // Projects in all 3 modals
@@ -2347,7 +2316,7 @@
         document.getElementById('solarEndTime').value = '17:00';
         toggleSolarTime();
         document.getElementById('solarPhase').value = 'survey';
-        document.querySelectorAll('.solar-team-cb').forEach(cb => cb.checked = false);
+        selectedTeam = []; renderTeamChips();
         document.getElementById('solarDesc').value = '';
         document.getElementById('solarColor').value = '#0f9d58';
         document.getElementById('solarJobOrder').value = '';
@@ -2465,8 +2434,50 @@
       document.getElementById('solarJobType').value = phase === 'survey' ? 'survey' : 'installation';
     }
 
-    function getSelectedTeam() {
-      return [...document.querySelectorAll('.solar-team-cb:checked')].map(cb => cb.value);
+    // ═══ Team Member Management (chip-based) ═══
+    let selectedTeam = [];
+
+    function addTeamMember() {
+      const sel = document.getElementById('solarTechSelect');
+      const id = sel.value;
+      if (!id) { typeof showToast==='function' && showToast('กรุณาเลือกช่าง/พนักงาน','warning'); return; }
+      if (selectedTeam.find(t=>t.id===id)) { typeof showToast==='function' && showToast('เลือกคนนี้แล้ว','warning'); return; }
+      const tech = technicians.find(t=>t.id===id);
+      if (!tech) return;
+      const name = tech.nickname || tech.name || ((tech.first_name||'')+' '+(tech.last_name||'')).trim();
+      selectedTeam.push({ id, name, isLead: selectedTeam.length===0 });
+      sel.value = '';
+      renderTeamChips();
+    }
+
+    function removeTeamMember(id) {
+      selectedTeam = selectedTeam.filter(t=>t.id!==id);
+      if (selectedTeam.length>0 && !selectedTeam.find(t=>t.isLead)) selectedTeam[0].isLead=true;
+      renderTeamChips();
+    }
+
+    function toggleLead(id) {
+      selectedTeam.forEach(t=>t.isLead=(t.id===id));
+      renderTeamChips();
+    }
+
+    function renderTeamChips() {
+      const el = document.getElementById('solarTeamChips');
+      if (!el) return;
+      if (!selectedTeam.length) { el.innerHTML='<span style="font-size:12px;color:var(--text-muted);padding:4px 0">ยังไม่ได้เลือกทีมงาน</span>'; return; }
+      el.innerHTML = selectedTeam.map(t=>`<div class="team-chip${t.isLead?' team-chip-lead':''}"><span class="team-chip-star" onclick="toggleLead('${t.id}')">${t.isLead?'★':'☆'}</span><span class="team-chip-name">${t.name}</span><button type="button" class="team-chip-remove" onclick="removeTeamMember('${t.id}')">&times;</button></div>`).join('');
+    }
+
+    function getSelectedTeam() { return selectedTeam.map(t=>t.id); }
+    function getTeamLead() { const lead=selectedTeam.find(t=>t.isLead); return lead?lead.id:null; }
+
+    // ═══ JO Date Sync from Booking ═══
+    function getBookingDate(type, startOrEnd) {
+      const map = { vehicle:{start:'vehStartDate',end:'vehEndDate'}, solar:{start:'solarStartDate',end:'solarEndDate'}, flight:{start:'flightDepTime',end:'flightArrTime'} };
+      const fieldId = map[type]?.[startOrEnd];
+      if (!fieldId) return '';
+      const val = document.getElementById(fieldId)?.value || '';
+      return (type==='flight' && val.includes('T')) ? val.slice(0,10) : val;
     }
 
     // FIX: Add validation + double-submit protection
@@ -2498,7 +2509,7 @@
             booking_type: 'solar',
             phase: phase,
             job_order_id: document.getElementById('solarJobOrder').value || null,
-            technician_id: document.getElementById('solarTech').value || null,
+            technician_id: getTeamLead(),
             job_type: document.getElementById('solarJobType').value,
             description: document.getElementById('solarDesc').value,
             start_date: document.getElementById('solarStartDate').value,
@@ -2519,7 +2530,7 @@
             survey_photos: document.getElementById('solarPhotos').value || null,
             survey_notes: document.getElementById('solarSurveyNotes').value || null,
             electrical_info: document.getElementById('solarElecInfo').value || null,
-            participants: getSelectedTeam().map(id => ({ user_id: null, name: (technicians.find(t=>t.id===id)||{}).nickname || '', role: 'technician' })),
+            participants: selectedTeam.map(t => ({ user_id: null, name: t.name, role: t.isLead ? 'lead' : 'technician' })),
           };
         } else if (type === 'flight') {
           const depTime = document.getElementById('flightDepTime').value;
@@ -2608,7 +2619,13 @@
         document.getElementById('modalVehicle').classList.add('show');
       } else if (ev.booking_type === 'solar') {
         // FIX: use technician_id not resource_id
-        document.getElementById('solarTech').value = ev.technician_id || '';
+        // Restore team — add lead technician as first member
+        selectedTeam = [];
+        if (ev.technician_id) {
+          const tech = technicians.find(t=>t.id===ev.technician_id);
+          if (tech) selectedTeam.push({ id: tech.id, name: tech.nickname||tech.name||((tech.first_name||'')+' '+(tech.last_name||'')).trim(), isLead: true });
+        }
+        renderTeamChips();
         document.getElementById('solarPhase').value = ev.phase || 'survey';
         document.getElementById('solarJobType').value = ev.job_type || 'survey';
         // REMOVED: solarSite/Capacity/Tools/Safety — moved to JO form
