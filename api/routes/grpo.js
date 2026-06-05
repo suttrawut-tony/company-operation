@@ -155,4 +155,21 @@ router.post('/:id/cancel', async (req, res) => {
   }
 });
 
+// FIXED: Added PUT /:id for editing draft GRPO
+router.put('/:id', async (req, res) => {
+  try {
+    const { rows: [grpo] } = await db.query('SELECT * FROM goods_receipts WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!grpo) return res.status(404).json({ error: 'Not found' });
+    if (grpo.status !== 'draft') return res.status(400).json({ error: 'Can only edit draft GRPO' });
+    const allowed = ['remarks','received_date','warehouse_code'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of allowed) { if (req.body[f] !== undefined) { sets.push(`${f}=$${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at=NOW()');
+    params.push(req.params.id);
+    const { rows } = await db.query(`UPDATE goods_receipts SET ${sets.join(',')} WHERE id=$${idx} RETURNING *`, params);
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

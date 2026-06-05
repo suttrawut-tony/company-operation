@@ -117,4 +117,24 @@ router.delete('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// FIXED: Added GET /:id
+router.get('/:id', async (req, res) => {
+  try {
+    const { rows: [ot] } = await db.query('SELECT * FROM ot_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!ot) return res.status(404).json({ error: 'Not found' });
+    res.json(ot);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// FIXED: Added POST /:id/reject
+router.post('/:id/reject', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      "UPDATE ot_requests SET status='rejected', updated_at=NOW() WHERE id=$1 AND company_id=$2 AND status LIKE 'pending_%' RETURNING *",
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(400).json({ error: 'Cannot reject' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

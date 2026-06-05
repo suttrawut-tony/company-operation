@@ -120,4 +120,28 @@ router.post('/:id/reject', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// FIXED: Added PUT /:id
+router.put('/:id', async (req, res) => {
+  try {
+    const allowed = ['vendor_name','amount','currency','validity_days','delivery_days','notes','status'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of allowed) { if (req.body[f] !== undefined) { sets.push(`${f}=$${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at=NOW()');
+    params.push(req.params.id);
+    const { rows } = await db.query(`UPDATE vendor_quotes SET ${sets.join(',')} WHERE id=$${idx} RETURNING *`, params);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// FIXED: Added DELETE /:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const { rows } = await db.query("UPDATE vendor_quotes SET status='cancelled' WHERE id=$1 RETURNING *", [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json({ deleted: true, ...rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
