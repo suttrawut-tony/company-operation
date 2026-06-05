@@ -475,31 +475,67 @@
     .team-chip-name { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .team-chip-remove { border:none; background:none; font-size:15px; line-height:1; cursor:pointer; color:var(--text-muted); padding:0 2px; border-radius:50%; }
     .team-chip-remove:hover { color:var(--danger); background:rgba(239,68,68,0.1); }
-    /* GPS Picker v2 */
-    .gps-method-btn { display:flex; align-items:center; gap:12px; width:100%; padding:14px 16px; margin-bottom:12px; background:var(--bg-white); border:1.5px solid var(--border); border-radius:12px; cursor:pointer; transition:all 0.2s; text-align:left; font-family:inherit; }
-    .gps-method-btn:hover { border-color:var(--primary); background:rgba(79,110,247,0.04); transform:translateY(-1px); box-shadow:var(--shadow-sm); }
-    .gps-method-btn:disabled { opacity:0.6; cursor:wait; }
-    .gps-method-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .gps-method-title { font-size:13px; font-weight:600; color:var(--text-primary); }
-    .gps-method-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
-    .gps-divider { display:flex; align-items:center; gap:12px; margin:16px 0; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
-    .gps-divider::before,.gps-divider::after { content:''; flex:1; height:1px; background:var(--border-light); }
-    .gps-section { margin-bottom:16px; }
-    .gps-section-label { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
-    .gps-paste-input { font-size:13px!important; padding:10px 14px!important; border-radius:12px!important; }
-    .gps-hint { font-size:11px; color:var(--text-muted); margin-top:8px; padding:8px 12px; background:var(--bg-light); border-radius:8px; line-height:1.6; }
-    .gps-hint strong { color:var(--text-secondary); }
-    .gps-open-maps-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:10px; margin-top:10px; background:var(--bg-white); border:1.5px dashed var(--border); border-radius:12px; cursor:pointer; font-size:13px; font-weight:500; color:var(--primary); font-family:inherit; transition:all 0.15s; }
-    .gps-open-maps-btn:hover { border-color:var(--primary); background:rgba(79,110,247,0.04); }
-    .gps-preview { margin-top:16px; border:1.5px solid var(--border); border-radius:12px; overflow:hidden; animation:gpsSlideIn 0.25s ease-out; }
-    @keyframes gpsSlideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    .gps-preview-header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-light); border-bottom:1px solid var(--border-light); font-size:12px; font-weight:600; color:var(--text-secondary); }
-    .gps-gmaps-link { font-size:11px; font-weight:600; color:var(--primary); text-decoration:none; }
-    .gps-gmaps-link:hover { text-decoration:underline; }
-    .gps-map-frame { width:100%; height:200px; background:var(--bg-hover); }
-    .gps-coords-display { padding:10px 14px; border-top:1px solid var(--border-light); font-size:13px; text-align:center; }
-    .gps-loading-dot::after { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; margin-left:4px; animation:gpsDotPulse 1s infinite; }
-    @keyframes gpsDotPulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+    /* GPS Picker v3 — Polished UI */
+    #gps-picker-modal { z-index:9000!important; background:rgba(0,0,0,0.55)!important; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+    #gps-picker-modal .modal-box { width:440px; max-width:92vw; max-height:88vh; overflow-y:auto; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:gpsModalIn 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes gpsModalIn { from{opacity:0;transform:scale(0.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .gps-header { padding:20px 24px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-light); }
+    .gps-header-left { display:flex; align-items:center; gap:12px; }
+    .gps-header-icon { width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#ef4444,#f97316); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(239,68,68,0.3); }
+    .gps-header h3 { font-size:17px; font-weight:700; margin:0; }
+    .gps-header-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
+    .gps-close { width:32px; height:32px; border:none; background:var(--bg-hover); border-radius:50%; cursor:pointer; font-size:18px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+    .gps-close:hover { background:var(--danger); color:white; }
+    .gps-body { padding:20px 24px; }
+    .gps-step { border:1.5px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; transition:border-color 0.2s,box-shadow 0.2s; }
+    .gps-step:hover { border-color:var(--primary); box-shadow:0 2px 12px rgba(79,110,247,0.1); }
+    .gps-step-header { display:flex; align-items:center; gap:14px; padding:14px 16px; cursor:pointer; transition:background 0.15s; }
+    .gps-step-header:hover { background:var(--bg-hover); }
+    .gps-step-num { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+    .gps-step-num.s1 { background:linear-gradient(135deg,#3b82f6,#6366f1); color:white; }
+    .gps-step-num.s2 { background:linear-gradient(135deg,#10b981,#059669); color:white; }
+    .gps-step-num.s3 { background:linear-gradient(135deg,#8b5cf6,#7c3aed); color:white; }
+    .gps-step-info { flex:1; }
+    .gps-step-title { font-size:13px; font-weight:600; }
+    .gps-step-desc { font-size:11px; color:var(--text-muted); margin-top:1px; }
+    .gps-step-arrow { color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
+    .gps-step.open .gps-step-arrow { transform:rotate(90deg); }
+    .gps-step-body { display:none; padding:0 16px 16px; animation:gpsSD 0.2s ease-out; }
+    .gps-step.open .gps-step-body { display:block; }
+    @keyframes gpsSD { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .gps-paste-box { position:relative; }
+    .gps-paste-input { width:100%; padding:12px 16px 12px 40px!important; font-size:13px!important; border:1.5px solid var(--border)!important; border-radius:12px!important; }
+    .gps-paste-input:focus { border-color:var(--primary)!important; box-shadow:0 0 0 3px rgba(79,110,247,0.12)!important; }
+    .gps-paste-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--text-muted); pointer-events:none; }
+    .gps-paste-check { position:absolute; right:12px; top:50%; transform:translateY(-50%); display:none; color:var(--success,#10b981); }
+    .gps-paste-check.show { display:flex; animation:gpsCk 0.3s ease-out; }
+    @keyframes gpsCk { from{transform:translateY(-50%) scale(0)} to{transform:translateY(-50%) scale(1)} }
+    .gps-gmaps-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px; margin-top:12px; background:white; border:1.5px solid #4285f4; border-radius:12px; cursor:pointer; font-size:13px; font-weight:600; color:#4285f4; font-family:inherit; transition:all 0.15s; }
+    .gps-gmaps-btn:hover { background:#4285f4; color:white; }
+    .gps-tip { font-size:11px; color:var(--text-muted); margin-top:10px; padding:10px 14px; background:linear-gradient(135deg,#f0f9ff,#eff6ff); border-radius:10px; border-left:3px solid #3b82f6; line-height:1.7; }
+    .gps-tip strong { color:var(--text-secondary); }
+    .gps-coord-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .gps-coord-group label { display:block; font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px; }
+    .gps-coord-group input { font-family:'SF Mono','Menlo',monospace; font-size:14px; font-weight:600; }
+    .gps-preview { margin-top:16px; border:2px solid var(--primary); border-radius:14px; overflow:hidden; animation:gpsPvIn 0.3s ease-out; box-shadow:0 4px 16px rgba(79,110,247,0.15); }
+    @keyframes gpsPvIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .gps-preview-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:linear-gradient(135deg,var(--primary-light),#f0f9ff); }
+    .gps-preview-bar .label { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--primary); }
+    .gps-preview-bar .gmaps-link { font-size:11px; font-weight:600; color:#4285f4; text-decoration:none; display:flex; align-items:center; gap:4px; padding:4px 10px; background:white; border-radius:6px; border:1px solid #e5e7eb; transition:all 0.15s; }
+    .gps-preview-bar .gmaps-link:hover { background:#4285f4; color:white; border-color:#4285f4; }
+    .gps-map-frame { width:100%; height:180px; background:var(--bg-hover); }
+    .gps-coords-bar { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border-top:1px solid var(--border-light); font-family:'SF Mono','Menlo',monospace; font-size:13px; font-weight:600; }
+    .gps-coords-bar .copy-btn { border:none; background:var(--bg-hover); border-radius:6px; padding:3px 8px; cursor:pointer; font-size:11px; color:var(--text-muted); transition:all 0.15s; }
+    .gps-coords-bar .copy-btn:hover { background:var(--primary); color:white; }
+    .gps-footer { padding:14px 24px; border-top:1px solid var(--border-light); display:flex; gap:10px; justify-content:flex-end; background:var(--bg-light); border-radius:0 0 16px 16px; }
+    .gps-footer .btn-confirm { padding:10px 24px; font-size:13px; font-weight:600; border-radius:10px; display:flex; align-items:center; gap:8px; }
+    .gps-footer .btn-confirm:disabled { opacity:0.5; cursor:not-allowed; }
+    .gps-status { padding:10px 14px; border-radius:10px; font-size:12px; font-weight:500; display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .gps-status.loading { background:#eff6ff; color:#2563eb; }
+    .gps-status.success { background:#f0fdf4; color:#16a34a; }
+    .gps-status.error { background:#fef2f2; color:#dc2626; }
+    .gps-spinner { width:14px; height:14px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:gpsSpin 0.8s linear infinite; }
+    @keyframes gpsSpin { to{transform:rotate(360deg)} }
     /* Drag to Copy v2 */
     .cal-event.dragging-src { opacity:0.35; transform:scale(0.95); animation:dragPulse 1.5s infinite; }
     @keyframes dragPulse { 0%,100%{opacity:0.35} 50%{opacity:0.2} }
@@ -2422,78 +2458,70 @@
       document.getElementById('solarTimeRow').style.display = allDay ? 'none' : 'grid';
     }
 
-    // ═══ GPS Picker v2 — Full rewrite ═══
+    // ═══ GPS Picker v3 — Polished Accordion UI ═══
     let _gpsPrefix = '';
 
     function pickGPS(prefix) {
-      _gpsPrefix = prefix;
-      document.getElementById('gps-picker-modal')?.remove();
-      const eLat = document.getElementById(prefix+'Lat')?.value || '';
-      const eLng = document.getElementById(prefix+'Lng')?.value || '';
-      const m = document.createElement('div');
-      m.className='modal-overlay show'; m.id='gps-picker-modal';
+      _gpsPrefix=prefix; document.getElementById('gps-picker-modal')?.remove();
+      const eLat=document.getElementById(prefix+'Lat')?.value||'',eLng=document.getElementById(prefix+'Lng')?.value||'',has=eLat&&eLng;
+      const m=document.createElement('div'); m.className='modal-overlay show'; m.id='gps-picker-modal';
       m.onclick=e=>{if(e.target===m)m.remove();};
-      m.innerHTML=`<div class="modal-box" style="width:480px;max-height:90vh;overflow-y:auto">
-        <div class="modal-header"><h3 style="display:flex;align-items:center;gap:8px"><span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#f97316);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>ปักหมุดสถานที่</h3><button class="modal-close" onclick="closeGPSPicker()">&times;</button></div>
-        <div class="modal-body" style="padding:16px 20px">
-          <button class="gps-method-btn" onclick="gpsGetCurrent()" id="gps-btn-current"><span class="gps-method-icon" style="background:linear-gradient(135deg,#3b82f6,#6366f1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/></svg></span><div><div class="gps-method-title">ใช้ตำแหน่งปัจจุบัน</div><div class="gps-method-desc">ระบบจะขอสิทธิ์เข้าถึง GPS ของอุปกรณ์</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--text-muted)"><path d="m9 18 6-6-6-6"/></svg></button>
-          <div id="gps-current-status" style="display:none;padding:8px 12px;margin:-4px 0 12px;font-size:12px;border-radius:var(--radius)"></div>
-          <div class="gps-divider"><span>หรือ</span></div>
-          <div class="gps-section"><label class="gps-section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>วางพิกัด หรือ Google Maps URL</label><input type="text" class="form-input gps-paste-input" id="gps-paste" placeholder="เช่น 13.756, 100.501 หรือวาง Google Maps link" oninput="gpsParsePaste(this.value)"><div class="gps-hint"><strong>วิธีใช้:</strong> เปิด Google Maps → กดค้างที่จุดที่ต้องการ → copy พิกัด หรือ copy URL → กลับมาวางที่นี่</div><button class="gps-open-maps-btn" onclick="gpsOpenMapsForPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>เปิด Google Maps เพื่อเลือกตำแหน่ง</button></div>
-          <div class="gps-divider"><span>หรือกรอกเอง</span></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label class="gps-section-label" style="margin-bottom:4px">Latitude</label><input type="number" step="any" class="form-input" id="gps-lat" placeholder="13.7563" value="${eLat}" oninput="gpsUpdatePreview()"></div><div><label class="gps-section-label" style="margin-bottom:4px">Longitude</label><input type="number" step="any" class="form-input" id="gps-lng" placeholder="100.5018" value="${eLng}" oninput="gpsUpdatePreview()"></div></div>
-          <div id="gps-preview" class="gps-preview" style="display:none"><div class="gps-preview-header"><span>ตำแหน่งที่เลือก</span><a id="gps-gmaps-link" href="#" target="_blank" class="gps-gmaps-link">ดูบน Google Maps</a></div><div id="gps-map-frame" class="gps-map-frame"></div><div id="gps-coords-display" class="gps-coords-display"></div></div>
+      m.innerHTML=`<div class="modal-box">
+        <div class="gps-header"><div class="gps-header-left"><div class="gps-header-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div><div><h3>ปักหมุดสถานที่</h3><div class="gps-header-sub">เลือกวิธีระบุตำแหน่ง</div></div></div><button class="gps-close" onclick="closeGPSPicker()">&times;</button></div>
+        <div class="gps-body">
+          <div class="gps-step" id="gps-step-1"><div class="gps-step-header" onclick="gpsToggleStep(1)"><div class="gps-step-num s1">1</div><div class="gps-step-info"><div class="gps-step-title">ใช้ตำแหน่งปัจจุบัน</div><div class="gps-step-desc">ระบบขอสิทธิ์ GPS อัตโนมัติ</div></div><svg class="gps-step-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div><div class="gps-step-body"><button class="btn btn-primary btn-sm" style="width:100%;padding:11px;border-radius:10px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="gpsGetCurrent()" id="gps-btn-current"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>หาตำแหน่งของฉัน</button><div id="gps-current-status" style="display:none"></div></div></div>
+          <div class="gps-step open" id="gps-step-2"><div class="gps-step-header" onclick="gpsToggleStep(2)"><div class="gps-step-num s2">2</div><div class="gps-step-info"><div class="gps-step-title">วางพิกัด / Google Maps URL</div><div class="gps-step-desc">Copy จาก Google Maps แล้ววางที่นี่</div></div><svg class="gps-step-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div><div class="gps-step-body"><div class="gps-paste-box"><svg class="gps-paste-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><input type="text" class="form-input gps-paste-input" id="gps-paste" placeholder="13.756, 100.501 หรือวาง Google Maps link" oninput="gpsParsePaste(this.value)"><div class="gps-paste-check" id="gps-paste-ok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div></div><button class="gps-gmaps-btn" onclick="gpsOpenMapsForPick()"><svg width="18" height="18" viewBox="0 0 92 92" fill="none"><path d="M46 8C29.4 8 16 21.4 16 38c0 25.5 30 46 30 46s30-20.5 30-46c0-16.6-13.4-30-30-30z" fill="#4285F4"/><circle cx="46" cy="38" r="12" fill="white"/></svg>เปิด Google Maps เลือกตำแหน่ง</button><div class="gps-tip"><strong>วิธีใช้:</strong> เปิด Google Maps → <strong>กดค้าง</strong>ที่จุดที่ต้องการ → copy ตัวเลขพิกัด → กลับมา<strong>วาง</strong>ช่องด้านบน</div></div></div>
+          <div class="gps-step${has?' open':''}" id="gps-step-3"><div class="gps-step-header" onclick="gpsToggleStep(3)"><div class="gps-step-num s3">3</div><div class="gps-step-info"><div class="gps-step-title">กรอกพิกัดเอง</div><div class="gps-step-desc">ระบุ Latitude, Longitude โดยตรง</div></div><svg class="gps-step-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div><div class="gps-step-body"><div class="gps-coord-grid"><div class="gps-coord-group"><label>Latitude</label><input type="number" step="any" class="form-input" id="gps-lat" placeholder="13.7563" value="${eLat}" oninput="gpsUpdatePreview()"></div><div class="gps-coord-group"><label>Longitude</label><input type="number" step="any" class="form-input" id="gps-lng" placeholder="100.5018" value="${eLng}" oninput="gpsUpdatePreview()"></div></div></div></div>
+          <div id="gps-preview" class="gps-preview" style="display:${has?'block':'none'}"><div class="gps-preview-bar"><span class="label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>ตำแหน่งที่เลือก</span><a id="gps-gmaps-link" href="#" target="_blank" class="gmaps-link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Google Maps</a></div><div id="gps-map-frame" class="gps-map-frame"></div><div id="gps-coords-display" class="gps-coords-bar"></div></div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeGPSPicker()">ยกเลิก</button><button class="btn btn-primary btn-sm" id="gps-confirm-btn" onclick="confirmGPS()" ${eLat&&eLng?'':'disabled'}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ยืนยันตำแหน่ง</button></div>
+        <div class="gps-footer"><button class="btn btn-secondary btn-sm" onclick="closeGPSPicker()" style="padding:10px 20px;border-radius:10px">ยกเลิก</button><button class="btn btn-primary btn-sm btn-confirm" id="gps-confirm-btn" onclick="confirmGPS()" ${has?'':'disabled'}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ยืนยันตำแหน่ง</button></div>
       </div>`;
-      document.body.appendChild(m);
-      if(eLat&&eLng) gpsUpdatePreview();
+      document.body.appendChild(m); if(has)gpsUpdatePreview();
     }
 
-    function closeGPSPicker() { document.getElementById('gps-picker-modal')?.remove(); }
+    function closeGPSPicker(){document.getElementById('gps-picker-modal')?.remove();}
+    function gpsToggleStep(n){document.getElementById('gps-step-'+n)?.classList.toggle('open');}
 
-    function gpsGetCurrent() {
-      const s=document.getElementById('gps-current-status'); const btn=document.getElementById('gps-btn-current');
-      s.style.display='block';
-      if(!navigator.geolocation){s.style.background='#fef2f2';s.style.color='#dc2626';s.textContent='Browser ไม่รองรับ GPS';return;}
-      s.style.background='#eff6ff';s.style.color='#2563eb';s.innerHTML='<span class="gps-loading-dot"></span> กำลังหาตำแหน่ง...';btn.disabled=true;
+    function gpsGetCurrent(){
+      const s=document.getElementById('gps-current-status'),btn=document.getElementById('gps-btn-current');
+      s.style.display='flex';
+      if(!navigator.geolocation){s.className='gps-status error';s.textContent='Browser ไม่รองรับ GPS';return;}
+      s.className='gps-status loading';s.innerHTML='<div class="gps-spinner"></div> กำลังหาตำแหน่ง...';btn.disabled=true;
       navigator.geolocation.getCurrentPosition(pos=>{
         document.getElementById('gps-lat').value=pos.coords.latitude.toFixed(7);
         document.getElementById('gps-lng').value=pos.coords.longitude.toFixed(7);
-        s.style.background='#f0fdf4';s.style.color='#16a34a';s.textContent='พบตำแหน่งแล้ว';btn.disabled=false;
-        gpsUpdatePreview(); setTimeout(()=>{s.style.display='none';},3000);
-      },err=>{
-        s.style.background='#fef2f2';s.style.color='#dc2626';
-        s.textContent=err.code===1?'ไม่ได้รับอนุญาตเข้าถึง GPS':err.code===2?'ไม่สามารถหาตำแหน่งได้':'หมดเวลาหาตำแหน่ง';btn.disabled=false;
+        s.className='gps-status success';s.textContent='พบตำแหน่งแล้ว!';btn.disabled=false;
+        document.getElementById('gps-step-3')?.classList.add('open');
+        gpsUpdatePreview();setTimeout(()=>{s.style.display='none';},3000);
+      },err=>{s.className='gps-status error';s.textContent=err.code===1?'ไม่ได้รับอนุญาตเข้าถึง GPS':err.code===2?'ไม่สามารถหาตำแหน่งได้':'หมดเวลา';btn.disabled=false;
       },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
     }
 
-    function gpsParsePaste(raw) {
+    function gpsParsePaste(raw){
+      const ck=document.getElementById('gps-paste-ok'); if(ck)ck.classList.remove('show');
       if(!raw||!raw.trim())return; const v=raw.trim(); let lat=null,lng=null;
-      let m=v.match(/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/); if(m){lat=m[1];lng=m[2];}
-      if(!lat){m=v.match(/[?&](?:q|ll|query)=(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);if(m){lat=m[1];lng=m[2];}}
-      if(!lat){m=v.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);if(m){lat=m[1];lng=m[2];}}
-      if(!lat){m=v.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);if(m){lat=m[1];lng=m[2];}}
-      if(!lat){m=v.match(/\((-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)\)/);if(m){lat=m[1];lng=m[2];}}
-      if(lat&&lng){const la=parseFloat(lat),lo=parseFloat(lng);if(la>=-90&&la<=90&&lo>=-180&&lo<=180){document.getElementById('gps-lat').value=la.toFixed(7);document.getElementById('gps-lng').value=lo.toFixed(7);gpsUpdatePreview();}}
+      let mt=v.match(/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);if(mt){lat=mt[1];lng=mt[2];}
+      if(!lat){mt=v.match(/[?&](?:q|ll|query)=(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);if(mt){lat=mt[1];lng=mt[2];}}
+      if(!lat){mt=v.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);if(mt){lat=mt[1];lng=mt[2];}}
+      if(!lat){mt=v.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);if(mt){lat=mt[1];lng=mt[2];}}
+      if(!lat){mt=v.match(/\((-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)\)/);if(mt){lat=mt[1];lng=mt[2];}}
+      if(lat&&lng){const la=parseFloat(lat),lo=parseFloat(lng);if(la>=-90&&la<=90&&lo>=-180&&lo<=180){document.getElementById('gps-lat').value=la.toFixed(7);document.getElementById('gps-lng').value=lo.toFixed(7);if(ck)ck.classList.add('show');document.getElementById('gps-step-3')?.classList.add('open');gpsUpdatePreview();}}
     }
 
-    function gpsOpenMapsForPick() {
-      const lat=document.getElementById('gps-lat').value||'13.7563',lng=document.getElementById('gps-lng').value||'100.5018';
-      window.open(`https://www.google.com/maps/@${lat},${lng},15z`,'_blank');
-    }
+    function gpsOpenMapsForPick(){const lat=document.getElementById('gps-lat').value||'13.7563',lng=document.getElementById('gps-lng').value||'100.5018';window.open(`https://www.google.com/maps/@${lat},${lng},15z`,'_blank');}
 
-    function gpsUpdatePreview() {
+    function gpsUpdatePreview(){
       const lat=parseFloat(document.getElementById('gps-lat').value),lng=parseFloat(document.getElementById('gps-lng').value);
       const pv=document.getElementById('gps-preview'),btn=document.getElementById('gps-confirm-btn');
       if(!lat||!lng||isNaN(lat)||isNaN(lng)){if(pv)pv.style.display='none';if(btn)btn.disabled=true;return;}
-      if(pv)pv.style.display='block'; if(btn)btn.disabled=false;
+      if(pv)pv.style.display='block';if(btn)btn.disabled=false;
       document.getElementById('gps-map-frame').innerHTML=`<iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.005},${lat-0.003},${lng+0.005},${lat+0.003}&layer=mapnik&marker=${lat},${lng}" style="width:100%;height:100%;border:0" loading="lazy"></iframe>`;
-      document.getElementById('gps-coords-display').innerHTML=`<span style="font-family:monospace;font-weight:600">${lat.toFixed(7)}, ${lng.toFixed(7)}</span>`;
+      const cs=`${lat.toFixed(7)}, ${lng.toFixed(7)}`;
+      document.getElementById('gps-coords-display').innerHTML=`<span>${cs}</span><button class="copy-btn" onclick="navigator.clipboard?.writeText('${cs}');this.textContent='copied!';setTimeout(()=>this.textContent='copy',1500)">copy</button>`;
       document.getElementById('gps-gmaps-link').href=`https://www.google.com/maps?q=${lat},${lng}`;
     }
 
-    function confirmGPS() {
+    function confirmGPS(){
       const lat=document.getElementById('gps-lat').value,lng=document.getElementById('gps-lng').value;
       if(!lat||!lng){typeof showToast==='function'&&showToast('กรุณาระบุพิกัด','warning');return;}
       const loc=document.getElementById(_gpsPrefix+'Location');
@@ -2501,8 +2529,7 @@
       loc.value=txt+(txt?' ':'')+`(${lat}, ${lng})`;
       document.getElementById(_gpsPrefix+'Lat').value=lat;
       document.getElementById(_gpsPrefix+'Lng').value=lng;
-      closeGPSPicker();
-      typeof showToast==='function'&&showToast('ปักหมุดสำเร็จ','success');
+      closeGPSPicker();typeof showToast==='function'&&showToast('ปักหมุดสำเร็จ','success');
     }
 
     function onPhaseChange() {
