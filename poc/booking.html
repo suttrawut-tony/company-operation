@@ -3548,6 +3548,15 @@
       refreshAll();
       initIcons();
       initDragToCopy();
+      // Deep link: ?edit=bookingId → auto-open edit modal
+      const _urlP = new URLSearchParams(location.search);
+      const _editId = _urlP.get('edit');
+      if (_editId) {
+        const _wait = setInterval(()=>{
+          if(allBookings.length>0){clearInterval(_wait);setTimeout(()=>editBooking(_editId),300);}
+        },200);
+        setTimeout(()=>clearInterval(_wait),10000);
+      }
     }
   </script>
 </body>

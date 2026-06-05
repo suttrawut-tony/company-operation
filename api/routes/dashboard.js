@@ -76,6 +76,32 @@ router.get('/my-tasks', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/dashboard/pending-convert — Bookings confirmed, waiting to convert to SQ
+router.get('/pending-convert', async (req, res) => {
+  try {
+    const allowedRoles = ['executive','pm','admin','procurement'];
+    if (!allowedRoles.includes(req.user.role)) return res.json([]);
+    let q = `SELECT b.id, b.title, b.booking_type, b.status, b.customer_name,
+      b.start_date, b.end_date, b.updated_at, b.recommended_kwp, b.site_name, b.location,
+      p.code AS project_code, p.name AS project_name,
+      jo.job_order_number,
+      u.first_name || ' ' || u.last_name AS booked_by_name,
+      COALESCE(bi.item_count, 0) AS item_count,
+      EXTRACT(DAY FROM NOW() - b.updated_at) AS days_waiting
+      FROM bookings b
+      LEFT JOIN projects p ON b.project_id = p.id
+      LEFT JOIN job_orders jo ON b.job_order_id = jo.id
+      LEFT JOIN users u ON b.booked_by = u.id
+      LEFT JOIN (SELECT booking_id, COUNT(*) AS item_count FROM booking_items GROUP BY booking_id) bi ON bi.booking_id = b.id
+      WHERE b.company_id = $1 AND b.status = 'confirmed' AND b.booking_type IN ('solar','technician')`;
+    const params = [req.user.company_id];
+    if (req.user.role === 'staff') { params.push(req.user.id); q += ` AND b.booked_by = $${params.length}`; }
+    q += ' ORDER BY b.updated_at ASC';
+    const { rows } = await db.query(q, params);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/dashboard/my-tasks-all — All tasks for current user (with date range + done)
 router.get('/my-tasks-all', async (req, res) => {
   try {

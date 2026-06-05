@@ -469,6 +469,23 @@
             </div>
           </div>
         </div>
+
+        <!-- Pending Convert to SQ -->
+        <div class="widget" data-widget="pendingConvert" data-widget-label="รอสร้างใบเสนอราคา">
+          <div class="widget-toolbar">
+            <button title="Drag to reorder" class="drag-handle" style="cursor:grab;">&#9776;</button>
+            <button title="Hide widget" class="btn-hide" onclick="toggleWidget('pendingConvert')">&#10005;</button>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:8px"><h2>รอสร้างใบเสนอราคา</h2><span class="badge badge-warning" id="convert-count" style="display:none">0</span></div>
+              <a href="booking.html" style="font-size:12px;color:var(--primary);font-weight:500;text-decoration:none" id="convert-link">View All &rarr;</a>
+            </div>
+            <div class="card-body" style="padding:12px 20px" id="convert-list">
+              <div style="color:var(--text-muted);font-size:13px;padding:8px 0;text-align:center">Loading...</div>
+            </div>
+          </div>
+        </div>
     </div>
   </main>
   </div><!-- end main-wrapper -->
@@ -1043,14 +1060,37 @@
 
     // FIXED: Auth guard
     if (!API.requireAuth()) throw new Error('Not authenticated');
+    // ═══ Pending Convert to SQ ═══
+    async function loadPendingConvert() {
+      try {
+        const items = await API.get('/dashboard/pending-convert');
+        const countEl=document.getElementById('convert-count'), listEl=document.getElementById('convert-list');
+        if(!items.length){countEl.style.display='none';listEl.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:12px 0;text-align:center">ไม่มีรายการรอ Convert</div>';return;}
+        countEl.style.display='';countEl.textContent=items.length;
+        listEl.innerHTML=items.map(b=>{
+          const days=Math.round(b.days_waiting||0);
+          const daysText=days===0?'วันนี้':days+' วัน';
+          const dBadge=days>3?'background:#fef2f2;color:#ef4444':'background:#fffbeb;color:#d97706';
+          const cust=b.customer_name||b.title||'ลูกค้า';
+          const kwp=b.recommended_kwp?b.recommended_kwp+'kWp':'';
+          const loc=b.site_name||b.location||'';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="window.location='booking.html?edit=${b.id}'">
+            <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cust}${kwp?' — '+kwp:''}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">${b.job_order_number||''} ${loc?'| '+loc:''} | ${b.item_count||0} รายการ</div></div>
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;${dBadge}">รอ ${daysText}</span>
+            <button style="font-size:11px;font-weight:600;padding:6px 14px;border-radius:999px;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary);cursor:pointer;white-space:nowrap;font-family:inherit" onclick="event.stopPropagation();window.location='booking.html?edit=${b.id}'">Convert &rarr;</button>
+          </div>`;
+        }).join('');
+      } catch(e){document.getElementById('convert-list').innerHTML='';}
+    }
+
     // Load everything
-    Promise.all([loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks()])
+    Promise.all([loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks(), loadPendingConvert()])
       .then(() => applyConfig(loadConfig()));
 
     // Real-time: auto-refresh on changes
     API.onRealtime(msg => {
       if (['pr_created','pr_updated','expense_created','expense_updated','budget_created','budget_updated','project_updated','task_created','task_updated'].includes(msg.type)) {
-        loadDashboard(); loadApprovals(); loadBudgetSummary(); loadAlerts(); loadMyTasks();
+        loadDashboard(); loadApprovals(); loadBudgetSummary(); loadAlerts(); loadMyTasks(); loadPendingConvert();
       }
     });
   </script>
