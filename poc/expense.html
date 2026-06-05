@@ -140,9 +140,9 @@
           Scan Receipt / OCR
         </button>
         <a href="doc-detail.html?type=expense&mode=new" class="btn btn-secondary">+ Manual Entry</a>
-        <button class="btn btn-secondary" style="display:flex;align-items:center;gap:6px;" onclick="exportExpenseCSV()">
+        <button class="btn btn-secondary" style="display:flex;align-items:center;gap:6px;" onclick="exportExpenseExcel()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-          Export
+          Export Excel
         </button>
       </div>
     </div>
@@ -428,6 +428,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allExpenses = [];
@@ -705,6 +706,26 @@
       a.download = 'expense_export_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
     }
 
+    function exportExpenseExcel() {
+      exportExcel(allExpenses, 'expense_export', {
+        sheetName: 'Expenses',
+        headers: {
+          doc_number:      'Doc Number',
+          doc_date:        'Date',
+          expense_type:    'Type',
+          description:     'Description',
+          requester_name:  'Requester',
+          amount:          'Amount',
+          tax_code:        'Tax Code',
+          sap_account:     'GL Account',
+          _project_code:   'Project Code',
+          _project_name:   'Project Name',
+          status:          'Status',
+          sap_doc_num:     'SAP Doc#',
+        },
+      });
+    }
+
     // ═══ Delete Expense ═══
     async function deleteExpense(expenseId, docNumber) {
       if (!confirm('ยกเลิก Expense ' + (docNumber||'') + ' ?')) return;
@@ -714,6 +735,8 @@
       } catch(e) { alert('Error: ' + e.message); }
     }
 
+    // FIXED: Auth guard
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadExpenses();
     API.onRealtime(msg => { if (msg.type.startsWith('expense_')) loadExpenses(); });
   </script>

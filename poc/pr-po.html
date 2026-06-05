@@ -129,6 +129,7 @@
         <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg> Purchase Request / Purchase Order</h1>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-secondary" onclick="exportPRPO()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
         <div class="view-switch">
           <button class="active" onclick="switchPRView('kanban')">&#9638; Kanban</button>
           <button onclick="switchPRView('list')">&#9776; List</button>
@@ -182,6 +183,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allPRs = [];
@@ -189,6 +191,22 @@
     let allProjects = [];
     let docType = 'pr'; // pr, po, all
     const userRole = (API.getUser() || {}).role || '';
+
+    function exportPRPO() {
+      const items = docType === 'po' ? allPOs : docType === 'pr' ? allPRs : [...allPRs, ...allPOs];
+      const data = items.map(d => ({
+        'Doc No': d.doc_number || '',
+        'Type': d._type || docType.toUpperCase(),
+        'Date': fmtDate(d.doc_date || d.created_at),
+        'Project': d._project_code || d.project_code || '',
+        'Vendor': d.vendor_name || '',
+        'Requester': d._requester_name || d.requester_name || '',
+        'Amount': parseFloat(d.total_amount || 0),
+        'Status': (d.status || '').replace(/_/g, ' '),
+        'SAP Doc No': d.sap_doc_number || '',
+      }));
+      exportExcel(data, docType === 'all' ? 'PR_PO' : docType.toUpperCase());
+    }
 
     async function deletePR(id, doc) {
       if (!confirm('Delete ' + doc + '?')) return;
@@ -456,6 +474,8 @@
       }
     }
 
+    // FIXED: Auth guard
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadPRPO();
     API.onRealtime(msg => {
       if (msg.type.startsWith('pr_')) loadPRPO();

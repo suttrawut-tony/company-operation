@@ -567,8 +567,11 @@
     // Close modal on ESC
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRetModal(); });
 
-    loadProjects();
-    API.onRealtime(msg => { if (msg.type.startsWith('project_')) loadProjects(); });
+    // FIXED: Auth guard
+    if (API.requireAuth()) {
+      loadProjects();
+      API.onRealtime(msg => { if (msg.type.startsWith('project_')) loadProjects(); });
+    }
   </script>
 </body>
 </html>

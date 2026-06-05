@@ -781,6 +781,8 @@
       return Math.round(s/86400)+'d ago';
     }
 
+    // FIXED: Auth guard
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     const params = new URLSearchParams(window.location.search);
     loadProject(params.get('id'));
   </script>

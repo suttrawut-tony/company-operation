@@ -79,7 +79,7 @@
       <div><h1>Advance</h1></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" id="btn-new" onclick="openNewModal()">+ New Advance</button>
-        <button class="btn btn-secondary" onclick="exportCSV()">Export</button>
+        <button class="btn btn-secondary" onclick="exportAdvanceExcel()">Export Excel</button>
       </div>
     </div>
 
@@ -279,6 +279,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allAdvances = [];
@@ -1005,8 +1006,29 @@
       a.download = 'advance_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
     }
 
+    function exportAdvanceExcel() {
+      const list = getFiltered();
+      exportExcel(list, 'advance', {
+        sheetName: 'Advance',
+        headers: {
+          doc_number: 'Doc Number',
+          doc_date: 'Date',
+          employee_name: 'Employee',
+          description: 'Description',
+          amount: 'Amount',
+          paid_amount: 'Paid',
+          settled_amount: 'Settled',
+          balance: 'Balance',
+          status: 'Status',
+          project_code: 'Project'
+        }
+      });
+    }
+
     document.addEventListener('keydown', e => { if (e.key==='Escape') { closeNewModal(); closePayModal(); closeSettleModal(); } });
 
+    // FIXED: Auth guard
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadData();
     API.onRealtime(msg => { if (msg.type.startsWith('advance_')) loadData(); });
   </script>

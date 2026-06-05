@@ -1041,6 +1041,8 @@
       }
     }
 
+    // FIXED: Auth guard
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     // Load everything
     Promise.all([loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks()])
       .then(() => applyConfig(loadConfig()));

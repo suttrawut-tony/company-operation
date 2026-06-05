@@ -68,4 +68,44 @@ router.put('/bp/:id', requireRole('executive','admin','procurement'), async (req
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// FIXED: Added GET /items/:id
+router.get('/items/:id', async (req, res) => {
+  try {
+    const { rows: [item] } = await db.query('SELECT * FROM items WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!item) return res.status(404).json({ error: 'Not found' });
+    res.json(item);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// FIXED: Added DELETE /items/:id (soft delete)
+router.delete('/items/:id', requireRole('executive','admin'), async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'UPDATE items SET is_active=false WHERE id=$1 AND company_id=$2 RETURNING *',
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json({ deleted: true, ...rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// FIXED: Added GET /bp/:id
+router.get('/bp/:id', async (req, res) => {
+  try {
+    const { rows: [bp] } = await db.query('SELECT * FROM business_partners WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!bp) return res.status(404).json({ error: 'Not found' });
+    res.json(bp);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// FIXED: Added DELETE /bp/:id (soft delete)
+router.delete('/bp/:id', requireRole('executive','admin'), async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'UPDATE business_partners SET is_active=false WHERE id=$1 AND company_id=$2 RETURNING *',
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json({ deleted: true, ...rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

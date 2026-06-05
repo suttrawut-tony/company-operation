@@ -40,6 +40,26 @@ router.put('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// FIXED: Added GET /:id
+router.get('/:id', async (req, res) => {
+  try {
+    const { rows: [tech] } = await db.query('SELECT * FROM technicians WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!tech) return res.status(404).json({ error: 'Not found' });
+    res.json(tech);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// FIXED: Added DELETE /:id (soft delete)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      "UPDATE technicians SET status='inactive', updated_at=NOW() WHERE id=$1 AND company_id=$2 RETURNING *",
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json({ deleted: true, ...rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/technicians/:id/schedule
 router.get('/:id/schedule', async (req, res) => {
   try {

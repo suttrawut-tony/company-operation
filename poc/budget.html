@@ -116,7 +116,7 @@
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" onclick="openNewBudget()">+ New Budget</button>
-        <button class="btn btn-secondary" onclick="exportBudgetCSV()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export</button>
+        <button class="btn btn-secondary" onclick="exportBudgetExcel()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
       </div>
     </div>
 
@@ -263,6 +263,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allBudgets = [];
@@ -986,7 +987,7 @@
     // Close on ESC
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBudgetModal(); });
 
-    // ═══ Export CSV ═══
+    // ═══ Export CSV (legacy) ═══
     function exportBudgetCSV() {
       const rows = [['Code','Name','Project','Status','TOR','Budget','Actual','Variance']];
       allBudgets.forEach(b => {
@@ -999,6 +1000,35 @@
       a.download = 'budget_export_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
     }
 
+    // ═══ Export Excel ═══
+    function exportBudgetExcel() {
+      const data = allBudgets.map(b => ({
+        code: b.code,
+        name: b.name,
+        project: b._project_code || '',
+        status: b.status,
+        tor: parseFloat(b.total_tor || 0),
+        budget: parseFloat(b.total_budget || 0),
+        actual: parseFloat(b.total_actual || 0),
+        variance: parseFloat(b.total_budget || 0) - parseFloat(b.total_actual || 0)
+      }));
+      exportExcel(data, 'budget_export', {
+        sheetName: 'Budget',
+        headers: {
+          code: 'Code',
+          name: 'Name',
+          project: 'Project',
+          status: 'Status',
+          tor: 'TOR',
+          budget: 'Budget',
+          actual: 'Actual',
+          variance: 'Variance'
+        }
+      });
+    }
+
+    // FIXED: Auth guard
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     // Init — check URL params for deep linking
     const _urlParams = new URLSearchParams(window.location.search);
     if (_urlParams.get('tab') === 'project') {

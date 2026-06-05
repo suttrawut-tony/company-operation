@@ -28,4 +28,20 @@ router.post('/read-all', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// FIXED: Added DELETE /:id
+router.delete('/:id', async (req, res) => {
+  try {
+    await db.query('DELETE FROM notifications WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    res.json({ deleted: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// FIXED: Added DELETE /clear-all
+router.delete('/', async (req, res) => {
+  try {
+    await db.query('DELETE FROM notifications WHERE user_id=$1', [req.user.id]);
+    res.json({ cleared: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
