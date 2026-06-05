@@ -1579,7 +1579,7 @@
       }
     }
 
-    const TYPE_COLORS = { vehicle: '#4285f4', solar: '#0f9d58', flight: '#db4437' };
+    const TYPE_COLORS = { vehicle: '#4285f4', solar: '#0f9d58', technician: '#0f9d58', flight: '#db4437' };
 
     // Shared status config — color + Thai label for every status in the workflow
     const STATUS_CONFIG = {
@@ -1601,9 +1601,10 @@
     const TYPE_ICONS = {
       vehicle: (typeof I !== 'undefined' ? I.car : '\u{1F697}'),
       solar: (typeof I !== 'undefined' ? I.user : '\u{1F477}'),
+      technician: (typeof I !== 'undefined' ? I.user : '\u{1F477}'),
       flight: (typeof I !== 'undefined' ? I.plane : '\u2708\uFE0F')
     };
-    const TYPE_LABELS = { vehicle: 'รถยนต์', solar: 'ช่าง', flight: 'เครื่องบิน' };
+    const TYPE_LABELS = { vehicle: 'รถยนต์', solar: 'ช่าง', technician: 'ช่าง', flight: 'เครื่องบิน' };
     const TH_DAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
     const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                         'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
