@@ -150,4 +150,46 @@ router.delete('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// POST /api/job-orders/:id/create-tasks — Create tasks for team from JO + bookings
+router.post('/:id/create-tasks', async (req, res) => {
+  try {
+    const { rows: [jo] } = await db.query('SELECT * FROM job_orders WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!jo) return res.status(404).json({ error: 'Job Order not found' });
+
+    const { rows: bookings } = await db.query(
+      `SELECT b.*, t.id AS tech_id, t.first_name AS tech_first, t.nickname AS tech_nick
+       FROM bookings b LEFT JOIN technicians t ON b.technician_id = t.id
+       WHERE b.job_order_id = $1 AND b.status NOT IN ('cancelled','rejected')`, [jo.id]);
+    if (!bookings.length) return res.status(400).json({ error: 'ไม่มี Booking ที่เชื่อมกับ Job Order นี้' });
+
+    const projectId = jo.project_id || bookings[0].project_id;
+    if (!projectId) return res.status(400).json({ error: 'Job Order ไม่มี Project' });
+
+    const created = [];
+    for (const bk of bookings) {
+      const team = [];
+      if (bk.technician_id) team.push({ name: bk.tech_nick||bk.tech_first||'ช่าง', role: 'lead' });
+      // Parse participants
+      let parts = bk.participants;
+      if (typeof parts === 'string') try { parts = JSON.parse(parts); } catch(e) { parts = []; }
+      if (Array.isArray(parts)) parts.forEach(p => { if(p.name) team.push({ name:p.name, role:p.role||'technician' }); });
+      if (!team.length) team.push({ name: null, role: 'unassigned' });
+
+      for (const m of team) {
+        const title = m.role === 'lead' ? `[หัวหน้า] ${jo.title}` : jo.title;
+        const { rows: [task] } = await db.query(
+          `INSERT INTO tasks (project_id, title, description, priority,
+            start_date, due_date, start_time, end_time,
+            job_order_id, booking_id, location, task_type, created_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+          [projectId, title, jo.description||null, jo.priority||'normal',
+           bk.start_date, bk.end_date, bk.start_time||null, bk.end_time||null,
+           jo.id, bk.id, jo.location||null, jo.job_type||'job_order', req.user.id]);
+        if (task) created.push(task);
+      }
+    }
+    res.status(201).json({ created: created.length, tasks: created, message: `สร้าง ${created.length} tasks จาก ${jo.job_order_number}` });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

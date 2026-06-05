@@ -1522,9 +1522,22 @@
         typeof showToast === 'function' && showToast('อนุมัติใบสั่งงานสำเร็จ', 'success');
         await loadJobOrders();
         document.getElementById(prefix + 'JobOrder').value = joId;
+        // Auto-create tasks for team
+        if (confirm('ต้องการสร้าง Tasks ให้ทีมงานด้วยไหม?')) {
+          try { const r = await API.post('/job-orders/'+joId+'/create-tasks'); typeof showToast==='function'&&showToast(r.message,'success'); }
+          catch(e2) { typeof showToast==='function'&&showToast('สร้าง Tasks: '+e2.message,'warning'); }
+        }
       } catch(e) {
         typeof showToast === 'function' ? showToast(e.message || 'Error', 'error') : alert(e.message);
       }
+    }
+
+    async function createTasksFromJO(joId) {
+      if (!confirm('สร้าง Tasks ให้ทีมงานทุกคนจาก Job Order นี้?')) return;
+      try {
+        const r = await API.post('/job-orders/'+joId+'/create-tasks');
+        typeof showToast==='function'&&showToast(r.message||'สร้าง tasks สำเร็จ','success');
+      } catch(e) { typeof showToast==='function'?showToast(e.message,'error'):alert(e.message); }
     }
 
     function onJOSelect(type) {

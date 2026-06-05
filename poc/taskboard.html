@@ -159,7 +159,10 @@
         <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="6" height="14" x="2" y="6" rx="2"/><rect width="6" height="10" x="9" y="2" rx="2"/><rect width="6" height="14" x="16" y="8" rx="2"/></svg> Taskboard</h1>
         <div class="subtitle" id="boardSubtitle"></div>
       </div>
-      <button class="btn btn-primary" onclick="openAddTask()">+ Add Task</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportTasks()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openAddTask()">+ Add Task</button>
+      </div>
     </div>
 
     <div class="tb-header-row">
@@ -254,15 +257,19 @@
             </select>
           </div>
           <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">วันเริ่มต้น</label>
-              <input type="date" class="form-input" id="task-start">
-            </div>
-            <div class="form-group">
-              <label class="form-label">วันสิ้นสุด</label>
-              <input type="date" class="form-input" id="task-due">
-            </div>
+            <div class="form-group"><label class="form-label">วันเริ่มต้น</label><input type="date" class="form-input" id="task-start"></div>
+            <div class="form-group"><label class="form-label">วันสิ้นสุด</label><input type="date" class="form-input" id="task-due"></div>
           </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">เวลาเริ่ม</label><input type="time" class="form-input" id="task-start-time"></div>
+            <div class="form-group"><label class="form-label">เวลาสิ้นสุด</label><input type="time" class="form-input" id="task-end-time"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">ชั่วโมงประมาณ</label><input type="number" class="form-input" id="task-est-hours" step="0.5" min="0" placeholder="เช่น 4"></div>
+            <div class="form-group"><label class="form-label">ชั่วโมงจริง</label><input type="number" class="form-input" id="task-actual-hours" step="0.5" min="0" placeholder="กรอกตอนเสร็จ"></div>
+          </div>
+          <div class="form-group"><label class="form-label">สถานที่</label><input type="text" class="form-input" id="task-location" placeholder="ชื่อสถานที่"></div>
+          <div class="form-group" id="task-jo-group" style="display:none"><label class="form-label">Job Order</label><div id="task-jo-info" style="font-size:12px;padding:8px 12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border-light)"></div></div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary btn-sm" onclick="closeTaskModal()">ยกเลิก</button>
@@ -276,6 +283,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allTasks = [];
@@ -363,6 +371,9 @@
           </div>
           <div class="task-title" style="${titleStyle}">${t.title || 'Untitled'}</div>
           ${dateRange ? '<div class="task-dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>'+dateRange+'</div>' : ''}
+          ${t.start_time&&t.end_time?'<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">&#9200; '+t.start_time.slice(0,5)+'–'+t.end_time.slice(0,5)+(t.estimated_hours?' (~'+t.estimated_hours+'h)':'')+'</div>':''}
+          ${t.job_order_number?'<div style="margin-bottom:4px"><span style="font-size:9px;background:var(--primary-light);color:var(--primary);padding:1px 6px;border-radius:4px;font-weight:600">JO: '+t.job_order_number+'</span></div>':''}
+          ${t.location?'<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">&#128205; '+t.location+'</div>':''}
           ${descPreview}
           <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border-light);">
             <div style="display:flex;align-items:center;gap:6px;">
@@ -613,6 +624,12 @@
       document.getElementById('task-status').value = 'todo';
       document.getElementById('task-start').value = '';
       document.getElementById('task-due').value = '';
+      document.getElementById('task-start-time').value = '';
+      document.getElementById('task-end-time').value = '';
+      document.getElementById('task-est-hours').value = '';
+      document.getElementById('task-actual-hours').value = '';
+      document.getElementById('task-location').value = '';
+      document.getElementById('task-jo-group').style.display = 'none';
       await populateAssigneeDropdown();
       document.getElementById('task-assignee').value = '';
       document.getElementById('task-modal').classList.add('show');
@@ -638,6 +655,14 @@
       document.getElementById('task-status').value = t.status || 'todo';
       document.getElementById('task-start').value = t.start_date ? toLD(t.start_date) : '';
       document.getElementById('task-due').value = t.due_date ? toLD(t.due_date) : '';
+      document.getElementById('task-start-time').value = t.start_time ? t.start_time.slice(0,5) : '';
+      document.getElementById('task-end-time').value = t.end_time ? t.end_time.slice(0,5) : '';
+      document.getElementById('task-est-hours').value = t.estimated_hours || '';
+      document.getElementById('task-actual-hours').value = t.actual_hours || '';
+      document.getElementById('task-location').value = t.location || '';
+      const joG = document.getElementById('task-jo-group');
+      if (t.job_order_id && t.job_order_number) { joG.style.display=''; document.getElementById('task-jo-info').innerHTML='<span style="color:var(--primary);font-weight:600">'+t.job_order_number+'</span> '+(t.jo_title||''); }
+      else joG.style.display='none';
       await populateAssigneeDropdown();
       document.getElementById('task-assignee').value = t.assigned_to || '';
       document.getElementById('task-modal').classList.add('show');
@@ -669,6 +694,11 @@
         assigned_to: document.getElementById('task-assignee').value || null,
         start_date: startDate,
         due_date: dueDate,
+        start_time: document.getElementById('task-start-time').value || null,
+        end_time: document.getElementById('task-end-time').value || null,
+        estimated_hours: document.getElementById('task-est-hours').value || null,
+        actual_hours: document.getElementById('task-actual-hours').value || null,
+        location: document.getElementById('task-location').value || null,
       };
 
       try {
@@ -831,6 +861,29 @@
       if (listSortCol === col) listSortAsc = !listSortAsc;
       else { listSortCol = col; listSortAsc = true; }
       renderBoard();
+    }
+
+    // ═══ Export Excel ═══
+    function exportTasks() {
+      const tasks = getFilteredTasks();
+      if (!tasks.length) { alert('ไม่มี tasks ให้ export'); return; }
+
+      const statusLabel = { todo: 'To-do', in_progress: 'In Progress', review: 'Review', done: 'Done' };
+      const projSel = document.getElementById('projectSelect');
+      const projName = projSel.selectedIndex > 0 ? projSel.options[projSel.selectedIndex].text : 'Taskboard';
+
+      const rows = tasks.map(t => ({
+        'Task Title': t.title || '',
+        'Description': t.description || '',
+        'Project': projName,
+        'Status': statusLabel[t.status] || t.status || '',
+        'Priority': (t.priority || '').charAt(0).toUpperCase() + (t.priority || '').slice(1),
+        'Assignee': (t.first_name_th || t.first_name || '') + (t.last_name ? ' ' + t.last_name : ''),
+        'Start Date': t.start_date ? toLD(t.start_date) : '',
+        'Due Date': t.due_date ? toLD(t.due_date) : ''
+      }));
+
+      exportExcel(rows, projName.replace(/[^a-zA-Z0-9ก-๙]/g, '_') + '_tasks', { sheetName: 'Tasks' });
     }
 
     // Close modal on ESC

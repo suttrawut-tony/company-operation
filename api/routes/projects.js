@@ -123,9 +123,11 @@ router.delete('/:id/members/:userId', requireProjectAccess, requireRole('pm','ex
 router.get('/:id/tasks', requireProjectAccess, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT t.*, u.first_name, u.last_name, u.first_name_th
+      `SELECT t.*, u.first_name, u.last_name, u.first_name_th,
+       jo.job_order_number, jo.title AS jo_title
        FROM tasks t LEFT JOIN users u ON t.assigned_to = u.id
-       WHERE t.project_id = $1 ORDER BY t.status, t.due_date`, [req.params.id]);
+       LEFT JOIN job_orders jo ON t.job_order_id = jo.id
+       WHERE t.project_id = $1 ORDER BY t.sort_order, t.status, t.due_date`, [req.params.id]);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -133,12 +135,16 @@ router.get('/:id/tasks', requireProjectAccess, async (req, res) => {
 // POST /api/projects/:id/tasks — Create task
 router.post('/:id/tasks', requireProjectAccess, async (req, res) => {
   try {
-    const { title, description, priority, assigned_to, due_date, start_date, phase_id } = req.body;
+    const { title, description, priority, assigned_to, due_date, start_date, phase_id,
+            start_time, end_time, estimated_hours, job_order_id, booking_id, location, task_type } = req.body;
     const { rows } = await db.query(
-      `INSERT INTO tasks (project_id, title, description, priority, assigned_to, due_date, start_date, phase_id, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [req.params.id, title, description || null, priority || 'medium',
-       assigned_to || null, due_date || null, start_date || null, phase_id || null, req.user.id]
+      `INSERT INTO tasks (project_id, title, description, priority, assigned_to, due_date, start_date, phase_id,
+        start_time, end_time, estimated_hours, job_order_id, booking_id, location, task_type, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+      [req.params.id, title, description||null, priority||'medium',
+       assigned_to||null, due_date||null, start_date||null, phase_id||null,
+       start_time||null, end_time||null, estimated_hours||null,
+       job_order_id||null, booking_id||null, location||null, task_type||'general', req.user.id]
     );
     res.status(201).json(rows[0]);
     req.broadcast('task_created', { project_id: req.params.id });
@@ -148,16 +154,22 @@ router.post('/:id/tasks', requireProjectAccess, async (req, res) => {
 // PUT /api/projects/:id/tasks/:taskId — Update task
 router.put('/:id/tasks/:taskId', requireProjectAccess, async (req, res) => {
   try {
-    const { title, description, status, priority, assigned_to, due_date, start_date } = req.body;
+    const { title, description, status, priority, assigned_to, due_date, start_date,
+            start_time, end_time, estimated_hours, actual_hours, location, task_type } = req.body;
     const { rows } = await db.query(
       `UPDATE tasks SET title=COALESCE($1,title), description=COALESCE($2,description),
        status=COALESCE($3,status), priority=COALESCE($4,priority),
        assigned_to=COALESCE($5,assigned_to), due_date=COALESCE($6,due_date),
        start_date=COALESCE($7,start_date),
+       start_time=COALESCE($8,start_time), end_time=COALESCE($9,end_time),
+       estimated_hours=COALESCE($10,estimated_hours), actual_hours=COALESCE($11,actual_hours),
+       location=COALESCE($12,location), task_type=COALESCE($13,task_type),
        completed_at=CASE WHEN $3='done' THEN NOW() ELSE completed_at END,
        updated_at=NOW()
-       WHERE id=$8 AND project_id=$9 RETURNING *`,
-      [title, description, status, priority, assigned_to, due_date, start_date, req.params.taskId, req.params.id]
+       WHERE id=$14 AND project_id=$15 RETURNING *`,
+      [title, description, status, priority, assigned_to, due_date, start_date,
+       start_time, end_time, estimated_hours, actual_hours, location, task_type,
+       req.params.taskId, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Task not found' });
     res.json(rows[0]);
