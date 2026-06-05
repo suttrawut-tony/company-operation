@@ -132,6 +132,23 @@ router.put('/:id', async (req, res) => {
     if (!['pending','approved','confirmed','surveying','survey_completed'].includes(existing.status) && req.user.role !== 'executive') {
       return res.status(400).json({ error: 'Cannot edit booking with status ' + existing.status });
     }
+    // Status transition validation (state machine)
+    if (req.body.status && req.body.status !== existing.status) {
+      const validTransitions = {
+        pending: ['approved','cancelled'],
+        approved: ['surveying','cancelled'],
+        surveying: ['survey_completed','cancelled'],
+        survey_completed: ['confirmed','cancelled'],
+        confirmed: ['quotation_sent','cancelled'],
+        quotation_sent: ['completed','cancelled'],
+        checked_out: ['checked_in'],
+        checked_in: ['completed'],
+      };
+      const allowed = validTransitions[existing.status] || [];
+      if (!allowed.includes(req.body.status) && req.user.role !== 'executive') {
+        return res.status(400).json({ error: `Cannot change status from '${existing.status}' to '${req.body.status}'. Allowed: ${allowed.join(', ')}` });
+      }
+    }
     // Sanitize UUID fields
     ['project_id','job_order_id','vehicle_id','technician_id','quotation_id'].forEach(f => {
       if (req.body[f] === '' || req.body[f] === 'null') req.body[f] = null;
@@ -281,9 +298,16 @@ router.post('/:id/convert-to-sq', async (req, res) => {
     const { rows: [booking] } = await db.query(
       'SELECT * FROM bookings WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    // Validate: only confirmed bookings can be converted
+    if (booking.status !== 'confirmed' && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'Booking must be in "confirmed" status to convert. Current: ' + booking.status });
+    }
 
     const { rows: bItems } = await db.query(
       'SELECT * FROM booking_items WHERE booking_id = $1 ORDER BY sort_order', [booking.id]);
+    if (!bItems.length) {
+      return res.status(400).json({ error: 'Booking has no items. Add items before converting to SQ.' });
+    }
 
     // Calculate totals
     const subtotal = bItems.reduce((s, i) => s + parseFloat(i.total || 0), 0);

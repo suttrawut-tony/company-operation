@@ -842,6 +842,7 @@
                 <option value="">-- เลือกใบสั่งงาน --</option>
               </select>
               <button type="button" class="jo-add-btn" onclick="toggleJOForm('vehicle')" title="สร้างใบสั่งงานใหม่">+</button>
+              <button type="button" class="jo-add-btn" onclick="approveJO('vehicle')" title="อนุมัติใบสั่งงาน" style="color:var(--success,#0f9d58);font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
             </div>
           </div>
           <div class="jo-inline-form" id="vehJOForm">
@@ -986,6 +987,7 @@
                 <option value="">-- เลือกใบสั่งงาน --</option>
               </select>
               <button type="button" class="jo-add-btn" onclick="toggleJOForm('solar')" title="สร้างใบสั่งงานใหม่">+</button>
+              <button type="button" class="jo-add-btn" onclick="approveJO('solar')" title="อนุมัติใบสั่งงาน" style="color:var(--success,#0f9d58);font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
             </div>
           </div>
           <div class="jo-inline-form" id="solarJOForm">
@@ -1261,6 +1263,7 @@
                 <option value="">-- เลือกใบสั่งงาน --</option>
               </select>
               <button type="button" class="jo-add-btn" onclick="toggleJOForm('flight')" title="สร้างใบสั่งงานใหม่">+</button>
+              <button type="button" class="jo-add-btn" onclick="approveJO('flight')" title="อนุมัติใบสั่งงาน" style="color:var(--success,#0f9d58);font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
             </div>
           </div>
           <div class="jo-inline-form" id="flightJOForm">
@@ -1455,8 +1458,9 @@
 
     async function loadJobOrders() {
       try {
-        const res = await API.get('/job-orders/approved');
-        approvedJobOrders = res || [];
+        // Load all non-cancelled JOs (draft + approved + in_progress)
+        const res = await API.get('/job-orders');
+        approvedJobOrders = (res || []).filter(jo => jo.status !== 'cancelled' && jo.status !== 'rejected');
         populateJOSelects();
       } catch(e) { approvedJobOrders = []; }
     }
@@ -1469,7 +1473,9 @@
         sel.innerHTML = '<option value="">-- เลือกใบสั่งงาน --</option>';
         approvedJobOrders.forEach(jo => {
           const extra = jo.project_code ? ` (${jo.project_code})` : '';
-          sel.innerHTML += `<option value="${jo.id}">${jo.job_order_number} — ${jo.title}${extra}</option>`;
+          const statusTag = jo.status === 'draft' ? ' [รออนุมัติ]' : jo.status === 'approved' ? '' : ` [${jo.status}]`;
+          sel.innerHTML += `<option value="${jo.id}" ${jo.status==='draft'?'style="color:var(--warning)"':''}>` +
+            `${jo.job_order_number} — ${jo.title}${extra}${statusTag}</option>`;
         });
         if (cur) sel.value = cur;
       });
@@ -1491,6 +1497,20 @@
         const todayStr = fmt(new Date());
         document.getElementById(prefix + 'JOStart').value = todayStr;
         document.getElementById(prefix + 'JOEnd').value = todayStr;
+      }
+    }
+
+    async function approveJO(type) {
+      const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
+      const joId = document.getElementById(prefix + 'JobOrder').value;
+      if (!joId) { typeof showToast === 'function' ? showToast('กรุณาเลือกใบสั่งงานก่อน','error') : alert('เลือก JO ก่อน'); return; }
+      try {
+        await API.post('/job-orders/' + joId + '/approve');
+        typeof showToast === 'function' && showToast('อนุมัติใบสั่งงานสำเร็จ', 'success');
+        await loadJobOrders();
+        document.getElementById(prefix + 'JobOrder').value = joId;
+      } catch(e) {
+        typeof showToast === 'function' ? showToast(e.message || 'Error', 'error') : alert(e.message);
       }
     }
 

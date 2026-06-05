@@ -77,9 +77,40 @@ router.post('/', async (req, res) => {
        b.job_type || null, b.site_name || null, b.location || null, b.priority || 'normal',
        b.planned_start, b.planned_end,
        b.needs_vehicle || false, b.needs_technician || false, b.needs_flight || false,
-       'approved', req.user.id]);
+       b.status || 'draft', req.user.id]);
 
     res.status(201).json(jo);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/job-orders/:id/approve — approve a draft/submitted JO
+router.post('/:id/approve', async (req, res) => {
+  try {
+    // Only manager/executive can approve
+    if (!['executive','manager'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Only manager or executive can approve job orders' });
+    }
+    const { rows } = await db.query(
+      `UPDATE job_orders SET status='approved', updated_at=NOW()
+       WHERE id=$1 AND company_id=$2 AND status IN ('draft','submitted') RETURNING *`,
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(400).json({ error: 'Cannot approve — JO not found or already approved' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/job-orders/:id/reject
+router.post('/:id/reject', async (req, res) => {
+  try {
+    if (!['executive','manager'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Only manager or executive can reject job orders' });
+    }
+    const { rows } = await db.query(
+      `UPDATE job_orders SET status='rejected', updated_at=NOW()
+       WHERE id=$1 AND company_id=$2 AND status IN ('draft','submitted') RETURNING *`,
+      [req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(400).json({ error: 'Cannot reject' });
+    res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
