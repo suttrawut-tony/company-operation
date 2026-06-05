@@ -500,6 +500,20 @@
     .gps-coords-display { padding:10px 14px; border-top:1px solid var(--border-light); font-size:13px; text-align:center; }
     .gps-loading-dot::after { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; margin-left:4px; animation:gpsDotPulse 1s infinite; }
     @keyframes gpsDotPulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+    /* Drag to Copy */
+    .cal-event[dragging="true"] { opacity:0.4; transform:scale(0.95); }
+    .cal-event.drag-ready { cursor:grab; box-shadow:0 2px 8px rgba(0,0,0,0.15); transform:scale(1.02); }
+    .drag-ghost { position:fixed; pointer-events:none; z-index:9999; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; color:#fff; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.25); transform:translate(-50%,-50%); opacity:0.9; }
+    .drag-ghost::after { content:' \2935 copy'; font-size:10px; opacity:0.8; margin-left:6px; }
+    .cal-cell.drag-over { background:rgba(79,110,247,0.12)!important; box-shadow:inset 0 0 0 2px var(--primary); }
+    .copy-confirm { position:fixed; z-index:10000; background:var(--bg-white); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.2); padding:20px; width:340px; max-width:90vw; animation:gpsSlideIn 0.2s ease-out; }
+    .copy-confirm-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+    .copy-confirm-desc { font-size:12px; color:var(--text-secondary); margin-bottom:16px; }
+    .copy-confirm-event { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-light); border-radius:8px; margin-bottom:12px; font-size:12px; font-weight:600; }
+    .copy-confirm-event .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .copy-confirm-arrow { text-align:center; font-size:18px; color:var(--primary); margin:8px 0; }
+    .copy-confirm-date { text-align:center; font-size:14px; font-weight:700; color:var(--primary); padding:8px; background:var(--primary-light); border-radius:var(--radius); margin-bottom:16px; }
+    .copy-confirm-footer { display:flex; gap:8px; justify-content:flex-end; }
 
     /* ── Quick Popup (Google Calendar style) ── */
     .qp-backdrop {
@@ -3226,6 +3240,14 @@
       btnEdit.addEventListener('click', () => { closeQuickPopup(); editBooking(ev.id); });
       toolbarEl.appendChild(btnEdit);
 
+      // Copy button
+      const btnCopy = document.createElement('button');
+      btnCopy.className = 'qp-tool-btn';
+      btnCopy.title = 'ก็อปปี้';
+      btnCopy.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      btnCopy.addEventListener('click', () => { closeQuickPopup(); promptCopyDate(ev.id); });
+      toolbarEl.appendChild(btnCopy);
+
       const btnDel = document.createElement('button');
       btnDel.className = 'qp-tool-btn';
       btnDel.title = 'ลบ';
@@ -3363,6 +3385,123 @@
       });
     }
 
+    // ═══ Drag to Copy Engine ═══
+    let _dragState = null;
+
+    function initDragToCopy() {
+      const area = document.getElementById('calendarArea');
+      if (!area) return;
+      area.addEventListener('mousedown', e => { const el=e.target.closest('.cal-event'); if(el) startDragHold(el,e.clientX,e.clientY,e); }, {passive:false});
+      area.addEventListener('touchstart', e => { const el=e.target.closest('.cal-event'); if(el){ const t=e.touches[0]; startDragHold(el,t.clientX,t.clientY,e); }}, {passive:false});
+      document.addEventListener('mousemove', e => { if(!_dragState)return; if(!_dragState.isDragging){if(Math.abs(e.clientX-_dragState.startX)>5||Math.abs(e.clientY-_dragState.startY)>5){clearTimeout(_dragState.holdTimer);_dragState=null;}return;} e.preventDefault(); updateDragPos(e.clientX,e.clientY); }, {passive:false});
+      document.addEventListener('touchmove', e => { if(!_dragState||!_dragState.isDragging)return; e.preventDefault(); const t=e.touches[0]; updateDragPos(t.clientX,t.clientY); }, {passive:false});
+      document.addEventListener('mouseup', onDragEnd);
+      document.addEventListener('touchend', onDragEnd);
+      document.addEventListener('keydown', e => { if(e.key==='Escape') cancelDrag(); });
+    }
+
+    function startDragHold(el, x, y, origEvt) {
+      const oc = el.getAttribute('onclick')||'';
+      const m = oc.match(/showQuickDetail\('([^']+)'/);
+      if (!m) return;
+      _dragState = { eventId:m[1], eventEl:el, ghostEl:null, startX:x, startY:y, isDragging:false, targetDate:null,
+        holdTimer: setTimeout(()=>{
+          if(!_dragState) return;
+          _dragState.isDragging=true;
+          el.setAttribute('dragging','true'); el.classList.add('drag-ready');
+          const ev = allBookings.find(b=>b.id===_dragState.eventId);
+          if(ev){ const g=document.createElement('div'); g.className='drag-ghost'; g.style.background=getResourceColor(ev); g.textContent=ev.title||'Booking'; g.style.left=x+'px'; g.style.top=y+'px'; document.body.appendChild(g); _dragState.ghostEl=g; }
+        }, 300)
+      };
+    }
+
+    function updateDragPos(x,y) {
+      if(_dragState.ghostEl){_dragState.ghostEl.style.left=x+'px';_dragState.ghostEl.style.top=y+'px';}
+      document.querySelectorAll('.cal-cell.drag-over').forEach(c=>c.classList.remove('drag-over'));
+      const under=document.elementFromPoint(x,y);
+      const cell=under?.closest('.cal-cell');
+      if(cell&&cell.dataset.date){cell.classList.add('drag-over');_dragState.targetDate=cell.dataset.date;}
+      else _dragState.targetDate=null;
+    }
+
+    function onDragEnd() {
+      if(!_dragState)return;
+      clearTimeout(_dragState.holdTimer);
+      if(!_dragState.isDragging){_dragState=null;return;}
+      const{eventId,eventEl,ghostEl,targetDate}=_dragState;
+      eventEl.removeAttribute('dragging'); eventEl.classList.remove('drag-ready');
+      if(ghostEl)ghostEl.remove();
+      document.querySelectorAll('.cal-cell.drag-over').forEach(c=>c.classList.remove('drag-over'));
+      if(targetDate){const ev=allBookings.find(b=>b.id===eventId);if(ev&&targetDate!==toLocalDate(ev.start_date))showCopyConfirm(ev,targetDate);}
+      _dragState=null;
+    }
+
+    function cancelDrag() {
+      if(!_dragState)return; clearTimeout(_dragState.holdTimer);
+      if(_dragState.eventEl){_dragState.eventEl.removeAttribute('dragging');_dragState.eventEl.classList.remove('drag-ready');}
+      if(_dragState.ghostEl)_dragState.ghostEl.remove();
+      document.querySelectorAll('.cal-cell.drag-over').forEach(c=>c.classList.remove('drag-over'));
+      _dragState=null;
+    }
+
+    // Copy confirm popup
+    function showCopyConfirm(ev, newStart) {
+      document.getElementById('copy-confirm-popup')?.remove();
+      document.getElementById('copy-confirm-backdrop')?.remove();
+      const s=toLocalDate(ev.start_date), e=toLocalDate(ev.end_date||ev.start_date);
+      const dur=Math.round((new Date(e)-new Date(s))/86400000);
+      const ne=new Date(newStart); ne.setDate(ne.getDate()+dur); const newEnd=fmt(ne);
+      const c=getResourceColor(ev);
+      const df=d=>new Date(d+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+      let dd=df(newStart); if(dur>0) dd+=' → '+df(newEnd);
+      const bd=document.createElement('div'); bd.id='copy-confirm-backdrop'; bd.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:9999';
+      bd.onclick=()=>{bd.remove();document.getElementById('copy-confirm-popup')?.remove();};
+      const p=document.createElement('div'); p.className='copy-confirm'; p.id='copy-confirm-popup';
+      p.style.cssText='top:50%;left:50%;transform:translate(-50%,-50%)';
+      p.innerHTML=`<div class="copy-confirm-title">ก็อปปี้การจอง</div><div class="copy-confirm-desc">คัดลอกการจองนี้ไปยังวันที่ใหม่</div><div class="copy-confirm-event"><span class="dot" style="background:${c}"></span><span>${ev.title||'Booking'}</span></div><div class="copy-confirm-arrow">&darr;</div><div class="copy-confirm-date">${dd}</div><div class="copy-confirm-footer"><button class="btn btn-secondary btn-sm" onclick="document.getElementById('copy-confirm-popup').remove();document.getElementById('copy-confirm-backdrop').remove()">ยกเลิก</button><button class="btn btn-primary btn-sm" id="copy-confirm-btn" onclick="executeCopy('${ev.id}','${newStart}','${newEnd}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ก็อปปี้</button></div>`;
+      document.body.appendChild(bd); document.body.appendChild(p);
+    }
+
+    async function executeCopy(eventId, newStart, newEnd) {
+      const btn=document.getElementById('copy-confirm-btn');
+      if(btn){btn.disabled=true;btn.textContent='กำลังก็อปปี้...';}
+      try {
+        const ev=allBookings.find(b=>b.id===eventId); if(!ev) throw new Error('ไม่พบข้อมูล');
+        const d={};
+        ['booking_type','title','description','purpose','location','vehicle_id','technician_id','project_id','job_order_id','job_type','phase','color','all_day','start_time','end_time','passengers','customer_name','customer_phone','customer_address','site_name','system_capacity','airline','flight_number','departure_airport','arrival_airport','latitude','longitude'].forEach(f=>{if(ev[f]!=null)d[f]=ev[f];});
+        d.start_date=newStart; d.end_date=newEnd;
+        await API.post('/bookings',d);
+        document.getElementById('copy-confirm-popup')?.remove();
+        document.getElementById('copy-confirm-backdrop')?.remove();
+        typeof showToast==='function'&&showToast('ก็อปปี้การจองสำเร็จ','success');
+        refreshAll();
+      } catch(e){ typeof showToast==='function'?showToast(e.message,'error'):alert(e.message); if(btn){btn.disabled=false;btn.textContent='ก็อปปี้';} }
+    }
+
+    function promptCopyDate(eventId) {
+      const ev=allBookings.find(b=>b.id===eventId); if(!ev) return;
+      document.getElementById('copy-date-picker')?.remove();
+      document.getElementById('copy-date-backdrop')?.remove();
+      const c=getResourceColor(ev);
+      const bd=document.createElement('div'); bd.id='copy-date-backdrop'; bd.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:9999';
+      bd.onclick=()=>{bd.remove();document.getElementById('copy-date-picker')?.remove();};
+      const p=document.createElement('div'); p.className='copy-confirm'; p.id='copy-date-picker';
+      p.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000';
+      p.innerHTML=`<div class="copy-confirm-title">ก็อปปี้การจอง</div><div class="copy-confirm-event"><span class="dot" style="background:${c}"></span><span>${ev.title||'Booking'}</span></div><div class="form-group" style="margin:16px 0 8px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block">เลือกวันที่เริ่มต้นใหม่</label><input type="date" class="form-input" id="copy-new-date" value="${fmt(new Date())}" style="width:100%"></div><div class="copy-confirm-footer"><button class="btn btn-secondary btn-sm" onclick="document.getElementById('copy-date-picker').remove();document.getElementById('copy-date-backdrop').remove()">ยกเลิก</button><button class="btn btn-primary btn-sm" onclick="executeCopyFromPicker('${ev.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ก็อปปี้</button></div>`;
+      document.body.appendChild(bd); document.body.appendChild(p);
+    }
+
+    function executeCopyFromPicker(eventId) {
+      const d=document.getElementById('copy-new-date').value; if(!d){typeof showToast==='function'&&showToast('กรุณาเลือกวันที่','warning');return;}
+      const ev=allBookings.find(b=>b.id===eventId); if(!ev) return;
+      const s=toLocalDate(ev.start_date),e=toLocalDate(ev.end_date||ev.start_date);
+      const dur=Math.round((new Date(e)-new Date(s))/86400000);
+      const ne=new Date(d); ne.setDate(ne.getDate()+dur);
+      document.getElementById('copy-date-picker')?.remove();
+      document.getElementById('copy-date-backdrop')?.remove();
+      showCopyConfirm(ev,d,fmt(ne));
+    }
+
     function initIcons() {
       if (typeof I === 'undefined') return;
       // Page header
@@ -3397,6 +3536,7 @@
       loadResources();
       refreshAll();
       initIcons();
+      initDragToCopy();
     }
   </script>
 </body>
