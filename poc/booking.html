@@ -1930,8 +1930,11 @@
       return ev.color || TYPE_COLORS[ev.booking_type] || '#4285f4';
     }
 
+    // FIX: Compare dates as YYYY-MM-DD strings only, handle null/empty end_date
     function isMultiDay(ev) {
-      const s = toLocalDate(ev.start_date), e = toLocalDate(ev.end_date||ev.start_date);
+      const s = toLocalDate(ev.start_date);
+      const e = toLocalDate(ev.end_date);
+      if (!s || !e) return false;
       return s !== e;
     }
 
@@ -2542,10 +2545,12 @@
       }
     }
 
+    // FIX: Close both popup types + add debug guard
     function editBooking(id) {
       closePopup();
-      const ev = allBookings.find(e => e.id === id);
-      if (!ev) return;
+      closeQuickPopup();
+      const ev = allBookings.find(e => String(e.id) === String(id));
+      if (!ev) { console.warn('editBooking: booking not found for id', id); return; }
       editingId = id;
 
       if (ev.booking_type === 'vehicle') {
@@ -2624,23 +2629,27 @@
       }
     }
 
+    // FIX: Close both popup types
     async function deleteBooking(id) {
       if (!confirm('ต้องการลบการจองนี้หรือไม่?')) return;
       try {
         await API.del('/bookings/' + id);
         if (typeof showToast === 'function') showToast('ลบการจองสำเร็จ', 'success');
         closePopup();
+        closeQuickPopup();
         refreshAll();
       } catch(e) {
         if (typeof showToast === 'function') showToast(e.message || 'เกิดข้อผิดพลาด', 'error');
       }
     }
 
+    // FIX: Close both popup types
     async function approveBooking(id) {
       try {
         await API.post('/bookings/' + id + '/approve');
         if (typeof showToast === 'function') showToast('อนุมัติสำเร็จ', 'success');
         closePopup();
+        closeQuickPopup();
         refreshAll();
       } catch(e) {
         if (typeof showToast === 'function') showToast(e.message || 'เกิดข้อผิดพลาด', 'error');
