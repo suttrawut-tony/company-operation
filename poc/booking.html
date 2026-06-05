@@ -3115,16 +3115,41 @@
       const trashIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
       const closeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
-      // FIX: Add approve button when status=pending
+      // FIX: Use global handlers to avoid innerHTML onclick issues
       const checkIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-      let toolbar = '';
+      const toolbarEl = document.getElementById('qpDetailToolbar');
+      toolbarEl.innerHTML = '';
+
       if (ev.status === 'pending') {
-        toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup();approveBooking('${ev.id}')" title="อนุมัติ" style="color:var(--success,#0f9d58)">${checkIcon}</button>`;
+        const btnApprove = document.createElement('button');
+        btnApprove.className = 'qp-tool-btn';
+        btnApprove.title = 'อนุมัติ';
+        btnApprove.style.color = 'var(--success,#0f9d58)';
+        btnApprove.innerHTML = checkIcon;
+        btnApprove.addEventListener('click', () => { closeQuickPopup(); approveBooking(ev.id); });
+        toolbarEl.appendChild(btnApprove);
       }
-      toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup();editBooking('${ev.id}')" title="แก้ไข">${editIcon}</button>`;
-      toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup();deleteBooking('${ev.id}')" title="ลบ">${trashIcon}</button>`;
-      toolbar += `<button class="qp-tool-btn" onclick="closeQuickPopup()" title="ปิด">${closeIcon}</button>`;
-      document.getElementById('qpDetailToolbar').innerHTML = toolbar;
+
+      const btnEdit = document.createElement('button');
+      btnEdit.className = 'qp-tool-btn';
+      btnEdit.title = 'แก้ไข';
+      btnEdit.innerHTML = editIcon;
+      btnEdit.addEventListener('click', () => { closeQuickPopup(); editBooking(ev.id); });
+      toolbarEl.appendChild(btnEdit);
+
+      const btnDel = document.createElement('button');
+      btnDel.className = 'qp-tool-btn';
+      btnDel.title = 'ลบ';
+      btnDel.innerHTML = trashIcon;
+      btnDel.addEventListener('click', () => { closeQuickPopup(); deleteBooking(ev.id); });
+      toolbarEl.appendChild(btnDel);
+
+      const btnClose = document.createElement('button');
+      btnClose.className = 'qp-tool-btn';
+      btnClose.title = 'ปิด';
+      btnClose.innerHTML = closeIcon;
+      btnClose.addEventListener('click', () => closeQuickPopup());
+      toolbarEl.appendChild(btnClose);
 
       // Title with color dot
       document.getElementById('qpDetailTitle').innerHTML =
