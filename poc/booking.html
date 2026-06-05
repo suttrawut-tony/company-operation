@@ -475,6 +475,31 @@
     .team-chip-name { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .team-chip-remove { border:none; background:none; font-size:15px; line-height:1; cursor:pointer; color:var(--text-muted); padding:0 2px; border-radius:50%; }
     .team-chip-remove:hover { color:var(--danger); background:rgba(239,68,68,0.1); }
+    /* GPS Picker v2 */
+    .gps-method-btn { display:flex; align-items:center; gap:12px; width:100%; padding:14px 16px; margin-bottom:12px; background:var(--bg-white); border:1.5px solid var(--border); border-radius:12px; cursor:pointer; transition:all 0.2s; text-align:left; font-family:inherit; }
+    .gps-method-btn:hover { border-color:var(--primary); background:rgba(79,110,247,0.04); transform:translateY(-1px); box-shadow:var(--shadow-sm); }
+    .gps-method-btn:disabled { opacity:0.6; cursor:wait; }
+    .gps-method-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .gps-method-title { font-size:13px; font-weight:600; color:var(--text-primary); }
+    .gps-method-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .gps-divider { display:flex; align-items:center; gap:12px; margin:16px 0; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+    .gps-divider::before,.gps-divider::after { content:''; flex:1; height:1px; background:var(--border-light); }
+    .gps-section { margin-bottom:16px; }
+    .gps-section-label { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+    .gps-paste-input { font-size:13px!important; padding:10px 14px!important; border-radius:12px!important; }
+    .gps-hint { font-size:11px; color:var(--text-muted); margin-top:8px; padding:8px 12px; background:var(--bg-light); border-radius:8px; line-height:1.6; }
+    .gps-hint strong { color:var(--text-secondary); }
+    .gps-open-maps-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:10px; margin-top:10px; background:var(--bg-white); border:1.5px dashed var(--border); border-radius:12px; cursor:pointer; font-size:13px; font-weight:500; color:var(--primary); font-family:inherit; transition:all 0.15s; }
+    .gps-open-maps-btn:hover { border-color:var(--primary); background:rgba(79,110,247,0.04); }
+    .gps-preview { margin-top:16px; border:1.5px solid var(--border); border-radius:12px; overflow:hidden; animation:gpsSlideIn 0.25s ease-out; }
+    @keyframes gpsSlideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .gps-preview-header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-light); border-bottom:1px solid var(--border-light); font-size:12px; font-weight:600; color:var(--text-secondary); }
+    .gps-gmaps-link { font-size:11px; font-weight:600; color:var(--primary); text-decoration:none; }
+    .gps-gmaps-link:hover { text-decoration:underline; }
+    .gps-map-frame { width:100%; height:200px; background:var(--bg-hover); }
+    .gps-coords-display { padding:10px 14px; border-top:1px solid var(--border-light); font-size:13px; text-align:center; }
+    .gps-loading-dot::after { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; margin-left:4px; animation:gpsDotPulse 1s infinite; }
+    @keyframes gpsDotPulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
 
     /* ── Quick Popup (Google Calendar style) ── */
     .qp-backdrop {
@@ -2360,73 +2385,87 @@
       document.getElementById('solarTimeRow').style.display = allDay ? 'none' : 'grid';
     }
 
-    // ═══ GPS Picker ═══
+    // ═══ GPS Picker v2 — Full rewrite ═══
+    let _gpsPrefix = '';
+
     function pickGPS(prefix) {
-      const existing = document.getElementById('gps-picker-modal');
-      if (existing) existing.remove();
-      const modal = document.createElement('div');
-      modal.className = 'modal-overlay show'; modal.id = 'gps-picker-modal';
-      modal.onclick = e => { if (e.target === modal) modal.remove(); };
-      modal.innerHTML = `<div class="modal-box" style="width:400px">
-        <div class="modal-header"><h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> ปักหมุด GPS</h3>
-          <button class="modal-close" onclick="document.getElementById('gps-picker-modal').remove()">&times;</button></div>
-        <div class="modal-body">
-          <button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:12px" onclick="getMyLocation('${prefix}')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
-            ใช้ตำแหน่งปัจจุบัน
-          </button>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-            <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Latitude</label>
-              <input class="form-input" type="number" step="any" id="gps-lat" placeholder="เช่น 13.7563"></div>
-            <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Longitude</label>
-              <input class="form-input" type="number" step="any" id="gps-lng" placeholder="เช่น 100.5018"></div>
-          </div>
-          <div id="gps-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
-          <button class="btn btn-ghost btn-sm" id="gps-map-link" style="display:none;margin-bottom:12px" onclick="openGPSMap()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-            เปิด Google Maps
-          </button>
+      _gpsPrefix = prefix;
+      document.getElementById('gps-picker-modal')?.remove();
+      const eLat = document.getElementById(prefix+'Lat')?.value || '';
+      const eLng = document.getElementById(prefix+'Lng')?.value || '';
+      const m = document.createElement('div');
+      m.className='modal-overlay show'; m.id='gps-picker-modal';
+      m.onclick=e=>{if(e.target===m)m.remove();};
+      m.innerHTML=`<div class="modal-box" style="width:480px;max-height:90vh;overflow-y:auto">
+        <div class="modal-header"><h3 style="display:flex;align-items:center;gap:8px"><span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#f97316);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>ปักหมุดสถานที่</h3><button class="modal-close" onclick="closeGPSPicker()">&times;</button></div>
+        <div class="modal-body" style="padding:16px 20px">
+          <button class="gps-method-btn" onclick="gpsGetCurrent()" id="gps-btn-current"><span class="gps-method-icon" style="background:linear-gradient(135deg,#3b82f6,#6366f1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/></svg></span><div><div class="gps-method-title">ใช้ตำแหน่งปัจจุบัน</div><div class="gps-method-desc">ระบบจะขอสิทธิ์เข้าถึง GPS ของอุปกรณ์</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--text-muted)"><path d="m9 18 6-6-6-6"/></svg></button>
+          <div id="gps-current-status" style="display:none;padding:8px 12px;margin:-4px 0 12px;font-size:12px;border-radius:var(--radius)"></div>
+          <div class="gps-divider"><span>หรือ</span></div>
+          <div class="gps-section"><label class="gps-section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>วางพิกัด หรือ Google Maps URL</label><input type="text" class="form-input gps-paste-input" id="gps-paste" placeholder="เช่น 13.756, 100.501 หรือวาง Google Maps link" oninput="gpsParsePaste(this.value)"><div class="gps-hint"><strong>วิธีใช้:</strong> เปิด Google Maps → กดค้างที่จุดที่ต้องการ → copy พิกัด หรือ copy URL → กลับมาวางที่นี่</div><button class="gps-open-maps-btn" onclick="gpsOpenMapsForPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>เปิด Google Maps เพื่อเลือกตำแหน่ง</button></div>
+          <div class="gps-divider"><span>หรือกรอกเอง</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label class="gps-section-label" style="margin-bottom:4px">Latitude</label><input type="number" step="any" class="form-input" id="gps-lat" placeholder="13.7563" value="${eLat}" oninput="gpsUpdatePreview()"></div><div><label class="gps-section-label" style="margin-bottom:4px">Longitude</label><input type="number" step="any" class="form-input" id="gps-lng" placeholder="100.5018" value="${eLng}" oninput="gpsUpdatePreview()"></div></div>
+          <div id="gps-preview" class="gps-preview" style="display:none"><div class="gps-preview-header"><span>ตำแหน่งที่เลือก</span><a id="gps-gmaps-link" href="#" target="_blank" class="gps-gmaps-link">ดูบน Google Maps</a></div><div id="gps-map-frame" class="gps-map-frame"></div><div id="gps-coords-display" class="gps-coords-display"></div></div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('gps-picker-modal').remove()">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" onclick="confirmGPS('${prefix}')">ยืนยัน</button>
-        </div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeGPSPicker()">ยกเลิก</button><button class="btn btn-primary btn-sm" id="gps-confirm-btn" onclick="confirmGPS()" ${eLat&&eLng?'':'disabled'}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ยืนยันตำแหน่ง</button></div>
       </div>`;
-      document.body.appendChild(modal);
+      document.body.appendChild(m);
+      if(eLat&&eLng) gpsUpdatePreview();
     }
 
-    function getMyLocation(prefix) {
-      const status = document.getElementById('gps-status');
-      if (!navigator.geolocation) { status.textContent = 'Browser ไม่รองรับ GPS'; return; }
-      status.textContent = 'กำลังหาตำแหน่ง...';
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          document.getElementById('gps-lat').value = pos.coords.latitude.toFixed(7);
-          document.getElementById('gps-lng').value = pos.coords.longitude.toFixed(7);
-          status.innerHTML = '<span style="color:var(--success)">พบตำแหน่งแล้ว</span>';
-          document.getElementById('gps-map-link').style.display = '';
-        },
-        err => { status.textContent = 'ไม่สามารถหาตำแหน่งได้: ' + err.message; },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+    function closeGPSPicker() { document.getElementById('gps-picker-modal')?.remove(); }
+
+    function gpsGetCurrent() {
+      const s=document.getElementById('gps-current-status'); const btn=document.getElementById('gps-btn-current');
+      s.style.display='block';
+      if(!navigator.geolocation){s.style.background='#fef2f2';s.style.color='#dc2626';s.textContent='Browser ไม่รองรับ GPS';return;}
+      s.style.background='#eff6ff';s.style.color='#2563eb';s.innerHTML='<span class="gps-loading-dot"></span> กำลังหาตำแหน่ง...';btn.disabled=true;
+      navigator.geolocation.getCurrentPosition(pos=>{
+        document.getElementById('gps-lat').value=pos.coords.latitude.toFixed(7);
+        document.getElementById('gps-lng').value=pos.coords.longitude.toFixed(7);
+        s.style.background='#f0fdf4';s.style.color='#16a34a';s.textContent='พบตำแหน่งแล้ว';btn.disabled=false;
+        gpsUpdatePreview(); setTimeout(()=>{s.style.display='none';},3000);
+      },err=>{
+        s.style.background='#fef2f2';s.style.color='#dc2626';
+        s.textContent=err.code===1?'ไม่ได้รับอนุญาตเข้าถึง GPS':err.code===2?'ไม่สามารถหาตำแหน่งได้':'หมดเวลาหาตำแหน่ง';btn.disabled=false;
+      },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
     }
 
-    function openGPSMap() {
-      const lat = document.getElementById('gps-lat').value;
-      const lng = document.getElementById('gps-lng').value;
-      if (lat && lng) window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank');
+    function gpsParsePaste(raw) {
+      if(!raw||!raw.trim())return; const v=raw.trim(); let lat=null,lng=null;
+      let m=v.match(/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/); if(m){lat=m[1];lng=m[2];}
+      if(!lat){m=v.match(/[?&](?:q|ll|query)=(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);if(m){lat=m[1];lng=m[2];}}
+      if(!lat){m=v.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);if(m){lat=m[1];lng=m[2];}}
+      if(!lat){m=v.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);if(m){lat=m[1];lng=m[2];}}
+      if(!lat){m=v.match(/\((-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)\)/);if(m){lat=m[1];lng=m[2];}}
+      if(lat&&lng){const la=parseFloat(lat),lo=parseFloat(lng);if(la>=-90&&la<=90&&lo>=-180&&lo<=180){document.getElementById('gps-lat').value=la.toFixed(7);document.getElementById('gps-lng').value=lo.toFixed(7);gpsUpdatePreview();}}
     }
 
-    function confirmGPS(prefix) {
-      const lat = document.getElementById('gps-lat').value;
-      const lng = document.getElementById('gps-lng').value;
-      if (!lat || !lng) { alert('กรุณาระบุพิกัด'); return; }
-      const locInput = document.getElementById(prefix + 'Location');
-      const current = locInput.value.replace(/\s*\([\d.,\s-]+\)\s*$/, '');
-      locInput.value = current + (current ? ' ' : '') + `(${lat}, ${lng})`;
-      document.getElementById(prefix + 'Lat').value = lat;
-      document.getElementById(prefix + 'Lng').value = lng;
-      document.getElementById('gps-picker-modal').remove();
+    function gpsOpenMapsForPick() {
+      const lat=document.getElementById('gps-lat').value||'13.7563',lng=document.getElementById('gps-lng').value||'100.5018';
+      window.open(`https://www.google.com/maps/@${lat},${lng},15z`,'_blank');
+    }
+
+    function gpsUpdatePreview() {
+      const lat=parseFloat(document.getElementById('gps-lat').value),lng=parseFloat(document.getElementById('gps-lng').value);
+      const pv=document.getElementById('gps-preview'),btn=document.getElementById('gps-confirm-btn');
+      if(!lat||!lng||isNaN(lat)||isNaN(lng)){if(pv)pv.style.display='none';if(btn)btn.disabled=true;return;}
+      if(pv)pv.style.display='block'; if(btn)btn.disabled=false;
+      document.getElementById('gps-map-frame').innerHTML=`<iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.005},${lat-0.003},${lng+0.005},${lat+0.003}&layer=mapnik&marker=${lat},${lng}" style="width:100%;height:100%;border:0" loading="lazy"></iframe>`;
+      document.getElementById('gps-coords-display').innerHTML=`<span style="font-family:monospace;font-weight:600">${lat.toFixed(7)}, ${lng.toFixed(7)}</span>`;
+      document.getElementById('gps-gmaps-link').href=`https://www.google.com/maps?q=${lat},${lng}`;
+    }
+
+    function confirmGPS() {
+      const lat=document.getElementById('gps-lat').value,lng=document.getElementById('gps-lng').value;
+      if(!lat||!lng){typeof showToast==='function'&&showToast('กรุณาระบุพิกัด','warning');return;}
+      const loc=document.getElementById(_gpsPrefix+'Location');
+      const txt=loc.value.replace(/\s*\([-\d.,\s]+\)\s*$/,'');
+      loc.value=txt+(txt?' ':'')+`(${lat}, ${lng})`;
+      document.getElementById(_gpsPrefix+'Lat').value=lat;
+      document.getElementById(_gpsPrefix+'Lng').value=lng;
+      closeGPSPicker();
+      typeof showToast==='function'&&showToast('ปักหมุดสำเร็จ','success');
     }
 
     function onPhaseChange() {
