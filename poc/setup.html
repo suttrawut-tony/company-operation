@@ -331,6 +331,8 @@ const SECTIONS = [
   { id: 'payment',        label: 'Payment Terms',        icon: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>' },
   { id: 'ot-rate',        label: 'OT Rate Policy',       icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
   { id: 'notifications',  label: 'Notifications',        icon: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>' },
+  { id: 'vehicles',       label: 'Vehicle Master',       icon: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>' },
+  { id: 'manpower',       label: 'Manpower / Technician',icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
 ];
 
 let activeSection = 'company';
@@ -359,6 +361,8 @@ function switchSection(id) {
   document.getElementById(`section-${id}`)?.classList.add('active');
   if (id === 'subscription') loadSubscriptionUI();
   if (id === 'modules') loadModuleTable();
+  if (id === 'vehicles') loadVehicleTable();
+  if (id === 'manpower') loadManpowerTable();
 }
 
 // ─── Build All Sections ───
@@ -377,6 +381,8 @@ function renderSettingsContent() {
     ${renderPaymentTerms()}
     ${renderOTRatePolicy()}
     ${renderNotifications()}
+    ${renderVehicleMaster()}
+    ${renderManpowerMaster()}
   `;
 }
 
@@ -1251,6 +1257,242 @@ function testSAPConnection() {
     statusEl.textContent = 'Connected';
     showToast('SAP B1 connection successful');
   }, 1200);
+}
+
+// ═══════════════════════════════════════
+// Vehicle Master
+// ═══════════════════════════════════════
+let allVehicles = [];
+function renderVehicleMaster() {
+  return `
+  <div class="setup-section${activeSection==='vehicles'?' active':''}" id="section-vehicles">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS.find(s=>s.id==='vehicles').icon,20)} Vehicle Master</h2>
+      <p>จัดการข้อมูลรถยนต์ทั้งหมดของบริษัท</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>รายการรถยนต์</h3>
+        <button class="btn btn-primary btn-sm" onclick="openVehicleModal()">+ เพิ่มรถ</button>
+      </div>
+      <div id="vehicle-table-body" style="overflow-x:auto"><div style="padding:20px;text-align:center;color:var(--text-muted)">Loading...</div></div>
+    </div>
+  </div>`;
+}
+
+async function loadVehicleTable() {
+  try {
+    allVehicles = await API.getVehicles();
+    if (!Array.isArray(allVehicles)) allVehicles = allVehicles.vehicles || [];
+    renderVehicleRows();
+  } catch(e) { document.getElementById('vehicle-table-body').innerHTML='<div style="padding:20px;color:var(--danger)">Error: '+e.message+'</div>'; }
+}
+
+function renderVehicleRows() {
+  const el = document.getElementById('vehicle-table-body');
+  if (!allVehicles.length) { el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted)">ยังไม่มีรถ</div>'; return; }
+  const statusBadge = s => {
+    const m = {available:'background:#d1fae5;color:#065f46',in_use:'background:#dbeafe;color:#1d4ed8',maintenance:'background:#fff3cd;color:#856404',retired:'background:#f8d7da;color:#721c24'};
+    return `<span style="font-size:10px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;${m[s]||m.available}">${(s||'available').replace(/_/g,' ')}</span>`;
+  };
+  let h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>';
+  h+='<th style="padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">ทะเบียน</th>';
+  h+='<th style="padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">ชื่อรถ</th>';
+  h+='<th style="padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">ประเภท</th>';
+  h+='<th style="padding:10px 16px;text-align:center;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">ที่นั่ง</th>';
+  h+='<th style="padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">สถานะ</th>';
+  h+='<th style="padding:10px 16px;text-align:right;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">KM</th>';
+  h+='<th style="padding:10px 16px;text-align:center;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">Actions</th>';
+  h+='</tr></thead><tbody>';
+  allVehicles.forEach(v => {
+    h+=`<tr style="border-bottom:1px solid var(--border-light)">
+      <td style="padding:10px 16px;font-weight:600;color:var(--primary)">${v.plate_number||'-'}</td>
+      <td style="padding:10px 16px">${v.name||'-'}</td>
+      <td style="padding:10px 16px">${v.vehicle_type||'-'}</td>
+      <td style="padding:10px 16px;text-align:center">${v.seats||'-'}</td>
+      <td style="padding:10px 16px">${statusBadge(v.status)}</td>
+      <td style="padding:10px 16px;text-align:right;font-family:monospace">${v.current_km?Number(v.current_km).toLocaleString():'-'}</td>
+      <td style="padding:10px 16px;text-align:center">
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="openVehicleModal('${v.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="toggleVehicleStatus('${v.id}','${v.status}')">Toggle</button>
+      </td>
+    </tr>`;
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+function openVehicleModal(editId) {
+  const v = editId ? allVehicles.find(x=>x.id===editId) : {};
+  const modal = document.createElement('div');
+  modal.className='modal-overlay show'; modal.id='veh-modal';
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+  modal.innerHTML=`<div class="modal-box" style="width:520px">
+    <div class="modal-header"><h3>${editId?'แก้ไขรถ':'เพิ่มรถใหม่'}</h3><button class="modal-close" onclick="document.getElementById('veh-modal').remove()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">ทะเบียน *</label><input class="form-input" id="vm-plate" value="${v.plate_number||''}"></div>
+        <div class="form-group"><label class="form-label">ชื่อรถ *</label><input class="form-input" id="vm-name" value="${v.name||''}"></div>
+        <div class="form-group"><label class="form-label">ประเภท</label><select class="form-input" id="vm-type"><option value="Pickup" ${v.vehicle_type==='Pickup'?'selected':''}>Pickup</option><option value="Van" ${v.vehicle_type==='Van'?'selected':''}>Van</option><option value="Sedan" ${v.vehicle_type==='Sedan'?'selected':''}>Sedan</option><option value="SUV" ${v.vehicle_type==='SUV'?'selected':''}>SUV</option><option value="Truck" ${v.vehicle_type==='Truck'?'selected':''}>Truck</option></select></div>
+        <div class="form-group"><label class="form-label">จำนวนที่นั่ง</label><input class="form-input" type="number" id="vm-seats" value="${v.seats||5}"></div>
+        <div class="form-group"><label class="form-label">KM ปัจจุบัน</label><input class="form-input" type="number" id="vm-km" value="${v.current_km||0}"></div>
+        <div class="form-group"><label class="form-label">ระดับน้ำมัน</label><select class="form-input" id="vm-fuel"><option value="full" ${v.fuel_level==='full'?'selected':''}>Full</option><option value="3/4" ${v.fuel_level==='3/4'?'selected':''}>3/4</option><option value="half" ${v.fuel_level==='half'?'selected':''}>1/2</option><option value="1/4" ${v.fuel_level==='1/4'?'selected':''}>1/4</option><option value="empty" ${v.fuel_level==='empty'?'selected':''}>Empty</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-input" id="vm-notes" rows="2">${v.notes||''}</textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('veh-modal').remove()">ยกเลิก</button>
+      <button class="btn btn-primary btn-sm" onclick="saveVehicleMaster('${editId||''}')">บันทึก</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function saveVehicleMaster(editId) {
+  const data = {
+    plate_number: document.getElementById('vm-plate').value.trim(),
+    name: document.getElementById('vm-name').value.trim(),
+    vehicle_type: document.getElementById('vm-type').value,
+    seats: parseInt(document.getElementById('vm-seats').value)||5,
+    current_km: parseFloat(document.getElementById('vm-km').value)||0,
+    fuel_level: document.getElementById('vm-fuel').value,
+    notes: document.getElementById('vm-notes').value,
+  };
+  if (!data.plate_number || !data.name) { alert('กรุณากรอกทะเบียนและชื่อรถ'); return; }
+  try {
+    if (editId) await API.put('/vehicle/'+editId, data);
+    else await API.post('/vehicle', data);
+    document.getElementById('veh-modal').remove();
+    showToast(editId?'อัปเดตรถสำเร็จ':'เพิ่มรถสำเร็จ','success');
+    loadVehicleTable();
+  } catch(e) { showToast(e.message||'Error','error'); }
+}
+
+async function toggleVehicleStatus(id, current) {
+  const cycle = ['available','in_use','maintenance','retired'];
+  const next = cycle[(cycle.indexOf(current)+1)%cycle.length];
+  try {
+    await API.put('/vehicle/'+id, {status:next});
+    showToast('เปลี่ยนสถานะเป็น '+next,'success');
+    loadVehicleTable();
+  } catch(e) { showToast(e.message,'error'); }
+}
+
+// ═══════════════════════════════════════
+// Manpower / Technician Master
+// ═══════════════════════════════════════
+let allTechs = [];
+function renderManpowerMaster() {
+  return `
+  <div class="setup-section${activeSection==='manpower'?' active':''}" id="section-manpower">
+    <div class="section-header">
+      <h2>${sIcon(SECTIONS.find(s=>s.id==='manpower').icon,20)} Manpower / Technician</h2>
+      <p>จัดการข้อมูลช่างและพนักงานภาคสนาม</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>รายการช่าง / พนักงาน</h3>
+        <button class="btn btn-primary btn-sm" onclick="openManpowerModal()">+ เพิ่มช่าง</button>
+      </div>
+      <div id="manpower-table-body" style="overflow-x:auto"><div style="padding:20px;text-align:center;color:var(--text-muted)">Loading...</div></div>
+    </div>
+  </div>`;
+}
+
+async function loadManpowerTable() {
+  try {
+    const res = await API.get('/technicians');
+    allTechs = Array.isArray(res) ? res : (res.technicians||[]);
+    renderManpowerRows();
+  } catch(e) { document.getElementById('manpower-table-body').innerHTML='<div style="padding:20px;color:var(--danger)">Error: '+e.message+'</div>'; }
+}
+
+function renderManpowerRows() {
+  const el = document.getElementById('manpower-table-body');
+  if (!allTechs.length) { el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted)">ยังไม่มีข้อมูล</div>'; return; }
+  const th = s => `<th style="padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-muted)">${s}</th>`;
+  let h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>';
+  h+=th('รหัส')+th('ชื่อ')+th('ชื่อเล่น')+th('ความชำนาญ')+th('ระดับ')+th('ค่าแรง/วัน')+th('โทร')+th('สถานะ')+th('Actions');
+  h+='</tr></thead><tbody>';
+  allTechs.forEach(t => {
+    const name = (t.first_name||'')+(t.last_name?' '+t.last_name:'');
+    const statusBg = t.status==='active'||!t.status?'background:#d1fae5;color:#065f46':'background:#f8d7da;color:#721c24';
+    h+=`<tr style="border-bottom:1px solid var(--border-light)">
+      <td style="padding:10px 16px;font-weight:600;color:var(--primary)">${t.employee_id||t.code||'-'}</td>
+      <td style="padding:10px 16px">${name||'-'}</td>
+      <td style="padding:10px 16px">${t.nickname||'-'}</td>
+      <td style="padding:10px 16px">${t.specialization||'-'}</td>
+      <td style="padding:10px 16px">${t.skill_level||'-'}</td>
+      <td style="padding:10px 16px;text-align:right;font-family:monospace">${t.daily_rate?Number(t.daily_rate).toLocaleString():'-'}</td>
+      <td style="padding:10px 16px">${t.phone||'-'}</td>
+      <td style="padding:10px 16px"><span style="font-size:10px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;${statusBg}">${t.status||'active'}</span></td>
+      <td style="padding:10px 16px;text-align:center">
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="openManpowerModal('${t.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="toggleTechStatus('${t.id}','${t.status||'active'}')">Toggle</button>
+      </td>
+    </tr>`;
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+function openManpowerModal(editId) {
+  const t = editId ? allTechs.find(x=>x.id===editId) : {};
+  const modal = document.createElement('div');
+  modal.className='modal-overlay show'; modal.id='mp-modal';
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+  modal.innerHTML=`<div class="modal-box" style="width:560px">
+    <div class="modal-header"><h3>${editId?'แก้ไขช่าง':'เพิ่มช่าง/พนักงาน'}</h3><button class="modal-close" onclick="document.getElementById('mp-modal').remove()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">ชื่อ *</label><input class="form-input" id="mp-fname" value="${t.first_name||''}"></div>
+        <div class="form-group"><label class="form-label">นามสกุล</label><input class="form-input" id="mp-lname" value="${t.last_name||''}"></div>
+        <div class="form-group"><label class="form-label">ชื่อเล่น</label><input class="form-input" id="mp-nick" value="${t.nickname||''}"></div>
+        <div class="form-group"><label class="form-label">ตำแหน่ง</label><select class="form-input" id="mp-spec"><option value="installation" ${t.specialization==='installation'?'selected':''}>ช่างติดตั้ง</option><option value="electrical" ${t.specialization==='electrical'?'selected':''}>ช่างไฟฟ้า</option><option value="survey" ${t.specialization==='survey'?'selected':''}>Survey</option><option value="assistant" ${t.specialization==='assistant'?'selected':''}>ผู้ช่วย</option><option value="general" ${t.specialization==='general'||!t.specialization?'selected':''}>ทั่วไป</option></select></div>
+        <div class="form-group"><label class="form-label">ระดับ</label><select class="form-input" id="mp-level"><option value="junior" ${t.skill_level==='junior'||!t.skill_level?'selected':''}>Junior</option><option value="senior" ${t.skill_level==='senior'?'selected':''}>Senior</option><option value="lead" ${t.skill_level==='lead'?'selected':''}>Lead</option></select></div>
+        <div class="form-group"><label class="form-label">ค่าแรง/วัน</label><input class="form-input" type="number" id="mp-rate" value="${t.daily_rate||0}"></div>
+        <div class="form-group"><label class="form-label">โทรศัพท์</label><input class="form-input" id="mp-phone" value="${t.phone||''}"></div>
+        <div class="form-group"><label class="form-label">รหัสพนักงาน</label><input class="form-input" id="mp-empid" value="${t.employee_id||''}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-input" id="mp-notes" rows="2">${t.notes||''}</textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mp-modal').remove()">ยกเลิก</button>
+      <button class="btn btn-primary btn-sm" onclick="saveManpower('${editId||''}')">บันทึก</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function saveManpower(editId) {
+  const data = {
+    first_name: document.getElementById('mp-fname').value.trim(),
+    last_name: document.getElementById('mp-lname').value.trim(),
+    nickname: document.getElementById('mp-nick').value.trim(),
+    specialization: document.getElementById('mp-spec').value,
+    skill_level: document.getElementById('mp-level').value,
+    daily_rate: parseFloat(document.getElementById('mp-rate').value)||0,
+    phone: document.getElementById('mp-phone').value.trim(),
+    employee_id: document.getElementById('mp-empid').value.trim(),
+    notes: document.getElementById('mp-notes').value,
+  };
+  if (!data.first_name) { alert('กรุณากรอกชื่อ'); return; }
+  try {
+    if (editId) await API.put('/technicians/'+editId, data);
+    else await API.post('/technicians', data);
+    document.getElementById('mp-modal').remove();
+    showToast(editId?'อัปเดตสำเร็จ':'เพิ่มช่างสำเร็จ','success');
+    loadManpowerTable();
+  } catch(e) { showToast(e.message||'Error','error'); }
+}
+
+async function toggleTechStatus(id, current) {
+  const next = current==='active'?'inactive':'active';
+  try {
+    await API.put('/technicians/'+id, {status:next});
+    showToast('เปลี่ยนสถานะเป็น '+next,'success');
+    loadManpowerTable();
+  } catch(e) { showToast(e.message,'error'); }
 }
 
 // ─── Fix Page Header Icon (replace placeholder after nav.js loads) ───
