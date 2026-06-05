@@ -1957,17 +1957,9 @@
         dayEvents.slice(0, maxShow).forEach(ev => {
           const c = getResourceColor(ev);
           const cancelled = isCancelled(ev) ? ' cancelled' : '';
-          const multi = isMultiDay(ev);
-
-          if (multi) {
-            // Multi-day: colored bar
-            const spanCls = getSpanClass(ev, dt);
-            html += `<div class="cal-event cal-event-bar${cancelled} ${spanCls}" style="background:${c};color:#fff" onclick="event.stopPropagation();showQuickDetail('${ev.id}',event)" title="${ev.title || ''}">${ev.title || 'Untitled'}</div>`;
-          } else {
-            // Single day: dot + time + title (Google Calendar style)
-            const timeStr = ev.start_time ? ev.start_time.slice(0,5) : '';
-            html += `<div class="cal-event cal-event-dot${cancelled}" onclick="event.stopPropagation();showQuickDetail('${ev.id}',event)" title="${ev.title || ''}"><span class="ev-dot" style="background:${c}"></span>${timeStr ? '<span class="ev-time">'+timeStr+'</span>' : ''}<span class="ev-label">${ev.title || 'Untitled'}</span></div>`;
-          }
+          const spanCls = isMultiDay(ev) ? getSpanClass(ev, dt) : '';
+          // FIX: All events show as colored bar for consistent UI
+          html += `<div class="cal-event cal-event-bar${cancelled} ${spanCls}" style="background:${c};color:#fff" onclick="event.stopPropagation();showQuickDetail('${ev.id}',event)" title="${ev.title || ''}">${ev.title || 'Untitled'}</div>`;
         });
         if (dayEvents.length > maxShow) {
           html += `<div class="cal-more" onclick="event.stopPropagation();showDayEvents('${fmt(dt)}')">+${dayEvents.length - maxShow} more</div>`;
