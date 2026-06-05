@@ -1068,16 +1068,21 @@
         if(!items.length){countEl.style.display='none';listEl.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:12px 0;text-align:center">ไม่มีรายการรอ Convert</div>';return;}
         countEl.style.display='';countEl.textContent=items.length;
         listEl.innerHTML=items.map(b=>{
-          const days=Math.round(b.days_waiting||0);
-          const daysText=days===0?'วันนี้':days+' วัน';
+          const days=Math.round(b.days_waiting||0), daysText=days===0?'วันนี้':days+' วัน';
           const dBadge=days>3?'background:#fef2f2;color:#ef4444':'background:#fffbeb;color:#d97706';
-          const cust=b.customer_name||b.title||'ลูกค้า';
-          const kwp=b.recommended_kwp?b.recommended_kwp+'kWp':'';
-          const loc=b.site_name||b.location||'';
-          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="window.location='booking.html?edit=${b.id}'">
-            <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cust}${kwp?' — '+kwp:''}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">${b.job_order_number||''} ${loc?'| '+loc:''} | ${b.item_count||0} รายการ</div></div>
+          const cust=b.customer_name||b.title||'ลูกค้า', kwp=b.recommended_kwp?b.recommended_kwp+'kWp':'';
+          const loc=b.site_name||b.location||'', ic=parseInt(b.item_count)||0;
+          // FIX: Status badges per state
+          let stHtml='';
+          if(b.status==='survey_completed'&&ic===0) stHtml='<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706;font-weight:600">รอเพิ่มอุปกรณ์</span>';
+          else if(b.status==='survey_completed') stHtml='<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#dbeafe;color:#1d4ed8;font-weight:600">รอยืนยัน</span>';
+          else if(b.status==='confirmed'&&ic===0) stHtml='<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#fef2f2;color:#ef4444;font-weight:600">ไม่มีรายการ!</span>';
+          else stHtml='<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f0fdf4;color:#16a34a;font-weight:600">พร้อม Convert</span>';
+          const btnLabel=b.status==='confirmed'&&ic>0?'Convert &rarr;':'ดูรายละเอียด &rarr;';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="window.location='booking.html?edit=${b.id}'">
+            <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cust}${kwp?' — '+kwp:''}</div><div style="font-size:11px;color:var(--text-muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">${b.job_order_number?'<span>'+b.job_order_number+'</span>':''}${loc?'<span>'+loc+'</span>':''}<span>${ic} รายการ</span>${stHtml}</div></div>
             <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;${dBadge}">รอ ${daysText}</span>
-            <button style="font-size:11px;font-weight:600;padding:6px 14px;border-radius:999px;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary);cursor:pointer;white-space:nowrap;font-family:inherit" onclick="event.stopPropagation();window.location='booking.html?edit=${b.id}'">Convert &rarr;</button>
+            <button style="font-size:11px;font-weight:600;padding:6px 14px;border-radius:999px;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary);cursor:pointer;white-space:nowrap;font-family:inherit" onclick="event.stopPropagation();window.location='booking.html?edit=${b.id}'">${btnLabel}</button>
           </div>`;
         }).join('');
       } catch(e){document.getElementById('convert-list').innerHTML='';}

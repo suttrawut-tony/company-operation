@@ -93,7 +93,7 @@ router.get('/pending-convert', async (req, res) => {
       LEFT JOIN job_orders jo ON b.job_order_id = jo.id
       LEFT JOIN users u ON b.booked_by = u.id
       LEFT JOIN (SELECT booking_id, COUNT(*) AS item_count FROM booking_items GROUP BY booking_id) bi ON bi.booking_id = b.id
-      WHERE b.company_id = $1 AND b.status = 'confirmed' AND b.booking_type IN ('solar','technician')`;
+      WHERE b.company_id = $1 AND b.status IN ('confirmed','survey_completed') AND b.booking_type IN ('solar','technician')`;
     const params = [req.user.company_id];
     if (req.user.role === 'staff') { params.push(req.user.id); q += ` AND b.booked_by = $${params.length}`; }
     q += ' ORDER BY b.updated_at ASC';

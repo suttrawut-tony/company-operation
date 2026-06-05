@@ -2675,13 +2675,18 @@
         }
 
         _saving = true;
+        let savedId = editingId;
         if (editingId) {
           await API.put('/bookings/' + editingId, data);
-          if (typeof showToast === 'function') showToast('อัปเดตการจองสำเร็จ', 'success');
         } else {
-          await API.post('/bookings', data);
-          if (typeof showToast === 'function') showToast('สร้างการจองสำเร็จ', 'success');
+          const result = await API.post('/bookings', data);
+          savedId = result.id;
         }
+        // FIX: Save booking items if solar type has items
+        if (type === 'solar' && solarItems.length > 0 && savedId) {
+          try { await saveBookingItems(savedId); } catch(e) { console.warn('Save items:', e.message); }
+        }
+        if (typeof showToast === 'function') showToast(editingId ? 'อัปเดตการจองสำเร็จ' : 'สร้างการจองสำเร็จ', 'success');
         closeAllModals();
         editingId = null;
         refreshAll();
@@ -3099,15 +3104,16 @@
     async function changeSolarStatus(newStatus) {
       if (!editingId) { alert('กรุณาบันทึก Booking ก่อน'); return; }
       try {
+        // FIX: Save items before status change to prevent data loss
+        if (solarItems.length > 0) { try { await saveBookingItems(editingId); } catch(e) {} }
         await API.put('/bookings/' + editingId, { status: newStatus });
         typeof showToast === 'function' && showToast('อัปเดตสถานะสำเร็จ', 'success');
-        // Reload and re-show
         const res = await API.get('/bookings?start_date=2020-01-01&end_date=2030-12-31');
         allBookings = res.bookings || res || [];
         const ev = allBookings.find(b => b.id === editingId);
         if (ev) {
           showSolarSections(newStatus);
-          if (newStatus === 'survey_completed') loadBookingItems(editingId);
+          if (['survey_completed','confirmed'].includes(newStatus)) loadBookingItems(editingId);
         }
       } catch(e) {
         typeof showToast === 'function' ? showToast(e.message||'Error','error') : alert(e.message);
@@ -3122,19 +3128,32 @@
         solarItems = Array.isArray(items) ? items : [];
       } catch(e) { solarItems = []; }
       renderBookingItems();
+      // FIX: Re-evaluate sections after items loaded (fixes async race)
+      const ev = allBookings.find(b=>b.id===bookingId);
+      if (ev) showSolarSections(ev.status||'');
     }
 
+    // FIX: Robust saveBookingItems — handles empty items, per-item error, sort_order
     async function saveBookingItems(bookingId) {
-      if (!bookingId || !solarItems.length) return;
-      // Delete existing, re-add
+      if (!bookingId) return;
+      // Delete existing items
       try {
         const existing = await API.get('/bookings/' + bookingId + '/items');
-        for (const it of (Array.isArray(existing) ? existing : [])) {
-          await API.del('/bookings/' + bookingId + '/items/' + it.id);
+        for (const it of (Array.isArray(existing)?existing:[])) {
+          try { await API.del('/bookings/'+bookingId+'/items/'+it.id); } catch(e) {}
         }
       } catch(e) {}
-      for (const it of solarItems) {
-        await API.post('/bookings/' + bookingId + '/items', it);
+      if (!solarItems.length) return;
+      // Add new items
+      for (let i=0; i<solarItems.length; i++) {
+        const it = solarItems[i];
+        try {
+          await API.post('/bookings/'+bookingId+'/items', {
+            item_id:it.item_id||null, item_code:it.item_code||'', item_name:it.item_name||'',
+            qty:parseFloat(it.qty)||1, unit:it.unit||'EA',
+            unit_price:parseFloat(it.unit_price)||0, total:parseFloat(it.total)||0, sort_order:i
+          });
+        } catch(e) { console.warn('Failed to save item:', it.item_name, e.message); }
       }
     }
 
