@@ -757,19 +757,28 @@
     const DEFAULT_CONFIG = {
       layout: 'default',
       widgets: {
-        kpi:       { visible: true, order: 0 },
-        alerts:    { visible: true, order: 1 },
-        mytasks:   { visible: true, order: 2 },
-        projects:  { visible: true, order: 3 },
-        budget:    { visible: true, order: 4 },
-        approvals: { visible: true, order: 5 }
+        kpi:            { visible: true, order: 0 },
+        alerts:         { visible: true, order: 1 },
+        mytasks:        { visible: true, order: 2 },
+        approvals:      { visible: true, order: 3 },
+        pendingConvert: { visible: true, order: 4 },
+        projects:       { visible: true, order: 5 },
+        budget:         { visible: true, order: 6 }
       }
     };
 
+    // FIX: Merge saved config with DEFAULT_CONFIG to include new widgets
     function loadConfig() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const config = JSON.parse(saved);
+          if (!config.widgets) config.widgets = {};
+          for (const [id, def] of Object.entries(DEFAULT_CONFIG.widgets)) {
+            if (!config.widgets[id]) config.widgets[id] = { ...def };
+          }
+          return config;
+        }
       } catch(e) {}
       return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
     }
@@ -1062,11 +1071,18 @@
     if (!API.requireAuth()) throw new Error('Not authenticated');
     // ═══ Pending Convert to SQ ═══
     async function loadPendingConvert() {
+      const listEl=document.getElementById('convert-list');
+      const countEl=document.getElementById('convert-count');
+      if(!listEl) return;
       try {
         const items = await API.get('/dashboard/pending-convert');
-        const countEl=document.getElementById('convert-count'), listEl=document.getElementById('convert-list');
-        if(!items.length){countEl.style.display='none';listEl.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:12px 0;text-align:center">ไม่มีรายการรอ Convert</div>';return;}
-        countEl.style.display='';countEl.textContent=items.length;
+        if(!items||!Array.isArray(items)||!items.length){
+          if(countEl)countEl.style.display='none';
+          listEl.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:16px 0;text-align:center">ไม่มีรายการรอ Convert</div>';
+          return;
+        }
+        if(countEl){countEl.style.display='';countEl.textContent=items.length;}
+        const linkEl=document.getElementById('convert-link');if(linkEl)linkEl.textContent='View All '+items.length+' →';
         listEl.innerHTML=items.map(b=>{
           const days=Math.round(b.days_waiting||0), daysText=days===0?'วันนี้':days+' วัน';
           const dBadge=days>3?'background:#fef2f2;color:#ef4444':'background:#fffbeb;color:#d97706';
@@ -1085,7 +1101,10 @@
             <button style="font-size:11px;font-weight:600;padding:6px 14px;border-radius:999px;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary);cursor:pointer;white-space:nowrap;font-family:inherit" onclick="event.stopPropagation();window.location='booking.html?edit=${b.id}'">${btnLabel}</button>
           </div>`;
         }).join('');
-      } catch(e){document.getElementById('convert-list').innerHTML='';}
+      } catch(e){
+        console.error('[dashboard] pending-convert error:', e);
+        listEl.innerHTML='<div style="color:var(--danger,#ef4444);font-size:12px;padding:12px 0;text-align:center">โหลดไม่สำเร็จ: '+(e.message||'Error')+'<br><a href="#" onclick="loadPendingConvert();return false" style="color:var(--primary)">ลองใหม่</a></div>';
+      }
     }
 
     // Load everything
