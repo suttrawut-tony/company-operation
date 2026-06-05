@@ -14,7 +14,10 @@
   <main class="page fade-in">
     <div class="page-header">
       <div><h1>Item Master</h1></div>
-      <button class="btn btn-primary" onclick="openItemModal()">+ New Item</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportItems()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openItemModal()">+ New Item</button>
+      </div>
     </div>
     <div style="margin-bottom:16px;display:flex;gap:12px;">
       <input type="text" class="form-input" id="item-search" placeholder="Search code, name..." oninput="renderItems()" style="width:300px;">
@@ -62,6 +65,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allItems = [];
@@ -95,6 +99,21 @@
       const id=document.getElementById('im-id').value;
       const body={item_code:document.getElementById('im-code').value,item_name:document.getElementById('im-name').value,item_name_th:document.getElementById('im-name-th').value,category:document.getElementById('im-cat').value,uom:document.getElementById('im-uom').value,unit_price:parseFloat(document.getElementById('im-price').value)||0,gl_account:document.getElementById('im-gl').value};
       try { if(id) await API.put('/master/items/'+id,body); else await API.post('/master/items',body); closeItemModal(); await loadItems(); } catch(e){alert('Error: '+e.message);}
+    }
+    function exportItems() {
+      const headers = ['Code','Name','Name (TH)','Category','UOM','Unit Price','GL Account','Tax Code','Status'];
+      const rows = allItems.map(i => [
+        i.item_code,
+        i.item_name,
+        i.item_name_th || '',
+        i.category || '',
+        i.uom || '',
+        parseFloat(i.unit_price || 0),
+        i.gl_account || '',
+        i.tax_code || '',
+        i.is_active ? 'Active' : 'Inactive'
+      ]);
+      exportToExcel(headers, rows, 'Item_Master', 'Item Master');
     }
     loadItems();
   </script>

@@ -61,7 +61,10 @@
   <main class="page fade-in">
     <div class="page-header">
       <div><h1 id="pgIcon"></h1></div>
-      <button class="btn btn-primary" onclick="openCreateModal()">+ สร้างใบเสนอราคา</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportQuotations()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ สร้างใบเสนอราคา</button>
+      </div>
     </div>
     <div class="sq-stats" id="stats"></div>
     <div class="card">
@@ -97,6 +100,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allSQ = [];
@@ -350,6 +354,34 @@
     }
 
     function closeModal() { document.getElementById('sqModal').classList.remove('show'); }
+
+    function exportQuotations() {
+      if (!allSQ.length) { alert('ไม่มีข้อมูลให้ Export'); return; }
+      const headers = ['SQ Number','ลูกค้า','เบอร์โทร','ที่อยู่','ไซต์','ขนาด (kWp)','ประเภทหลังคา','พื้นที่หลังคา (sqm)','โปรเจกต์','Subtotal','ส่วนลด (%)','ส่วนลด (฿)','VAT (%)','VAT (฿)','Grand Total','สถานะ','เงื่อนไข','หมายเหตุ','มีผล (วัน)','วันที่สร้าง'];
+      const rows = allSQ.map(q => [
+        q.sq_number || '',
+        q.customer_name || '',
+        q.customer_phone || '',
+        q.customer_address || '',
+        q.site_name || '',
+        q.system_capacity || '',
+        q.roof_type || '',
+        q.roof_area || '',
+        q.project_code || '',
+        parseFloat(q.subtotal || 0),
+        parseFloat(q.discount_pct || 0),
+        parseFloat(q.discount_amt || 0),
+        parseFloat(q.vat_pct || 7),
+        parseFloat(q.vat_amt || 0),
+        parseFloat(q.grand_total || 0),
+        q.status || '',
+        q.terms || '',
+        q.notes || '',
+        q.validity_days || 30,
+        q.created_at ? new Date(q.created_at).toLocaleDateString('th-TH') : ''
+      ]);
+      exportToExcel(headers, rows, 'Quotations', 'quotations.xlsx');
+    }
 
     // Init
     if (API.requireAuth()) {

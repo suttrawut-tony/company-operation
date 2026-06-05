@@ -66,6 +66,7 @@
     <div class="page-header">
       <div><h1>Petty Cash</h1></div>
       <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportPettyCash()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
         <button class="btn btn-primary" onclick="openNewFundModal()">+ New Fund</button>
       </div>
     </div>
@@ -237,6 +238,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allFunds = [];
@@ -664,6 +666,25 @@
         });
         closeCountModal(); await loadData();
       } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ═══ Export Excel ═══
+    function exportPettyCash() {
+      if (!allFunds.length) { alert('No data to export'); return; }
+      const rows = allFunds.map(f => ({
+        'Fund Code': f.fund_code || '',
+        'Fund Name': f.fund_name || '',
+        'Status': f.status || '',
+        'Custodian': f.custodian_name || '',
+        'Project': f.project_code || '',
+        'GL Account': f.gl_account || '',
+        'Fund Limit': parseFloat(f.fund_limit || 0),
+        'Current Balance': parseFloat(f.current_balance || 0),
+        'Used': parseFloat(f.fund_limit || 0) - parseFloat(f.current_balance || 0),
+        'Balance %': parseFloat(f.fund_limit) > 0 ? Math.round(parseFloat(f.current_balance) / parseFloat(f.fund_limit) * 100) : 0,
+        'Low Threshold %': parseFloat(f.low_threshold || 0),
+      }));
+      exportToExcel(rows, 'Petty_Cash_Funds');
     }
 
     loadData();

@@ -89,6 +89,7 @@
       <div>
         <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Holiday Work / OT</h1>
       </div>
+      <button class="btn btn-secondary" onclick="exportOT()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
       <button class="btn btn-primary" onclick="openOTModal()">+ New OT Request</button>
     </div>
 
@@ -232,6 +233,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     const userRole = (API.getUser()||{}).role||'';
@@ -305,6 +307,33 @@
     }
 
     let otData = [];
+
+    function exportOT() {
+      if (!otData.length) { alert('No OT data to export'); return; }
+      const headers = ['Doc No', 'Employee', 'Type', 'Date', 'Hours', 'Rate', 'Multiplier', 'Compensation', 'Project', 'Status'];
+      const rows = otData.map((r, i) => {
+        const t = (r.ot_type || '').toLowerCase();
+        const typeName = t.includes('holiday') ? 'Holiday' : t.includes('special') ? 'Special' : 'Normal';
+        const hrs = parseFloat(r.hours) || 0;
+        const mult = parseFloat(r.multiplier) || 1;
+        const comp = parseFloat(r.compensation) || 0;
+        const baseRate = parseFloat(r.base_rate) || (hrs > 0 && mult > 0 ? Math.round(comp / mult / hrs) : 0);
+        const projCode = projectMap[r.project_id] || '';
+        return [
+          r.doc_no || r.id || (i + 1),
+          r.user_name || '-',
+          typeName,
+          r.ot_date ? r.ot_date.substring(0, 10) : '',
+          hrs,
+          baseRate,
+          mult,
+          comp,
+          projCode,
+          r.status || 'draft'
+        ];
+      });
+      exportToExcel(headers, rows, 'OT_Records', 'OT Records');
+    }
 
     function otTypeIcon(type) {
       const t = (type || '').toLowerCase();

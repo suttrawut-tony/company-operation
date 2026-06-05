@@ -117,7 +117,10 @@
           <button class="nav-arr" onclick="navNext()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
         </div>
       </div>
-      <h1>My Tasks</h1>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h1>My Tasks</h1>
+        <button class="btn btn-secondary" onclick="exportMyTasks()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+      </div>
       <div class="mt-sub" id="heroSub"></div>
     </div>
 
@@ -150,6 +153,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allTasks = [];
@@ -412,6 +416,26 @@
         closeModal();
         render();
       } catch(e) { alert(e.message); }
+    }
+
+    // ═══ Export Excel ═══
+    function exportMyTasks() {
+      if (!allTasks.length) { alert('ไม่มีข้อมูลให้ Export'); return; }
+      const PRI_LABELS = { high: 'สูง', medium: 'กลาง', low: 'ต่ำ' };
+      const STAT_LABELS = { todo: 'รอทำ', in_progress: 'กำลังทำ', review: 'รีวิว', done: 'เสร็จ' };
+      const headers = ['รหัสโปรเจค', 'ชื่อโปรเจค', 'ชื่องาน', 'รายละเอียด', 'สถานะ', 'ความสำคัญ', 'วันเริ่ม', 'วันกำหนด', 'ผู้รับผิดชอบ'];
+      const rows = allTasks.map(t => [
+        t.project_code || '',
+        t.project_name || '',
+        t.title || '',
+        t.description || '',
+        STAT_LABELS[t.status] || t.status || '',
+        PRI_LABELS[t.priority] || t.priority || '',
+        t.start_date ? ftl(t.start_date) : '',
+        t.due_date ? ftl(t.due_date) : '',
+        t.first_name_th || t.first_name || ''
+      ]);
+      exportToExcel(headers, rows, 'my-tasks', 'My Tasks');
     }
 
     // ═══ Init ═══

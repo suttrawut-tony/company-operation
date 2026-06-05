@@ -14,7 +14,10 @@
   <main class="page fade-in">
     <div class="page-header">
       <div><h1>Business Partner</h1></div>
-      <button class="btn btn-primary" onclick="openBPModal()">+ New Partner</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportBPs()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openBPModal()">+ New Partner</button>
+      </div>
     </div>
     <div style="margin-bottom:16px;display:flex;gap:12px;">
       <input type="text" class="form-input" id="bp-search" placeholder="Search code, name, contact..." oninput="renderBPs()" style="width:300px;">
@@ -65,6 +68,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allBPs = [];
@@ -105,6 +109,15 @@
       const id=document.getElementById('bm-id').value;
       const body={bp_code:document.getElementById('bm-code').value,bp_name:document.getElementById('bm-name').value,bp_name_th:document.getElementById('bm-name-th').value,bp_type:document.getElementById('bm-type').value,contact_person:document.getElementById('bm-contact').value,phone:document.getElementById('bm-phone').value,email:document.getElementById('bm-email').value,tax_id:document.getElementById('bm-taxid').value,address:document.getElementById('bm-address').value,payment_terms:parseInt(document.getElementById('bm-terms').value)||30,bank_name:document.getElementById('bm-bank').value,bank_account:document.getElementById('bm-bankacc').value};
       try { if(id) await API.put('/master/bp/'+id,body); else await API.post('/master/bp',body); closeBPModal(); await loadBPs(); } catch(e){alert('Error: '+e.message);}
+    }
+    function exportBPs() {
+      const headers = ['BP Code','BP Name','Name (TH)','Type','Contact Person','Phone','Email','Tax ID','Address','Payment Terms (days)','Bank','Bank Account'];
+      const rows = allBPs.map(b => [
+        b.bp_code || '', b.bp_name || '', b.bp_name_th || '', b.bp_type || '',
+        b.contact_person || '', b.phone || '', b.email || '', b.tax_id || '',
+        b.address || '', b.payment_terms || 30, b.bank_name || '', b.bank_account || ''
+      ]);
+      exportToExcel(headers, rows, 'BP_Master', 'Business Partners');
     }
     loadBPs();
   </script>

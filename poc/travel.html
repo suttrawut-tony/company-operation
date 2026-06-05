@@ -140,7 +140,10 @@
       <div>
         <h1><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> Travel Request</h1>
       </div>
-      <button class="btn btn-primary" onclick="openTravelModal()">+ New Travel Request</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-secondary" onclick="exportTravel()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openTravelModal()">+ New Travel Request</button>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -221,6 +224,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     /* ── State ── */
@@ -650,6 +654,37 @@
       }
       renderTravelStats(filtered);
       renderTravelList(filtered);
+    }
+
+    /* ── Export to Excel ── */
+    function exportTravel() {
+      const projectId = document.getElementById('filter-project').value;
+      let rows = allTravelData;
+      if (projectId) {
+        rows = allTravelData.filter(r => String(r.project_id) === projectId);
+      }
+      if (!rows.length) { alert('No travel data to export'); return; }
+
+      const mapped = rows.map(r => {
+        const members = r.team_members || r.members || [];
+        const lead = members.find(m => m.is_lead);
+        const leadName = lead ? (lead.name || (lead.first_name + ' ' + (lead.last_name || ''))) : (r.lead_name || '');
+        const proj = r.project_code || (r.project_id && projectsMap[r.project_id] ? projectsMap[r.project_id].code : '');
+        return {
+          'Doc No': r.doc_number || '',
+          'Destination': r.destination || '',
+          'Start Date': r.start_date ? r.start_date.substring(0, 10) : '',
+          'End Date': r.end_date ? r.end_date.substring(0, 10) : '',
+          'Team Size': members.length,
+          'Est. Cost': parseFloat(r.estimated_cost) || 0,
+          'Advance': parseFloat(r.advance_amount) || 0,
+          'Leader': leadName,
+          'Project': proj,
+          'Status': r.status || 'draft'
+        };
+      });
+
+      exportToExcel(mapped, 'Travel_Requests', 'Travel Requests');
     }
 
     // Init

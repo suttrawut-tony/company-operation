@@ -273,7 +273,7 @@
       <div class="card-header">
         <h2 id="report-title">Report</h2>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export CSV</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportReportExcel()">Export Excel</button>
           <button class="btn btn-secondary btn-sm" onclick="window.print()">Print</button>
           <button class="btn btn-ghost btn-sm" onclick="closeReport()">Close</button>
         </div>
@@ -287,6 +287,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     /* ───────────────────────────────────────────
@@ -351,6 +352,14 @@
       a.download = (_csvTitle || 'report').replace(/\s+/g, '_') + '.csv';
       a.click();
       URL.revokeObjectURL(url);
+    }
+
+    /* ───────────────────────────────────────────
+       Excel Export
+    ─────────────────────────────────────────── */
+    function exportReportExcel() {
+      if (!_csvData.length) { showToast('No data to export', 'warning'); return; }
+      exportExcel(_csvData, _csvTitle || 'report');
     }
 
     /* ───────────────────────────────────────────
