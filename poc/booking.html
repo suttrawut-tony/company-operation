@@ -1250,9 +1250,18 @@
         <div id="solarStatusActions" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px;text-align:center"></div>
 
         <!-- Convert to SQ button -->
-        <div id="solarConvertSection" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px;text-align:center">
-          <button class="btn-sm btn-primary" onclick="convertToSQ()" style="padding:10px 24px;font-size:13px">แปลงเป็นใบเสนอราคา (Convert to SQ)</button>
-          <p style="font-size:11px;color:var(--text-muted);margin-top:8px">สร้าง Sales Quotation + Project อัตโนมัติ</p>
+        <div id="solarConvertSection" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px">
+          <div class="form-group" style="text-align:left;margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-secondary)">รหัสโปรเจกต์ <span style="font-size:10px;font-weight:400;color:var(--text-muted);background:var(--bg-light);padding:2px 8px;border-radius:999px">ไม่บังคับ</span></label>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+              <input type="text" id="solarManualProjectCode" class="form-input" placeholder="เช่น SOL-2026-0015 (ว่างไว้ = สร้างอัตโนมัติ)" style="flex:1;font-family:monospace" oninput="document.getElementById('projectCodeHint').innerHTML=this.value.trim()?'<span style=color:var(--success)>ใช้รหัสที่กรอก</span>':'auto: PRJ-YYYYMM-XXX'">
+              <span style="font-size:11px;color:var(--text-muted);white-space:nowrap" id="projectCodeHint">auto: PRJ-YYYYMM-XXX</span>
+            </div>
+          </div>
+          <div style="text-align:center">
+            <button class="btn-sm btn-primary" onclick="convertToSQ()" style="padding:10px 24px;font-size:13px">แปลงเป็นใบเสนอราคา (Convert to SQ)</button>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:8px">สร้าง Sales Quotation + Project อัตโนมัติ</p>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -1492,7 +1501,7 @@
         if (!sel) return;
         sel.innerHTML = '<option value="">-- เลือกโปรเจกต์ --</option>';
         projects.forEach(p => {
-          sel.innerHTML += `<option value="${p.id}">${p.project_code||''} ${p.name||p.project_name||''}</option>`;
+          const _pc=p.code||p.project_code||'',_pn=p.name||p.project_name||'';sel.innerHTML+=`<option value="${p.id}">${_pc?'['+_pc+'] ':''}${_pn}</option>`;
         });
       });
     }
@@ -2258,7 +2267,7 @@
           <td><span class="type-badge" style="background:${evBg(c)};color:${c}">${TYPE_ICONS[ev.booking_type] || ''} ${TYPE_LABELS[ev.booking_type] || ev.booking_type}</span></td>
           <td class="ev-title">${ev.title || '-'}</td>
           <td>${ev.resource_name || '-'}</td>
-          <td>${ev.project_name || '-'}</td>
+          <td>${ev.project_code?'['+ev.project_code+'] ':''}${ev.project_name||'-'}</td>
           <td>${ev.job_order_number ? '<span class="jo-badge">'+I.clipboardList+' '+ev.job_order_number+'</span>' : '-'}</td>
           <td><span class="status-badge" style="${sc}">${statusLabel(ev.status)}</span></td>
           <td>${ev.booked_by || ev.created_by_name || '-'}</td>
@@ -2288,7 +2297,7 @@
       body += row('วันที่', toLocalDate(ev.start_date) + ' → ' + toLocalDate(ev.end_date || ev.start_date));
       if (ev.start_time || ev.end_time) body += row('เวลา', formatTimeRange(ev));
       if (ev.resource_name) body += row('ทรัพยากร', ev.resource_name);
-      if (ev.project_name) body += row('โปรเจกต์', ev.project_name);
+      if (ev.project_name) body += row('โปรเจกต์', (ev.project_code?'['+ev.project_code+'] ':'')+ev.project_name);
       if (ev.status) body += row('สถานะ', `<span style="padding:2px 8px;border-radius:var(--radius-full);font-size:11px;font-weight:600;${statusStyle(ev.status)}">${statusLabel(ev.status)}</span>`);
       if (ev.location) body += row('สถานที่', ev.location);
       if (ev.purpose) body += row('วัตถุประสงค์', ev.purpose);
@@ -3096,9 +3105,11 @@
         // Save items first
         await saveBookingItems(editingId);
         // Convert (backend reads booking data directly from DB — no need to saveBooking)
-        const result = await API.post('/bookings/' + editingId + '/convert-to-sq');
+        const manualCode = (document.getElementById('solarManualProjectCode')?.value||'').trim();
+        const convertBody = manualCode ? {manual_project_code:manualCode} : {};
+        const result = await API.post('/bookings/' + editingId + '/convert-to-sq', convertBody);
         typeof showToast === 'function' && showToast(
-          'สร้าง ' + (result.sq_number || 'SQ') + ' + ' + (result.project_code || 'Project') + ' สำเร็จ', 'success');
+          'สร้าง ' + (result.sq_number||'SQ') + ' สำเร็จ — โปรเจกต์: ' + (result.project_code||''), 'success');
         closeAllModals();
         refreshAll();
       } catch(e) {
@@ -3296,7 +3307,7 @@
       }
       // Project
       if (ev.project_name) {
-        body += `<div class="qp-row"><span class="qp-label">โปรเจกต์</span><span class="qp-val">${ev.project_name}</span></div>`;
+        body += `<div class="qp-row"><span class="qp-label">โปรเจกต์</span><span class="qp-val">${ev.project_code?'['+ev.project_code+'] ':''}${ev.project_name}</span></div>`;
       }
       // JO
       if (ev.job_order_number) {

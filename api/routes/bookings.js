@@ -324,13 +324,20 @@ router.post('/:id/convert-to-sq', async (req, res) => {
     if (lastSQ) { sqSeq = parseInt(lastSQ.sq_number.split('-')[2] || '0') + 1; }
     const sqNumber = `${sqPrefix}-${String(sqSeq).padStart(3, '0')}`;
 
-    // Auto-generate Project code
-    const prjPrefix = `PRJ-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const { rows: [lastPrj] } = await db.query(
-      `SELECT code FROM projects WHERE code LIKE $1 || '%' ORDER BY code DESC LIMIT 1`, [prjPrefix]);
-    let prjSeq = 1;
-    if (lastPrj) { prjSeq = parseInt(lastPrj.code.split('-')[2] || '0') + 1; }
-    const prjCode = `${prjPrefix}-${String(prjSeq).padStart(3, '0')}`;
+    // Project code: manual if provided, else auto-gen
+    let prjCode;
+    const manualCode = (req.body.manual_project_code || '').trim();
+    if (manualCode) {
+      const { rows: dup } = await db.query('SELECT id FROM projects WHERE code=$1 AND company_id=$2', [manualCode, req.user.company_id]);
+      if (dup.length) return res.status(400).json({ error: `รหัสโปรเจกต์ "${manualCode}" มีอยู่แล้ว กรุณาใช้รหัสอื่น` });
+      prjCode = manualCode;
+    } else {
+      const prjPrefix = `PRJ-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const { rows: [lastPrj] } = await db.query(`SELECT code FROM projects WHERE code LIKE $1 || '%' ORDER BY code DESC LIMIT 1`, [prjPrefix]);
+      let prjSeq = 1;
+      if (lastPrj) { prjSeq = parseInt(lastPrj.code.split('-')[2] || '0') + 1; }
+      prjCode = `${prjPrefix}-${String(prjSeq).padStart(3, '0')}`;
+    }
 
     // Create Project
     const prjName = `Solar ${booking.recommended_kwp || ''}kWp — ${booking.customer_name || booking.site_name || 'Customer'}`;
