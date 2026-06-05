@@ -1917,17 +1917,9 @@
     // ══════════════════════════════════
     //  MONTH VIEW
     // ══════════════════════════════════
+    // FIX: Use consistent color per booking type as default
     function getResourceColor(ev) {
-      if (ev.booking_type === 'flight') return '#db4437';
-      if (ev.technician_id) {
-        const idx = technicians.findIndex(t => t.id === ev.technician_id);
-        if (idx >= 0) return technicians[idx].color || CAL_COLORS[(idx+1) % CAL_COLORS.length];
-      }
-      if (ev.vehicle_id) {
-        const idx = vehicles.findIndex(v => v.id === ev.vehicle_id);
-        if (idx >= 0) return vehicles[idx].color || CAL_COLORS[idx % CAL_COLORS.length];
-      }
-      return ev.color || TYPE_COLORS[ev.booking_type] || '#4285f4';
+      return TYPE_COLORS[ev.booking_type] || '#4285f4';
     }
 
     // FIX: Compare dates as YYYY-MM-DD strings only, handle null/empty end_date
