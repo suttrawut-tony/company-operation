@@ -126,17 +126,9 @@
             </div>
             <div class="form-group">
               <label class="form-label">Project <span style="color:var(--danger);">*</span></label>
+              <!-- FIXED: Dynamic project dropdown from API -->
               <select class="form-select" id="pr-project">
                 <option value="">-- Select Project --</option>
-                <option value="SDA-2026-001">SDA-2026-001 — Marine Navigation System - Phuket</option>
-                <option value="SDA-2026-002">SDA-2026-002 — Sonar System Installation - Rayong</option>
-                <option value="SDA-2026-003">SDA-2026-003 — Radar System Upgrade - Bangkok</option>
-                <option value="SDA-2026-004">SDA-2026-004 — GPS Fleet Management - Samut Prakan</option>
-                <option value="SDA-2026-005">SDA-2026-005 — Satcom System - Chonburi</option>
-                <option value="SDA-2026-006">SDA-2026-006 — AIS Repeater System - Surat Thani</option>
-                <option value="SDA-2026-007">SDA-2026-007 — Weather Station Network - Chumphon</option>
-                <option value="SDA-2026-008">SDA-2026-008 — CCTV Monitoring Port - Laem Chabang</option>
-                <option value="SDA-2026-011">SDA-2026-011 — VTS System - Map Ta Phut</option>
               </select>
             </div>
             <div class="form-group">
@@ -162,13 +154,9 @@
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Vendor (SAP Business Partner) <span style="color:var(--danger);">*</span></label>
+              <!-- FIXED: Dynamic vendor dropdown from API -->
               <select class="form-select" id="pr-vendor">
                 <option value="">-- Select Vendor --</option>
-                <option value="VD0001">VD0001 — Marine Electronics Co. (ในประเทศ)</option>
-                <option value="VD0002">VD0002 — Navigation Systems Ltd. (ในประเทศ)</option>
-                <option value="VF0001">VF0001 — Furuno Japan (ต่างประเทศ)</option>
-                <option value="VF0002">VF0002 — JRC Global (ต่างประเทศ)</option>
-                <option value="VO0001">VO0001 — General Supplier (อื่น)</option>
               </select>
             </div>
             <div class="form-group">
@@ -460,8 +448,76 @@
       }
     }
 
-    function saveDraft() { alert('PR saved as Draft'); window.location = 'pr-po.html'; }
-    function submitPR() { alert('PR submitted for approval!'); window.location = 'pr-po.html'; }
+    // FIXED: Load dropdowns from API
+    async function loadDropdowns() {
+      try {
+        const [projects, bps] = await Promise.all([API.getProjects(), API.get('/master/bp')]);
+        const pSel = document.getElementById('pr-project');
+        (Array.isArray(projects)?projects:(projects.data||[])).forEach(p => {
+          pSel.innerHTML += `<option value="${p.id}">${p.code||''} — ${p.name||''}</option>`;
+        });
+        const vSel = document.getElementById('pr-vendor');
+        (Array.isArray(bps)?bps:[]).forEach(b => {
+          vSel.innerHTML += `<option value="${b.id}">${b.bp_code||''} — ${b.bp_name||''}</option>`;
+        });
+      } catch(e) { console.warn('Failed to load dropdowns', e); }
+    }
+
+    // FIXED: Set today's date
+    document.getElementById('pr-date').value = new Date().toISOString().slice(0,10);
+
+    // FIXED: Real saveDraft — POST to API
+    async function saveDraft() {
+      const data = collectPRData();
+      if (!data) return;
+      data.status = 'draft';
+      try {
+        await API.post('/pr', data);
+        typeof showToast === 'function' && showToast('บันทึก Draft สำเร็จ', 'success');
+        window.location = 'pr-po.html';
+      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : alert(e.message); }
+    }
+
+    // FIXED: Real submitPR — POST then submit
+    async function submitPR() {
+      const data = collectPRData();
+      if (!data) return;
+      try {
+        const pr = await API.post('/pr', data);
+        await API.post('/pr/' + pr.id + '/submit');
+        typeof showToast === 'function' && showToast('ส่ง PR เพื่ออนุมัติสำเร็จ', 'success');
+        window.location = 'pr-po.html';
+      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : alert(e.message); }
+    }
+
+    function collectPRData() {
+      const project_id = document.getElementById('pr-project').value;
+      if (!project_id) { alert('กรุณาเลือก Project'); return null; }
+      // Collect line items from table
+      const lines = [];
+      document.querySelectorAll('#line-items-body tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 5) {
+          lines.push({
+            item_code: cells[1]?.textContent?.trim() || '',
+            description: cells[2]?.textContent?.trim() || '',
+            quantity: parseFloat(cells[3]?.textContent) || 1,
+            unit_price: parseFloat(cells[4]?.textContent?.replace(/,/g,'')) || 0,
+          });
+        }
+      });
+      return {
+        project_id,
+        vendor_code: document.getElementById('pr-vendor').value || null,
+        priority: document.getElementById('pr-priority').value || 'medium',
+        pr_date: document.getElementById('pr-date').value,
+        remarks: document.getElementById('pr-remarks')?.value || '',
+        lines,
+      };
+    }
+
+    // Init
+    if (API.requireAuth()) { loadDropdowns(); }
   </script>
 </body>
 </html>

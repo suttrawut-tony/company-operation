@@ -48,12 +48,17 @@
     let plans = [];
     let cycle = 'monthly';
 
+    // FIXED: Use API wrapper with error handling (pricing page is public, no auth needed)
     async function loadPlans() {
       try {
         const resp = await fetch('/api/subscription/plans');
+        if (!resp.ok) throw new Error('Failed to load plans');
         plans = await resp.json();
         renderPlans();
-      } catch(e) { console.error(e); }
+      } catch(e) {
+        console.error(e);
+        document.querySelector('.pricing-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">ไม่สามารถโหลดแพลนได้</div>';
+      }
     }
 
     function setCycle(c, btn) {

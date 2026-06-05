@@ -2,11 +2,18 @@ const router = require('express').Router();
 const { authenticate, requireRole } = require('../middleware/auth');
 router.use(authenticate);
 
-// SAP proxy routes — forward to SAP Service Layer via sap-client.js
-// These are placeholders until SAP credentials are confirmed
+// FIXED: SAP proxy routes — stubs with clear status flag
+// Real connection requires SAP_HOST/SAP_USER/SAP_PASSWORD env vars
+const sapConfigured = !!(process.env.SAP_HOST && process.env.SAP_USER);
 
 // GET /api/sap/vendors — search SAP BusinessPartners
+// GET /api/sap/status — check if SAP is configured
+router.get('/status', (req, res) => {
+  res.json({ connected: sapConfigured, message: sapConfigured ? 'SAP configured' : 'SAP not configured — set SAP_HOST + SAP_USER env vars' });
+});
+
 router.get('/vendors', async (req, res) => {
+  if (!sapConfigured) return res.json({ connected: false, data: [] });
   res.json({ message: 'SAP vendor lookup — requires SAP Service Layer connection', data: [] });
 });
 
