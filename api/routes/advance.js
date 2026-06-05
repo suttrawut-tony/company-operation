@@ -442,7 +442,7 @@ router.post('/:id/pay', async (req, res) => {
 
       const newPaid = parseFloat(adv.paid_amount || 0) + payAmt;
       await db.query(
-        "UPDATE advance_requests SET status='paid', paid_amount=$1, balance=$1-settled_amount, due_date=$2, updated_at=NOW() WHERE id=$3",
+        /* FIXED: Added parentheses for SQL arithmetic */ "UPDATE advance_requests SET status='paid', paid_amount=$1, balance=($1 - settled_amount), due_date=$2, updated_at=NOW() WHERE id=$3",
         [newPaid, dueDateStr, req.params.id]);
 
       // Notification

@@ -136,7 +136,12 @@ router.post('/upgrade', async (req, res) => {
     }
 
     // Create invoice
-    const invNum = `INV-${new Date().toISOString().slice(0,7).replace('-','')}-${String(Math.floor(Math.random()*9999)).padStart(4,'0')}`;
+    // FIXED: Use sequential invoice number instead of random to prevent duplicates
+    const invPrefix = `INV-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const { rows: [lastInv] } = await db.query(`SELECT invoice_number FROM invoices WHERE invoice_number LIKE $1 || '%' ORDER BY invoice_number DESC LIMIT 1`, [invPrefix]);
+    let invSeq = 1;
+    if (lastInv) { const parts = lastInv.invoice_number.split('-'); invSeq = parseInt(parts[2]||'0') + 1; }
+    const invNum = `${invPrefix}-${String(invSeq).padStart(4,'0')}`;
     const subtotal = amount;
     const vat = Math.round(subtotal * 7) / 100;
     const dueDate = new Date(); dueDate.setDate(dueDate.getDate() + 7);
@@ -145,7 +150,7 @@ router.post('/upgrade', async (req, res) => {
        VALUES ($1,$2,$3,CURRENT_DATE,$4,$5,$6,$7,'issued',NOW(),$8)`,
       [req.user.company_id, sub.id, invNum, periodEnd.toISOString().slice(0,10), subtotal, vat, subtotal + vat, dueDate.toISOString().slice(0,10)]);
 
-    sessionStorage && sessionStorage.removeItem('sda_modules');
+    // FIXED: Removed sessionStorage (browser API, not available in Node.js)
     res.json({ subscription: sub, message: 'อัปเกรดแพลนเรียบร้อย' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

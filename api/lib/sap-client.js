@@ -22,8 +22,8 @@ class SAPClient {
     this.sessionId = null;
     this.sessionExpiry = null;
 
-    // Allow self-signed certs (SAP dev servers)
-    this.agent = new https.Agent({ rejectUnauthorized: false });
+    // FIXED: Only allow self-signed certs if explicitly configured (dev only)
+    this.agent = new https.Agent({ rejectUnauthorized: process.env.SAP_ALLOW_SELFSIGNED !== 'true' });
   }
 
   // ─── Authentication ───
@@ -123,7 +123,8 @@ class SAPClient {
   async getVendors(filter = '') {
     await this.ensureSession();
     let url = "/BusinessPartners?$filter=CardType eq 'S'&$select=CardCode,CardName,Phone1,EmailAddress&$top=100";
-    if (filter) url += ` and contains(CardName,'${filter}')`;
+    // FIXED: Escape single quotes to prevent OData injection
+    if (filter) url += ` and contains(CardName,'${filter.replace(/'/g, "''")}')`;
     return this._request('GET', url);
   }
 

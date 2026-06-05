@@ -64,15 +64,27 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/po/:id — Update PO status
+// FIXED: Merged duplicate PUT /:id into single route
 router.put('/:id', async (req, res) => {
   try {
-    const { status } = req.body;
-    const { rows } = await db.query(
-      'UPDATE purchase_orders SET status=COALESCE($1,status) WHERE id=$2 AND company_id=$3 RETURNING *',
-      [status, req.params.id, req.user.company_id]
-    );
-    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!po) return res.status(404).json({ error: 'Not found' });
+    // If only status update, allow any status
+    if (req.body.status && Object.keys(req.body).length === 1) {
+      const { rows } = await db.query('UPDATE purchase_orders SET status=$1, updated_at=NOW() WHERE id=$2 RETURNING *', [req.body.status, req.params.id]);
+      return res.json(rows[0]);
+    }
+    // Full edit: draft only
+    if (po.status !== 'draft' && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'แก้ไขได้เฉพาะสถานะ draft' });
+    }
+    const fields = ['vendor_code','vendor_name','remarks','total_amount','tax_amount','status'];
+    const sets = []; const params = []; let idx = 1;
+    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push('updated_at = NOW()');
+    params.push(req.params.id);
+    const { rows } = await db.query(`UPDATE purchase_orders SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -197,24 +209,7 @@ router.post('/:id/reject', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/po/:id — Edit PO (draft only: vendor, remarks, lines)
-router.put('/:id', async (req, res) => {
-  try {
-    const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
-    if (!po) return res.status(404).json({ error: 'Not found' });
-    if (po.status !== 'draft' && req.user.role !== 'executive') {
-      return res.status(400).json({ error: 'INVALID_STATUS', message: 'แก้ไขได้เฉพาะสถานะ draft' });
-    }
-    const fields = ['vendor_code','vendor_name','remarks','total_amount','tax_amount'];
-    const sets = []; const params = []; let idx = 1;
-    for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
-    if (!sets.length) return res.status(400).json({ error: 'No fields' });
-    sets.push('updated_at = NOW()');
-    params.push(req.params.id);
-    const { rows } = await db.query(`UPDATE purchase_orders SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
-    res.json(rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
+// FIXED: Duplicate PUT /:id removed — merged into route above
 
 // DELETE /api/po/:id — Cancel PO (soft delete)
 router.delete('/:id', async (req, res) => {
