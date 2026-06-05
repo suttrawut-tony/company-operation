@@ -71,13 +71,15 @@ router.post('/', async (req, res) => {
     const { rows: [jo] } = await db.query(
       `INSERT INTO job_orders (company_id, job_order_number, project_id, title, description,
         job_type, site_name, location, priority, planned_start, planned_end,
-        needs_vehicle, needs_technician, needs_flight, status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+        needs_vehicle, needs_technician, needs_flight, status, created_by,
+        latitude, longitude, required_tools)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
       [req.user.company_id, jobOrderNumber, b.project_id || null, b.title, b.description || null,
        b.job_type || null, b.site_name || null, b.location || null, b.priority || 'normal',
        b.planned_start, b.planned_end,
        b.needs_vehicle || false, b.needs_technician || false, b.needs_flight || false,
-       b.status || 'draft', req.user.id]);
+       b.status || 'draft', req.user.id,
+       b.latitude || null, b.longitude || null, b.required_tools || null]);
 
     res.status(201).json(jo);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -123,7 +125,7 @@ router.put('/:id', async (req, res) => {
 
     const allowed = ['title', 'description', 'job_type', 'site_name', 'location', 'priority',
       'planned_start', 'planned_end', 'needs_vehicle', 'needs_technician', 'needs_flight',
-      'project_id', 'status'];
+      'project_id', 'status', 'latitude', 'longitude', 'required_tools'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) {
       if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); }

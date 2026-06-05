@@ -669,6 +669,7 @@
       <button class="gc-nav-btn" onclick="navNext()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
       <span class="gc-month" id="monthLabel"></span>
       <div class="gc-right">
+        <button class="btn btn-secondary" onclick="exportBookings()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
         <select class="gc-view-select" id="viewSelect" onchange="setView(this.value)">
           <option value="month">เดือน</option>
           <option value="week">สัปดาห์</option>
@@ -875,7 +876,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label>สถานที่</label>
-                <input type="text" id="vehJOLocation" placeholder="ปลายทาง">
+                <div style="display:flex;gap:6px"><input type="text" id="vehJOLocation" placeholder="ปลายทาง" style="flex:1"><button type="button" class="btn-sm" onclick="pickGPS('vehJO')" title="ปักหมุด GPS" style="white-space:nowrap;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>GPS</button></div>
+                <input type="hidden" id="vehJOLat"><input type="hidden" id="vehJOLng">
               </div>
               <div class="form-group">
                 <label>ชื่อไซต์</label>
@@ -886,6 +888,10 @@
               <label>รายละเอียด</label>
               <textarea id="vehJODesc" rows="2" placeholder="รายละเอียดงาน"></textarea>
             </div>
+            <div class="form-group">
+              <label>อุปกรณ์/เครื่องมือที่ต้องใช้</label>
+              <input type="text" id="vehJOTools" placeholder="เช่น Multimeter, Clamp meter, สว่าน">
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label>วันเริ่มต้น</label>
@@ -895,10 +901,6 @@
                 <label>วันสิ้นสุด</label>
                 <input type="date" id="vehJOEnd">
               </div>
-            </div>
-            <div class="form-group">
-              <label>โปรเจกต์</label>
-              <select id="vehJOProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
             </div>
             <div class="jo-inline-footer">
               <button class="btn-sm" onclick="toggleJOForm('vehicle')">ยกเลิก</button>
@@ -1021,7 +1023,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label>สถานที่</label>
-                <input type="text" id="solarJOLocation" placeholder="ปลายทาง">
+                <div style="display:flex;gap:6px"><input type="text" id="solarJOLocation" placeholder="ปลายทาง" style="flex:1"><button type="button" class="btn-sm" onclick="pickGPS('solarJO')" title="ปักหมุด GPS" style="white-space:nowrap;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>GPS</button></div>
+                <input type="hidden" id="solarJOLat"><input type="hidden" id="solarJOLng">
               </div>
               <div class="form-group">
                 <label>ชื่อไซต์</label>
@@ -1032,6 +1035,10 @@
               <label>รายละเอียด</label>
               <textarea id="solarJODesc" rows="2" placeholder="รายละเอียดงาน"></textarea>
             </div>
+            <div class="form-group">
+              <label>อุปกรณ์/เครื่องมือที่ต้องใช้</label>
+              <input type="text" id="solarJOTools" placeholder="เช่น Multimeter, Clamp meter, สว่าน">
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label>วันเริ่มต้น</label>
@@ -1041,10 +1048,6 @@
                 <label>วันสิ้นสุด</label>
                 <input type="date" id="solarJOEnd">
               </div>
-            </div>
-            <div class="form-group">
-              <label>โปรเจกต์</label>
-              <select id="solarJOProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
             </div>
             <div class="jo-inline-footer">
               <button class="btn-sm" onclick="toggleJOForm('solar')">ยกเลิก</button>
@@ -1080,27 +1083,10 @@
           <label>ทีมช่างสำรวจ (เลือกหลายคนได้)</label>
           <div id="solarTeamCheckboxes" style="max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px"></div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>ชื่อไซต์งาน</label>
-            <input type="text" id="solarSite" placeholder="ชื่อไซต์">
-          </div>
-          <div class="form-group">
-            <label>ขนาดระบบ (kWp)</label>
-            <input type="number" id="solarCapacity" step="0.1" placeholder="เช่น 10.5">
-          </div>
-        </div>
+        <!-- REMOVED: solarSite, solarCapacity, solarTools, solarSafety — moved to JO form -->
         <div class="form-group">
           <label>รายละเอียดงาน</label>
           <textarea id="solarDesc" placeholder="รายละเอียดงานที่ต้องทำ"></textarea>
-        </div>
-        <div class="form-group">
-          <label>เครื่องมือที่ต้องใช้</label>
-          <input type="text" id="solarTools" placeholder="เช่น Multimeter, Clamp meter">
-        </div>
-        <div class="form-group">
-          <label>หมายเหตุความปลอดภัย</label>
-          <input type="text" id="solarSafety" placeholder="เช่น ทำงานบนหลังคา ต้องมี Harness">
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -1295,7 +1281,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label>สถานที่</label>
-                <input type="text" id="flightJOLocation" placeholder="ปลายทาง">
+                <div style="display:flex;gap:6px"><input type="text" id="flightJOLocation" placeholder="ปลายทาง" style="flex:1"><button type="button" class="btn-sm" onclick="pickGPS('flightJO')" title="ปักหมุด GPS" style="white-space:nowrap;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>GPS</button></div>
+                <input type="hidden" id="flightJOLat"><input type="hidden" id="flightJOLng">
               </div>
               <div class="form-group">
                 <label>ชื่อไซต์</label>
@@ -1306,6 +1293,10 @@
               <label>รายละเอียด</label>
               <textarea id="flightJODesc" rows="2" placeholder="รายละเอียดงาน"></textarea>
             </div>
+            <div class="form-group">
+              <label>อุปกรณ์/เครื่องมือที่ต้องใช้</label>
+              <input type="text" id="flightJOTools" placeholder="เช่น Multimeter, Clamp meter, สว่าน">
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label>วันเริ่มต้น</label>
@@ -1315,10 +1306,6 @@
                 <label>วันสิ้นสุด</label>
                 <input type="date" id="flightJOEnd">
               </div>
-            </div>
-            <div class="form-group">
-              <label>โปรเจกต์</label>
-              <select id="flightJOProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
             </div>
             <div class="jo-inline-footer">
               <button class="btn-sm" onclick="toggleJOForm('flight')">ยกเลิก</button>
@@ -1439,6 +1426,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     // ── State ──
@@ -1529,7 +1517,7 @@
         if (jo.location) document.getElementById('vehLocation').value = jo.location;
       } else if (type === 'solar') {
         if (jo.job_type) document.getElementById('solarJobType').value = jo.job_type;
-        if (jo.site_name) document.getElementById('solarSite').value = jo.site_name;
+        // REMOVED: solarSite moved to JO form
         if (jo.description) document.getElementById('solarDesc').value = jo.description;
         if (jo.planned_start) document.getElementById('solarStartDate').value = toLocalDate(jo.planned_start);
         if (jo.planned_end) document.getElementById('solarEndDate').value = toLocalDate(jo.planned_end);
@@ -1554,9 +1542,11 @@
         location: document.getElementById(prefix + 'JOLocation').value,
         site_name: document.getElementById(prefix + 'JOSite').value,
         description: document.getElementById(prefix + 'JODesc').value,
+        required_tools: document.getElementById(prefix + 'JOTools').value,
+        latitude: document.getElementById(prefix + 'JOLat').value || null,
+        longitude: document.getElementById(prefix + 'JOLng').value || null,
         planned_start: document.getElementById(prefix + 'JOStart').value,
         planned_end: document.getElementById(prefix + 'JOEnd').value,
-        project_id: document.getElementById(prefix + 'JOProject').value || null,
         needs_vehicle: type === 'vehicle',
         needs_technician: type === 'solar',
         needs_flight: type === 'flight',
@@ -2357,12 +2347,8 @@
         document.getElementById('solarEndTime').value = '17:00';
         toggleSolarTime();
         document.getElementById('solarPhase').value = 'survey';
-        document.getElementById('solarSite').value = '';
         document.querySelectorAll('.solar-team-cb').forEach(cb => cb.checked = false);
-        document.getElementById('solarCapacity').value = '';
         document.getElementById('solarDesc').value = '';
-        document.getElementById('solarTools').value = '';
-        document.getElementById('solarSafety').value = '';
         document.getElementById('solarColor').value = '#0f9d58';
         document.getElementById('solarJobOrder').value = '';
         document.getElementById('solarJOForm').classList.remove('show');
@@ -2405,6 +2391,75 @@
       document.getElementById('solarTimeRow').style.display = allDay ? 'none' : 'grid';
     }
 
+    // ═══ GPS Picker ═══
+    function pickGPS(prefix) {
+      const existing = document.getElementById('gps-picker-modal');
+      if (existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay show'; modal.id = 'gps-picker-modal';
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `<div class="modal-box" style="width:400px">
+        <div class="modal-header"><h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> ปักหมุด GPS</h3>
+          <button class="modal-close" onclick="document.getElementById('gps-picker-modal').remove()">&times;</button></div>
+        <div class="modal-body">
+          <button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:12px" onclick="getMyLocation('${prefix}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
+            ใช้ตำแหน่งปัจจุบัน
+          </button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Latitude</label>
+              <input class="form-input" type="number" step="any" id="gps-lat" placeholder="เช่น 13.7563"></div>
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Longitude</label>
+              <input class="form-input" type="number" step="any" id="gps-lng" placeholder="เช่น 100.5018"></div>
+          </div>
+          <div id="gps-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+          <button class="btn btn-ghost btn-sm" id="gps-map-link" style="display:none;margin-bottom:12px" onclick="openGPSMap()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            เปิด Google Maps
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('gps-picker-modal').remove()">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" onclick="confirmGPS('${prefix}')">ยืนยัน</button>
+        </div>
+      </div>`;
+      document.body.appendChild(modal);
+    }
+
+    function getMyLocation(prefix) {
+      const status = document.getElementById('gps-status');
+      if (!navigator.geolocation) { status.textContent = 'Browser ไม่รองรับ GPS'; return; }
+      status.textContent = 'กำลังหาตำแหน่ง...';
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          document.getElementById('gps-lat').value = pos.coords.latitude.toFixed(7);
+          document.getElementById('gps-lng').value = pos.coords.longitude.toFixed(7);
+          status.innerHTML = '<span style="color:var(--success)">พบตำแหน่งแล้ว</span>';
+          document.getElementById('gps-map-link').style.display = '';
+        },
+        err => { status.textContent = 'ไม่สามารถหาตำแหน่งได้: ' + err.message; },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function openGPSMap() {
+      const lat = document.getElementById('gps-lat').value;
+      const lng = document.getElementById('gps-lng').value;
+      if (lat && lng) window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank');
+    }
+
+    function confirmGPS(prefix) {
+      const lat = document.getElementById('gps-lat').value;
+      const lng = document.getElementById('gps-lng').value;
+      if (!lat || !lng) { alert('กรุณาระบุพิกัด'); return; }
+      const locInput = document.getElementById(prefix + 'Location');
+      const current = locInput.value.replace(/\s*\([\d.,\s-]+\)\s*$/, '');
+      locInput.value = current + (current ? ' ' : '') + `(${lat}, ${lng})`;
+      document.getElementById(prefix + 'Lat').value = lat;
+      document.getElementById(prefix + 'Lng').value = lng;
+      document.getElementById('gps-picker-modal').remove();
+    }
+
     function onPhaseChange() {
       const phase = document.getElementById('solarPhase').value;
       document.getElementById('solarJobType').value = phase === 'survey' ? 'survey' : 'installation';
@@ -2445,11 +2500,7 @@
             job_order_id: document.getElementById('solarJobOrder').value || null,
             technician_id: document.getElementById('solarTech').value || null,
             job_type: document.getElementById('solarJobType').value,
-            site_name: document.getElementById('solarSite').value,
-            system_capacity: document.getElementById('solarCapacity').value || null,
             description: document.getElementById('solarDesc').value,
-            tools_required: document.getElementById('solarTools').value,
-            safety_notes: document.getElementById('solarSafety').value,
             start_date: document.getElementById('solarStartDate').value,
             end_date: document.getElementById('solarEndDate').value,
             all_day: document.getElementById('solarAllDay').checked,
@@ -2457,7 +2508,7 @@
             end_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarEndTime').value,
             project_id: document.getElementById('solarProject').value || null,
             color: phase === 'survey' ? '#ff9800' : '#0f9d58',
-            title: document.getElementById('solarJobType').value + ' - ' + (document.getElementById('solarCustName').value || document.getElementById('solarSite').value),
+            title: document.getElementById('solarJobType').value + ' - ' + (document.getElementById('solarCustName').value || ''),
             customer_name: document.getElementById('solarCustName').value || null,
             customer_phone: document.getElementById('solarCustPhone').value || null,
             customer_address: document.getElementById('solarCustAddr').value || null,
@@ -2560,11 +2611,8 @@
         document.getElementById('solarTech').value = ev.technician_id || '';
         document.getElementById('solarPhase').value = ev.phase || 'survey';
         document.getElementById('solarJobType').value = ev.job_type || 'survey';
-        document.getElementById('solarSite').value = ev.site_name || '';
-        document.getElementById('solarCapacity').value = ev.system_capacity || '';
+        // REMOVED: solarSite/Capacity/Tools/Safety — moved to JO form
         document.getElementById('solarDesc').value = ev.description || '';
-        document.getElementById('solarTools').value = ev.tools_required || '';
-        document.getElementById('solarSafety').value = ev.safety_notes || '';
         document.getElementById('solarStartDate').value = toLocalDate(ev.start_date);
         document.getElementById('solarEndDate').value = toLocalDate(ev.end_date || ev.start_date);
         document.getElementById('solarAllDay').checked = !!ev.all_day;
@@ -3269,6 +3317,24 @@
         const key = el.dataset.icon;
         if (I[key]) el.innerHTML = I[key];
       });
+    }
+
+    // ── Export Bookings to Excel ──
+    function exportBookings() {
+      const data = (filteredBookings && filteredBookings.length ? filteredBookings : allBookings).map(ev => ({
+        'วันที่เริ่ม': toLocalDate(ev.start_date),
+        'วันที่สิ้นสุด': toLocalDate(ev.end_date || ev.start_date),
+        'ประเภท': (TYPE_LABELS[ev.booking_type] || ev.booking_type || '-'),
+        'ชื่อรายการ': ev.title || '-',
+        'ทรัพยากร': ev.resource_name || '-',
+        'โปรเจกต์': ev.project_name || '-',
+        'ใบสั่งงาน': ev.job_order_number || '-',
+        'สถานะ': statusLabel(ev.status),
+        'ผู้จอง': ev.booked_by || ev.created_by_name || '-',
+        'หมายเหตุ': ev.notes || ev.description || '-',
+      }));
+      if (!data.length) { alert('ไม่มีข้อมูลสำหรับ Export'); return; }
+      exportToExcel(data, 'Bookings', 'bookings.xlsx');
     }
 
     if (API.requireAuth()) {
