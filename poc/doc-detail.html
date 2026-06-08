@@ -839,7 +839,7 @@
           } else if (docType === 'po') {
             result = await API.createPO(data);
           }
-          alert('Document created: ' + (result.doc_number || 'OK'));
+          showToast('Document created: ' + (result.doc_number || 'OK'), 'success');
           window.location = 'doc-detail.html?type=' + docType + '&doc=' + result.doc_number;
         } else {
           // Update existing document
@@ -848,10 +848,10 @@
             else if (docType === 'po') await API.put('/po/' + doc.id, { status: doc.status });
             isEditing = false;
             render();
-          } catch(e) { alert('Error: ' + e.message); }
+          } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
       } catch (e) {
-        alert('Error saving: ' + e.message);
+        showToast('Error saving: ' + e.message, 'error');
       }
     }
 
@@ -864,9 +864,9 @@
         if (docType === 'pr') await API.submitPR(doc.id);
         else if (docType === 'expense') await API.submitExpense(doc.id);
         else if (docType === 'po') await API.post('/po/' + doc.id + '/submit');
-        alert('Submitted for approval!');
+        showToast('Submitted for approval!', 'success');
         location.reload();
-      } catch (e) { alert('Error: ' + e.message); }
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function approveDoc() {
@@ -874,9 +874,9 @@
         if (docType === 'pr') await API.approvePR(doc.id);
         else if (docType === 'po') await API.post('/po/' + doc.id + '/approve');
         else if (docType === 'expense') await API.approveExpense(doc.id);
-        alert('Approved!');
+        showToast('Approved!', 'success');
         location.reload();
-      } catch (e) { alert('Error: ' + e.message); }
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function rejectDoc() {
@@ -887,7 +887,7 @@
         else if (docType === 'po') await API.post('/po/' + doc.id + '/reject', { reason });
         else if (docType === 'expense') await API.post('/expense/' + doc.id + '/reject', { reason });
         location.reload();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     function copyDoc() {
@@ -915,7 +915,7 @@
         else if (docType === 'po') await API.put('/po/' + doc.id, { status: 'cancelled' });
         doc.status = 'cancelled';
         render();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // Render Document Flow Chain with clickable links
@@ -1013,6 +1013,7 @@
       el.innerHTML = nodes.join('');
     }
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadDocument();
   </script>
 </body>

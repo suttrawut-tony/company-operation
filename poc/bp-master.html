@@ -108,7 +108,7 @@
     async function saveBP() {
       const id=document.getElementById('bm-id').value;
       const body={bp_code:document.getElementById('bm-code').value,bp_name:document.getElementById('bm-name').value,bp_name_th:document.getElementById('bm-name-th').value,bp_type:document.getElementById('bm-type').value,contact_person:document.getElementById('bm-contact').value,phone:document.getElementById('bm-phone').value,email:document.getElementById('bm-email').value,tax_id:document.getElementById('bm-taxid').value,address:document.getElementById('bm-address').value,payment_terms:parseInt(document.getElementById('bm-terms').value)||30,bank_name:document.getElementById('bm-bank').value,bank_account:document.getElementById('bm-bankacc').value};
-      try { if(id) await API.put('/master/bp/'+id,body); else await API.post('/master/bp',body); closeBPModal(); await loadBPs(); } catch(e){alert('Error: '+e.message);}
+      try { if(id) await API.put('/master/bp/'+id,body); else await API.post('/master/bp',body); closeBPModal(); await loadBPs(); } catch(e){showToast('Error: '+e.message, 'error');}
     }
     function exportBPs() {
       const headers = ['BP Code','BP Name','Name (TH)','Type','Contact Person','Phone','Email','Tax ID','Address','Payment Terms (days)','Bank','Bank Account'];
@@ -119,6 +119,7 @@
       ]);
       exportToExcel(headers, rows, 'BP_Master', 'Business Partners');
     }
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadBPs();
   </script>
 </body></html>

@@ -605,12 +605,12 @@
     async function submitBudget(id) {
       const b = allBudgets.find(x => x.id === id); if (!b) return;
       const old = b.status; b.status = 'pending_manager'; reRenderCard(id);
-      try { await API.submitBudget(id); } catch(e) { b.status = old; reRenderCard(id); alert('Error: '+e.message); }
+      try { await API.submitBudget(id); } catch(e) { b.status = old; reRenderCard(id); showToast('Error: '+e.message, 'error'); }
     }
     async function approveBudget(id) {
       const b = allBudgets.find(x => x.id === id); if (!b) return;
       const old = b.status; b.status = {pending_manager:'pending_executive',pending_executive:'approved'}[b.status]||'approved'; reRenderCard(id);
-      try { await API.approveBudget(id); } catch(e) { b.status = old; reRenderCard(id); alert('Error: '+e.message); }
+      try { await API.approveBudget(id); } catch(e) { b.status = old; reRenderCard(id); showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ New Budget Modal ═══
@@ -670,7 +670,7 @@
       const code = document.getElementById('bg-code').value.trim();
       const name = document.getElementById('bg-name').value.trim();
       const year = document.getElementById('bg-year').value;
-      if (!projectId || !code || !name) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+      if (!projectId || !code || !name) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return; }
       const lines = [];
       document.querySelectorAll('.line-row').forEach((row, i) => {
         const ln = row.querySelector('[data-ln-name]').value.trim();
@@ -678,7 +678,7 @@
         const bud = parseFloat(row.querySelector('[data-ln-bud]').value) || 0;
         if (ln) lines.push({ name: ln, category: 'material', tor_amount: tor, budget_amount: bud, actual_amount: 0, sort_order: i+1 });
       });
-      if (!lines.length) { alert('กรุณาเพิ่มรายการอย่างน้อย 1 รายการ'); return; }
+      if (!lines.length) { showToast('กรุณาเพิ่มรายการอย่างน้อย 1 รายการ', 'error'); return; }
       const btn = document.getElementById('bg-save-btn');
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
       try {
@@ -687,7 +687,7 @@
         dataLoaded = false;
         await loadMaster();
         if (currentTab === 'project') loadProjectBudget();
-      } catch(err) { alert('Error: ' + err.message); }
+      } catch(err) { showToast('Error: ' + err.message, 'error'); }
       finally { btn.disabled = false; btn.textContent = 'อัปเดต'; }
     }
 
@@ -699,7 +699,7 @@
         dataLoaded = false;
         await loadMaster();
         if (currentTab === 'project') loadProjectBudget();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
     function closeBudgetModal() { document.getElementById('budget-modal').classList.remove('show'); }
 
@@ -740,7 +740,7 @@
       const code = document.getElementById('bg-code').value.trim();
       const name = document.getElementById('bg-name').value.trim();
       const year = document.getElementById('bg-year').value;
-      if (!projectId || !code || !name) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+      if (!projectId || !code || !name) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return; }
 
       const lines = [];
       document.querySelectorAll('.line-row').forEach((row, i) => {
@@ -749,7 +749,7 @@
         const bud = parseFloat(row.querySelector('[data-ln-bud]').value) || 0;
         if (ln) lines.push({ name: ln, category: 'material', tor_amount: tor, budget_amount: bud, actual_amount: 0, sort_order: i+1 });
       });
-      if (!lines.length) { alert('กรุณาเพิ่มรายการอย่างน้อย 1 รายการ'); return; }
+      if (!lines.length) { showToast('กรุณาเพิ่มรายการอย่างน้อย 1 รายการ', 'error'); return; }
 
       const btn = document.getElementById('bg-save-btn');
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
@@ -760,7 +760,7 @@
         dataLoaded = false; // force reload
         await loadMaster();
         if (currentTab === 'project') loadProjectBudget();
-      } catch(err) { alert('Error: ' + err.message); }
+      } catch(err) { showToast('Error: ' + err.message, 'error'); }
       finally { btn.disabled = false; btn.textContent = 'บันทึก'; }
     }
 
@@ -774,7 +774,7 @@
       b.status = 'draft'; b.reject_reason = reason;
       reRenderCard(id);
       try { await API.post('/budget/' + id + '/reject', { reason }); }
-      catch(e) { b.status = old; b.reject_reason = ''; reRenderCard(id); alert('Error: '+e.message); }
+      catch(e) { b.status = old; b.reject_reason = ''; reRenderCard(id); showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Budget Transfer ═══
@@ -790,7 +790,7 @@
         document.getElementById('tf-amount').value = '';
         document.getElementById('tf-reason').value = '';
         document.getElementById('transfer-modal').classList.add('show');
-      } catch(e) { alert('Error loading lines: ' + e.message); }
+      } catch(e) { showToast('Error loading lines: ' + e.message, 'error'); }
     }
     function closeTransferModal() { document.getElementById('transfer-modal').classList.remove('show'); }
 
@@ -800,8 +800,8 @@
       const to = document.getElementById('tf-to').value;
       const amount = parseFloat(document.getElementById('tf-amount').value);
       const reason = document.getElementById('tf-reason').value;
-      if (!from || !to || from === to) { alert('กรุณาเลือกรายการที่ต่างกัน'); return; }
-      if (!amount || amount <= 0) { alert('กรุณากรอกจำนวนเงิน'); return; }
+      if (!from || !to || from === to) { showToast('กรุณาเลือกรายการที่ต่างกัน', 'error'); return; }
+      if (!amount || amount <= 0) { showToast('กรุณากรอกจำนวนเงิน', 'error'); return; }
       try {
         await API.post('/budget/' + budgetId + '/transfer', { from_line_id: from, to_line_id: to, amount, reason });
         closeTransferModal();
@@ -809,7 +809,7 @@
         if (currentTab === 'master') loadMaster();
         else if (currentTab === 'project') loadProjectBudget();
         else loadComparison();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ═══ Revision History ═══

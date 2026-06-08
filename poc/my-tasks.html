@@ -415,12 +415,12 @@
         if(t) t.status=newStatus;
         closeModal();
         render();
-      } catch(e) { alert(e.message); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     // ═══ Export Excel ═══
     function exportMyTasks() {
-      if (!allTasks.length) { alert('ไม่มีข้อมูลให้ Export'); return; }
+      if (!allTasks.length) { showToast('ไม่มีข้อมูลให้ Export', 'warning'); return; }
       const PRI_LABELS = { high: 'สูง', medium: 'กลาง', low: 'ต่ำ' };
       const STAT_LABELS = { todo: 'รอทำ', in_progress: 'กำลังทำ', review: 'รีวิว', done: 'เสร็จ' };
       const headers = ['รหัสโปรเจค', 'ชื่อโปรเจค', 'ชื่องาน', 'รายละเอียด', 'สถานะ', 'ความสำคัญ', 'วันเริ่ม', 'วันกำหนด', 'ผู้รับผิดชอบ'];

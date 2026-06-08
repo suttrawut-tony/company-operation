@@ -649,18 +649,18 @@
         };
 
         if (!data.description || !data.amount) {
-          alert('Please fill in Description and Amount');
+          showToast('กรุณากรอกรายละเอียดและจำนวนเงิน', 'error');
           return;
         }
 
         const result = await API.createExpense(data);
-        alert('Expense created: ' + result.doc_number + '\nAmount: ฿' + money(data.amount));
+        showToast('สร้าง Expense ' + result.doc_number + ' สำเร็จ (฿' + money(data.amount) + ')', 'success');
         closeScanModal();
 
         // Redirect to detail page
         window.location = 'doc-detail.html?type=expense&doc=' + result.doc_number;
       } catch (e) {
-        alert('Error: ' + e.message);
+        showToast('Error: ' + e.message, 'error');
       }
     }
 
@@ -675,7 +675,7 @@
       } catch (e) {
         exp.status = oldStatus;
         renderExpenses();
-        alert('Submit failed: ' + e.message);
+        showToast('Submit failed: ' + e.message, 'error');
       }
     }
 
@@ -691,7 +691,7 @@
       } catch (e) {
         exp.status = oldStatus;
         renderExpenses();
-        alert('Approve failed: ' + e.message);
+        showToast('Approve failed: ' + e.message, 'error');
       }
     }
 
@@ -732,7 +732,7 @@
       try {
         await API.del('/expense/' + expenseId);
         await loadExpenses();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // FIXED: Auth guard

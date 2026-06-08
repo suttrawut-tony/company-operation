@@ -315,8 +315,8 @@
       const purpose = document.getElementById('book-purpose').value;
       const passengers = document.getElementById('book-passengers').value;
 
-      if (!vehicle_id) { alert('Please select a vehicle.'); return; }
-      if (!start_date || !end_date) { alert('Please select start and end dates.'); return; }
+      if (!vehicle_id) { showToast('Please select a vehicle.', 'error'); return; }
+      if (!start_date || !end_date) { showToast('Please select start and end dates.', 'error'); return; }
 
       // Hide previous conflict warning
       document.getElementById('conflict-warn').style.display = 'none';
@@ -356,7 +356,7 @@
         loadVehicles();
       } catch (e) {
         console.error('Booking failed:', e);
-        alert('Booking failed: ' + e.message);
+        showToast('Booking failed: ' + e.message, 'error');
       }
     }
 
@@ -527,7 +527,7 @@
         loadVehicles();
       } catch (e) {
         console.error('Checkout failed:', e);
-        alert('Check-out failed: ' + e.message);
+        showToast('Check-out failed: ' + e.message, 'error');
       }
     }
 
@@ -542,7 +542,7 @@
         loadVehicles();
       } catch (e) {
         console.error('Checkin failed:', e);
-        alert('Check-in failed: ' + e.message);
+        showToast('Check-in failed: ' + e.message, 'error');
       }
     }
 
@@ -550,7 +550,7 @@
       if (event) event.stopPropagation();
       if (!confirm('ยกเลิกการจองนี้?')) return;
       try { await API.del('/vehicle/bookings/'+id); loadVehicles(); }
-      catch(e) { alert('Error: '+e.message); }
+      catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ---- Calendar ----
@@ -712,7 +712,7 @@
         closeKmModal();
         loadVehicles();
         showToast('KM updated');
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ═══ Photo Modal ═══
@@ -748,7 +748,7 @@
     }
     async function savePhoto() {
       const file = document.getElementById('photo-file').files[0];
-      if (!file) { alert('เลือกรูปก่อน'); return; }
+      if (!file) { showToast('เลือกรูปก่อน', 'warning'); return; }
       const id = document.getElementById('photo-vehicle-id').value;
       // Convert to base64 data URL and save as image_url
       const reader = new FileReader();
@@ -758,7 +758,7 @@
           closePhotoModal();
           loadVehicles();
           showToast('Photo saved');
-        } catch(err) { alert('Error: ' + err.message); }
+        } catch(err) { showToast('Error: ' + err.message, 'error'); }
       };
       reader.readAsDataURL(file);
     }
@@ -839,7 +839,7 @@
         await API.del('/vehicle/'+vid);
         document.getElementById('vehicle-detail-modal').classList.add('hidden');
         loadVehicles();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     function openEditVehicleModal(vid) {
@@ -889,7 +889,7 @@
             });
             document.getElementById('add-vehicle-modal').classList.add('hidden');
             loadVehicles();
-          } catch(e) { alert('Error: '+e.message); }
+          } catch(e) { showToast('Error: '+e.message, 'error'); }
         };
       }, 100);
     }
@@ -1023,7 +1023,7 @@
         });
         document.getElementById('ins-modal').classList.add('hidden');
         loadVDInsurance(vid);
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Maintenance Modal ═══
@@ -1070,7 +1070,7 @@
         });
         document.getElementById('maint-modal').classList.add('hidden');
         loadVDMaintenance(vid);
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Add Vehicle Modal ═══
@@ -1136,7 +1136,7 @@
     async function saveNewVehicle() {
       const name = document.getElementById('av-name').value.trim();
       const plate = document.getElementById('av-plate').value.trim();
-      if (!name || !plate) { alert('Name and Plate Number are required'); return; }
+      if (!name || !plate) { showToast('Name and Plate Number are required', 'error'); return; }
       try {
         await API.post('/vehicle', {
           name, plate_number: plate,
@@ -1160,7 +1160,7 @@
         document.getElementById('add-vehicle-modal').classList.add('hidden');
         loadVehicles();
         showToast('Vehicle created');
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ═══ Availability Grid ═══
@@ -1284,7 +1284,7 @@
     }
 
     function exportVehicles() {
-      if (!allVehicles || allVehicles.length === 0) { alert('No vehicle data to export.'); return; }
+      if (!allVehicles || allVehicles.length === 0) { showToast('No vehicle data to export.', 'warning'); return; }
       const rows = allVehicles.map(v => ({
         'Vehicle Name': v.name || '',
         'Plate No': v.plate_number || '',
@@ -1297,6 +1297,7 @@
       exportToExcel(rows, 'Vehicles', 'vehicles.xlsx');
     }
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadVehicles();
   </script>
   <style>

@@ -287,6 +287,7 @@
       exportExcel(rows, 'journal-entries', { sheetName: 'Journal Entries' });
     }
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadJE();
   </script>
 </body>

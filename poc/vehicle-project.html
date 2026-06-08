@@ -113,6 +113,7 @@
       }
     }
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadData();
   </script>
 </body>

@@ -53,32 +53,103 @@
     .gc-create-btn .plus-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
     .gc-create-btn .plus-icon svg { stroke: none; }
 
-    /* Sidebar Sections */
-    .sb-section { padding: 0 12px; margin-bottom: 8px; }
+    /* ═══ Sidebar v2 — Google Calendar Style ═══ */
+    .sb-section { padding: 4px 14px; margin-bottom: 4px; }
     .sb-section-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.5px; color: var(--text-muted);
+      padding: 10px 2px 6px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);
     }
+    .sb-section-header .sb-section-left { display: flex; align-items: center; gap: 6px; }
+    .sb-section-header .sb-section-icon { width: 18px; height: 18px; opacity: 0.5; }
     .sb-section-header .sb-add {
-      width: 24px; height: 24px; border: none; background: none; border-radius: 50%;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      color: var(--text-muted); font-size: 16px;
+      width: 24px; height: 24px; border: 1.5px dashed var(--border);
+      background: none; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 14px; transition: all 0.15s;
     }
-    .sb-section-header .sb-add:hover { background: var(--bg-hover); color: var(--primary); }
+    .sb-section-header .sb-add:hover {
+      background: var(--primary-light, #eef2ff); border-color: var(--primary);
+      color: var(--primary); border-style: solid;
+    }
+
+    /* Calendar Item — custom checkbox */
     .sb-cal-item {
-      display: flex; align-items: center; gap: 8px; padding: 4px; font-size: 12px;
-      cursor: pointer; border-radius: var(--radius);
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 8px; font-size: 13px; font-weight: 500;
+      cursor: pointer; border-radius: 8px; transition: background 0.1s;
+      color: var(--text-primary); user-select: none;
     }
     .sb-cal-item:hover { background: var(--bg-hover); }
-    .sb-cal-item input[type="checkbox"] { margin: 0; cursor: pointer; width: 14px; height: 14px; accent-color: var(--cal-color, var(--primary)); }
-    .sb-cal-item .sb-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .sb-search {
-      margin: 8px 12px; padding: 8px 12px 8px 32px; border: 1px solid var(--border);
-      border-radius: var(--radius); font-size: 12px; width: calc(100% - 24px);
-      box-sizing: border-box; background: var(--bg-light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") 10px center no-repeat;
+
+    /* Custom checkbox */
+    .sb-cal-item input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; border: 2px solid var(--cal-color, var(--border));
+      border-radius: 4px; cursor: pointer; flex-shrink: 0;
+      position: relative; transition: all 0.15s; background: transparent; margin: 0;
     }
-    .sb-search:focus { outline: none; border-color: var(--primary); background-color: var(--bg-white); }
+    .sb-cal-item input[type="checkbox"]:checked {
+      background: var(--cal-color, var(--primary)); border-color: var(--cal-color, var(--primary));
+    }
+    .sb-cal-item input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; top: 2px; left: 5px;
+      width: 5px; height: 9px; border: solid white;
+      border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+    .sb-cal-item input[type="checkbox"]:hover {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--cal-color, var(--primary)) 15%, transparent);
+    }
+
+    /* Color bar (replaces dot) */
+    .sb-color-bar { width: 4px; height: 24px; border-radius: 2px; flex-shrink: 0; }
+
+    /* Name */
+    .sb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
+    .sb-name .sb-sub { font-size: 10px; color: var(--text-muted); font-weight: 400; display: block; }
+
+    /* Search */
+    .sb-search {
+      margin: 10px 14px; padding: 9px 12px 9px 34px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 12px; width: calc(100% - 28px); box-sizing: border-box;
+      background: var(--bg-light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") 12px center no-repeat;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .sb-search:focus {
+      outline: none; border-color: var(--primary); background-color: var(--bg-white);
+      box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+
+    /* Divider */
+    .sb-divider { height: 1px; background: var(--border-light); margin: 8px 14px; }
+
+    /* Flight section */
+    .sb-flight-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 500; padding: 6px 8px;
+      border-radius: 8px; cursor: pointer; transition: background 0.1s;
+    }
+    .sb-flight-label:hover { background: var(--bg-hover); }
+    .sb-flight-label input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; border: 2px solid #db4437;
+      border-radius: 4px; cursor: pointer; position: relative;
+      background: transparent; margin: 0; flex-shrink: 0; transition: all 0.15s;
+    }
+    .sb-flight-label input[type="checkbox"]:checked {
+      background: #db4437; border-color: #db4437;
+    }
+    .sb-flight-label input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; top: 2px; left: 5px;
+      width: 5px; height: 9px; border: solid white;
+      border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+    .sb-flight-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
 
     /* Create popup (add technician/vehicle) */
     .sb-create-popup {
@@ -792,12 +863,15 @@
         <div style="padding:0 12px"><div class="mini-cal" id="miniCal"></div></div>
 
         <!-- Search -->
-        <input class="sb-search" placeholder="ค้นหาคน..." id="sbSearch" oninput="filterSidebar()">
+        <input class="sb-search" placeholder="ค้นหาช่าง, รถ..." id="sbSearch" oninput="filterSidebar()">
 
-        <!-- My Calendars (Technicians) -->
+        <!-- Technicians -->
         <div class="sb-section">
           <div class="sb-section-header">
-            <span>ช่าง / พนักงาน</span>
+            <div class="sb-section-left">
+              <svg class="sb-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>ช่าง / พนักงาน</span>
+            </div>
             <button class="sb-add" onclick="showAddTechPopup()" title="เพิ่มช่าง">+</button>
           </div>
           <div id="sbTechList"></div>
@@ -826,10 +900,15 @@
           </div>
         </div>
 
-        <!-- Resources (Vehicles) -->
+        <div class="sb-divider"></div>
+
+        <!-- Vehicles -->
         <div class="sb-section">
           <div class="sb-section-header">
-            <span>รถยนต์</span>
+            <div class="sb-section-left">
+              <svg class="sb-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+              <span>รถยนต์</span>
+            </div>
             <button class="sb-add" onclick="showAddVehiclePopup()" title="เพิ่มรถ">+</button>
           </div>
           <div id="sbVehicleList"></div>
@@ -854,12 +933,22 @@
           </div>
         </div>
 
+        <div class="sb-divider"></div>
+
         <!-- Flights -->
         <div class="sb-section">
-          <div class="sb-section-header"><span>เครื่องบิน</span></div>
-          <label class="sb-cal-item">
-            <input type="checkbox" checked data-type="flight" onchange="applyFilters()" style="--cal-color:#db4437">
-            <span class="sb-dot" style="background:#db4437"></span> เที่ยวบินทั้งหมด
+          <div class="sb-section-header">
+            <div class="sb-section-left">
+              <svg class="sb-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+              <span>เครื่องบิน</span>
+            </div>
+          </div>
+          <label class="sb-flight-label">
+            <input type="checkbox" checked data-type="flight" onchange="applyFilters()">
+            <div class="sb-flight-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#db4437" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+            </div>
+            <span>เที่ยวบินทั้งหมด</span>
           </label>
         </div>
       </div>
@@ -1553,7 +1642,7 @@
     async function approveJO(type) {
       const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
       const joId = document.getElementById(prefix + 'JobOrder').value;
-      if (!joId) { typeof showToast === 'function' ? showToast('กรุณาเลือกใบสั่งงานก่อน','error') : alert('เลือก JO ก่อน'); return; }
+      if (!joId) { showToast('กรุณาเลือกใบสั่งงานก่อน','error'); return; }
       try {
         await API.post('/job-orders/' + joId + '/approve');
         typeof showToast === 'function' && showToast('อนุมัติใบสั่งงานสำเร็จ', 'success');
@@ -1565,7 +1654,7 @@
           catch(e2) { typeof showToast==='function'&&showToast('สร้าง Tasks: '+e2.message,'warning'); }
         }
       } catch(e) {
-        typeof showToast === 'function' ? showToast(e.message || 'Error', 'error') : alert(e.message);
+        showToast(e.message || 'Error', 'error');
       }
     }
 
@@ -1574,7 +1663,7 @@
       try {
         const r = await API.post('/job-orders/'+joId+'/create-tasks');
         typeof showToast==='function'&&showToast(r.message||'สร้าง tasks สำเร็จ','success');
-      } catch(e) { typeof showToast==='function'?showToast(e.message,'error'):alert(e.message); }
+      } catch(e) { showToast(e.message,'error'); }
     }
 
     function onJOSelect(type) {
@@ -1608,7 +1697,7 @@
     async function saveInlineJO(type) {
       const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
       const title = document.getElementById(prefix + 'JOTitle').value.trim();
-      if (!title) { typeof showToast === 'function' ? showToast('กรุณากรอกชื่องาน','error') : alert('กรุณากรอกชื่องาน'); return; }
+      if (!title) { showToast('กรุณากรอกชื่องาน','error'); return; }
 
       const data = {
         title,
@@ -1627,7 +1716,7 @@
         needs_flight: type === 'flight',
       };
       if (!data.planned_start || !data.planned_end) {
-        typeof showToast === 'function' ? showToast('กรุณาระบุวันที่จองด้านล่างก่อน','error') : alert('กรุณาระบุวันที่จองก่อน');
+        showToast('กรุณาระบุวันที่จองด้านล่างก่อน','error');
         return;
       }
       try {
@@ -1640,7 +1729,7 @@
         document.getElementById(prefix + 'JODesc').value = '';
         document.getElementById(prefix + 'JOForm').classList.remove('show');
       } catch(e) {
-        typeof showToast === 'function' ? showToast(e.message||'Error','error') : alert(e.message);
+        showToast(e.message||'Error','error');
       }
     }
 
@@ -1850,9 +1939,12 @@
         techDiv.innerHTML = technicians.map((t, i) => {
           const name = t.nickname || t.name || ((t.first_name||'')+' '+(t.last_name||'')).trim();
           const color = t.color || CAL_COLORS[(i + 1) % CAL_COLORS.length];
+          t._color = color;
+          const spec = t.specialization ? ({installation:'ติดตั้ง',survey:'สำรวจ',repair:'ซ่อม',general:'ทั่วไป'}[t.specialization] || t.specialization) : '';
           return `<label class="sb-cal-item">
             <input type="checkbox" checked data-res="${t.id}" onchange="applyFilters()" style="--cal-color:${color}">
-            <span class="sb-dot" style="background:${color}"></span> ${name}
+            <span class="sb-color-bar" style="background:${color}"></span>
+            <span class="sb-name">${name}${spec ? '<span class="sb-sub">' + spec + '</span>' : ''}</span>
           </label>`;
         }).join('');
       }
@@ -1861,10 +1953,14 @@
       if (vehDiv) {
         vehDiv.innerHTML = vehicles.map((v, i) => {
           const color = v.color || CAL_COLORS[i % CAL_COLORS.length];
-          const label = (v.plate_number||'') + ' ' + (v.name||'');
+          v._color = color;
+          const plate = v.plate_number || '';
+          const name = v.name || '';
+          const vType = v.vehicle_type || '';
           return `<label class="sb-cal-item">
             <input type="checkbox" checked data-res="${v.id}" onchange="applyFilters()" style="--cal-color:${color}">
-            <span class="sb-dot" style="background:${color}"></span> ${label.trim()}
+            <span class="sb-color-bar" style="background:${color}"></span>
+            <span class="sb-name"><strong>${plate}</strong> ${name}${vType ? '<span class="sb-sub">' + vType + '</span>' : ''}</span>
           </label>`;
         }).join('');
       }
@@ -1977,6 +2073,15 @@
     // ══════════════════════════════════
     // FIX: Use consistent color per booking type as default
     function getResourceColor(ev) {
+      if (ev.color) return ev.color;
+      if (ev.technician_id) {
+        const t = technicians.find(x => x.id === ev.technician_id);
+        if (t && t._color) return t._color;
+      }
+      if (ev.vehicle_id) {
+        const v = vehicles.find(x => x.id === ev.vehicle_id);
+        if (v && v._color) return v._color;
+      }
       return TYPE_COLORS[ev.booking_type] || '#4285f4';
     }
 
@@ -2666,11 +2771,11 @@
 
         // FIX: Validate required fields
         if (!data.start_date || !data.end_date) {
-          typeof showToast === 'function' ? showToast('กรุณาระบุวันที่', 'error') : alert('กรุณาระบุวันที่');
+          showToast('กรุณาระบุวันที่', 'error');
           return;
         }
         if (data.start_date > data.end_date) {
-          typeof showToast === 'function' ? showToast('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด', 'error') : alert('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด');
+          showToast('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด', 'error');
           return;
         }
 
@@ -2693,8 +2798,7 @@
       } catch(e) {
         // FIX: Show backend error message clearly (conflict, validation, etc.)
         const msg = e.message || 'เกิดข้อผิดพลาด';
-        if (typeof showToast === 'function') showToast(msg, 'error');
-        else alert(msg);
+        showToast(msg, 'error');
       } finally {
         _saving = false;
       }
@@ -3102,7 +3206,7 @@
     }
 
     async function changeSolarStatus(newStatus) {
-      if (!editingId) { alert('กรุณาบันทึก Booking ก่อน'); return; }
+      if (!editingId) { showToast('กรุณาบันทึก Booking ก่อน', 'error'); return; }
       try {
         // FIX: Save items before status change to prevent data loss
         if (solarItems.length > 0) { try { await saveBookingItems(editingId); } catch(e) {} }
@@ -3116,7 +3220,7 @@
           if (['survey_completed','confirmed'].includes(newStatus)) loadBookingItems(editingId);
         }
       } catch(e) {
-        typeof showToast === 'function' ? showToast(e.message||'Error','error') : alert(e.message);
+        showToast(e.message||'Error','error');
       }
     }
 
@@ -3158,8 +3262,8 @@
     }
 
     async function convertToSQ() {
-      if (!editingId) { alert('กรุณาบันทึก Booking ก่อน'); return; }
-      if (!solarItems.length) { alert('กรุณาเพิ่มรายการอุปกรณ์ก่อน'); return; }
+      if (!editingId) { showToast('กรุณาบันทึก Booking ก่อน', 'warning'); return; }
+      if (!solarItems.length) { showToast('กรุณาเพิ่มรายการอุปกรณ์ก่อน', 'warning'); return; }
       if (!confirm('ยืนยันแปลงเป็นใบเสนอราคา?\nจะสร้าง Sales Quotation + Project อัตโนมัติ')) return;
       try {
         // Save items first
@@ -3173,7 +3277,7 @@
         closeAllModals();
         refreshAll();
       } catch(e) {
-        typeof showToast === 'function' ? showToast(e.message || 'Error', 'error') : alert(e.message);
+        showToast(e.message || 'Error', 'error');
       }
     }
 
@@ -3247,7 +3351,7 @@
         closeQuickPopup();
         refreshAll();
       } catch(e) {
-        typeof showToast === 'function' ? showToast(e.message || 'Error', 'error') : alert(e.message);
+        showToast(e.message || 'Error', 'error');
       }
     }
 
@@ -3412,7 +3516,7 @@
         specialization: document.getElementById('atSpecialization').value,
         color: document.getElementById('atColor').value,
       };
-      if (!data.first_name) { alert('กรุณากรอกชื่อ'); return; }
+      if (!data.first_name) { showToast('กรุณากรอกชื่อ', 'error'); return; }
       try {
         await API.post('/technicians', data);
         typeof showToast === 'function' && showToast('เพิ่มช่างสำเร็จ', 'success');
@@ -3425,7 +3529,7 @@
         const tRes = await API.get('/technicians');
         technicians = tRes.technicians || tRes || [];
         populateSelects(); renderResourceFilters();
-      } catch(e) { alert(e.message); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     async function saveVehicle() {
@@ -3435,7 +3539,7 @@
         vehicle_type: document.getElementById('avType').value,
         color: document.getElementById('avColor').value,
       };
-      if (!data.name || !data.plate_number) { alert('กรุณากรอกชื่อและทะเบียน'); return; }
+      if (!data.name || !data.plate_number) { showToast('กรุณากรอกชื่อและทะเบียน', 'error'); return; }
       try {
         await API.post('/vehicle', data);
         typeof showToast === 'function' && showToast('เพิ่มรถสำเร็จ', 'success');
@@ -3446,7 +3550,7 @@
         const vRes = await API.getVehicles();
         vehicles = vRes.vehicles || vRes || [];
         populateSelects(); renderResourceFilters();
-      } catch(e) { alert(e.message); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     function filterSidebar() {
@@ -3547,7 +3651,7 @@
         const dtThai=new Date(newStart+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short'});
         typeof showToast==='function'&&showToast('ก็อปปี้สำเร็จ → '+dtThai,'success');
         refreshAll();
-      } catch(err) { typeof showToast==='function'?showToast('ก็อปปี้ไม่สำเร็จ: '+err.message,'error'):alert(err.message); }
+      } catch(err) { showToast('ก็อปปี้ไม่สำเร็จ: '+err.message,'error'); }
     }
 
     // Copy button from detail popup (date picker fallback)
@@ -3595,7 +3699,7 @@
         'ผู้จอง': ev.booked_by || ev.created_by_name || '-',
         'หมายเหตุ': ev.notes || ev.description || '-',
       }));
-      if (!data.length) { alert('ไม่มีข้อมูลสำหรับ Export'); return; }
+      if (!data.length) { showToast('ไม่มีข้อมูลสำหรับ Export', 'warning'); return; }
       exportToExcel(data, 'Bookings', 'bookings.xlsx');
     }
 

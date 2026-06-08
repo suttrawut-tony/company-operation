@@ -587,7 +587,7 @@
         el.innerHTML = html;
         // Scroll to bottom of replies
         el.scrollTop = el.scrollHeight;
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     };
 
     window.postReply = async function(threadId) {
@@ -598,7 +598,7 @@
       try {
         await API.post('/projects/'+currentProjectId+'/threads/'+threadId+'/reply', { message: msg });
         openThread(threadId); // reload
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     };
 
     window.openNewThread = function() {
@@ -607,7 +607,7 @@
       const body = prompt('Description (optional):');
       API.post('/projects/'+currentProjectId+'/threads', { title: title.trim(), body: body||'' })
         .then(() => loadThreads())
-        .catch(e => alert('Error: '+e.message));
+        .catch(e => showToast('Error: '+e.message, 'error'));
     };
 
     // Real-time

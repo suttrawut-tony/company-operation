@@ -605,10 +605,10 @@
       const pw = document.getElementById('um-password').value;
       if (pw) body.password = pw;
 
-      if (!body.email || !body.first_name) { alert('Email and First Name required'); return; }
-      if (!id && !pw) { alert('Password required for new user'); return; }
+      if (!body.email || !body.first_name) { showToast('Email and First Name required', 'error'); return; }
+      if (!id && !pw) { showToast('Password required for new user', 'error'); return; }
       if (pw && (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw))) {
-        alert('Password must be at least 8 characters and include both a letter and a number');
+        showToast('Password must be at least 8 characters and include both a letter and a number', 'error');
         return;
       }
 
@@ -623,7 +623,7 @@
         }
         closeUserModal();
         await loadData();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
       finally { btn.disabled = false; btn.textContent = 'Save'; }
     }
 
@@ -635,7 +635,7 @@
         await API.del('/auth/users/' + id);
         closeUserModal();
         await loadData();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function approveUser(id) {
@@ -643,7 +643,7 @@
       try {
         await API.approveUser(id);
         await loadData();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function addUserToProject() {
@@ -657,7 +657,7 @@
         if (!userProjectsMap[userId]) userProjectsMap[userId] = [];
         userProjectsMap[userId].push({ code: proj?.code||'', name: proj?.name||'', id: projectId, role: 'member' });
         renderUserProjectsInModal(userId);
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function removeUserFromProject(userId, projectId) {
@@ -666,11 +666,12 @@
         await API.del('/projects/' + projectId + '/members/' + userId);
         userProjectsMap[userId] = (userProjectsMap[userId] || []).filter(p => p.id !== projectId);
         renderUserProjectsInModal(userId);
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUserModal(); });
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadData();
   </script>
 </body>

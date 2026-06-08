@@ -268,23 +268,23 @@
       const ot_type = ot_type_val === '3.0' ? 'special' : ot_type_val === '2.0' ? 'holiday' : 'normal';
       const hours = parseFloat(document.getElementById('ot-hours').value) || 0;
       const reason = modal.querySelector('.form-textarea').value;
-      if (!ot_date || !hours) { alert('Fill date and hours'); return; }
+      if (!ot_date || !hours) { showToast('Fill date and hours', 'error'); return; }
       const data = { ot_date, ot_type, hours, base_rate: 300, reason };
       try {
         if (editingOTId) {
           await API.put('/ot/' + editingOTId, data);
-          alert('OT request updated.');
+          showToast('OT request updated.', 'success');
         } else {
           const created = await API.post('/ot', data);
           await API.post('/ot/' + created.id + '/submit');
-          alert('OT request submitted!');
+          showToast('OT request submitted!', 'success');
         }
         closeOTModal();
         otData = await API.getOTs();
         renderOTStats(otData);
         renderOTSummary(otData);
         renderOTList();
-      } catch (e) { alert('Error: ' + e.message); }
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     function editOT(id) {
@@ -303,13 +303,13 @@
         renderOTStats(otData);
         renderOTSummary(otData);
         renderOTList();
-      } catch (e) { alert('Delete failed: ' + e.message); }
+      } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
     }
 
     let otData = [];
 
     function exportOT() {
-      if (!otData.length) { alert('No OT data to export'); return; }
+      if (!otData.length) { showToast('No OT data to export', 'warning'); return; }
       const headers = ['Doc No', 'Employee', 'Type', 'Date', 'Hours', 'Rate', 'Multiplier', 'Compensation', 'Project', 'Status'];
       const rows = otData.map((r, i) => {
         const t = (r.ot_type || '').toLowerCase();
@@ -376,7 +376,7 @@
       } catch (e) {
         ot.status = oldStatus;
         renderOTList();
-        alert('Action failed: ' + (e.message || e));
+        showToast('Action failed: ' + (e.message || e), 'error');
       }
     }
 
@@ -502,6 +502,7 @@
       }
     }
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadOT();
   </script>
 </body>

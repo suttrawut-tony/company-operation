@@ -464,7 +464,7 @@
 
     async function saveFund() {
       const name = document.getElementById('f-name').value.trim();
-      if (!name) { alert('Enter fund name'); return; }
+      if (!name) { showToast('Enter fund name', 'error'); return; }
       const payload = {
         fund_name: name,
         fund_limit: parseFloat(document.getElementById('f-limit').value) || 5000,
@@ -480,7 +480,7 @@
           await API.post('/petty-cash/funds', payload);
         }
         closeFundModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Delete Disbursement ═══
@@ -492,7 +492,7 @@
         // Re-expand the fund detail
         const el = document.getElementById('expand-' + fundId);
         if (el) { el.classList.add('show'); await loadFundDetail(fundId); }
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Disbursement Modal ═══
@@ -510,7 +510,7 @@
     async function saveDisb() {
       const desc = document.getElementById('d-desc').value.trim();
       const amount = parseFloat(document.getElementById('d-amount').value);
-      if (!desc || !amount) { alert('Fill description and amount'); return; }
+      if (!desc || !amount) { showToast('Fill description and amount', 'error'); return; }
       try {
         await API.post('/petty-cash/disbursements', {
           fund_id: document.getElementById('d-fund-id').value,
@@ -520,7 +520,7 @@
           remarks: document.getElementById('d-remarks').value
         });
         closeDisbModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Receipt Modal ═══
@@ -566,21 +566,21 @@
 
     async function submitReceipt() {
       const amount = parseFloat(document.getElementById('r-amount').value);
-      if (!amount) { alert('Enter actual amount'); return; }
+      if (!amount) { showToast('Enter actual amount', 'error'); return; }
       try {
         await API.post('/petty-cash/disbursements/'+document.getElementById('r-disb-id').value+'/submit-receipt', {
           receipt_amount: amount,
           category: document.getElementById('r-category').value
         });
         closeReceiptModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Approve Disbursement ═══
     async function approveDisb(id) {
       if (!confirm('Approve this receipt?')) return;
       try { await API.post('/petty-cash/disbursements/'+id+'/approve'); await loadData(); }
-      catch(e) { alert('Error: '+e.message); }
+      catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Replenish Modal ═══
@@ -597,14 +597,14 @@
     function closeReplModal() { document.getElementById('repl-modal').classList.remove('show'); }
     async function saveRepl() {
       const amount = parseFloat(document.getElementById('rp-amount').value);
-      if (!amount) { alert('Enter amount'); return; }
+      if (!amount) { showToast('Enter amount', 'error'); return; }
       try {
         await API.post('/petty-cash/replenish', {
           fund_id: document.getElementById('rp-fund-id').value,
           amount, remarks: document.getElementById('rp-remarks').value
         });
         closeReplModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Approve Replenish Modal ═══
@@ -631,7 +631,7 @@
           reference: document.getElementById('ar-ref').value
         });
         closeApproveReplModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Cash Count Modal ═══
@@ -657,7 +657,7 @@
 
     async function saveCashCount() {
       const actual = parseFloat(document.getElementById('cc-actual').value);
-      if (isNaN(actual)) { alert('Enter actual amount'); return; }
+      if (isNaN(actual)) { showToast('Enter actual amount', 'error'); return; }
       try {
         await API.post('/petty-cash/count', {
           fund_id: document.getElementById('cc-fund-id').value,
@@ -665,12 +665,12 @@
           remarks: document.getElementById('cc-remarks').value
         });
         closeCountModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Export Excel ═══
     function exportPettyCash() {
-      if (!allFunds.length) { alert('No data to export'); return; }
+      if (!allFunds.length) { showToast('No data to export', 'warning'); return; }
       const rows = allFunds.map(f => ({
         'Fund Code': f.fund_code || '',
         'Fund Name': f.fund_name || '',
@@ -687,6 +687,7 @@
       exportToExcel(rows, 'Petty_Cash_Funds');
     }
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadData();
     API.onRealtime(msg => { if (msg.type.startsWith('pc_')) loadData(); });
   </script>

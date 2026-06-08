@@ -211,12 +211,12 @@
     async function deletePR(id, doc) {
       if (!confirm('Delete ' + doc + '?')) return;
       try { await API.del('/pr/' + id); await loadPRPO(); showToast('Deleted ' + doc); }
-      catch(e) { alert('Error: ' + e.message); }
+      catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
     async function deletePO(id, doc) {
       if (!confirm('Delete ' + doc + '?')) return;
       try { await API.del('/po/' + id); await loadPRPO(); showToast('Deleted ' + doc); }
-      catch(e) { alert('Error: ' + e.message); }
+      catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     const COLUMNS = [
@@ -470,7 +470,7 @@
         // Rollback on failure
         pr.status = oldStatus;
         refresh();
-        alert('Failed to update status: ' + (err.message || err));
+        showToast('Failed to update status: ' + (err.message || err), 'error');
       }
     }
 

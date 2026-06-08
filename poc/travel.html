@@ -371,45 +371,45 @@
     /* ── Submit travel ── */
     async function submitTravel() {
       const data = collectTravelForm();
-      if (!data.destination) { alert('Please enter a destination'); return; }
-      if (!data.start_date || !data.end_date) { alert('Please select start and end dates'); return; }
+      if (!data.destination) { showToast('Please enter a destination', 'error'); return; }
+      if (!data.start_date || !data.end_date) { showToast('Please select start and end dates', 'error'); return; }
 
       try {
         if (editingTravelId) {
           await API.put('/travel/' + editingTravelId, data);
           await API.submitTravel(editingTravelId);
-          alert('Travel request updated and submitted!');
+          showToast('Travel request updated and submitted!', 'success');
         } else {
           const created = await API.createTravel(data);
           await API.submitTravel(created.id);
-          alert('Travel request submitted for approval!');
+          showToast('Travel request submitted for approval!', 'success');
         }
         closeTravelModal();
         loadTravel();
       } catch (e) {
         console.error('Submit failed:', e);
-        alert('Submit failed: ' + e.message);
+        showToast('Submit failed: ' + e.message, 'error');
       }
     }
 
     /* ── Save draft ── */
     async function saveDraft() {
       const data = collectTravelForm();
-      if (!data.destination) { alert('Please enter a destination'); return; }
+      if (!data.destination) { showToast('Please enter a destination', 'error'); return; }
 
       try {
         if (editingTravelId) {
           await API.put('/travel/' + editingTravelId, data);
-          alert('Travel request updated.');
+          showToast('Travel request updated.', 'success');
         } else {
           await API.createTravel(data);
-          alert('Travel request saved as draft.');
+          showToast('Travel request saved as draft.', 'success');
         }
         closeTravelModal();
         loadTravel();
       } catch (e) {
         console.error('Save draft failed:', e);
-        alert('Save failed: ' + e.message);
+        showToast('Save failed: ' + e.message, 'error');
       }
     }
 
@@ -428,7 +428,7 @@
       try {
         await API.del('/travel/' + id);
         loadTravel();
-      } catch (e) { alert('Delete failed: ' + e.message); }
+      } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
     }
 
     /* ── Helpers ── */
@@ -527,7 +527,7 @@
         await API.submitTravel(id);
         loadTravel();
       } catch (e) {
-        alert('Submit failed: ' + e.message);
+        showToast('Submit failed: ' + e.message, 'error');
       }
     }
 
@@ -537,7 +537,7 @@
         await API.approveTravel(id);
         loadTravel();
       } catch (e) {
-        alert('Approve failed: ' + e.message);
+        showToast('Approve failed: ' + e.message, 'error');
       }
     }
 
@@ -631,7 +631,7 @@
         loadTravel();
       } catch (e) {
         console.error('Confirm failed:', e);
-        alert('Confirm failed: ' + e.message);
+        showToast('Confirm failed: ' + e.message, 'error');
       }
     }
 
@@ -663,7 +663,7 @@
       if (projectId) {
         rows = allTravelData.filter(r => String(r.project_id) === projectId);
       }
-      if (!rows.length) { alert('No travel data to export'); return; }
+      if (!rows.length) { showToast('No travel data to export', 'warning'); return; }
 
       const mapped = rows.map(r => {
         const members = r.team_members || r.members || [];
@@ -688,6 +688,7 @@
     }
 
     // Init
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadProjects();
     loadTravel();
   </script>

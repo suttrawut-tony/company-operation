@@ -98,7 +98,7 @@
     async function saveItem() {
       const id=document.getElementById('im-id').value;
       const body={item_code:document.getElementById('im-code').value,item_name:document.getElementById('im-name').value,item_name_th:document.getElementById('im-name-th').value,category:document.getElementById('im-cat').value,uom:document.getElementById('im-uom').value,unit_price:parseFloat(document.getElementById('im-price').value)||0,gl_account:document.getElementById('im-gl').value};
-      try { if(id) await API.put('/master/items/'+id,body); else await API.post('/master/items',body); closeItemModal(); await loadItems(); } catch(e){alert('Error: '+e.message);}
+      try { if(id) await API.put('/master/items/'+id,body); else await API.post('/master/items',body); closeItemModal(); await loadItems(); } catch(e){showToast('Error: '+e.message, 'error');}
     }
     function exportItems() {
       const headers = ['Code','Name','Name (TH)','Category','UOM','Unit Price','GL Account','Tax Code','Status'];
@@ -115,6 +115,7 @@
       ]);
       exportToExcel(headers, rows, 'Item_Master', 'Item Master');
     }
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadItems();
   </script>
 </body></html>

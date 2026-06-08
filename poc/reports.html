@@ -336,7 +336,7 @@
        CSV Export
     ─────────────────────────────────────────── */
     function exportCSV() {
-      if (!_csvData.length) { alert('No data to export.'); return; }
+      if (!_csvData.length) { showToast('No data to export.', 'warning'); return; }
       const headers = Object.keys(_csvData[0]);
       const rows = _csvData.map(row =>
         headers.map(h => {
@@ -1114,6 +1114,7 @@
     /* ───────────────────────────────────────────
        Init
     ─────────────────────────────────────────── */
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadStats();
   </script>
 </body>

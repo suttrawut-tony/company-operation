@@ -137,6 +137,7 @@
         document.getElementById('web-series').innerHTML = `<tr><td colspan="4">${emptyMsg('Error: '+e.message)}</td></tr>`;
       }
     }
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadNumberSeries();
   </script>
 </body>

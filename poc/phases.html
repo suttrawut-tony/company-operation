@@ -523,7 +523,7 @@
     let stepCounter = 0;
 
     function openAddPhase() {
-      if (!currentProjectId) { alert('กรุณาเลือกโปรเจกต์ก่อน'); return; }
+      if (!currentProjectId) { showToast('กรุณาเลือกโปรเจกต์ก่อน', 'warning'); return; }
       document.getElementById('phase-modal-title').textContent = 'เพิ่ม Phase ใหม่';
       document.getElementById('phase-edit-id').value = '';
       document.getElementById('phase-name').value = '';
@@ -599,7 +599,7 @@
 
     async function savePhase() {
       const name = document.getElementById('phase-name').value.trim();
-      if (!name) { alert('กรุณากรอกชื่อ Phase'); return; }
+      if (!name) { showToast('กรุณากรอกชื่อ Phase', 'error'); return; }
 
       const editId = document.getElementById('phase-edit-id').value;
       const btn = document.getElementById('phase-save-btn');
@@ -638,7 +638,7 @@
         closePhaseModal();
         onProjectChange(); // reload
       } catch (err) {
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
         btn.textContent = 'บันทึก';
@@ -650,7 +650,7 @@
       try {
         await API.del('/projects/' + currentProjectId + '/phases/' + phaseId);
         onProjectChange();
-      } catch (err) { alert('Error: ' + err.message); }
+      } catch (err) { showToast('Error: ' + err.message, 'error'); }
     }
 
     // ═══ Step Modal ═══
@@ -675,7 +675,7 @@
     async function saveStep() {
       const phaseId = document.getElementById('step-phase-id').value;
       const name = document.getElementById('step-name').value.trim();
-      if (!name) { alert('กรุณากรอกชื่อ Step'); return; }
+      if (!name) { showToast('กรุณากรอกชื่อ Step', 'error'); return; }
 
       const body = {
         name,
@@ -694,7 +694,7 @@
         }
         closeStepModal();
         onProjectChange();
-      } catch (err) { alert('Error: ' + err.message); }
+      } catch (err) { showToast('Error: ' + err.message, 'error'); }
     }
 
     async function toggleStepStatus(phaseId, stepId, newStatus) {
@@ -703,7 +703,7 @@
           status: newStatus
         });
         onProjectChange();
-      } catch (err) { alert('Error: ' + err.message); }
+      } catch (err) { showToast('Error: ' + err.message, 'error'); }
     }
 
     // Edit step — reuse step modal with pre-filled data
@@ -716,7 +716,7 @@
           break;
         }
       }
-      if (!stepData) { alert('Step not found'); return; }
+      if (!stepData) { showToast('Step not found', 'error'); return; }
 
       document.getElementById('step-phase-id').value = phaseId;
       document.getElementById('step-name').value = stepData.name || '';
@@ -737,7 +737,7 @@
       try {
         await API.del('/projects/' + currentProjectId + '/phases/' + phaseId + '/steps/' + stepId);
         onProjectChange();
-      } catch (err) { alert('Error: ' + err.message); }
+      } catch (err) { showToast('Error: ' + err.message, 'error'); }
     }
 
     // ═══ Sub-tasks ═══
@@ -776,7 +776,7 @@
         }
         if (subData) break;
       }
-      if (!subData) { alert('Sub-task not found'); return; }
+      if (!subData) { showToast('Sub-task not found', 'error'); return; }
 
       document.getElementById('sub-modal').dataset.editSubId = subId;
       document.getElementById('sub-step-id').value = stepId;
@@ -795,7 +795,7 @@
 
     async function saveSubtask() {
       const name = document.getElementById('sub-name').value.trim();
-      if (!name) { alert('กรุณากรอกชื่อ'); return; }
+      if (!name) { showToast('กรุณากรอกชื่อ', 'error'); return; }
       const editId = document.getElementById('sub-modal').dataset.editSubId;
       const body = {
         step_id: document.getElementById('sub-step-id').value,
@@ -812,14 +812,14 @@
         }
         closeSubModal();
         onProjectChange();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function toggleSubStatus(subId, newStatus) {
       try {
         await API.put('/projects/' + currentProjectId + '/subtasks/' + subId, { status: newStatus });
         onProjectChange();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function deleteSubtask(subId) {
@@ -827,7 +827,7 @@
       try {
         await API.del('/projects/' + currentProjectId + '/subtasks/' + subId);
         onProjectChange();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // Load project members when project changes
@@ -991,7 +991,7 @@
       try {
         await API.post('/projects/' + currentProjectId + '/payment-schedule/generate');
         loadFinanceDashboard();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     function openPaymentModal() {
@@ -1024,7 +1024,7 @@
         });
         document.getElementById('pmt-modal').classList.remove('show');
         loadFinanceDashboard();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function invoicePayment(paymentId) {
@@ -1033,7 +1033,7 @@
       try {
         await API.put('/projects/payment-schedule/' + paymentId, { invoice_number: invNum, invoice_date: new Date().toISOString().slice(0,10) });
         loadFinanceDashboard();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function receivePayment(paymentId, amount) {
@@ -1049,7 +1049,7 @@
           payment_method: 'transfer'
         });
         loadFinanceDashboard();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // Hook into project change to load finance

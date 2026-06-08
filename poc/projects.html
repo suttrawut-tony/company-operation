@@ -414,7 +414,7 @@
     async function saveNewProject() {
       const code = document.getElementById('np-code').value.trim();
       const name = document.getElementById('np-name').value.trim();
-      if (!code || !name) { alert('Please fill code and name'); return; }
+      if (!code || !name) { showToast('Please fill code and name', 'error'); return; }
       try {
         await API.createProject({
           code, name,
@@ -426,7 +426,7 @@
         });
         closeProjModal();
         await loadProjects();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ═══ Retention Modal ═══
@@ -499,7 +499,7 @@
         closeRetModal();
         await loadProjects();
       } catch (err) {
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
         btn.textContent = 'บันทึก';
@@ -540,7 +540,7 @@
       if (!editingProjectId) return;
       const code = document.getElementById('np-code').value.trim();
       const name = document.getElementById('np-name').value.trim();
-      if (!code || !name) { alert('Please fill code and name'); return; }
+      if (!code || !name) { showToast('Please fill code and name', 'error'); return; }
       try {
         await API.put('/projects/' + editingProjectId, {
           code, name,
@@ -552,7 +552,7 @@
         });
         closeProjModal();
         await loadProjects();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // ═══ Delete Project ═══
@@ -561,7 +561,7 @@
       try {
         await API.del('/projects/' + projectId);
         await loadProjects();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     // Close modal on ESC

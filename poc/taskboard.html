@@ -588,7 +588,7 @@
         // Rollback on failure
         task.status = oldStatus;
         renderBoard();
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       }
     }
 
@@ -615,7 +615,7 @@
     }
 
     async function openAddTask() {
-      if (!currentProjectId) { alert('กรุณาเลือกโปรเจกต์ก่อน'); return; }
+      if (!currentProjectId) { showToast('กรุณาเลือกโปรเจกต์ก่อน', 'warning'); return; }
       document.getElementById('task-modal-title').textContent = 'เพิ่ม Task ใหม่';
       document.getElementById('task-edit-id').value = '';
       document.getElementById('task-title').value = '';
@@ -638,7 +638,7 @@
 
     // Open add task with pre-filled date (from calendar click)
     function openAddTaskWithDate(dateStr) {
-      if (!currentProjectId) { alert('กรุณาเลือกโปรเจกต์ก่อน'); return; }
+      if (!currentProjectId) { showToast('กรุณาเลือกโปรเจกต์ก่อน', 'warning'); return; }
       openAddTask();
       document.getElementById('task-start').value = dateStr;
       document.getElementById('task-due').value = dateStr;
@@ -674,7 +674,7 @@
 
     async function saveTask() {
       const title = document.getElementById('task-title').value.trim();
-      if (!title) { alert('กรุณากรอกชื่อ Task'); return; }
+      if (!title) { showToast('กรุณากรอกชื่อ Task', 'error'); return; }
 
       const editId = document.getElementById('task-edit-id').value;
       const btn = document.getElementById('task-save-btn');
@@ -684,7 +684,7 @@
       const startDate = document.getElementById('task-start').value || null;
       const dueDate = document.getElementById('task-due').value || null;
       if (startDate && dueDate && startDate > dueDate) {
-        alert('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด'); return;
+        showToast('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด', 'error'); return;
       }
       const body = {
         title,
@@ -710,7 +710,7 @@
         closeTaskModal();
         onProjectChange(); // reload
       } catch (err) {
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
         btn.textContent = 'บันทึก';
@@ -722,7 +722,7 @@
       try {
         await API.del('/projects/' + currentProjectId + '/tasks/' + taskId);
         onProjectChange();
-      } catch (err) { alert('Error: ' + err.message); }
+      } catch (err) { showToast('Error: ' + err.message, 'error'); }
     }
 
     // ═══ Calendar View ═══
@@ -866,7 +866,7 @@
     // ═══ Export Excel ═══
     function exportTasks() {
       const tasks = getFilteredTasks();
-      if (!tasks.length) { alert('ไม่มี tasks ให้ export'); return; }
+      if (!tasks.length) { showToast('ไม่มี tasks ให้ export', 'warning'); return; }
 
       const statusLabel = { todo: 'To-do', in_progress: 'In Progress', review: 'Review', done: 'Done' };
       const projSel = document.getElementById('projectSelect');
@@ -889,6 +889,7 @@
     // Close modal on ESC
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTaskModal(); });
 
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     loadTaskboard().then(() => {
       const params = new URLSearchParams(window.location.search);
       const projParam = params.get('project');

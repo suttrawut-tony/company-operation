@@ -618,23 +618,23 @@
 
     // ═══ Actions ═══
     async function submitAdv(id) {
-      try { await API.post('/advance/'+id+'/submit'); await loadData(); } catch(e) { alert('Error: '+e.message); }
+      try { await API.post('/advance/'+id+'/submit'); await loadData(); } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
     async function approveAdv(id) {
-      try { await API.post('/advance/'+id+'/approve'); await loadData(); } catch(e) { alert('Error: '+e.message); }
+      try { await API.post('/advance/'+id+'/approve'); await loadData(); } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
     async function confirmReturn(id, amount) {
       if (!confirm('ยืนยันว่าคืนเงิน ฿'+fmtNum(amount)+' แล้ว?')) return;
       try {
         await API.post('/advance/'+id+'/confirm-return');
         await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // Approve clearing
     async function approveClear(settlementId) {
       try { await API.post('/advance/settlement/'+settlementId+'/approve'); await loadData(); }
-      catch(e) { alert('Error: '+e.message); }
+      catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
 
@@ -708,16 +708,16 @@
     async function saveAdvance() {
       const type = document.querySelector('input[name="f-type"]:checked').value;
       const desc = document.getElementById('f-desc').value.trim();
-      if (!desc) { alert('Fill description'); return; }
+      if (!desc) { showToast('Fill description', 'error'); return; }
 
       let amount, receipt_lines;
       if (type === 'reimburse') {
         receipt_lines = getReceiptLines();
-        if (!receipt_lines.length) { alert('Add at least 1 receipt line'); return; }
+        if (!receipt_lines.length) { showToast('Add at least 1 receipt line', 'error'); return; }
         amount = receipt_lines.reduce((s, l) => s + l.amount, 0);
       } else {
         amount = parseFloat(document.getElementById('f-amount').value);
-        if (!amount) { alert('Fill amount'); return; }
+        if (!amount) { showToast('Fill amount', 'error'); return; }
       }
 
       try {
@@ -732,8 +732,8 @@
         closeNewModal(); await loadData(); showToast('Advance created successfully');
       } catch(e) {
         if (e.error === 'OVERDUE_LOCK' || (e.message && e.message.includes('OVERDUE_LOCK'))) {
-          alert('ไม่สามารถสร้างรายการใหม่ได้ — มีเงินทดรองจ่ายเกินกำหนดเคลียร์อยู่ กรุณาเคลียร์ก่อน');
-        } else { alert('Error: '+e.message); }
+          showToast('ไม่สามารถสร้างรายการใหม่ได้ — มีเงินทดรองจ่ายเกินกำหนดเคลียร์อยู่ กรุณาเคลียร์ก่อน', 'error');
+        } else { showToast('Error: '+e.message, 'error'); }
       }
     }
 
@@ -761,7 +761,7 @@
             if (a.advance_type === 'advance') body.amount = parseFloat(document.getElementById('f-amount').value);
             await API.put('/advance/'+id, body);
             closeNewModal(); await loadData();
-          } catch(e) { alert('Error: '+e.message); }
+          } catch(e) { showToast('Error: '+e.message, 'error'); }
         };
       }, 100);
     }
@@ -769,7 +769,7 @@
     async function deleteAdvance(id, docNumber) {
       if (!confirm('ยกเลิกรายการ '+docNumber+' ?')) return;
       try { await API.del('/advance/'+id); await loadData(); showToast('Deleted ' + docNumber); }
-      catch(e) { alert('Error: '+e.message); }
+      catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Payment Modal ═══
@@ -808,7 +808,7 @@
       const id = document.getElementById('p-adv-id').value;
       const amount = parseFloat(document.getElementById('p-amount').value);
       const ref = document.getElementById('p-ref').value.trim();
-      if (!ref) { alert('Reference is required'); return; }
+      if (!ref) { showToast('Reference is required', 'error'); return; }
       try {
         await API.post('/advance/'+id+'/pay', {
           amount,
@@ -819,7 +819,7 @@
           payment_date: document.getElementById('p-date').value || null
         });
         closePayModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     function closePayAndReload() {
@@ -894,11 +894,11 @@
         const cat = row.querySelector('[data-sl-cat]').value;
         if (desc && amt > 0) lines.push({ description: desc, amount: amt, category: cat });
       });
-      if (!lines.length) { alert('Add at least one expense item'); return; }
+      if (!lines.length) { showToast('Add at least one expense item', 'error'); return; }
       try {
         await API.post('/advance/'+id+'/settle', { lines, remarks: document.getElementById('s-remarks').value });
         closeSettleModal(); await loadData();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     // ═══ Return / Reimburse ═══
@@ -952,14 +952,14 @@
         });
         closeReturnModal();
         await loadData();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
     async function confirmReturnFromModal(id) {
       try {
         await API.post('/advance/'+id+'/confirm-return');
         closeReturnAndReload();
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
     function closeReturnAndReload() {

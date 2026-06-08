@@ -475,7 +475,7 @@
         await API.post('/pr', data);
         typeof showToast === 'function' && showToast('บันทึก Draft สำเร็จ', 'success');
         window.location = 'pr-po.html';
-      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : alert(e.message); }
+      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : showToast(e.message, 'error'); }
     }
 
     // FIXED: Real submitPR — POST then submit
@@ -487,12 +487,12 @@
         await API.post('/pr/' + pr.id + '/submit');
         typeof showToast === 'function' && showToast('ส่ง PR เพื่ออนุมัติสำเร็จ', 'success');
         window.location = 'pr-po.html';
-      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : alert(e.message); }
+      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : showToast(e.message, 'error'); }
     }
 
     function collectPRData() {
       const project_id = document.getElementById('pr-project').value;
-      if (!project_id) { alert('กรุณาเลือก Project'); return null; }
+      if (!project_id) { showToast('กรุณาเลือก Project', 'error'); return null; }
       // Collect line items from table
       const lines = [];
       document.querySelectorAll('#line-items-body tr').forEach(row => {

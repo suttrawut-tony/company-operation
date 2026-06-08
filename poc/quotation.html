@@ -157,7 +157,7 @@
         editItems = (editSQ.items||[]).map(it=>({...it}));
         renderEditModal(false);
         document.getElementById('sqModal').classList.add('show');
-      } catch(e) { alert(e.message); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     function openCreateModal() {
@@ -305,7 +305,7 @@
           typeof showToast==='function' && showToast('บันทึกสำเร็จ','success');
         }
         closeModal(); loadData();
-      } catch(e) { alert(e.message); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     async function updateStatus(id, status) {
@@ -313,7 +313,7 @@
         await API.put('/quotations/'+id, { status });
         typeof showToast==='function' && showToast('อัปเดตสำเร็จ','success');
         closeModal(); loadData();
-      } catch(e) { alert(e.message); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     function printSQ(id) {
@@ -356,7 +356,7 @@
     function closeModal() { document.getElementById('sqModal').classList.remove('show'); }
 
     function exportQuotations() {
-      if (!allSQ.length) { alert('ไม่มีข้อมูลให้ Export'); return; }
+      if (!allSQ.length) { showToast('ไม่มีข้อมูลให้ Export', 'warning'); return; }
       const headers = ['SQ Number','ลูกค้า','เบอร์โทร','ที่อยู่','ไซต์','ขนาด (kWp)','ประเภทหลังคา','พื้นที่หลังคา (sqm)','โปรเจกต์','Subtotal','ส่วนลด (%)','ส่วนลด (฿)','VAT (%)','VAT (฿)','Grand Total','สถานะ','เงื่อนไข','หมายเหตุ','มีผล (วัน)','วันที่สร้าง'];
       const rows = allSQ.map(q => [
         q.sq_number || '',
