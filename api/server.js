@@ -58,7 +58,9 @@ const morgan = require('morgan');
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // SECURITY FIX: CORS — restrict origins in production
-const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(Boolean);
+// '*' (or empty) means allow all, matching the old behavior and .env.example docs
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',').map(s => s.trim()).filter(o => o && o !== '*');
 app.use(cors({
   origin: allowedOrigins.length > 0
     ? (origin, cb) => { if (!origin || allowedOrigins.includes(origin)) cb(null, true); else cb(new Error('Not allowed by CORS')); }
