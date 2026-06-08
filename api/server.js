@@ -5,6 +5,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const db = require('./db');
 
@@ -35,6 +36,9 @@ const PORT = process.env.PORT || 4000;
 
 // Trust the first proxy hop (Railway, Cloudflare, etc.) so rate-limit + req.ip work
 app.set('trust proxy', 1);
+
+// gzip all responses (CSS/JS/JSON) — ~75% smaller payloads over the wire
+app.use(compression());
 
 // SECURITY FIX: HTTP security headers
 const helmet = require('helmet');
@@ -76,8 +80,18 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 const rateLimit = require('express-rate-limit');
 app.use('/api/', rateLimit({ windowMs: 60000, max: 100, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests' } }));
 
-// Serve static POC files
-app.use(express.static(path.join(__dirname, '..', 'poc')));
+// Serve static POC files.
+// Assets (css/js/img) cache for 1h so page navigation doesn't re-fetch them every time;
+// HTML pages stay no-cache (revalidate via ETag → cheap 304) so deploys show up immediately.
+app.use(express.static(path.join(__dirname, '..', 'poc'), {
+  etag: true,
+  maxAge: '1h',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 // Real-time broadcast middleware
 app.use(require('./middleware/broadcast'));
