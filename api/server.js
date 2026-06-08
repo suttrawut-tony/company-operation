@@ -82,7 +82,10 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // SECURITY FIX: Global rate limit (100 req/min per IP)
 const rateLimit = require('express-rate-limit');
-app.use('/api/', rateLimit({ windowMs: 60000, max: 100, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests' } }));
+// NOTE: a whole office usually shares ONE public IP (NAT), so the per-IP budget
+// must cover every staff member's SPA traffic combined. 100/min locked the office
+// out; 1000/min still stops a runaway script but never trips normal multi-user use.
+app.use('/api/', rateLimit({ windowMs: 60000, max: 1000, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests' } }));
 
 // Serve static POC files.
 // Assets (css/js/img) cache for 1h so page navigation doesn't re-fetch them every time;

@@ -102,7 +102,12 @@ function formatErr(err) {
 
 // ─── Rate limiters ───
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 20,
+  windowMs: 15 * 60 * 1000, max: 50,
+  // Only FAILED logins count. A whole office shares one public IP (NAT), so
+  // counting successful logins burned the budget and locked everyone out.
+  // With this, normal users are never limited — only repeated wrong-password
+  // (brute-force) attempts from an IP get throttled.
+  skipSuccessfulRequests: true,
   standardHeaders: true, legacyHeaders: false,
   message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
 });
