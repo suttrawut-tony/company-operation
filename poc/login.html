@@ -311,11 +311,27 @@
 
   <script src="assets/js/api.js"></script>
   <script>
-    // If already logged in, go to dashboard
-    if (API.isLoggedIn()) window.location.href = 'dashboard.html';
-
     const loginPanel  = document.getElementById('loginPanel');
     const forgotPanel = document.getElementById('forgotPanel');
+
+    // ── Auto-login (demo mode) — open the app without a login screen ──
+    // Every page needs a JWT, so instead of ripping auth out of every route
+    // we sign in automatically as the demo admin and go straight to the app.
+    // The manual form below stays as a fallback (and surfaces real errors).
+    (async function autoLogin() {
+      if (loginPanel) loginPanel.classList.add('hidden');
+      try {
+        if (!API.isLoggedIn()) {
+          await API.login('admin@local', 'admin1234');  // static demo admin (works even if DB is down)
+        }
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        console.error('[auto-login]', err);
+        if (loginPanel) loginPanel.classList.remove('hidden');  // reveal manual form
+        const box = document.getElementById('login-error');
+        if (box) { box.textContent = 'Auto-login failed — please sign in manually. (' + (err.message || err) + ')'; box.style.display = 'block'; }
+      }
+    })();
 
     document.getElementById('show-forgot').addEventListener('click', (e) => {
       e.preventDefault();
