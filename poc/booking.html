@@ -1954,13 +1954,22 @@
     // Google Calendar-style palette
     const CAL_COLORS = ['#4285f4','#0f9d58','#f4b400','#db4437','#ab47bc','#00acc1','#ff7043','#7cb342','#e91e63','#3949ab'];
 
+    // A vehicle/technician "color" in the DB may be a real-world paint name
+    // ("Dark Blue", "Silver", "White") rather than a CSS color — feeding that
+    // straight into CSS makes the swatch/checkbox invalid or invisible. Only
+    // use it when it's a valid hex code; otherwise fall back to a palette color.
+    function uiColor(raw, fallback) {
+      return (typeof raw === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw.trim()))
+        ? raw.trim() : fallback;
+    }
+
     function renderResourceFilters() {
       // Technicians → sidebar "My Calendars"
       const techDiv = document.getElementById('sbTechList');
       if (techDiv) {
         techDiv.innerHTML = technicians.map((t, i) => {
           const name = t.nickname || t.name || ((t.first_name||'')+' '+(t.last_name||'')).trim();
-          const color = t.color || CAL_COLORS[(i + 1) % CAL_COLORS.length];
+          const color = uiColor(t.color, CAL_COLORS[(i + 1) % CAL_COLORS.length]);
           t._color = color;
           const spec = t.specialization ? ({installation:'ติดตั้ง',survey:'สำรวจ',repair:'ซ่อม',general:'ทั่วไป'}[t.specialization] || t.specialization) : '';
           return `<label class="sb-cal-item">
@@ -1974,7 +1983,7 @@
       const vehDiv = document.getElementById('sbVehicleList');
       if (vehDiv) {
         vehDiv.innerHTML = vehicles.map((v, i) => {
-          const color = v.color || CAL_COLORS[i % CAL_COLORS.length];
+          const color = uiColor(v.color, CAL_COLORS[i % CAL_COLORS.length]);
           v._color = color;
           const plate = v.plate_number || '';
           const name = v.name || '';
