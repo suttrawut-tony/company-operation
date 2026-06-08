@@ -1910,8 +1910,10 @@
       const typeChecks = document.querySelectorAll('[data-type]');
       const enabledTypes = new Set();
       typeChecks.forEach(cb => { if (cb.checked) enabledTypes.add(cb.dataset.type); });
-      // If no type checkboxes found, enable all
-      if (!enabledTypes.size) { enabledTypes.add('vehicle'); enabledTypes.add('solar'); enabledTypes.add('flight'); }
+      // If there are NO type checkboxes in the page at all, enable every type.
+      // (Must check checkbox COUNT, not how many are ticked — otherwise unticking
+      //  the last one wrongly re-enables all types, so the filter does nothing.)
+      if (!typeChecks.length) { enabledTypes.add('vehicle'); enabledTypes.add('solar'); enabledTypes.add('flight'); }
 
       // Collect enabled resources (technicians + vehicles)
       const resChecks = document.querySelectorAll('[data-res]');
