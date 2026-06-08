@@ -260,14 +260,6 @@
         <h2>Welcome back</h2>
         <div class="subtitle">เข้าสู่ระบบด้วยบัญชีของคุณ</div>
 
-        <div class="form-group">
-          <label class="form-label">Company</label>
-          <div class="company-slug-row">
-            <span class="slug-prefix">app.company-operation.com/</span>
-            <input type="text" class="slug-input" value="company" placeholder="company-slug" id="login-slug">
-          </div>
-        </div>
-
         <form onsubmit="event.preventDefault(); handleLogin();">
           <div class="form-group">
             <label class="form-label">Email</label>
@@ -346,7 +338,7 @@
     async function handleLogin() {
       const email    = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-      const slug     = document.getElementById('login-slug').value.trim() || 'company';
+      const slug     = 'company';  // single-tenant — slug is fixed, no user input
       const remember = document.getElementById('login-remember').checked;
       const btn      = document.getElementById('login-submit');
 
