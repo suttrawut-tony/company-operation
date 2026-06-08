@@ -47,6 +47,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "cdn.sheetjs.com"],
+      // The whole POC UI uses inline event handlers (onclick="", onsubmit="").
+      // helmet's default script-src-attr is 'none', which silently blocks ALL
+      // of them — every button/form becomes dead. Allow inline handlers.
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
       fontSrc: ["'self'", "fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "*.openstreetmap.org", "*.tile.openstreetmap.org"],
