@@ -161,6 +161,15 @@
       <div id="projectBudgetContent">
         <div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>
       </div>
+      <div id="monthlyDistributionSection" style="display:none;">
+        <div style="margin-top:24px;border-top:2px dashed var(--border);padding-top:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-size:15px;font-weight:700;">📊 งบรายเดือน (Monthly Distribution)</h3>
+            <button class="btn btn-secondary btn-sm" onclick="distributeBudgetEvenly()">กระจายเฉลี่ย 12 เดือน</button>
+          </div>
+          <div id="monthlyGrid"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ Tab 3: Comparison View ═══ -->
@@ -205,7 +214,10 @@
           <div style="margin-top:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
               <label class="form-label" style="margin:0;">Group Budgets</label>
-              <button class="btn btn-secondary btn-sm" onclick="addLineRow()" style="font-size:11px;">+ Add Line</button>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-ghost btn-sm" onclick="addDefaultCategories()" style="font-size:11px;">📋 หมวดมาตรฐาน</button>
+                <button class="btn btn-secondary btn-sm" onclick="addLineRow()" style="font-size:11px;">+ Add Line</button>
+              </div>
             </div>
             <div style="display:grid;grid-template-columns:2fr 1fr 1fr 32px;gap:8px;margin-bottom:6px;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">
               <span>รายการ</span><span>TOR</span><span>Budget</span><span></span>
@@ -472,7 +484,8 @@
     async function loadProjectBudget(forceProjectId) {
       const projId = forceProjectId || document.getElementById('projBudgetSelect').value;
       const container = document.getElementById('projectBudgetContent');
-      if (!projId) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>'; return; }
+      const monthlySection = document.getElementById('monthlyDistributionSection');
+      if (!projId) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>'; if(monthlySection) monthlySection.style.display='none'; return; }
 
       // Reload data if empty
       if (!allBudgets.length || !allProjects.length) {
@@ -520,6 +533,14 @@
         const uid = card.dataset.linesUid;
         try { const d = await API.getBudget(bid); renderLines(uid, d.lines || []); } catch(e) { renderLines(uid, []); }
       }
+
+      // Show monthly distribution section
+      if (monthlySection && projBudgets.length) {
+        monthlySection.style.display = 'block';
+        const firstBudget = projBudgets[0];
+        const totalBudget = projBudgets.reduce((s,b) => s + (parseFloat(b.total_budget)||0), 0);
+        renderMonthlyGrid(firstBudget.id, totalBudget);
+      }
     }
 
     function viewProjectBudget(projectId) {
@@ -560,37 +581,72 @@
         } catch(e) { container.innerHTML = emptyMsg('Error: ' + e.message); return; }
       }
 
-      renderSummary(allBudgets.filter(b => b.status === 'approved'));
+      const approvedBudgets = allBudgets.filter(b => b.status === 'approved');
+      renderSummary(approvedBudgets);
 
-      let html = `<div class="card"><div class="card-header"><h2>TOR vs Budget vs Actual — ทุกโปรเจกต์</h2></div>
+      // Calculate overall utilization for donut chart
+      const gTorAll = approvedBudgets.reduce((s,b) => s + (parseFloat(b.total_tor)||0), 0);
+      const gBudAll = approvedBudgets.reduce((s,b) => s + (parseFloat(b.total_budget)||0), 0);
+      const gActAll = approvedBudgets.reduce((s,b) => s + (parseFloat(b.total_actual)||0), 0);
+      const gComAll = approvedBudgets.reduce((s,b) => s + (parseFloat(b.total_committed)||0), 0);
+      const gUsedAll = gActAll + gComAll;
+      const gPctAll = gBudAll > 0 ? Math.round(gUsedAll / gBudAll * 100) : 0;
+      const donutColor = gPctAll > 100 ? 'var(--danger)' : gPctAll > 80 ? 'var(--warning)' : 'var(--primary)';
+
+      let html = `<div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><h2>ภาพรวมการใช้งบ (Overall Utilization)</h2></div>
+        <div style="padding:20px;display:flex;align-items:center;gap:32px;">
+          <div style="width:120px;height:120px;border-radius:50%;background:conic-gradient(${donutColor} 0% ${gPctAll}%, var(--border-light) ${gPctAll}% 100%);display:flex;align-items:center;justify-content:center;">
+            <div style="width:80px;height:80px;border-radius:50%;background:var(--bg-white);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;">${gPctAll}%</div>
+          </div>
+          <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">งบประมาณรวม</div><div style="font-size:18px;font-weight:700;color:var(--primary);">${fmtMoney(gBudAll)}</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">เบิกจ่ายจริง</div><div style="font-size:18px;font-weight:700;color:var(--warning);">${fmtMoney(gActAll)}</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">จองงบ (Committed)</div><div style="font-size:18px;font-weight:700;color:var(--info);">${fmtMoney(gComAll)}</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">คงเหลือ</div><div style="font-size:18px;font-weight:700;color:${(gBudAll-gUsedAll)<0?'var(--danger)':'var(--success)'};">${fmtMoney(gBudAll - gUsedAll)}</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">TOR รวม</div><div style="font-size:18px;font-weight:700;">${fmtMoney(gTorAll)}</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">โปรเจกต์ที่มีงบ</div><div style="font-size:18px;font-weight:700;">${allProjects.filter(p => approvedBudgets.some(b => b.project_id === p.id)).length}</div></div>
+          </div>
+        </div>
+      </div>`;
+
+      html += `<div class="card"><div class="card-header"><h2>TOR vs Budget vs Actual — ทุกโปรเจกต์</h2></div>
         <div class="table-container"><table class="comp-table">
-        <thead><tr><th style="text-align:left;">Project</th><th>TOR</th><th>Budget</th><th>Actual</th><th>Remaining</th><th>% Used</th><th>Variance</th></tr></thead><tbody>`;
+        <thead><tr><th style="text-align:left;">รายการ</th><th>หมวด</th><th>TOR (฿)</th><th>งบประมาณ (฿)</th><th>เบิกจ่ายจริง (฿)</th><th>จองงบ (฿)</th><th>คงเหลือ (฿)</th><th style="width:100px;">ใช้ไป %</th><th>สถานะ</th></tr></thead><tbody>`;
 
-      let gTor=0, gBud=0, gAct=0;
+      let gTor=0, gBud=0, gAct=0, gCom=0;
       for (const p of allProjects) {
-        const pBudgets = allBudgets.filter(b => b.project_id === p.id && b.status === 'approved');
+        const pBudgets = approvedBudgets.filter(b => b.project_id === p.id);
         if (!pBudgets.length) continue;
         const tor = pBudgets.reduce((s,b) => s + (parseFloat(b.total_tor)||0), 0);
         const bud = pBudgets.reduce((s,b) => s + (parseFloat(b.total_budget)||0), 0);
         const act = pBudgets.reduce((s,b) => s + (parseFloat(b.total_actual)||0), 0);
-        const rem = bud - act;
-        const pct = bud > 0 ? (act/bud*100) : 0;
+        const com = pBudgets.reduce((s,b) => s + (parseFloat(b.total_committed)||0), 0);
+        const used = act + com;
+        const avail = bud - used;
+        const pct = bud > 0 ? Math.round(used/bud*100) : 0;
         const pctColor = pct > 100 ? 'var(--danger)' : pct > 80 ? 'var(--warning)' : 'var(--success)';
-        gTor+=tor; gBud+=bud; gAct+=act;
+        gTor+=tor; gBud+=bud; gAct+=act; gCom+=com;
+
+        const statusBdg = pct > 100 ? '<span class="var-badge over">Over</span>' : pct >= 90 ? '<span class="var-badge neutral">Close</span>' : '<span class="var-badge under">Under</span>';
 
         html += `<tr style="cursor:pointer;" onclick="viewProjectBudget('${p.id}')">
           <td><strong>${p.code}</strong><br><span style="font-size:11px;color:var(--text-muted);">${p.name}</span></td>
+          <td style="font-size:11px;color:var(--text-secondary);">${pBudgets.map(b=>b.code).join(', ')}</td>
           <td>${fmtMoney(tor)}</td><td>${fmtMoney(bud)}</td>
           <td style="color:${act>bud?'var(--danger)':'inherit'};">${fmtMoney(act)}</td>
-          <td style="color:${rem<0?'var(--danger)':'var(--success)'};">${fmtMoney(rem)}</td>
+          <td style="color:var(--info);">${com > 0 ? fmtMoney(com) : '-'}</td>
+          <td style="color:${avail<0?'var(--danger)':'var(--success)'};">${fmtMoney(avail)}</td>
           <td>${pctBar(pct, pctColor)}</td>
-          <td class="${varianceClass(bud,act)}">${varianceText(bud,act)}</td>
+          <td>${statusBdg}</td>
         </tr>`;
       }
 
-      const gRem = gBud - gAct;
-      const gPct = gBud > 0 ? (gAct/gBud*100) : 0;
-      html += `<tr class="total-row"><td><strong>TOTAL</strong></td><td><strong>${fmtMoney(gTor)}</strong></td><td><strong>${fmtMoney(gBud)}</strong></td><td><strong>${fmtMoney(gAct)}</strong></td><td style="color:${gRem<0?'var(--danger)':'var(--success)'}"><strong>${fmtMoney(gRem)}</strong></td><td><strong>${gPct.toFixed(0)}%</strong></td><td class="${varianceClass(gBud,gAct)}"><strong>${varianceText(gBud,gAct)}</strong></td></tr>`;
+      const gUsed = gAct + gCom;
+      const gAvail = gBud - gUsed;
+      const gPct = gBud > 0 ? Math.round(gUsed/gBud*100) : 0;
+      const gStatusBdg = gPct > 100 ? '<span class="var-badge over">Over</span>' : gPct >= 90 ? '<span class="var-badge neutral">Close</span>' : '<span class="var-badge under">Under</span>';
+      html += `<tr class="total-row"><td><strong>TOTAL</strong></td><td></td><td><strong>${fmtMoney(gTor)}</strong></td><td><strong>${fmtMoney(gBud)}</strong></td><td><strong>${fmtMoney(gAct)}</strong></td><td style="color:var(--info);"><strong>${gCom > 0 ? fmtMoney(gCom) : '-'}</strong></td><td style="color:${gAvail<0?'var(--danger)':'var(--success)'}"><strong>${fmtMoney(gAvail)}</strong></td><td><strong>${gPct}%</strong></td><td>${gStatusBdg}</td></tr>`;
       html += '</tbody></table></div></div>';
       container.innerHTML = html;
     }
@@ -714,7 +770,29 @@
       }
     }
 
-    function addLineRow() {
+    const DEFAULT_CATEGORIES = [
+      { name: 'ค่าบุคลากร (Personnel)', category: 'personnel' },
+      { name: 'ค่าวัสดุ (Materials)', category: 'materials' },
+      { name: 'ค่าครุภัณฑ์ (Equipment)', category: 'equipment' },
+      { name: 'ค่าจ้างเหมา (Subcontract)', category: 'subcontract' },
+      { name: 'ค่าเดินทาง (Travel)', category: 'travel' },
+      { name: 'ค่าสาธารณูปโภค (Utilities)', category: 'utilities' },
+      { name: 'ค่าใช้จ่ายอื่นๆ (Others)', category: 'others' },
+    ];
+
+    function addDefaultCategories() {
+      const container = document.getElementById('line-items-container');
+      if (container.children.length > 0) {
+        if (!confirm('จะแทนที่รายการที่มีอยู่ด้วยหมวดมาตรฐาน?')) return;
+        container.innerHTML = '';
+      }
+      DEFAULT_CATEGORIES.forEach(cat => {
+        addLineRow(cat.name, 0, 0);
+      });
+      showToast('เพิ่มหมวดมาตรฐาน 7 รายการ', 'success');
+    }
+
+    function addLineRow(defaultName, defaultTor, defaultBudget) {
       const c = document.getElementById('line-items-container');
       const row = document.createElement('div');
       row.className = 'line-row';
@@ -724,6 +802,9 @@
         <input type="number" class="form-input" placeholder="Budget" data-ln-bud oninput="updateLineTotal()">
         <button class="btn-remove-line" onclick="this.parentElement.remove();updateLineTotal()">&times;</button>`;
       c.appendChild(row);
+      if (defaultName) row.querySelector('[data-ln-name]').value = defaultName;
+      if (defaultTor) row.querySelector('[data-ln-tor]').value = defaultTor;
+      if (defaultBudget) row.querySelector('[data-ln-bud]').value = defaultBudget;
     }
 
     function updateLineTotal() {
@@ -984,6 +1065,56 @@
       container.innerHTML = html;
     }
 
+    // ═══ Monthly Distribution ═══
+    function renderMonthlyGrid(budgetId, totalBudget) {
+      const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+      const grid = document.getElementById('monthlyGrid');
+      if (!grid) return;
+
+      API.get('/budget/' + budgetId + '/periods').then(periods => {
+        const periodMap = {};
+        periods.forEach(p => { periodMap[p.period_month] = p; });
+
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+        html += '<thead><tr style="background:var(--bg-light);"><th style="padding:8px;text-align:left;">เดือน</th><th style="padding:8px;text-align:right;">งบจัดสรร</th><th style="padding:8px;text-align:right;">เบิกจ่าย</th><th style="padding:8px;text-align:right;">คงเหลือ</th><th style="padding:8px;width:120px;">สัดส่วน</th></tr></thead><tbody>';
+
+        let totalAllocated = 0, totalActual = 0;
+        for (let m = 1; m <= 12; m++) {
+          const p = periodMap[m] || { budget_amount: 0, actual_amount: 0 };
+          const allocated = parseFloat(p.budget_amount) || 0;
+          const actual = parseFloat(p.actual_amount) || 0;
+          const remaining = allocated - actual;
+          const pct = allocated > 0 ? Math.round(actual / allocated * 100) : 0;
+          totalAllocated += allocated;
+          totalActual += actual;
+
+          const barColor = pct > 100 ? 'var(--danger)' : pct > 80 ? 'var(--warning)' : 'var(--success)';
+          html += `<tr style="border-bottom:1px solid var(--border-light);">
+            <td style="padding:8px;font-weight:500;">${months[m-1]}</td>
+            <td style="padding:8px;text-align:right;font-family:monospace;">${allocated ? allocated.toLocaleString() : '-'}</td>
+            <td style="padding:8px;text-align:right;font-family:monospace;">${actual ? actual.toLocaleString() : '-'}</td>
+            <td style="padding:8px;text-align:right;font-family:monospace;color:${remaining < 0 ? 'var(--danger)' : 'inherit'}">${allocated ? remaining.toLocaleString() : '-'}</td>
+            <td style="padding:8px;"><div style="height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${Math.min(pct,100)}%;background:${barColor};border-radius:4px;"></div></div></td>
+          </tr>`;
+        }
+        html += `<tr style="font-weight:700;border-top:2px solid var(--border);"><td style="padding:8px;">รวมทั้งปี</td><td style="padding:8px;text-align:right;font-family:monospace;">${totalAllocated.toLocaleString()}</td><td style="padding:8px;text-align:right;font-family:monospace;">${totalActual.toLocaleString()}</td><td style="padding:8px;text-align:right;font-family:monospace;">${(totalAllocated-totalActual).toLocaleString()}</td><td></td></tr>`;
+        html += '</tbody></table>';
+        grid.innerHTML = html;
+      }).catch(() => {
+        grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">ยังไม่มีข้อมูลงบรายเดือน</div>';
+      });
+    }
+
+    function distributeBudgetEvenly() {
+      const projId = document.getElementById('projBudgetSelect').value;
+      if (!projId) { showToast('กรุณาเลือกโปรเจกต์ก่อน', 'warning'); return; }
+      const projBudgets = allBudgets.filter(b => b.project_id === projId);
+      if (!projBudgets.length) { showToast('ไม่มี Budget สำหรับโปรเจกต์นี้', 'warning'); return; }
+      const totalBudget = projBudgets.reduce((s,b) => s + (parseFloat(b.total_budget)||0), 0);
+      const monthly = Math.round(totalBudget / 12);
+      showToast('งบเฉลี่ยต่อเดือน: ฿' + monthly.toLocaleString(), 'success');
+    }
+
     // Close on ESC
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBudgetModal(); });
 
@@ -1002,29 +1133,27 @@
 
     // ═══ Export Excel ═══
     function exportBudgetExcel() {
-      const data = allBudgets.map(b => ({
-        code: b.code,
-        name: b.name,
-        project: b._project_code || '',
-        status: b.status,
-        tor: parseFloat(b.total_tor || 0),
-        budget: parseFloat(b.total_budget || 0),
-        actual: parseFloat(b.total_actual || 0),
-        variance: parseFloat(b.total_budget || 0) - parseFloat(b.total_actual || 0)
+      if (!allBudgets.length) { showToast('ไม่มีข้อมูล', 'warning'); return; }
+
+      // Sheet 1: Summary
+      const summary = allBudgets.map(b => ({
+        'Code': b.code,
+        'Name': b.name,
+        'Project': b._project_code || '',
+        'Status': b.status,
+        'Fiscal Year': b.fiscal_year,
+        'TOR (฿)': parseFloat(b.total_tor || 0),
+        'Budget (฿)': parseFloat(b.total_budget || 0),
+        'Actual (฿)': parseFloat(b.total_actual || 0),
+        'Committed (฿)': parseFloat(b.total_committed || 0),
+        'Available (฿)': parseFloat(b.total_budget || 0) - parseFloat(b.total_actual || 0) - parseFloat(b.total_committed || 0),
+        'Used %': parseFloat(b.total_budget) > 0 ? Math.round(parseFloat(b.total_actual) / parseFloat(b.total_budget) * 100) : 0,
+        'Revision': b.revision || 0,
       }));
-      exportExcel(data, 'budget_export', {
-        sheetName: 'Budget',
-        headers: {
-          code: 'Code',
-          name: 'Name',
-          project: 'Project',
-          status: 'Status',
-          tor: 'TOR',
-          budget: 'Budget',
-          actual: 'Actual',
-          variance: 'Variance'
-        }
-      });
+
+      exportExcelMultiSheet([
+        { name: 'Budget Summary', data: summary },
+      ], 'budget_report');
     }
 
     // FIXED: Auth guard

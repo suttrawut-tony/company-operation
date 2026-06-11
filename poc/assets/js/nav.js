@@ -39,42 +39,49 @@ const ICONS = {
   chevronRight: icon('<path d="m9 18 6-6-6-6"/>'),
   menu:         icon('<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>'),
   help:         icon('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
+  // extra icons to avoid duplicates
+  myTasks:      icon('<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>'),
+  quotation:    icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/>'),
+  booking:      icon('<path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><circle cx="16" cy="16" r="6"/><path d="M16 14v2l1 1"/>'),
+  itemMaster:   icon('<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
+  changeLog:    icon('<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-4"/><path d="m8 18 4-4 4 4"/>'),
+  bpGroup:      icon('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
 };
 
 // Navigation groups — hardcode fallback if API fails
 const NAV_GROUPS_FALLBACK = [
-  { label: 'Main', items: [
+  { label: 'Main', iconColor: 'icon-blue', items: [
     { id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, href: 'dashboard.html' },
-    { id: 'my-tasks', label: 'My Tasks', icon: ICONS.taskboard, href: 'my-tasks.html' },
+    { id: 'my-tasks', label: 'My Tasks', icon: ICONS.myTasks, href: 'my-tasks.html' },
   ] },
-  { label: 'Project', collapsible: true, items: [
+  { label: 'Project', collapsible: true, iconColor: 'icon-purple', items: [
     { id: 'projects', label: 'All Projects', icon: ICONS.allProjects, href: 'projects.html' },
     { id: 'overview', label: 'Project Detail', icon: ICONS.projectDetail, href: 'overview.html' },
     { id: 'phases', label: 'Plan Project', icon: ICONS.phases, href: 'phases.html' },
     { id: 'taskboard', label: 'Taskboard', icon: ICONS.taskboard, href: 'taskboard.html' },
   ]},
-  { label: 'Document', collapsible: true, items: [
+  { label: 'Document', collapsible: true, iconColor: 'icon-green', items: [
     { id: 'budget', label: 'Budget', icon: ICONS.budget, href: 'budget.html' },
     { id: 'pr-po', label: 'PR / PO', icon: ICONS.prpo, href: 'pr-po.html' },
-    { id: 'quotation', label: 'Quotation', icon: ICONS.expense, href: 'quotation.html' },
+    { id: 'quotation', label: 'Quotation', icon: ICONS.quotation, href: 'quotation.html' },
     { id: 'advance', label: 'Advance', icon: ICONS.advance, href: 'advance.html' },
     { id: 'petty-cash', label: 'Petty Cash', icon: ICONS.pettyCash, href: 'petty-cash.html' },
     { id: 'expense', label: 'Expense', icon: ICONS.expense, href: 'expense.html' },
     { id: 'travel', label: 'Travel', icon: ICONS.travel, href: 'travel.html' },
   ]},
-  { label: 'Resource', collapsible: true, items: [
-    { id: 'booking', label: 'Booking', icon: ICONS.vehicle, href: 'booking.html' },
+  { label: 'Resource', collapsible: true, iconColor: 'icon-amber', items: [
+    { id: 'booking', label: 'Booking', icon: ICONS.booking, href: 'booking.html' },
     { id: 'vehicle', label: 'Vehicles', icon: ICONS.vehicle, href: 'vehicle.html' },
     { id: 'ot', label: 'Holiday / OT', icon: ICONS.ot, href: 'ot.html' },
   ]},
-  { label: 'System', collapsible: true, items: [
-    { id: 'items', label: 'Item Master', icon: ICONS.prpo, href: 'item-master.html' },
-    { id: 'bp', label: 'Business Partner', icon: ICONS.user, href: 'bp-master.html' },
+  { label: 'System', collapsible: true, iconColor: 'icon-rose', items: [
+    { id: 'items', label: 'Item Master', icon: ICONS.itemMaster, href: 'item-master.html' },
+    { id: 'bp', label: 'Business Partner', icon: ICONS.bpGroup, href: 'bp-master.html' },
     { id: 'number-running', label: 'Number Running', icon: ICONS.numberRun, href: 'number-running.html' },
     { id: 'reports', label: 'Reports', icon: ICONS.reports, href: 'reports.html' },
     { id: 'permissions', label: 'User & Permission', icon: ICONS.permissions, href: 'user-permissions.html' },
     { id: 'setup', label: 'Setup', icon: ICONS.setup, href: 'setup.html' },
-    { id: 'changelog', label: 'Change Log', icon: ICONS.reports, href: 'changelog.html' },
+    { id: 'changelog', label: 'Change Log', icon: ICONS.changeLog, href: 'changelog.html' },
     { id: 'help', label: 'User Guide', icon: ICONS.help, href: 'help.html' },
   ]},
 ];
@@ -85,12 +92,20 @@ let _enabledHrefs = null; // set after API load
 // Build NAV_GROUPS from API modules
 function buildNavFromModules(modules) {
   const groupLabels = { main: 'Main', project: 'Project', document: 'Document', resource: 'Resource', system: 'System' };
+  const groupIconColors = { main: 'icon-blue', project: 'icon-purple', document: 'icon-green', resource: 'icon-amber', system: 'icon-rose' };
+  // Fix legacy icon keys from DB that cause duplicates
+  const iconKeyFix = { booking:'booking', 'my-tasks':'myTasks' };
+  const iconOverrides = {
+    booking: 'booking', items: 'itemMaster', bp: 'bpGroup',
+    changelog: 'changeLog', 'my-tasks': 'myTasks', quotation: 'quotation'
+  };
   const groups = {};
   for (const m of modules) {
     if (!m.is_enabled) continue;
     const g = m.module_group || 'system';
-    if (!groups[g]) groups[g] = { label: groupLabels[g] || g, collapsible: g !== 'main', items: [] };
-    groups[g].items.push({ id: m.module_id, label: m.module_name, icon: ICONS[m.icon] || ICONS.reports, href: m.href });
+    if (!groups[g]) groups[g] = { label: groupLabels[g] || g, collapsible: g !== 'main', iconColor: groupIconColors[g] || 'icon-blue', items: [] };
+    const fixedIcon = iconOverrides[m.module_id] || m.icon;
+    groups[g].items.push({ id: m.module_id, label: m.module_name, icon: ICONS[fixedIcon] || ICONS[m.icon] || ICONS.reports, href: m.href });
   }
   const order = ['main','project','document','resource','system'];
   const result = order.filter(g => groups[g]).map(g => groups[g]);
@@ -128,7 +143,16 @@ async function loadModulesFromAPI() {
 function checkModuleAccess() {
   if (!_enabledHrefs) return;
   const page = location.pathname.split('/').pop();
-  if (!page || page === '' || page === 'login.html' || page === 'register.html' || page === 'reset-password.html' || page === 'change-password.html') return;
+  // Whitelist: auth pages + sub-pages that open from main menu pages
+  const whitelist = [
+    '', 'login.html', 'register.html',
+    'reset-password.html', 'change-password.html',
+    'doc-detail.html', 'pr-create.html', 'pr-detail.html',
+    'journal-entries.html', 'vehicle-project.html',
+    'pricing.html', 'sow-template.html', 'sow-generator.html',
+    'sow-v2.html', 'sow-v2-generator.html'
+  ];
+  if (!page || whitelist.includes(page)) return;
   if (!_enabledHrefs.has(page)) {
     if (typeof showToast === 'function') showToast('ไม่สามารถเข้าถึงหน้านี้ได้ Module ถูกปิดอยู่', 'warning');
     location.href = 'dashboard.html';
@@ -192,8 +216,9 @@ function renderSidebar() {
           ${group.items.map(item => {
             const isActive = currentFile === item.href ||
               (currentFile === 'user-permissions.html' && item.id === 'permissions');
+            const iconCls = group.iconColor || 'icon-blue';
             return `<a class="sidebar-item${isActive ? ' active' : ''}" href="${item.href}" title="${item.label}">
-              <span class="sidebar-item-icon">${item.icon}</span>
+              <span class="sidebar-item-icon ${iconCls}">${item.icon}</span>
               <span class="sidebar-item-label">${item.label}</span>
             </a>`;
           }).join('')}
@@ -411,6 +436,27 @@ document.addEventListener('click', (e) => {
 window.ICONS = ICONS;
 window.icon = icon;
 
+// ═══ SAP status check — hide SAP buttons if not configured ═══
+window._sapConfigured = null;
+async function checkSapStatus() {
+  try {
+    const token = localStorage.getItem('sda_token');
+    if (!token) return;
+    const resp = await fetch('/api/sap/status', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (resp.ok) {
+      const data = await resp.json();
+      window._sapConfigured = !!data.connected;
+    }
+  } catch(e) { window._sapConfigured = false; }
+  // Hide all SAP-related buttons/elements if not configured
+  if (!window._sapConfigured) {
+    document.querySelectorAll('[data-sap], .sap-only').forEach(el => {
+      el.style.display = 'none';
+    });
+  }
+}
+window.checkSapStatus = checkSapStatus;
+
 // Contextual Help — map page to help section
 function openContextHelp() {
   const page = location.pathname.split('/').pop().replace('.html','');
@@ -456,4 +502,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   setTimeout(checkChangelogBadge, 500);
   setTimeout(checkModuleAccess, 300);
   setTimeout(checkSubscriptionBanner, 600);
+  setTimeout(checkSapStatus, 400);
 });

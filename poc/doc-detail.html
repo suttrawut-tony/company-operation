@@ -714,7 +714,9 @@
       if (amount > 10000) steps.push({ label:'Finance', st: ['draft','pending_manager','pending_finance'].includes(s)?s==='pending_finance'?'current':'pending':'done' });
       if (amount > 100000) steps.push({ label:'Executive', st: ['draft','pending_manager','pending_finance','pending_executive'].includes(s)?s==='pending_executive'?'current':'pending':'done' });
       steps.push({ label:'Budget Deduction', st: ['approved','paid','sent_to_sap','received'].includes(s)?'done':'pending', sub:'Auto' });
-      steps.push({ label:'Push to SAP', st: ['sent_to_sap','received'].includes(s)?'done':'pending', sub: doc.sap_doc_num?'SAP #'+doc.sap_doc_num:'' });
+      if (window._sapConfigured) {
+        steps.push({ label:'Push to SAP', st: ['sent_to_sap','received'].includes(s)?'done':'pending', sub: doc.sap_doc_num?'SAP #'+doc.sap_doc_num:'' });
+      }
       return steps;
     }
 

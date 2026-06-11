@@ -22,6 +22,76 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/budget/check — Budget control check (called when creating PR/Expense)
+// IMPORTANT: Must be before /:id to avoid "check" matching as :id param
+router.get('/check/:projectId', async (req, res) => {
+  try {
+    const { rows: budgets } = await db.query(
+      "SELECT * FROM budgets WHERE project_id = $1 AND status = 'approved'", [req.params.projectId]);
+    if (!budgets.length) return res.json({ allowed: true, message: 'No approved budget found' });
+
+    const budget = budgets[0];
+    const { rows: lines } = await db.query('SELECT * FROM budget_lines WHERE budget_id = $1', [budget.id]);
+
+    const totalBudget = lines.reduce((s, l) => s + parseFloat(l.budget_amount || 0), 0);
+    const totalUsed = lines.reduce((s, l) => s + parseFloat(l.actual_amount || 0) + parseFloat(l.committed_amount || 0), 0);
+    const pctUsed = totalBudget > 0 ? (totalUsed / totalBudget * 100) : 0;
+    const remaining = totalBudget - totalUsed;
+
+    const warn = budget.warn_threshold || 80;
+    const block = budget.block_threshold || 100;
+    const mode = budget.control_mode || 'warn';
+
+    let status = 'ok';
+    let message = `Budget remaining: ฿${remaining.toLocaleString()}`;
+    if (pctUsed >= block && mode === 'block') {
+      status = 'blocked';
+      message = `Budget exceeded! ${pctUsed.toFixed(0)}% used. Cannot proceed.`;
+    } else if (pctUsed >= warn) {
+      status = 'warning';
+      message = `Budget warning: ${pctUsed.toFixed(0)}% used (฿${remaining.toLocaleString()} remaining)`;
+    }
+
+    res.json({
+      allowed: status !== 'blocked',
+      status,
+      message,
+      pct_used: Math.round(pctUsed),
+      remaining,
+      total_budget: totalBudget,
+      total_used: totalUsed,
+      warn_threshold: warn,
+      block_threshold: block,
+      control_mode: mode
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/budget/:id/periods — Monthly distribution
+router.get('/:id/periods', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT * FROM budget_periods WHERE budget_id=$1 ORDER BY period_month', [req.params.id]);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/budget/:id/periods — Upsert monthly distribution
+router.post('/:id/periods', async (req, res) => {
+  try {
+    const { periods } = req.body;
+    if (!Array.isArray(periods)) return res.status(400).json({ error: 'periods array required' });
+    for (const p of periods) {
+      await db.query(
+        `INSERT INTO budget_periods (budget_id, line_id, period_month, budget_amount)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (id) DO UPDATE SET budget_amount = $4`,
+        [req.params.id, p.line_id || null, p.period_month, p.budget_amount || 0]);
+    }
+    res.json({ success: true, count: periods.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/budget/:id (with lines)
 router.get('/:id', async (req, res) => {
   try {
@@ -168,33 +238,39 @@ router.get('/:id/revisions', async (req, res) => {
 
 // POST /api/budget/:id/transfer — Transfer budget between lines
 router.post('/:id/transfer', async (req, res) => {
-  try {
-    const { from_line_id, to_line_id, amount, reason } = req.body;
-    if (!from_line_id || !to_line_id || !amount || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid transfer: need from_line_id, to_line_id, amount > 0' });
-    }
+  const { from_line_id, to_line_id, amount, reason } = req.body;
+  if (!from_line_id || !to_line_id || !amount || amount <= 0) {
+    return res.status(400).json({ error: 'Invalid transfer: need from_line_id, to_line_id, amount > 0' });
+  }
 
+  const client = await db.pool.connect();
+  try {
     // Validate lines belong to this budget
-    const { rows: fromLine } = await db.query('SELECT * FROM budget_lines WHERE id=$1 AND budget_id=$2', [from_line_id, req.params.id]);
-    const { rows: toLine } = await db.query('SELECT * FROM budget_lines WHERE id=$1 AND budget_id=$2', [to_line_id, req.params.id]);
+    const { rows: fromLine } = await client.query('SELECT * FROM budget_lines WHERE id=$1 AND budget_id=$2', [from_line_id, req.params.id]);
+    const { rows: toLine } = await client.query('SELECT * FROM budget_lines WHERE id=$1 AND budget_id=$2', [to_line_id, req.params.id]);
     if (!fromLine[0] || !toLine[0]) return res.status(404).json({ error: 'Line not found in this budget' });
 
     const available = parseFloat(fromLine[0].budget_amount) - parseFloat(fromLine[0].actual_amount) - parseFloat(fromLine[0].committed_amount || 0);
     if (amount > available) return res.status(400).json({ error: `Insufficient budget. Available: ${available}` });
 
-    // Execute transfer
-    await db.query('UPDATE budget_lines SET budget_amount = budget_amount - $1 WHERE id = $2', [amount, from_line_id]);
-    await db.query('UPDATE budget_lines SET budget_amount = budget_amount + $1 WHERE id = $2', [amount, to_line_id]);
-
-    // Log transfer
-    await db.query(
+    // Execute transfer within a transaction
+    await client.query('BEGIN');
+    await client.query('UPDATE budget_lines SET budget_amount = budget_amount - $1 WHERE id = $2', [amount, from_line_id]);
+    await client.query('UPDATE budget_lines SET budget_amount = budget_amount + $1 WHERE id = $2', [amount, to_line_id]);
+    await client.query(
       'INSERT INTO budget_transfers (budget_id, from_line_id, to_line_id, amount, reason, transferred_by) VALUES ($1,$2,$3,$4,$5,$6)',
       [req.params.id, from_line_id, to_line_id, amount, reason || '', req.user.id]
     );
+    await client.query('COMMIT');
 
     res.json({ success: true, from: from_line_id, to: to_line_id, amount });
     req.broadcast('budget_updated', { id: req.params.id });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
 });
 
 // GET /api/budget/:id/transfers — Get transfer history
@@ -209,50 +285,6 @@ router.get('/:id/transfers', async (req, res) => {
        LEFT JOIN budget_lines tl ON t.to_line_id = tl.id
        WHERE t.budget_id = $1 ORDER BY t.created_at DESC`, [req.params.id]);
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/budget/check — Budget control check (called when creating PR/Expense)
-router.get('/check/:projectId', async (req, res) => {
-  try {
-    const { rows: budgets } = await db.query(
-      "SELECT * FROM budgets WHERE project_id = $1 AND status = 'approved'", [req.params.projectId]);
-    if (!budgets.length) return res.json({ allowed: true, message: 'No approved budget found' });
-
-    const budget = budgets[0];
-    const { rows: lines } = await db.query('SELECT * FROM budget_lines WHERE budget_id = $1', [budget.id]);
-
-    const totalBudget = lines.reduce((s, l) => s + parseFloat(l.budget_amount || 0), 0);
-    const totalUsed = lines.reduce((s, l) => s + parseFloat(l.actual_amount || 0) + parseFloat(l.committed_amount || 0), 0);
-    const pctUsed = totalBudget > 0 ? (totalUsed / totalBudget * 100) : 0;
-    const remaining = totalBudget - totalUsed;
-
-    const warn = budget.warn_threshold || 80;
-    const block = budget.block_threshold || 100;
-    const mode = budget.control_mode || 'warn';
-
-    let status = 'ok';
-    let message = `Budget remaining: ฿${remaining.toLocaleString()}`;
-    if (pctUsed >= block && mode === 'block') {
-      status = 'blocked';
-      message = `Budget exceeded! ${pctUsed.toFixed(0)}% used. Cannot proceed.`;
-    } else if (pctUsed >= warn) {
-      status = 'warning';
-      message = `Budget warning: ${pctUsed.toFixed(0)}% used (฿${remaining.toLocaleString()} remaining)`;
-    }
-
-    res.json({
-      allowed: status !== 'blocked',
-      status,
-      message,
-      pct_used: Math.round(pctUsed),
-      remaining,
-      total_budget: totalBudget,
-      total_used: totalUsed,
-      warn_threshold: warn,
-      block_threshold: block,
-      control_mode: mode
-    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
