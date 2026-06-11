@@ -150,7 +150,7 @@ function checkModuleAccess() {
     'doc-detail.html', 'pr-create.html', 'pr-detail.html',
     'journal-entries.html', 'vehicle-project.html',
     'pricing.html', 'sow-template.html', 'sow-generator.html',
-    'sow-v2.html', 'sow-v2-generator.html'
+    'sow-v2.html', 'sow-v2-generator.html', 'sq-detail.html'
   ];
   if (!page || whitelist.includes(page)) return;
   if (!_enabledHrefs.has(page)) {

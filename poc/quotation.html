@@ -63,7 +63,7 @@
       <div><h1 id="pgIcon"></h1></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-secondary" onclick="exportQuotations()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
-        <button class="btn btn-primary" onclick="openCreateModal()">+ สร้างใบเสนอราคา</button>
+        <button class="btn btn-primary" onclick="window.location='sq-detail.html?mode=new'">+ สร้างใบเสนอราคา</button>
       </div>
     </div>
     <div class="sq-stats" id="stats"></div>
@@ -143,7 +143,7 @@
       if (!allSQ.length) { document.getElementById('tableWrap').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">ไม่มีรายการ</div>'; return; }
       let h='<table class="sq-table"><thead><tr><th>SQ Number</th><th>ลูกค้า</th><th>โปรเจกต์</th><th>ขนาด</th><th>ยอดรวม</th><th>สถานะ</th><th>วันที่</th></tr></thead><tbody>';
       allSQ.forEach(q=>{
-        h+=`<tr onclick="showDetail('${q.id}')"><td style="font-weight:600;color:var(--primary)">${q.sq_number||'-'}</td><td>${q.customer_name||'-'}</td><td>${q.project_code?q.project_code:'−'}</td><td>${q.system_capacity?q.system_capacity+'kWp':'−'}</td><td class="sq-amount">${fmtNum(q.grand_total||0)}</td><td><span class="sq-badge" style="${ss(q.status)}">${q.status||'-'}</span></td><td>${q.created_at?new Date(q.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'}):'-'}</td></tr>`;
+        h+=`<tr onclick="window.location='sq-detail.html?id=${q.id}'"><td style="font-weight:600;color:var(--primary)">${q.sq_number||'-'}</td><td>${q.customer_name||'-'}</td><td>${q.project_code?q.project_code:'−'}</td><td>${q.system_capacity?q.system_capacity+'kWp':'−'}</td><td class="sq-amount">${fmtNum(q.grand_total||0)}</td><td><span class="sq-badge" style="${ss(q.status)}">${q.status||'-'}</span></td><td>${q.created_at?new Date(q.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'}):'-'}</td></tr>`;
       });
       h+='</tbody></table>';
       document.getElementById('tableWrap').innerHTML=h;
@@ -174,7 +174,7 @@
       document.getElementById('modalTitle').textContent = title;
 
       let h = '<div class="sq-info-grid"><div>';
-      h += fg('ชื่อลูกค้า', 'text', 'sqCustName', sq.customer_name||'');
+      h += '<div class="sq-fg"><label>ชื่อลูกค้า</label><select id="sqCustName" class="searchable" onchange="onCustomerSelect(this)">' + buildCustomerOptions(sq.customer_name||'') + '</select></div>';
       h += fg('เบอร์โทร', 'text', 'sqCustPhone', sq.customer_phone||'');
       h += fg('ที่อยู่', 'text', 'sqCustAddr', sq.customer_address||'');
       h += '</div><div>';
@@ -219,10 +219,12 @@
       f += `<button class="btn-sm btn-primary" onclick="saveSQ(${isNew})">${isNew?'สร้าง':'บันทึก'}</button>`;
       f += `<button class="btn-sm" onclick="closeModal()">ปิด</button>`;
       document.getElementById('modalFooter').innerHTML = f;
-      // Init searchable on item picker after modal renders
+      // Init searchable on item picker + customer picker after modal renders
       setTimeout(function() {
         var picker = document.getElementById('sqItemPicker');
         if (picker && picker.dataset.searchable !== 'done') makeSearchable(picker);
+        var custPicker = document.getElementById('sqCustName');
+        if (custPicker && custPicker.dataset.searchable !== 'done') makeSearchable(custPicker);
       }, 100);
     }
 
@@ -287,8 +289,10 @@
       const vatAmt = Math.round((subtotal-discAmt)*vatPct/100*100)/100;
       const grand = subtotal - discAmt + vatAmt;
 
+      var custSel = document.getElementById('sqCustName');
+      var custOpt = custSel?.selectedOptions?.[0];
       const data = {
-        customer_name: document.getElementById('sqCustName').value||null,
+        customer_name: custOpt?.dataset?.name || custSel?.value || null,
         customer_phone: document.getElementById('sqCustPhone').value||null,
         customer_address: document.getElementById('sqCustAddr').value||null,
         site_name: document.getElementById('sqSiteName').value||null,
@@ -393,6 +397,7 @@
     if (API.requireAuth()) {
       loadData();
       loadMasterItems();
+      loadMasterCustomers();
       if (typeof I!=='undefined') document.getElementById('pgIcon').innerHTML = I.fileText+' Quotation (ใบเสนอราคา)';
       else document.getElementById('pgIcon').textContent = 'Quotation (ใบเสนอราคา)';
 

@@ -116,6 +116,47 @@ function onVendorSelect(selectEl) {
   if (termsEl) termsEl.value = opt.dataset.terms || 30;
 }
 
+// === Customer (BP type=customer) ===
+window._masterCustomers = [];
+window._masterCustomersLoaded = false;
+
+async function loadMasterCustomers() {
+  if (window._masterCustomersLoaded) return window._masterCustomers;
+  try {
+    var bps = await API.get('/master/bp?type=customer');
+    window._masterCustomers = (Array.isArray(bps) ? bps : []).filter(function(v) { return v.is_active !== false; });
+    window._masterCustomersLoaded = true;
+  } catch(e) { console.error('Failed to load customers:', e); }
+  return window._masterCustomers;
+}
+
+function buildCustomerOptions(selectedName) {
+  return '<option value="">-- Select Customer --</option>'
+    + window._masterCustomers.map(function(c) {
+      var isSelected = (selectedName && (c.bp_name === selectedName || c.bp_code === selectedName));
+      return '<option value="' + (c.bp_code||'') + '"'
+        + ' data-name="' + (c.bp_name||'').replace(/"/g,'&quot;') + '"'
+        + ' data-phone="' + (c.phone||'') + '"'
+        + ' data-email="' + (c.email||'') + '"'
+        + ' data-address="' + (c.address||'').replace(/"/g,'&quot;') + '"'
+        + ' data-contact="' + (c.contact_person||'').replace(/"/g,'&quot;') + '"'
+        + ' data-taxid="' + (c.tax_id||'') + '"'
+        + (isSelected ? ' selected' : '') + '>'
+        + (c.bp_code||'') + ' — ' + (c.bp_name||'')
+        + '</option>';
+    }).join('');
+}
+
+function onCustomerSelect(selectEl) {
+  var opt = selectEl.options[selectEl.selectedIndex];
+  if (!opt || !opt.value) return;
+  var container = selectEl.closest('.doc-form-grid') || selectEl.closest('.sq-info-grid') || document;
+  var phoneEl = container.querySelector('#fCustPhone, #sqCustPhone, [data-field="customer_phone"]');
+  var addrEl = container.querySelector('#fCustAddr, #sqCustAddr, [data-field="customer_address"]');
+  if (phoneEl) phoneEl.value = opt.dataset.phone || '';
+  if (addrEl) addrEl.value = opt.dataset.address || '';
+}
+
 // Init searchable on a newly added select element
 function initItemPicker(selectEl) {
   if (typeof makeSearchable === 'function') {
