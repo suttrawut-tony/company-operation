@@ -6,112 +6,69 @@
   <title>Company Operation — Sales Quotation</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
-    /* === Layout from doc-detail.html === */
-    .doc-topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 24px; background:var(--bg-white); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
-    .doc-topbar-left { display:flex; align-items:center; gap:12px; }
-    .doc-topbar-right { display:flex; align-items:center; gap:8px; }
-    .doc-nav-btn { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:4px 10px; cursor:pointer; font-size:12px; color:var(--text-secondary); }
-    .doc-nav-btn:hover { background:var(--bg-hover); }
-    .doc-back { text-decoration:none; color:var(--text-secondary); font-size:13px; display:flex; align-items:center; gap:4px; }
-    .doc-back:hover { color:var(--primary); }
-    .doc-page { max-width:1200px; margin:0 auto; padding:20px 24px; }
-    .doc-header { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 24px; margin-bottom:16px; }
-    .doc-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .doc-title-row h2 { font-size:15px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
-    .doc-number { font-size:22px; font-weight:800; color:var(--primary); }
-    .doc-form-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; font-size:12px; }
-    .doc-form-grid .fg { display:flex; flex-direction:column; gap:3px; }
-    .doc-form-grid .fg label { font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase; }
-    .doc-form-grid .fg .val { font-size:13px; font-weight:600; color:var(--text-primary); }
-    .doc-form-grid .fg input, .doc-form-grid .fg select, .doc-form-grid .fg textarea {
-      padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; font-family:var(--font); width:100%; box-sizing:border-box; }
-    .doc-form-grid .fg input:focus, .doc-form-grid .fg select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-light); }
-    .lines-card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; overflow:hidden; }
-    .lines-card-header { padding:12px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
-    .lines-card-header h3 { font-size:13px; font-weight:700; }
-    .lines-table { width:100%; border-collapse:collapse; font-size:12px; }
-    .lines-table th { background:var(--bg-light); padding:8px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
-    .lines-table td { padding:8px 12px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
-    .lines-table .num { text-align:right; }
-    .lines-table input, .lines-table select { padding:5px 8px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; font-family:var(--font); width:100%; box-sizing:border-box; }
-    .lines-table .row-num { color:var(--text-muted); font-weight:600; width:36px; text-align:center; }
-    .lines-table .row-action button { background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; }
-    .totals-wrap { display:flex; justify-content:flex-end; padding:16px 20px; }
-    .totals-box { width:320px; font-size:13px; }
-    .totals-box .trow { display:flex; justify-content:space-between; padding:5px 0; }
-    .totals-box .trow.grand { font-size:17px; font-weight:800; border-top:2px solid var(--border); padding-top:10px; margin-top:6px; color:var(--primary); }
-    .bottom-tabs { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
-    .btab-bar { display:flex; border-bottom:1px solid var(--border-light); }
-    .btab { padding:10px 20px; font-size:12px; font-weight:600; cursor:pointer; color:var(--text-secondary); border-bottom:2px solid transparent; }
-    .btab.active { color:var(--primary); border-bottom-color:var(--primary); }
-    .btab-panel { display:none; padding:20px; font-size:13px; }
-    .btab-panel.active { display:block; }
-    .status-badge { font-size:11px; padding:3px 10px; border-radius:var(--radius-full); font-weight:600; }
     @media print { body > *:not(.print-area) { display:none!important; } .print-area { display:block!important; } }
-    @media (max-width:768px) { .doc-form-grid { grid-template-columns:1fr 1fr; } .doc-topbar { flex-wrap:wrap; gap:8px; } }
   </style>
 </head>
 <body>
   <aside id="sidebar"></aside>
   <div class="main-wrapper">
 
-  <!-- Top bar (from doc-detail.html) -->
-  <div class="doc-topbar">
-    <div class="doc-topbar-left">
+  <!-- Top bar -->
+  <div class="doc-toolbar">
+    <div class="doc-toolbar-left">
       <a href="quotation.html" class="doc-back">&larr; Back</a>
       <span style="color:var(--border);">|</span>
       <span style="font-size:12px;color:var(--text-muted);" id="doc-nav-info">-</span>
       <button class="doc-nav-btn" onclick="navDoc(-1)">&laquo;</button>
       <button class="doc-nav-btn" onclick="navDoc(1)">&raquo;</button>
     </div>
-    <div class="doc-topbar-right" id="topActions"></div>
+    <div class="doc-toolbar-right" id="topActions"></div>
   </div>
 
-  <div class="doc-page">
+  <div class="page" style="max-width:1200px;">
 
     <!-- Document Header -->
-    <div class="doc-header">
-      <div class="doc-title-row">
-        <h2>SALES QUOTATION</h2>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span class="status-badge" id="statusBadge"></span>
-          <span class="doc-number" id="docNumber">-</span>
+    <div class="doc-card">
+      <div class="doc-card-top">
+        <div>
+          <div class="doc-type-label">SALES QUOTATION</div>
+          <div class="doc-number" id="docNumber">-</div>
         </div>
+        <div id="statusBadge"></div>
       </div>
-      <div class="doc-form-grid" id="formFields"></div>
+      <div class="doc-fields" id="formFields"></div>
     </div>
 
     <!-- Line Items -->
-    <div class="lines-card">
-      <div class="lines-card-header">
+    <div class="doc-lines">
+      <div class="doc-lines-header">
         <h3>Line Items</h3>
         <button class="btn btn-sm btn-primary" id="btn-add-line" onclick="addLine()" style="display:none;">+ Add Row</button>
       </div>
       <div style="overflow-x:auto;">
-        <table class="lines-table">
+        <table>
           <thead id="lines-head"></thead>
           <tbody id="lines-body"></tbody>
         </table>
       </div>
-      <div class="totals-wrap">
-        <div class="totals-box" id="totalsBox"></div>
+      <div class="doc-totals">
+        <div class="doc-totals-box" id="totalsBox"></div>
       </div>
     </div>
 
     <!-- Bottom Tabs -->
-    <div class="bottom-tabs">
-      <div class="btab-bar">
-        <div class="btab active" onclick="switchTab('info',this)">Document Info</div>
-        <div class="btab" onclick="switchTab('print',this)">Print Preview</div>
+    <div class="doc-tabs">
+      <div class="doc-tabs-bar">
+        <div class="doc-tab active" onclick="switchTab('info',this)">Document Info</div>
+        <div class="doc-tab" onclick="switchTab('print',this)">Print Preview</div>
       </div>
-      <div class="btab-panel active" id="tab-info"></div>
-      <div class="btab-panel" id="tab-print"></div>
+      <div class="doc-tab-panel active" id="tab-info"></div>
+      <div class="doc-tab-panel" id="tab-print"></div>
     </div>
 
   </div>
   </div>
 
-  <!-- Print area -->
   <div class="print-area" id="printArea" style="display:none"></div>
 
   <script src="assets/js/api.js"></script>
@@ -121,25 +78,17 @@
   <script src="assets/js/nav.js"></script>
   <script src="assets/js/item-picker.js"></script>
   <script>
-    // === State ===
-    let doc = null;
-    let lines = [];
-    let allDocs = [];
-    let currentIdx = 0;
-    let isEditing = false;
-    let isNew = false;
-    let allProjects = [];
-
-    const params = new URLSearchParams(location.search);
-    const docId = params.get('id');
-    const mode = params.get('mode');
+    var doc = null, lines = [], allDocs = [], currentIdx = 0;
+    var isEditing = false, isNew = false, allProjects = [];
+    var params = new URLSearchParams(location.search);
+    var docId = params.get('id'), mode = params.get('mode');
 
     function money(n) { return (parseFloat(n)||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-    // === Init ===
+    // === Init: await ALL master data before render ===
     async function init() {
-      await Promise.all([loadMasterItems(), loadProjects(), loadMasterCustomers()]);
-      allDocs = await API.get('/quotations').catch(()=>[]);
+      await Promise.all([loadMasterItems(), loadMasterCustomers(), loadProjects()]);
+      allDocs = await API.get('/quotations').catch(function() { return []; });
       if (!Array.isArray(allDocs)) allDocs = [];
 
       if (mode === 'new') {
@@ -149,13 +98,28 @@
         currentIdx = allDocs.length;
       } else if (docId) {
         doc = await API.get('/quotations/' + docId);
-        lines = (doc.items || []).map(it => ({...it}));
-        currentIdx = allDocs.findIndex(d => d.id === docId);
+        lines = (doc.items || []).map(function(it) { return Object.assign({}, it); });
+        currentIdx = allDocs.findIndex(function(d) { return d.id === docId; });
         if (currentIdx < 0) currentIdx = 0;
       } else if (allDocs.length) {
-        await loadDoc(0);
+        await loadDocByIdx(0);
       }
       render();
+      // Handle copy
+      var copyId = params.get('copy');
+      if (copyId && isNew) {
+        try {
+          var src = await API.get('/quotations/' + copyId);
+          doc.customer_name = src.customer_name; doc.customer_phone = src.customer_phone;
+          doc.customer_address = src.customer_address; doc.site_name = src.site_name;
+          doc.system_capacity = src.system_capacity; doc.roof_type = src.roof_type;
+          doc.roof_area = src.roof_area; doc.project_id = src.project_id;
+          doc.terms = src.terms; doc.notes = src.notes;
+          doc.discount_pct = src.discount_pct; doc.validity_days = src.validity_days;
+          lines = (src.items || []).map(function(it) { return Object.assign({}, it, {id:undefined}); });
+          render();
+        } catch(e) {}
+      }
     }
 
     async function loadProjects() {
@@ -163,33 +127,28 @@
       catch(e) { allProjects = []; }
     }
 
-    async function loadDoc(idx) {
+    async function loadDocByIdx(idx) {
       if (idx < 0 || idx >= allDocs.length) return;
       currentIdx = idx;
-      const d = allDocs[idx];
-      doc = await API.get('/quotations/' + d.id);
-      lines = (doc.items || []).map(it => ({...it}));
+      doc = await API.get('/quotations/' + allDocs[idx].id);
+      lines = (doc.items || []).map(function(it) { return Object.assign({}, it); });
       isNew = false; isEditing = false;
     }
 
     function navDoc(dir) {
       var newIdx = currentIdx + dir;
       if (newIdx < 0 || newIdx >= allDocs.length) return;
-      loadDoc(newIdx).then(render);
+      loadDocByIdx(newIdx).then(render);
     }
 
     // === Render ===
     function render() {
       if (!doc) return;
-      // Nav info
       document.getElementById('doc-nav-info').textContent = (currentIdx + 1) + ' / ' + (isNew ? allDocs.length + 1 : allDocs.length);
-
-      // Status badge
       var st = doc.status || 'draft';
       var stColors = { draft:'background:#e2e3e5;color:#383d41', sent:'background:#dbeafe;color:#1d4ed8', accepted:'background:#d4edda;color:#155724', rejected:'background:#f8d7da;color:#721c24' };
-      document.getElementById('statusBadge').innerHTML = '<span style="' + (stColors[st]||stColors.draft) + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">' + st + '</span>';
+      document.getElementById('statusBadge').innerHTML = '<span style="' + (stColors[st]||stColors.draft) + ';padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;">' + st.toUpperCase() + '</span>';
       document.getElementById('docNumber').textContent = doc.sq_number || (isNew ? 'NEW' : '-');
-
       renderFormFields();
       renderLines();
       renderTotals();
@@ -198,67 +157,65 @@
     }
 
     function renderFormFields() {
-      var projOpts = '<option value="">-</option>' + allProjects.map(function(p) {
-        return '<option value="' + p.id + '"' + (doc.project_id === p.id ? ' selected' : '') + '>' + (p.code||'') + ' - ' + (p.name||'') + '</option>';
-      }).join('');
-
-      var roofOpts = ['','metal_sheet','tile','concrete'].map(function(v) {
-        var labels = {'':'--','metal_sheet':'Metal Sheet','tile':'Tile','concrete':'Concrete'};
-        return '<option value="' + v + '"' + (doc.roof_type === v ? ' selected' : '') + '>' + labels[v] + '</option>';
-      }).join('');
-
+      var h = '';
       if (isEditing) {
-        document.getElementById('formFields').innerHTML =
-          fg('SQ Number', doc.sq_number || 'Auto', true) +
-          fgInput('Document Date', 'date', 'fDate', doc.created_at ? doc.created_at.substring(0,10) : new Date().toISOString().substring(0,10)) +
-          fgInput('Validity (days)', 'number', 'fValidity', doc.validity_days || 30) +
-          fgInput('Discount %', 'number', 'fDiscPct', doc.discount_pct || 0, 'onchange="calcTotals()"') +
-          '<div class="fg"><label>Customer</label><select id="fCustName" class="searchable" onchange="onCustomerSelect(this)">' + buildCustomerOptions(doc.customer_name) + '</select></div>' +
-          fgInput('Phone', 'text', 'fCustPhone', doc.customer_phone || '') +
-          '<div class="fg" style="grid-column:span 2"><label>Address</label><input id="fCustAddr" value="' + (doc.customer_address||'').replace(/"/g,'&quot;') + '"></div>' +
-          fgInput('Site Name', 'text', 'fSiteName', doc.site_name || '') +
-          fgInput('Capacity (kWp)', 'number', 'fCapacity', doc.system_capacity || '') +
-          '<div class="fg"><label>Roof Type</label><select id="fRoofType">' + roofOpts + '</select></div>' +
-          fgInput('Roof Area (sqm)', 'number', 'fRoofArea', doc.roof_area || '') +
-          '<div class="fg"><label>Project</label><select id="fProject">' + projOpts + '</select></div>' +
-          '<div class="fg" style="grid-column:span 2"><label>Terms</label><input id="fTerms" value="' + (doc.terms||'').replace(/"/g,'&quot;') + '"></div>' +
-          '<div class="fg" style="grid-column:span 2"><label>Notes</label><input id="fNotes" value="' + (doc.notes||'').replace(/"/g,'&quot;') + '"></div>';
+        var projOpts = '<option value="">-</option>' + allProjects.map(function(p) {
+          return '<option value="' + p.id + '"' + (doc.project_id === p.id ? ' selected' : '') + '>' + (p.code||'') + ' - ' + (p.name||'') + '</option>';
+        }).join('');
+        var roofOpts = ['','metal_sheet','tile','concrete'].map(function(v) {
+          var lb = {'':'--','metal_sheet':'Metal Sheet','tile':'Tile','concrete':'Concrete'};
+          return '<option value="' + v + '"' + (doc.roof_type === v ? ' selected' : '') + '>' + lb[v] + '</option>';
+        }).join('');
+
+        h += field('SQ Number', '<div class="read-val">' + (doc.sq_number||'Auto') + '</div>');
+        h += fieldInput('Document Date', 'date', 'fDate', doc.created_at ? doc.created_at.substring(0,10) : new Date().toISOString().substring(0,10));
+        h += fieldInput('Validity (days)', 'number', 'fValidity', doc.validity_days || 30);
+        h += fieldInput('Discount %', 'number', 'fDiscPct', doc.discount_pct || 0, 'onchange="renderTotals()"');
+        h += '<div class="doc-field"><label>Customer</label><select id="fCustName" class="searchable" onchange="onCustomerSelect(this)">' + buildCustomerOptions(doc.customer_name) + '</select></div>';
+        h += fieldInput('Phone', 'text', 'fCustPhone', doc.customer_phone || '');
+        h += '<div class="doc-field span-2"><label>Address</label><input id="fCustAddr" value="' + esc(doc.customer_address) + '"></div>';
+        h += fieldInput('Site Name', 'text', 'fSiteName', doc.site_name || '');
+        h += fieldInput('Capacity (kWp)', 'number', 'fCapacity', doc.system_capacity || '');
+        h += '<div class="doc-field"><label>Roof Type</label><select id="fRoofType">' + roofOpts + '</select></div>';
+        h += fieldInput('Roof Area (sqm)', 'number', 'fRoofArea', doc.roof_area || '');
+        h += '<div class="doc-field"><label>Project</label><select id="fProject">' + projOpts + '</select></div>';
+        h += '<div class="doc-field span-2"><label>Terms</label><input id="fTerms" value="' + esc(doc.terms) + '"></div>';
+        h += '<div class="doc-field span-4"><label>Notes</label><input id="fNotes" value="' + esc(doc.notes) + '"></div>';
       } else {
-        document.getElementById('formFields').innerHTML =
-          fg('SQ Number', doc.sq_number || '-') +
-          fg('Date', doc.created_at ? new Date(doc.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}) : '-') +
-          fg('Validity', (doc.validity_days||30) + ' days') +
-          fg('Grand Total', fmtMoney(doc.grand_total||0)) +
-          fg('Customer', doc.customer_name || '-') +
-          fg('Phone', doc.customer_phone || '-') +
-          fg('Address', doc.customer_address || '-', false, 2) +
-          fg('Site', doc.site_name || '-') +
-          fg('Capacity', (doc.system_capacity||'-') + ' kWp') +
-          fg('Roof', doc.roof_type || '-') +
-          fg('Roof Area', (doc.roof_area||'-') + ' sqm') +
-          fg('Project', doc.project_code ? doc.project_code + ' - ' + (doc.project_name||'') : '-') +
-          fg('Terms', doc.terms || '-', false, 2) +
-          fg('Notes', doc.notes || '-', false, 2);
+        h += readField('SQ Number', doc.sq_number || '-');
+        h += readField('Date', doc.created_at ? new Date(doc.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}) : '-');
+        h += readField('Validity', (doc.validity_days||30) + ' days');
+        h += readField('Grand Total', fmtMoney(doc.grand_total||0));
+        h += readField('Customer', doc.customer_name || '-');
+        h += readField('Phone', doc.customer_phone || '-');
+        h += readField('Address', doc.customer_address || '-', 2);
+        h += readField('Site', doc.site_name || '-');
+        h += readField('Capacity', (doc.system_capacity||'-') + ' kWp');
+        h += readField('Roof', doc.roof_type || '-');
+        h += readField('Roof Area', (doc.roof_area||'-') + ' sqm');
+        h += readField('Project', doc.project_code ? doc.project_code + ' - ' + (doc.project_name||'') : '-');
+        h += readField('Terms', doc.terms || '-', 2);
+        h += readField('Notes', doc.notes || '-', 4);
       }
+      document.getElementById('formFields').innerHTML = h;
 
-      // Init searchable on customer dropdown
+      // Init searchable dropdowns after DOM update
       if (isEditing) {
-        setTimeout(function() {
+        requestAnimationFrame(function() {
           var custSel = document.getElementById('fCustName');
           if (custSel && custSel.dataset.searchable !== 'done') makeSearchable(custSel);
-        }, 60);
+        });
       }
     }
 
-    function fg(label, val, readonly, span) {
-      return '<div class="fg"' + (span ? ' style="grid-column:span '+span+'"' : '') + '><label>' + label + '</label><div class="val">' + (val||'-') + '</div></div>';
-    }
-    function fgInput(label, type, id, val, extra) {
-      return '<div class="fg"><label>' + label + '</label><input type="' + type + '" id="' + id + '" value="' + (val||'') + '" ' + (extra||'') + '></div>';
-    }
+    function esc(s) { return (s||'').replace(/"/g,'&quot;'); }
+    function field(label, html) { return '<div class="doc-field"><label>' + label + '</label>' + html + '</div>'; }
+    function fieldInput(label, type, id, val, extra) { return '<div class="doc-field"><label>' + label + '</label><input type="' + type + '" id="' + id + '" value="' + (val===null||val===undefined?'':val) + '" ' + (extra||'') + '></div>'; }
+    function readField(label, val, span) { return '<div class="doc-field' + (span ? ' span-'+span : '') + '"><label>' + label + '</label><div class="read-val">' + (val||'-') + '</div></div>'; }
 
     function renderLines() {
-      document.getElementById('lines-head').innerHTML = '<tr><th style="width:36px">#</th><th style="min-width:140px">Item Code</th><th style="min-width:180px">Description</th><th class="num" style="width:70px">Qty</th><th style="width:70px">UoM</th><th class="num" style="width:110px">Unit Price</th><th class="num" style="width:110px">Total</th>' + (isEditing ? '<th style="width:36px"></th>' : '') + '</tr>';
+      var ec = isEditing ? '<th style="width:36px"></th>' : '';
+      document.getElementById('lines-head').innerHTML = '<tr><th style="width:40px">#</th><th style="width:28%">Item Code</th><th style="width:22%">Description</th><th class="num" style="width:8%">Qty</th><th style="width:8%">UoM</th><th class="num" style="width:12%">Unit Price</th><th class="num" style="width:12%">Total</th>' + ec + '</tr>';
 
       if (!lines.length && !isEditing) {
         document.getElementById('lines-body').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">No line items</td></tr>';
@@ -268,12 +225,12 @@
           if (isEditing) {
             return '<tr>' +
               '<td class="row-num">' + (i+1) + '</td>' +
-              '<td><select class="searchable item-code-select" style="min-width:120px" onchange="onLineItemSelect(this,' + i + ')">' + buildItemOptions(l.item_code) + '</select></td>' +
-              '<td><input value="' + (l.item_name||'').replace(/"/g,'&quot;') + '" data-field="item_name"></td>' +
-              '<td class="num"><input type="number" value="' + (l.qty||1) + '" min="0" style="width:60px" onchange="updateLineQty(' + i + ',this.value)"></td>' +
+              '<td><select class="searchable item-code-select" onchange="onLineItemSelect(this,' + i + ')">' + buildItemOptions(l.item_code) + '</select></td>' +
+              '<td><input value="' + esc(l.item_name) + '" data-field="item_name"></td>' +
+              '<td class="num"><input type="number" value="' + (l.qty||1) + '" min="0" style="width:60px" onchange="updateLineField(' + i + ',\'qty\',this.value)"></td>' +
               '<td><input value="' + (l.unit||l.uom||'EA') + '" data-field="uom" style="width:60px"></td>' +
-              '<td class="num"><input type="number" value="' + (l.unit_price||0) + '" step="0.01" data-field="price" onchange="updateLinePrice(' + i + ',this.value)"></td>' +
-              '<td class="num" style="font-weight:700">' + money(total) + '</td>' +
+              '<td class="num"><input type="number" value="' + (l.unit_price||0) + '" step="0.01" data-field="price" onchange="updateLineField(' + i + ',\'price\',this.value)"></td>' +
+              '<td class="num" style="font-weight:700" data-cell="total">' + money(total) + '</td>' +
               '<td class="row-action"><button onclick="removeLine(' + i + ')">&times;</button></td>' +
               '</tr>';
           } else {
@@ -292,7 +249,7 @@
 
       document.getElementById('btn-add-line').style.display = isEditing ? '' : 'none';
 
-      // Init searchable on new selects — use rAF for reliable timing
+      // Init searchable on item selects
       if (isEditing) {
         requestAnimationFrame(function() {
           document.querySelectorAll('#lines-body select.searchable:not([data-searchable="done"])')
@@ -308,12 +265,11 @@
       var afterDisc = subtotal - discAmt;
       var vatAmt = Math.round(afterDisc * 0.07 * 100) / 100;
       var grand = afterDisc + vatAmt;
-
       document.getElementById('totalsBox').innerHTML =
-        '<div class="trow"><span>Subtotal</span><span>' + money(subtotal) + '</span></div>' +
-        (discAmt ? '<div class="trow"><span>Discount ' + discPct + '%</span><span>-' + money(discAmt) + '</span></div>' : '') +
-        '<div class="trow"><span>VAT 7%</span><span>' + money(vatAmt) + '</span></div>' +
-        '<div class="trow grand"><span>Grand Total</span><span>' + money(grand) + '</span></div>';
+        '<div class="doc-totals-row"><span>Subtotal</span><span>' + money(subtotal) + '</span></div>' +
+        (discAmt ? '<div class="doc-totals-row"><span>Discount ' + discPct + '%</span><span>-' + money(discAmt) + '</span></div>' : '') +
+        '<div class="doc-totals-row"><span>VAT 7%</span><span>' + money(vatAmt) + '</span></div>' +
+        '<div class="doc-totals-row grand"><span>Grand Total</span><span>' + money(grand) + '</span></div>';
     }
 
     function renderTopActions() {
@@ -326,8 +282,8 @@
         h += '<button class="btn btn-secondary btn-sm" onclick="startEdit()">Edit</button>';
         if (st === 'draft') h += '<button class="btn btn-primary btn-sm" onclick="changeStatus(\'sent\')">Send to Customer</button>';
         if (st === 'sent') {
-          h += '<button class="btn btn-success btn-sm" onclick="changeStatus(\'accepted\')">Customer Accepted</button>';
-          h += '<button class="btn btn-danger btn-sm" onclick="changeStatus(\'rejected\')">Customer Rejected</button>';
+          h += '<button class="btn btn-success btn-sm" onclick="changeStatus(\'accepted\')">Accepted</button>';
+          h += '<button class="btn btn-danger btn-sm" onclick="changeStatus(\'rejected\')">Rejected</button>';
         }
         h += '<button class="btn btn-secondary btn-sm" onclick="printSQ()">Print</button>';
         if (st === 'accepted' || st === 'rejected') h += '<button class="btn btn-secondary btn-sm" onclick="copyToNew()">Copy to New</button>';
@@ -336,74 +292,52 @@
     }
 
     function renderBottomTabs() {
-      // Info tab
-      var info = '<div style="font-size:12px;color:var(--text-secondary);line-height:1.8;">';
-      info += '<strong>Created:</strong> ' + (doc.created_at ? new Date(doc.created_at).toLocaleString('th-TH') : '-') + '<br>';
-      info += '<strong>Updated:</strong> ' + (doc.updated_at ? new Date(doc.updated_at).toLocaleString('th-TH') : '-') + '<br>';
-      info += '<strong>Created by:</strong> ' + (doc.created_by_name || '-') + '<br>';
-      info += '<strong>Status:</strong> ' + (doc.status || '-');
-      info += '</div>';
-      document.getElementById('tab-info').innerHTML = info;
-
-      // Print preview
+      document.getElementById('tab-info').innerHTML = '<div style="line-height:2;color:var(--text-secondary);">' +
+        '<strong>Created:</strong> ' + (doc.created_at ? new Date(doc.created_at).toLocaleString('th-TH') : '-') + '<br>' +
+        '<strong>Updated:</strong> ' + (doc.updated_at ? new Date(doc.updated_at).toLocaleString('th-TH') : '-') + '<br>' +
+        '<strong>Created by:</strong> ' + (doc.created_by_name || '-') + '<br>' +
+        '<strong>Status:</strong> ' + (doc.status || '-') + '</div>';
       document.getElementById('tab-print').innerHTML = '<div style="text-align:center;padding:20px;"><button class="btn btn-primary" onclick="printSQ()">Print Quotation</button></div>';
     }
 
     function switchTab(tab, el) {
-      document.querySelectorAll('.btab').forEach(function(t) { t.classList.remove('active'); });
-      document.querySelectorAll('.btab-panel').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.doc-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.doc-tab-panel').forEach(function(t) { t.classList.remove('active'); });
       el.classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
     }
 
-    // === Line Item Actions ===
+    // === Line Item Actions (update DOM directly, no re-render) ===
     function addLine() {
       lines.push({ item_code:'', item_name:'', qty:1, unit:'EA', unit_price:0, total:0 });
       renderLines();
       renderTotals();
-      setTimeout(function() {
+      requestAnimationFrame(function() {
         var rows = document.querySelectorAll('#lines-body tr');
         var last = rows[rows.length - 1];
         if (last) {
-          last.querySelectorAll('select.searchable:not([data-searchable="done"])').forEach(function(s) { makeSearchable(s); });
           var inp = last.querySelector('.ss-wrapper input');
           if (inp) inp.focus();
         }
-      }, 100);
+      });
     }
 
-    function removeLine(i) {
-      lines.splice(i, 1);
-      renderLines();
-      renderTotals();
-    }
+    function removeLine(i) { lines.splice(i, 1); renderLines(); renderTotals(); }
 
-    function updateLineQty(i, val) {
-      lines[i].qty = parseFloat(val) || 0;
-      lines[i].total = lines[i].qty * parseFloat(lines[i].unit_price || 0);
+    function updateLineField(i, field, val) {
+      var v = parseFloat(val) || 0;
+      if (field === 'qty') lines[i].qty = v;
+      if (field === 'price') lines[i].unit_price = v;
+      lines[i].total = (parseFloat(lines[i].qty)||0) * (parseFloat(lines[i].unit_price)||0);
       // Update total cell directly
       var rows = document.querySelectorAll('#lines-body tr');
       if (rows[i]) {
-        var totalCells = rows[i].querySelectorAll('td.num');
-        var lastNum = totalCells[totalCells.length - 1];
-        if (lastNum) lastNum.textContent = money(lines[i].total);
+        var tc = rows[i].querySelector('[data-cell="total"]');
+        if (tc) tc.textContent = money(lines[i].total);
       }
       renderTotals();
     }
 
-    function updateLinePrice(i, val) {
-      lines[i].unit_price = parseFloat(val) || 0;
-      lines[i].total = (parseFloat(lines[i].qty) || 0) * lines[i].unit_price;
-      var rows = document.querySelectorAll('#lines-body tr');
-      if (rows[i]) {
-        var totalCells = rows[i].querySelectorAll('td.num');
-        var lastNum = totalCells[totalCells.length - 1];
-        if (lastNum) lastNum.textContent = money(lines[i].total);
-      }
-      renderTotals();
-    }
-
-    // FIX BUG 4: update DOM directly, don't re-render entire table
     function onLineItemSelect(sel, i) {
       var opt = sel.options[sel.selectedIndex];
       if (!opt || !opt.value) return;
@@ -412,7 +346,7 @@
       lines[i].unit = opt.dataset.uom || 'EA';
       lines[i].unit_price = parseFloat(opt.dataset.price) || 0;
       lines[i].total = (parseFloat(lines[i].qty) || 1) * lines[i].unit_price;
-
+      // Update DOM directly
       var row = sel.closest('tr');
       if (row) {
         var nameInp = row.querySelector('[data-field="item_name"]');
@@ -421,14 +355,11 @@
         if (nameInp) nameInp.value = lines[i].item_name;
         if (uomInp) uomInp.value = lines[i].unit;
         if (priceInp) priceInp.value = lines[i].unit_price;
-        var totalCells = row.querySelectorAll('td.num');
-        var lastNum = totalCells[totalCells.length - 1];
-        if (lastNum) lastNum.textContent = money(lines[i].total);
+        var tc = row.querySelector('[data-cell="total"]');
+        if (tc) tc.textContent = money(lines[i].total);
       }
       renderTotals();
     }
-
-    function calcTotals() { renderTotals(); }
 
     // === Edit / Save ===
     function startEdit() { isEditing = true; render(); }
@@ -439,11 +370,10 @@
       var discPct = parseFloat(document.getElementById('fDiscPct')?.value) || 0;
       var discAmt = Math.round(subtotal * discPct / 100 * 100) / 100;
       var afterDisc = subtotal - discAmt;
-      var vatPct = 7;
-      var vatAmt = Math.round(afterDisc * vatPct / 100 * 100) / 100;
+      var vatAmt = Math.round(afterDisc * 0.07 * 100) / 100;
       var grand = afterDisc + vatAmt;
 
-      // FIX BUG 3: Read line items using specific selectors
+      // Read lines from DOM using specific selectors
       var domLines = [];
       document.querySelectorAll('#lines-body tr').forEach(function(row) {
         var itemSel = row.querySelector('select.item-code-select');
@@ -461,13 +391,11 @@
         });
       });
 
-      // FIX BUG 4: read customer name from select option text
       var custSel = document.getElementById('fCustName');
       var custOpt = custSel?.selectedOptions?.[0];
-      var custName = custOpt?.dataset?.name || custSel?.value || null;
 
       return {
-        customer_name: custName,
+        customer_name: custOpt?.dataset?.name || custSel?.value || null,
         customer_phone: document.getElementById('fCustPhone')?.value || null,
         customer_address: document.getElementById('fCustAddr')?.value || null,
         site_name: document.getElementById('fSiteName')?.value || null,
@@ -478,12 +406,8 @@
         terms: document.getElementById('fTerms')?.value || null,
         notes: document.getElementById('fNotes')?.value || null,
         validity_days: parseInt(document.getElementById('fValidity')?.value) || 30,
-        subtotal: subtotal,
-        discount_pct: discPct,
-        discount_amt: discAmt,
-        vat_pct: vatPct,
-        vat_amt: vatAmt,
-        grand_total: grand,
+        subtotal: subtotal, discount_pct: discPct, discount_amt: discAmt,
+        vat_pct: 7, vat_amt: vatAmt, grand_total: grand,
         items: domLines.length ? domLines : lines,
       };
     }
@@ -493,7 +417,7 @@
       try {
         if (isNew) {
           var result = await API.post('/quotations', data);
-          showToast('Quotation created: ' + (result.sq_number||''), 'success');
+          showToast('Created: ' + (result.sq_number||''), 'success');
           window.location = 'sq-detail.html?id=' + result.id;
         } else {
           await API.put('/quotations/' + doc.id, data);
@@ -507,89 +431,43 @@
     }
 
     async function changeStatus(newStatus) {
-      var labels = { sent:'Send this quotation to customer?', accepted:'Mark as customer accepted?', rejected:'Mark as customer rejected?' };
-      if (!confirm(labels[newStatus] || 'Change status?')) return;
+      var msg = { sent:'Send this quotation?', accepted:'Mark as accepted?', rejected:'Mark as rejected?' };
+      if (!confirm(msg[newStatus] || 'Change status?')) return;
       try {
         await API.put('/quotations/' + doc.id, { status: newStatus });
         showToast('Status updated', 'success');
-        doc.status = newStatus;
-        render();
+        doc.status = newStatus; render();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
-    function copyToNew() {
-      // Pre-fill new quotation with current data
-      window.location = 'sq-detail.html?mode=new&copy=' + doc.id;
-    }
+    function copyToNew() { window.location = 'sq-detail.html?mode=new&copy=' + doc.id; }
 
-    // === Print (from quotation.html) ===
     function printSQ() {
-      var sq = doc;
-      var items = lines;
-      var subtotal = items.reduce(function(s,it) { return s + (parseFloat(it.qty)||0) * (parseFloat(it.unit_price)||0); }, 0);
-      var discAmt = parseFloat(sq.discount_amt) || 0;
-      var vatAmt = parseFloat(sq.vat_amt) || 0;
-      var grand = parseFloat(sq.grand_total) || 0;
-
+      var sq = doc, items = lines;
+      var subtotal = items.reduce(function(s,it) { return s + (parseFloat(it.qty)||0)*(parseFloat(it.unit_price)||0); }, 0);
+      var discAmt = parseFloat(sq.discount_amt)||0, vatAmt = parseFloat(sq.vat_amt)||0, grand = parseFloat(sq.grand_total)||0;
       var h = '<div style="max-width:800px;margin:0 auto;padding:40px;font-family:sans-serif;font-size:14px">' +
         '<div style="text-align:center;margin-bottom:30px"><h1 style="font-size:20px;margin:0">Sales Quotation</h1><p style="font-size:13px;color:#666;margin:4px 0">' + (sq.sq_number||'') + '</p></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;font-size:13px">' +
-          '<div><strong>Customer:</strong> ' + (sq.customer_name||'-') + '<br><strong>Phone:</strong> ' + (sq.customer_phone||'-') + '<br><strong>Address:</strong> ' + (sq.customer_address||'-') + '</div>' +
-          '<div style="text-align:right"><strong>Site:</strong> ' + (sq.site_name||'-') + '<br><strong>Capacity:</strong> ' + (sq.system_capacity||'-') + ' kWp<br><strong>Valid:</strong> ' + (sq.validity_days||30) + ' days</div>' +
-        '</div>' +
-        '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px"><thead><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left;border-bottom:2px solid #333">#</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">Code</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">Description</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">Qty</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">Unit</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">Price</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">Total</th></tr></thead><tbody>' +
-        items.map(function(it,i) {
-          var t = (parseFloat(it.qty)||0) * (parseFloat(it.unit_price)||0);
-          return '<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">' + (i+1) + '</td><td style="padding:6px 8px;border-bottom:1px solid #eee">' + (it.item_code||'') + '</td><td style="padding:6px 8px;border-bottom:1px solid #eee">' + (it.item_name||'') + '</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">' + (it.qty||0) + '</td><td style="padding:6px 8px;border-bottom:1px solid #eee">' + (it.unit||'') + '</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">' + Number(it.unit_price||0).toLocaleString() + '</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">' + Number(t).toLocaleString() + '</td></tr>';
-        }).join('') +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;font-size:13px"><div><strong>Customer:</strong> ' + (sq.customer_name||'-') + '<br><strong>Phone:</strong> ' + (sq.customer_phone||'-') + '<br><strong>Address:</strong> ' + (sq.customer_address||'-') + '</div><div style="text-align:right"><strong>Site:</strong> ' + (sq.site_name||'-') + '<br><strong>Capacity:</strong> ' + (sq.system_capacity||'-') + ' kWp<br><strong>Valid:</strong> ' + (sq.validity_days||30) + ' days</div></div>' +
+        '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px"><thead><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left;border-bottom:2px solid #333">#</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">Code</th><th style="padding:8px;text-align:left;border-bottom:2px solid #333">Description</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">Qty</th><th style="padding:8px;border-bottom:2px solid #333">Unit</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">Price</th><th style="padding:8px;text-align:right;border-bottom:2px solid #333">Total</th></tr></thead><tbody>' +
+        items.map(function(it,i) { var t=(parseFloat(it.qty)||0)*(parseFloat(it.unit_price)||0); return '<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">'+(i+1)+'</td><td style="padding:6px 8px;border-bottom:1px solid #eee">'+(it.item_code||'')+'</td><td style="padding:6px 8px;border-bottom:1px solid #eee">'+(it.item_name||'')+'</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">'+(it.qty||0)+'</td><td style="padding:6px 8px;border-bottom:1px solid #eee">'+(it.unit||'')+'</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">'+Number(it.unit_price||0).toLocaleString()+'</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">'+Number(t).toLocaleString()+'</td></tr>'; }).join('') +
         '</tbody></table>' +
-        '<div style="width:300px;margin-left:auto;font-size:13px">' +
-          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Subtotal</span><span>' + Number(subtotal).toLocaleString() + '</span></div>' +
-          (discAmt ? '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Discount</span><span>-' + Number(discAmt).toLocaleString() + '</span></div>' : '') +
-          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>VAT 7%</span><span>' + Number(vatAmt).toLocaleString() + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #333;font-size:16px;font-weight:800"><span>Grand Total</span><span>B' + Number(grand).toLocaleString() + '</span></div>' +
-        '</div>' +
-        (sq.terms ? '<div style="margin-top:20px;font-size:12px;color:#666"><strong>Terms:</strong> ' + sq.terms + '</div>' : '') +
-      '</div>';
-
-      var printArea = document.getElementById('printArea');
-      printArea.innerHTML = h;
-      printArea.style.display = 'block';
+        '<div style="width:300px;margin-left:auto;font-size:13px"><div style="display:flex;justify-content:space-between;padding:4px 0"><span>Subtotal</span><span>'+Number(subtotal).toLocaleString()+'</span></div>' +
+        (discAmt?'<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Discount</span><span>-'+Number(discAmt).toLocaleString()+'</span></div>':'') +
+        '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>VAT 7%</span><span>'+Number(vatAmt).toLocaleString()+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #333;font-size:16px;font-weight:800"><span>Grand Total</span><span>B'+Number(grand).toLocaleString()+'</span></div></div>' +
+        (sq.terms?'<div style="margin-top:20px;font-size:12px;color:#666"><strong>Terms:</strong> '+sq.terms+'</div>':'') +
+        '</div>';
+      var pa = document.getElementById('printArea');
+      pa.innerHTML = h; pa.style.display = 'block';
       window.print();
-      setTimeout(function() { printArea.style.display = 'none'; }, 500);
+      setTimeout(function() { pa.style.display = 'none'; }, 500);
     }
 
-    // === Copy support ===
-    async function handleCopy() {
-      var copyId = params.get('copy');
-      if (!copyId || !isNew) return;
-      try {
-        var src = await API.get('/quotations/' + copyId);
-        doc.customer_name = src.customer_name;
-        doc.customer_phone = src.customer_phone;
-        doc.customer_address = src.customer_address;
-        doc.site_name = src.site_name;
-        doc.system_capacity = src.system_capacity;
-        doc.roof_type = src.roof_type;
-        doc.roof_area = src.roof_area;
-        doc.project_id = src.project_id;
-        doc.terms = src.terms;
-        doc.notes = src.notes;
-        doc.discount_pct = src.discount_pct;
-        doc.validity_days = src.validity_days;
-        lines = (src.items || []).map(function(it) { return Object.assign({}, it, {id:undefined}); });
-        render();
-      } catch(e) {}
-    }
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && isEditing && !isNew) cancelEdit(); });
 
-    // === Keyboard shortcuts ===
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && isEditing && !isNew) cancelEdit();
-    });
-
-    // === Boot ===
     if (!API.requireAuth()) throw new Error('Not authenticated');
-    init().then(function() { handleCopy(); });
+    init();
   </script>
 </body>
 </html>
