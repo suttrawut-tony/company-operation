@@ -557,8 +557,8 @@
           <div class="exp-actions" onclick="event.stopPropagation();">
             ${e.status === 'draft' ? '<button class="btn btn-sm btn-primary" onclick="submitExpense(\''+e.id+'\')">Submit</button>' : ''}
             ${e.status.includes('pending') ? '<button class="btn btn-sm btn-success" onclick="approveExpense(\''+e.id+'\')">Approve</button>' : ''}
-            ${(e.status === 'draft' && (e.requester_id === userId || ['finance','executive'].includes(userRole))) ? '<a class="btn btn-sm btn-secondary" href="doc-detail.html?type=expense&id='+e.id+'&mode=edit" onclick="event.stopPropagation();" style="font-size:11px;">&#9998;</a>' : ''}
-            ${(e.status === 'draft' && (e.requester_id === userId || ['finance','executive'].includes(userRole))) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteExpense(\''+e.id+'\',\''+e.doc_number+'\')">&#128465;</button>' : ''}
+            ${(e.status === 'draft' && (e.created_by === userId || ['finance','executive'].includes(userRole))) ? '<a class="btn btn-sm btn-secondary" href="doc-detail.html?type=expense&id='+e.id+'&mode=edit" onclick="event.stopPropagation();" style="font-size:11px;">&#9998;</a>' : ''}
+            ${(e.status === 'draft' && (e.created_by === userId || ['finance','executive'].includes(userRole))) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteExpense(\''+e.id+'\',\''+e.doc_number+'\')">&#128465;</button>' : ''}
           </div>
         </div>`;
       }).join('');

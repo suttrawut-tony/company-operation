@@ -456,19 +456,22 @@
       if (currentCol && currentCol.dropStatus === newStatus) return; // same column, no-op
 
       const pr = allPRs.find(p => p.id === draggedCardId);
-      if (!pr) return;
-      const oldStatus = pr.status;
+      const po = allPOs.find(p => p.id === draggedCardId);
+      const item = pr || po;
+      if (!item) return;
+      const oldStatus = item.status;
+      const endpoint = pr ? '/pr/' : '/po/';
 
       // Optimistic update — move card instantly
-      pr.status = newStatus;
+      item.status = newStatus;
       refresh();
 
       // Save to server in background
       try {
-        await API.put('/pr/' + draggedCardId, { status: newStatus });
+        await API.put(endpoint + draggedCardId, { status: newStatus });
       } catch (err) {
         // Rollback on failure
-        pr.status = oldStatus;
+        item.status = oldStatus;
         refresh();
         showToast('Failed to update status: ' + (err.message || err), 'error');
       }

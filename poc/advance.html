@@ -532,7 +532,7 @@
               const diffLabel = s.settlement_type === 'reimburse' ? 'Company owes employee' : s.settlement_type === 'return' ? 'Employee returns' : 'Exact match';
               clrHtml += `<div style="padding:8px;background:var(--bg-white);border-radius:var(--radius);margin-bottom:6px;border:1px solid var(--border-light);">
                 <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px;">
-                  <span>${s.doc_number} ${statusBadge(s.status)} ${s.status==='pending_finance'&&['finance','executive'].includes(userRole)?'<button class="btn btn-success btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();approveClear(\''+s.id+'\')">Approve Clear</button>':''}</span>
+                  <span>${s.doc_number} ${statusBadge(s.status)} ${s.status==='pending_finance'&&['finance','executive'].includes(userRole)?'<button class="btn btn-success btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();approveClear(\''+s.id+'\')">Approve</button> <button class="btn btn-sm" style="margin-left:4px;background:var(--danger);color:#fff;" onclick="event.stopPropagation();rejectClear(\''+s.id+'\')">Reject</button>':''}</span>
                   <span>Total: ฿${fmtNum(parseFloat(s.total_expense))}</span>
                 </div>
                 <table style="width:100%;border-collapse:collapse;font-size:11px;">
@@ -633,8 +633,19 @@
 
     // Approve clearing
     async function approveClear(settlementId) {
-      try { await API.post('/advance/settlement/'+settlementId+'/approve'); await loadData(); }
+      try { await API.post('/advance/settlement/'+settlementId+'/approve'); await loadData(); showToast('Settlement approved'); }
       catch(e) { showToast('Error: '+e.message, 'error'); }
+    }
+
+    // Reject clearing
+    async function rejectClear(settlementId) {
+      const reason = prompt('Reason for rejection:');
+      if (reason === null) return;
+      try {
+        await API.post('/advance/settlement/'+settlementId+'/reject', { reason });
+        await loadData();
+        showToast('Settlement rejected');
+      } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
 

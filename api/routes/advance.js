@@ -3,6 +3,22 @@ const db = require('../db');
 const { authenticate, getUserProjectIds, checkPermission } = require('../middleware/auth');
 router.use(authenticate);
 
+// Helper: run multi-step operations inside a transaction
+async function withTransaction(fn) {
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // ═══ Static routes MUST come before /:id routes ═══
 
 // GET /api/advance/banks/list
@@ -71,37 +87,69 @@ router.post('/settlement/:id/approve', async (req, res) => {
     if (!s) return res.status(404).json({ error: 'Not found' });
     if (s.status !== 'pending_finance') return res.status(400).json({ error: 'Cannot approve at this step' });
 
-    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1', [s.advance_id]);
-    const { rows: sLines } = await db.query('SELECT * FROM settlement_lines WHERE settlement_id=$1 ORDER BY sort_order', [s.id]);
-    const totalExpense = parseFloat(s.total_expense);
-    const difference = parseFloat(s.difference);
+    const result = await withTransaction(async (client) => {
+      const { rows: [adv] } = await client.query('SELECT * FROM advance_requests WHERE id=$1', [s.advance_id]);
+      const { rows: sLines } = await client.query('SELECT * FROM settlement_lines WHERE settlement_id=$1 ORDER BY sort_order', [s.id]);
+      const totalExpense = parseFloat(s.total_expense);
+      const difference = parseFloat(s.difference);
 
-    const { rows: [journal] } = await db.query(
-      `INSERT INTO gl_journals (company_id, doc_type, doc_id, doc_number, remarks, total_debit, total_credit, created_by)
-       VALUES ($1,'advance_settle',$2,$3,$4,$5,$5,$6) RETURNING *`,
-      [req.user.company_id, s.id, s.doc_number, 'Clear - ' + (adv?.doc_number||''), totalExpense, req.user.id]);
+      const { rows: [journal] } = await client.query(
+        `INSERT INTO gl_journals (company_id, doc_type, doc_id, doc_number, remarks, total_debit, total_credit, created_by)
+         VALUES ($1,'advance_settle',$2,$3,$4,$5,$5,$6) RETURNING *`,
+        [req.user.company_id, s.id, s.doc_number, 'Clear - ' + (adv?.doc_number||''), totalExpense, req.user.id]);
 
-    let lineNum = 1;
-    const catAccounts = { travel:'522601', food:'522603', accommodation:'522602', transport:'522701', material:'511120', misc:'522709' };
-    for (const l of sLines) {
-      const glAcct = l.sap_account || catAccounts[l.category] || '522709';
-      await db.query(
-        'INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES ($1,$2,$3,$4,$5,0,$6)',
-        [journal.id, lineNum++, glAcct, l.description || l.category, parseFloat(l.amount), s.doc_number]);
+      let lineNum = 1;
+      const catAccounts = { travel:'522601', food:'522603', accommodation:'522602', transport:'522701', material:'511120', misc:'522709' };
+      for (const l of sLines) {
+        const glAcct = l.sap_account || catAccounts[l.category] || '522709';
+        await client.query(
+          'INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES ($1,$2,$3,$4,$5,0,$6)',
+          [journal.id, lineNum++, glAcct, l.description || l.category, parseFloat(l.amount), s.doc_number]);
+      }
+      const { rows: [emp] } = await client.query("SELECT first_name || ' ' || last_name AS name FROM users WHERE id=$1", [adv?.employee_id]);
+      await client.query(
+        'INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES ($1,$2,$3,$4,0,$5,$6)',
+        [journal.id, lineNum++, '113103', 'Employee Receivable - ' + (emp?.name||''), totalExpense, s.doc_number]);
+
+      const { rows } = await client.query(
+        'UPDATE advance_settlements SET status=$1, approved_by=$2, approved_at=NOW(), journal_id=$3 WHERE id=$4 RETURNING *',
+        ['approved', req.user.id, journal.id, req.params.id]);
+
+      if (difference === 0) {
+        await client.query("UPDATE advance_requests SET status='settled', updated_at=NOW() WHERE id=$1", [s.advance_id]);
+      }
+      return rows[0];
+    });
+
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/advance/settlement/:id/reject — Finance rejects settlement
+router.post('/settlement/:id/reject', async (req, res) => {
+  try {
+    if (!['finance','executive'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Only Finance can reject clearing' });
     }
-    const { rows: [emp] } = await db.query("SELECT first_name || ' ' || last_name AS name FROM users WHERE id=$1", [adv?.employee_id]);
-    await db.query(
-      'INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES ($1,$2,$3,$4,0,$5,$6)',
-      [journal.id, lineNum++, '113103', 'Employee Receivable - ' + (emp?.name||''), totalExpense, s.doc_number]);
+    const { reason } = req.body;
+    const { rows: [s] } = await db.query('SELECT * FROM advance_settlements WHERE id=$1', [req.params.id]);
+    if (!s) return res.status(404).json({ error: 'Not found' });
+    if (s.status !== 'pending_finance') return res.status(400).json({ error: 'Can only reject pending settlements' });
 
-    const { rows } = await db.query(
-      'UPDATE advance_settlements SET status=$1, approved_by=$2, journal_id=$3 WHERE id=$4 RETURNING *',
-      ['approved', req.user.id, journal.id, req.params.id]);
+    await withTransaction(async (client) => {
+      // Reject settlement
+      await client.query(
+        "UPDATE advance_settlements SET status='rejected', remarks=COALESCE(remarks,'') || ' [Rejected: ' || $1 || ']' WHERE id=$2",
+        [reason || 'No reason', req.params.id]);
 
-    if (difference === 0) {
-      await db.query("UPDATE advance_requests SET status='settled', updated_at=NOW() WHERE id=$1", [s.advance_id]);
-    }
-    res.json(rows[0]);
+      // Revert advance: undo settled_amount and balance, set back to 'paid'
+      const totalExpense = parseFloat(s.total_expense);
+      await client.query(
+        "UPDATE advance_requests SET status='paid', settled_amount=GREATEST(0, settled_amount-$1), balance=paid_amount-GREATEST(0, settled_amount-$1), updated_at=NOW() WHERE id=$2",
+        [totalExpense, s.advance_id]);
+    });
+
+    res.json({ rejected: true, settlement_id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -342,7 +390,13 @@ router.post('/:id/pay', async (req, res) => {
     if (!adv) return res.status(404).json({ error: 'Not found' });
     if (adv.status !== 'approved' && adv.status !== 'paid') return res.status(400).json({ error: 'Must be approved first' });
 
-    const payAmt = amount || parseFloat(adv.amount);
+    const payAmt = amount ? parseFloat(amount) : parseFloat(adv.amount);
+    const alreadyPaid = parseFloat(adv.paid_amount || 0);
+    const approvedAmt = parseFloat(adv.amount);
+    if (payAmt <= 0) return res.status(400).json({ error: 'Payment amount must be greater than 0' });
+    if (alreadyPaid + payAmt > approvedAmt * 1.001) {
+      return res.status(400).json({ error: `Payment would exceed approved amount. Approved: ${approvedAmt}, Already paid: ${alreadyPaid}, Attempting: ${payAmt}` });
+    }
     const payDate = payment_date || new Date().toISOString().slice(0, 10);
 
     // Get bank account GL
@@ -475,6 +529,13 @@ router.post('/:id/settle', async (req, res) => {
     if (!adv) return res.status(404).json({ error: 'Not found' });
     if (!['paid','settling','overdue'].includes(adv.status)) return res.status(400).json({ error: 'Advance must be paid first' });
 
+    // Prevent duplicate pending/approved settlements
+    const { rows: existingSettlements } = await db.query(
+      "SELECT id, status FROM advance_settlements WHERE advance_id=$1 AND status IN ('pending_finance','approved')", [req.params.id]);
+    if (existingSettlements.length > 0) {
+      return res.status(400).json({ error: 'This advance already has a pending or approved settlement. Cannot submit another.' });
+    }
+
     // Auto doc number
     const { rows: [series] } = await db.query(
       `INSERT INTO number_series (company_id, doc_type, prefix, year_month, current_number)
@@ -534,40 +595,38 @@ router.post('/:id/receive-return', async (req, res) => {
     const balance = parseFloat(adv.balance || 0);
     if (balance <= 0) return res.status(400).json({ error: 'No outstanding balance to return' });
 
-    // Get bank GL
-    let bankGL = '111201', bankName = 'Bank';
-    if (bank_account_id) {
-      const { rows: [ba] } = await db.query('SELECT * FROM bank_accounts WHERE id=$1', [bank_account_id]);
-      if (ba) { bankGL = ba.gl_account || '111201'; bankName = ba.name; }
-    }
+    const result = await withTransaction(async (client) => {
+      let bankGL = '111201', bankName = 'Bank';
+      if (bank_account_id) {
+        const { rows: [ba] } = await client.query('SELECT * FROM bank_accounts WHERE id=$1', [bank_account_id]);
+        if (ba) { bankGL = ba.gl_account || '111201'; bankName = ba.name; }
+      }
 
-    // Record payment (negative = return)
-    const { rows: [payment] } = await db.query(
-      `INSERT INTO advance_payments (advance_id, amount, payment_method, bank_account_id, reference, remarks, paid_by)
-       VALUES ($1,$2,'return',$3,$4,$5,$6) RETURNING *`,
-      [req.params.id, -balance, bank_account_id, reference, remarks || 'Employee return', req.user.id]);
+      const { rows: [payment] } = await client.query(
+        `INSERT INTO advance_payments (advance_id, amount, payment_method, bank_account_id, reference, remarks, paid_by)
+         VALUES ($1,$2,'return',$3,$4,$5,$6) RETURNING *`,
+        [req.params.id, -balance, bank_account_id, reference, remarks || 'Employee return', req.user.id]);
 
-    // GL Journal: Dr. Bank / Cr. Employee Receivable
-    const { rows: [emp] } = await db.query("SELECT first_name || ' ' || last_name AS name FROM users WHERE id=$1", [adv.employee_id]);
-    const { rows: [journal] } = await db.query(
-      `INSERT INTO gl_journals (company_id, doc_type, doc_id, doc_number, remarks, total_debit, total_credit, created_by)
-       VALUES ($1,'advance_return',$2,$3,$4,$5,$5,$6) RETURNING *`,
-      [req.user.company_id, payment.id, adv.doc_number, 'Employee return - ' + adv.doc_number, balance, req.user.id]);
+      const { rows: [emp] } = await client.query("SELECT first_name || ' ' || last_name AS name FROM users WHERE id=$1", [adv.employee_id]);
+      const { rows: [journal] } = await client.query(
+        `INSERT INTO gl_journals (company_id, doc_type, doc_id, doc_number, remarks, total_debit, total_credit, created_by)
+         VALUES ($1,'advance_return',$2,$3,$4,$5,$5,$6) RETURNING *`,
+        [req.user.company_id, payment.id, adv.doc_number, 'Employee return - ' + adv.doc_number, balance, req.user.id]);
 
-    await db.query(
-      `INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES
-       ($1, 1, $2, $3, $4, 0, $5),
-       ($1, 2, '113103', $6, 0, $4, $5)`,
-      [journal.id, bankGL, bankName, balance, 'Return from ' + adv.doc_number, 'Employee Receivable - ' + (emp?.name||'')]);
+      await client.query(
+        `INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES
+         ($1, 1, $2, $3, $4, 0, $5),
+         ($1, 2, '113103', $6, 0, $4, $5)`,
+        [journal.id, bankGL, bankName, balance, 'Return from ' + adv.doc_number, 'Employee Receivable - ' + (emp?.name||'')]);
 
-    await db.query('UPDATE advance_payments SET journal_id=$1 WHERE id=$2', [journal.id, payment.id]);
+      await client.query('UPDATE advance_payments SET journal_id=$1 WHERE id=$2', [journal.id, payment.id]);
+      await client.query(
+        "UPDATE advance_requests SET balance=0, status='settled', updated_at=NOW() WHERE id=$1", [req.params.id]);
 
-    // Close advance
-    await db.query(
-      "UPDATE advance_requests SET balance=0, status='settled', updated_at=NOW() WHERE id=$1",
-      [req.params.id]);
+      return { payment, journal };
+    });
 
-    res.json({ success: true, amount_returned: balance, journal });
+    res.json({ success: true, amount_returned: balance, journal: result.journal });
     req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -586,37 +645,38 @@ router.post('/:id/pay-reimburse', async (req, res) => {
     if (balance >= 0) return res.status(400).json({ error: 'No reimbursement needed' });
     const reimbAmt = Math.abs(balance);
 
-    let bankGL = '111201', bankName = 'Bank';
-    if (bank_account_id) {
-      const { rows: [ba] } = await db.query('SELECT * FROM bank_accounts WHERE id=$1', [bank_account_id]);
-      if (ba) { bankGL = ba.gl_account || '111201'; bankName = ba.name; }
-    }
+    const result = await withTransaction(async (client) => {
+      let bankGL = '111201', bankName = 'Bank';
+      if (bank_account_id) {
+        const { rows: [ba] } = await client.query('SELECT * FROM bank_accounts WHERE id=$1', [bank_account_id]);
+        if (ba) { bankGL = ba.gl_account || '111201'; bankName = ba.name; }
+      }
 
-    const { rows: [payment] } = await db.query(
-      `INSERT INTO advance_payments (advance_id, amount, payment_method, bank_account_id, reference, remarks, paid_by)
-       VALUES ($1,$2,'reimburse',$3,$4,$5,$6) RETURNING *`,
-      [req.params.id, reimbAmt, bank_account_id, reference, remarks || 'Reimburse to employee', req.user.id]);
+      const { rows: [payment] } = await client.query(
+        `INSERT INTO advance_payments (advance_id, amount, payment_method, bank_account_id, reference, remarks, paid_by)
+         VALUES ($1,$2,'reimburse',$3,$4,$5,$6) RETURNING *`,
+        [req.params.id, reimbAmt, bank_account_id, reference, remarks || 'Reimburse to employee', req.user.id]);
 
-    // GL: Dr. Employee Receivable / Cr. Bank
-    const { rows: [emp] } = await db.query("SELECT first_name || ' ' || last_name AS name FROM users WHERE id=$1", [adv.employee_id]);
-    const { rows: [journal] } = await db.query(
-      `INSERT INTO gl_journals (company_id, doc_type, doc_id, doc_number, remarks, total_debit, total_credit, created_by)
-       VALUES ($1,'advance_reimburse',$2,$3,$4,$5,$5,$6) RETURNING *`,
-      [req.user.company_id, payment.id, adv.doc_number, 'Reimburse - ' + adv.doc_number, reimbAmt, req.user.id]);
+      const { rows: [emp] } = await client.query("SELECT first_name || ' ' || last_name AS name FROM users WHERE id=$1", [adv.employee_id]);
+      const { rows: [journal] } = await client.query(
+        `INSERT INTO gl_journals (company_id, doc_type, doc_id, doc_number, remarks, total_debit, total_credit, created_by)
+         VALUES ($1,'advance_reimburse',$2,$3,$4,$5,$5,$6) RETURNING *`,
+        [req.user.company_id, payment.id, adv.doc_number, 'Reimburse - ' + adv.doc_number, reimbAmt, req.user.id]);
 
-    await db.query(
-      `INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES
-       ($1, 1, '113103', $2, $3, 0, $4),
-       ($1, 2, $5, $6, 0, $3, $4)`,
-      [journal.id, 'Employee Receivable - ' + (emp?.name||''), reimbAmt, 'Reimburse ' + adv.doc_number, bankGL, bankName]);
+      await client.query(
+        `INSERT INTO gl_journal_lines (journal_id, line_num, gl_account, account_name, debit, credit, description) VALUES
+         ($1, 1, '113103', $2, $3, 0, $4),
+         ($1, 2, $5, $6, 0, $3, $4)`,
+        [journal.id, 'Employee Receivable - ' + (emp?.name||''), reimbAmt, 'Reimburse ' + adv.doc_number, bankGL, bankName]);
 
-    await db.query('UPDATE advance_payments SET journal_id=$1 WHERE id=$2', [journal.id, payment.id]);
+      await client.query('UPDATE advance_payments SET journal_id=$1 WHERE id=$2', [journal.id, payment.id]);
+      await client.query(
+        "UPDATE advance_requests SET balance=0, status='settled', updated_at=NOW() WHERE id=$1", [req.params.id]);
 
-    await db.query(
-      "UPDATE advance_requests SET balance=0, status='settled', updated_at=NOW() WHERE id=$1",
-      [req.params.id]);
+      return { payment, journal };
+    });
 
-    res.json({ success: true, amount_reimbursed: reimbAmt, journal });
+    res.json({ success: true, amount_reimbursed: reimbAmt, journal: result.journal });
     req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

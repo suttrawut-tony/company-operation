@@ -58,7 +58,7 @@ router.get('/:id', async (req, res) => {
 
 // POST / — Create GRPO from PO
 router.post('/', async (req, res) => {
-  const client = await db.connect();
+  const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
     const { po_id, lines, warehouse, remarks } = req.body;
@@ -121,7 +121,7 @@ router.post('/', async (req, res) => {
 
 // POST /:id/cancel — Cancel GRPO and reverse received_qty on PO lines
 router.post('/:id/cancel', async (req, res) => {
-  const client = await db.connect();
+  const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
 

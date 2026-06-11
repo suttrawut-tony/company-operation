@@ -225,14 +225,14 @@
               <tbody id="line-items">
                 <tr data-line="1">
                   <td style="color:var(--text-muted);padding:10px;font-weight:600;">1</td>
-                  <td><input placeholder="SD-XXXX" list="items-list"></td>
-                  <td><input placeholder="Item description..." required></td>
+                  <td><select class="searchable item-code-select" style="min-width:120px;" onchange="onItemSelect(this);calcLine(this);"></select></td>
+                  <td><input placeholder="Item description..." data-field="item_name" required></td>
                   <td><input type="number" class="num-input" value="1" min="1" onchange="calcLine(this)"></td>
                   <td><select>
                     <option>EA</option><option>Set</option><option>Unit</option><option>Job</option>
                     <option>Month</option><option>Day</option><option>System</option><option>Roll</option>
                   </select></td>
-                  <td><input type="number" class="num-input" placeholder="0.00" step="0.01" onchange="calcLine(this)"></td>
+                  <td><input type="number" class="num-input" data-field="price" placeholder="0.00" step="0.01" onchange="calcLine(this)"></td>
                   <td><select>
                     <option value="IG07">IG07 (7%)</option>
                     <option value="IG00">IG00 (0%)</option>
@@ -354,26 +354,12 @@
   </main>
   </div>
 
-  <datalist id="items-list">
-    <option value="SD-0001">Sounder Unit</option>
-    <option value="SD-0015">Sounder Transducer 200kHz</option>
-    <option value="SN-0001">Sonar Module</option>
-    <option value="SN-0005">Sonar Transducer</option>
-    <option value="WR-0001">Wave Radar Unit</option>
-    <option value="GP-0001">GPS Navigator</option>
-    <option value="GR-0001">Gyro Compass</option>
-    <option value="CP-0001">Computer Server</option>
-    <option value="SC-0001">Satcom Terminal</option>
-    <option value="OT-0001">Connector Kit</option>
-    <option value="OT-0005">Network Cable Cat6</option>
-    <option value="EX-0001">Calibration Tools</option>
-  </datalist>
-
   <script src="assets/js/api.js"></script>
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
   <script src="assets/js/nav.js"></script>
+  <script src="assets/js/item-picker.js"></script>
   <script>
     let lineCount = 1;
 
@@ -386,7 +372,22 @@
       row.querySelectorAll('input').forEach(inp => { inp.value = ''; });
       row.querySelector('.num-input').value = '1';
       row.querySelector('.line-total').textContent = '฿0.00';
+      // Reset item picker and remove old searchable wrapper
+      const oldWrapper = row.querySelector('.ss-wrapper');
+      if (oldWrapper) {
+        const sel = oldWrapper.querySelector('select');
+        if (sel) {
+          sel.style.display = '';
+          sel.dataset.searchable = '';
+          sel.value = '';
+          oldWrapper.parentNode.insertBefore(sel, oldWrapper);
+        }
+        oldWrapper.remove();
+      }
       tbody.appendChild(row);
+      // Re-init searchable on new row's select
+      const newSel = row.querySelector('.item-code-select');
+      if (newSel) initItemPicker(newSel);
     }
 
     function removeLine(btn) {
@@ -448,10 +449,10 @@
       }
     }
 
-    // FIXED: Load dropdowns from API
+    // Load dropdowns from API + master items
     async function loadDropdowns() {
       try {
-        const [projects, bps] = await Promise.all([API.getProjects(), API.get('/master/bp')]);
+        const [projects, bps] = await Promise.all([API.getProjects(), API.get('/master/bp'), loadMasterItems()]);
         const pSel = document.getElementById('pr-project');
         (Array.isArray(projects)?projects:(projects.data||[])).forEach(p => {
           pSel.innerHTML += `<option value="${p.id}">${p.code||''} — ${p.name||''}</option>`;
@@ -459,6 +460,11 @@
         const vSel = document.getElementById('pr-vendor');
         (Array.isArray(bps)?bps:[]).forEach(b => {
           vSel.innerHTML += `<option value="${b.id}">${b.bp_code||''} — ${b.bp_name||''}</option>`;
+        });
+        // Populate item picker options + init searchable
+        document.querySelectorAll('.item-code-select').forEach(sel => {
+          sel.innerHTML = buildItemOptions('');
+          if (typeof makeSearchable === 'function') makeSearchable(sel);
         });
       } catch(e) { console.warn('Failed to load dropdowns', e); }
     }

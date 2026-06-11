@@ -268,6 +268,7 @@
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
   <script src="assets/js/nav.js"></script>
+  <script src="assets/js/item-picker.js"></script>
   <script>
     // Premium number formatter
     function money(n) {
@@ -496,14 +497,14 @@
             } else {
               return `<tr>
                 <td class="row-num">${i+1}</td>
-                <td><input value="${l.item_code||''}" placeholder="SD-0001" style="font-family:var(--font-mono);min-width:80px;"></td>
-                <td><input value="${l.item_name||''}" placeholder="Item description..."></td>
+                <td><select class="searchable item-code-select" style="font-family:var(--font-mono);min-width:120px;" onchange="onItemSelect(this);calcLines();">${buildItemOptions(l.item_code)}</select></td>
+                <td><input value="${l.item_name||''}" placeholder="Item description..." data-field="item_name"></td>
                 <td class="num"><input type="number" value="${l.quantity||1}" min="1" style="min-width:50px;"></td>
-                <td><select style="min-width:65px;"><option value="EA" ${l.uom==='EA'?'selected':''}>EA</option><option value="Set" ${l.uom==='Set'?'selected':''}>Set</option><option value="Unit" ${l.uom==='Unit'?'selected':''}>Unit</option><option value="Job" ${l.uom==='Job'?'selected':''}>Job</option><option value="Month" ${l.uom==='Month'?'selected':''}>Month</option><option value="System" ${l.uom==='System'?'selected':''}>System</option></select></td>
-                <td class="num"><input type="number" value="${l.unit_price||0}" step="0.01" style="min-width:90px;" onchange="calcLines()"></td>
+                <td><select data-field="uom" style="min-width:65px;"><option value="EA" ${l.uom==='EA'?'selected':''}>EA</option><option value="Set" ${l.uom==='Set'?'selected':''}>Set</option><option value="Unit" ${l.uom==='Unit'?'selected':''}>Unit</option><option value="Job" ${l.uom==='Job'?'selected':''}>Job</option><option value="Month" ${l.uom==='Month'?'selected':''}>Month</option><option value="System" ${l.uom==='System'?'selected':''}>System</option></select></td>
+                <td class="num"><input type="number" data-field="price" value="${l.unit_price||0}" step="0.01" style="min-width:90px;" onchange="calcLines()"></td>
                 <td class="num"><input type="number" value="${l.discount||0}" min="0" max="100" step="0.5" style="min-width:45px;" onchange="calcLines()"></td>
-                <td><select style="min-width:75px;"><option value="IG07" ${(l.tax_code||'IG07')==='IG07'?'selected':''}>IG07</option><option value="IG00" ${l.tax_code==='IG00'?'selected':''}>IG00</option><option value="IS07" ${l.tax_code==='IS07'?'selected':''}>IS07</option><option value="IS00" ${l.tax_code==='IS00'?'selected':''}>IS00</option></select></td>
-                <td><select style="min-width:75px;"><option value="114101" ${(l.sap_account||'114101')==='114101'?'selected':''}>114101</option><option value="511102" ${l.sap_account==='511102'?'selected':''}>511102</option><option value="511120" ${l.sap_account==='511120'?'selected':''}>511120</option><option value="522709" ${l.sap_account==='522709'?'selected':''}>522709</option></select></td>
+                <td><select data-field="tax" style="min-width:75px;"><option value="IG07" ${(l.tax_code||'IG07')==='IG07'?'selected':''}>IG07</option><option value="IG00" ${l.tax_code==='IG00'?'selected':''}>IG00</option><option value="IS07" ${l.tax_code==='IS07'?'selected':''}>IS07</option><option value="IS00" ${l.tax_code==='IS00'?'selected':''}>IS00</option></select></td>
+                <td><select data-field="account" style="min-width:75px;"><option value="114101" ${(l.sap_account||'114101')==='114101'?'selected':''}>114101</option><option value="511102" ${l.sap_account==='511102'?'selected':''}>511102</option><option value="511120" ${l.sap_account==='511120'?'selected':''}>511120</option><option value="522709" ${l.sap_account==='522709'?'selected':''}>522709</option></select></td>
                 <td><select style="min-width:65px;"><option value="HQ01" ${(l.warehouse||'HQ01')==='HQ01'?'selected':''}>HQ01</option><option value="PJ00" ${l.warehouse==='PJ00'?'selected':''}>PJ00</option><option value="PJ01" ${l.warehouse==='PJ01'?'selected':''}>PJ01</option><option value="AS01" ${l.warehouse==='AS01'?'selected':''}>AS01</option></select></td>
                 <td class="num" style="font-weight:700;">${money(total)}</td>
                 <td class="row-action"><button onclick="removeLine(${i})">&times;</button></td>
@@ -522,6 +523,13 @@
           document.getElementById('lines-foot').innerHTML = '';
         }
         document.getElementById('btn-add-line').style.display = isEditing ? '' : 'none';
+        // FIX BUG3: init searchable on newly rendered selects
+        if (isEditing) {
+          setTimeout(function() {
+            document.querySelectorAll('#lines-body select.searchable:not([data-searchable="done"])')
+              .forEach(function(s) { makeSearchable(s); });
+          }, 50);
+        }
       }
     }
 
@@ -741,11 +749,16 @@
     function addLine() {
       lines.push({ item_code:'', item_name:'', quantity:1, unit_price:0, uom:'EA', tax_code:'IG07', sap_account:'114101', total_price:0 });
       renderLines();
-      // Focus last row first input
-      setTimeout(() => {
-        const rows = document.querySelectorAll('#lines-body tr');
-        const lastRow = rows[rows.length - 1];
-        if (lastRow) lastRow.querySelector('input')?.focus();
+      // FIX BUG4: init searchable + focus last row
+      setTimeout(function() {
+        var rows = document.querySelectorAll('#lines-body tr');
+        var lastRow = rows[rows.length - 1];
+        if (lastRow) {
+          lastRow.querySelectorAll('select.searchable:not([data-searchable="done"])')
+            .forEach(function(s) { makeSearchable(s); });
+          var ssInput = lastRow.querySelector('.ss-wrapper input');
+          if (ssInput) ssInput.focus(); else lastRow.querySelector('input')?.focus();
+        }
       }, 100);
     }
 
@@ -844,10 +857,12 @@
           showToast('Document created: ' + (result.doc_number || 'OK'), 'success');
           window.location = 'doc-detail.html?type=' + docType + '&doc=' + result.doc_number;
         } else {
-          // Update existing document
+          // Update existing document with full form data
           try {
-            if (docType === 'pr') await API.put('/pr/' + doc.id, { status: doc.status });
-            else if (docType === 'po') await API.put('/po/' + doc.id, { status: doc.status });
+            if (docType === 'pr') await API.put('/pr/' + doc.id, data);
+            else if (docType === 'po') await API.put('/po/' + doc.id, data);
+            else if (docType === 'expense') await API.put('/expense/' + doc.id, data);
+            showToast('Document updated', 'success');
             isEditing = false;
             render();
           } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -1016,7 +1031,8 @@
     }
 
     if (!API.requireAuth()) throw new Error('Not authenticated');
-    loadDocument();
+    // Load master data for item picker before rendering
+    loadMasterItems().then(() => loadMasterVendors()).then(() => loadDocument());
   </script>
 </body>
 </html>

@@ -102,6 +102,7 @@
   <script src="assets/js/highlight.js"></script>
   <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
+  <script src="assets/js/item-picker.js"></script>
   <script>
     let allSQ = [];
     let editSQ = null;
@@ -186,7 +187,7 @@
       // Items
       h += '<h4 style="font-size:13px;font-weight:700;margin:16px 0 8px">รายการอุปกรณ์</h4>';
       h += `<div class="item-add-row">
-        <select id="sqItemPicker"><option value="">-- เลือกอุปกรณ์ --</option>${masterItems.map(it=>`<option value="${it.id}" data-code="${it.item_code||''}" data-name="${it.item_name||''}" data-unit="${it.uom||'EA'}" data-price="${it.unit_price||0}">${it.item_code||''} — ${it.item_name||''}</option>`).join('')}</select>
+        <select id="sqItemPicker" class="searchable" style="min-width:250px;"><option value="">-- เลือกอุปกรณ์ --</option>${masterItems.map(it=>`<option value="${it.id}" data-code="${it.item_code||''}" data-name="${it.item_name||''}" data-unit="${it.uom||'EA'}" data-price="${it.unit_price||0}">${it.item_code||''} — ${it.item_name||''}</option>`).join('')}</select>
         <input type="number" id="sqItemQty" value="1" min="1" placeholder="จำนวน">
         <button class="btn-sm btn-primary" onclick="sqAddItem()">เพิ่ม</button>
       </div>`;
@@ -218,6 +219,11 @@
       f += `<button class="btn-sm btn-primary" onclick="saveSQ(${isNew})">${isNew?'สร้าง':'บันทึก'}</button>`;
       f += `<button class="btn-sm" onclick="closeModal()">ปิด</button>`;
       document.getElementById('modalFooter').innerHTML = f;
+      // Init searchable on item picker after modal renders
+      setTimeout(function() {
+        var picker = document.getElementById('sqItemPicker');
+        if (picker && picker.dataset.searchable !== 'done') makeSearchable(picker);
+      }, 100);
     }
 
     function fg(label, type, id, val, extra='') {

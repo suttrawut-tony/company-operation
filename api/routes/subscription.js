@@ -143,7 +143,7 @@ router.post('/upgrade', async (req, res) => {
     if (lastInv) { const parts = lastInv.invoice_number.split('-'); invSeq = parseInt(parts[2]||'0') + 1; }
     const invNum = `${invPrefix}-${String(invSeq).padStart(4,'0')}`;
     const subtotal = amount;
-    const vat = Math.round(subtotal * 7) / 100;
+    const vat = Math.round(subtotal * 0.07 * 100) / 100;
     const dueDate = new Date(); dueDate.setDate(dueDate.getDate() + 7);
     await db.query(
       `INSERT INTO invoices (company_id, subscription_id, invoice_number, billing_period_start, billing_period_end, subtotal, vat_amount, total, status, issued_at, due_date)
