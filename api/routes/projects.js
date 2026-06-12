@@ -538,8 +538,8 @@ router.put('/payment-schedule/:paymentId', async (req, res) => {
 // DELETE /api/projects/payment-schedule/:paymentId
 router.delete('/payment-schedule/:paymentId', async (req, res) => {
   try {
-    const { rows } = await db.query("DELETE FROM phase_payments WHERE id=$1 AND status='pending' RETURNING id", [req.params.paymentId]);
-    if (!rows.length) return res.status(400).json({ error: 'Can only delete pending payments' });
+    const { rows } = await db.query("DELETE FROM phase_payments WHERE id=$1 AND status IN ('pending','invoiced') RETURNING id", [req.params.paymentId]);
+    if (!rows.length) return res.status(400).json({ error: 'Can only delete pending or invoiced payments (not paid)' });
     res.json({ deleted: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
