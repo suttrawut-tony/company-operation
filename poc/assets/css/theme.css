@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════ */
 
 /* ─── Google Fonts ─── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap');
 
 /* ─── Lucide Icons override ─── */
 .lucide { width: 20px; height: 20px; stroke-width: 1.75; vertical-align: middle; }
@@ -77,7 +77,7 @@
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
 
   /* Font */
-  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font: 'Sukhumvit Set', 'Sukhumvit', 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
 
   /* Font Size Scale */
