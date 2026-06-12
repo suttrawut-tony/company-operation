@@ -469,7 +469,7 @@
             </div>
             <div style="display:flex;gap:4px;align-items:center;">
               ${statusBadge(st)}
-              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">SAP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:var(--danger-bg);color:var(--danger);font-weight:600;cursor:pointer;" onclick="event.stopPropagation();retrySAP(\''+a.id+'\')" title="Click to retry">SAP Error</span>':''}
+              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">SAP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:var(--danger-bg);color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation();pushToSAP(\''+a.id+'\')">SAP Retry</button>':(['paid','settled','settling'].includes(st) && a.sap_status!=='posted' && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-color:#93c5fd;" onclick="event.stopPropagation();pushToSAP(\''+a.id+'\')">Push SAP</button>' : ''}
               <div onclick="event.stopPropagation();">${actions}</div>
             </div>
           </div>
@@ -1019,14 +1019,17 @@
       } catch(e) { el.innerHTML = '<div style="color:var(--danger);font-size:11px;">Error loading GL</div>'; }
     }
 
-    async function retrySAP(advId) {
+    async function pushToSAP(advId) {
+      if (!confirm('Push GL Journal to SAP B1?')) return;
       try {
-        var result = await API.post('/advance/' + advId + '/retry-sap');
+        var result = await API.post('/advance/' + advId + '/push-sap');
         var r = result.results || [];
         var posted = r.filter(function(x) { return x.status === 'posted'; }).length;
         var errors = r.filter(function(x) { return x.status === 'error'; }).length;
-        if (posted) showToast('SAP push OK: ' + posted, 'success');
-        if (errors) showToast('SAP push failed: ' + errors, 'error');
+        var skipped = r.filter(function(x) { return x.status === 'skipped'; }).length;
+        if (posted) showToast('Push SAP OK: ' + posted + ' journal(s)', 'success');
+        if (errors) showToast('Push SAP failed: ' + errors + ' journal(s)', 'error');
+        if (skipped) showToast('SAP not configured', 'warning');
         await loadData();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }

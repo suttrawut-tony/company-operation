@@ -7,22 +7,7 @@ const { authenticate, getUserProjectIds, checkPermission } = require('../middlew
 router.use(authenticate);
 const { pushJournalToSAP } = require('../services/sapPush');
 
-// Helper: push journal to SAP + update DB status (non-blocking on error)
-async function tryPushSAP(journalId, journal, lines, projectCode) {
-  try {
-    var result = await pushJournalToSAP(journal, lines, projectCode);
-    if (!result.skipped) {
-      await db.query('UPDATE gl_journals SET sap_doc_num=$1, sap_status=$2 WHERE id=$3', [result.sapDocNum, 'posted', journalId]);
-    } else {
-      await db.query("UPDATE gl_journals SET sap_status='skipped' WHERE id=$1", [journalId]);
-    }
-    return result;
-  } catch (e) {
-    console.error('SAP push failed:', e.message);
-    await db.query('UPDATE gl_journals SET sap_status=$1, sap_error=$2 WHERE id=$3', ['error', e.message, journalId]);
-    return { skipped: false, error: e.message };
-  }
-}
+// SAP push is manual — use POST /:id/push-sap endpoint
 
 // File upload config
 const uploadDir = path.join(__dirname, '..', 'uploads', 'advance');
@@ -162,8 +147,6 @@ router.post('/settlement/:id/approve', async (req, res) => {
     });
 
     res.json(result.settlement);
-    // Push to SAP (fire-and-forget)
-    tryPushSAP(result.journal.id, result.journal, result.lines).catch(function() {});
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -516,11 +499,6 @@ router.post('/:id/pay', upload.single('attachment'), async (req, res) => {
       } catch(_) {}
 
       res.status(201).json({ ...payment, journal, auto_settled: true });
-      // Push reimburse GL to SAP
-      tryPushSAP(journal.id, journal, [
-        { gl_account: '522709', debit: payAmt, credit: 0, account_name: 'Reimburse Expense' },
-        { gl_account: bankGL, debit: 0, credit: payAmt, account_name: bankName }
-      ]).catch(function() {});
     } else {
       // ═══ Advance: GL Dr. Employee Receivable / Cr. Bank ═══
       const { rows: [journal] } = await db.query(
@@ -558,11 +536,6 @@ router.post('/:id/pay', upload.single('attachment'), async (req, res) => {
       } catch(_) {}
 
       res.status(201).json({ ...payment, journal, due_date: dueDateStr });
-      // Push advance GL to SAP
-      tryPushSAP(journal.id, journal, [
-        { gl_account: '113103', debit: payAmt, credit: 0, account_name: 'Employee Receivable' },
-        { gl_account: bankGL, debit: 0, credit: payAmt, account_name: bankName }
-      ]).catch(function() {});
     }
 
     req.broadcast('advance_updated', { id: req.params.id });
@@ -679,10 +652,6 @@ router.post('/:id/receive-return', upload.single('attachment'), async (req, res)
     });
 
     res.json({ success: true, amount_returned: balance, journal: result.journal });
-    tryPushSAP(result.journal.id, result.journal, [
-      { gl_account: '111201', debit: balance, credit: 0, account_name: 'Bank' },
-      { gl_account: '113103', debit: 0, credit: balance, account_name: 'Employee Receivable' }
-    ]).catch(function() {});
     req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -733,10 +702,6 @@ router.post('/:id/pay-reimburse', upload.single('attachment'), async (req, res) 
     });
 
     res.json({ success: true, amount_reimbursed: reimbAmt, journal: result.journal });
-    tryPushSAP(result.journal.id, result.journal, [
-      { gl_account: '113103', debit: reimbAmt, credit: 0, account_name: 'Employee Receivable' },
-      { gl_account: '111201', debit: 0, credit: reimbAmt, account_name: 'Bank' }
-    ]).catch(function() {});
     req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -755,13 +720,20 @@ router.post('/:id/confirm-return', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/advance/:id/retry-sap — Retry failed SAP push
-router.post('/:id/retry-sap', async (req, res) => {
+// POST /api/advance/:id/push-sap — Manual push GL Journals to SAP
+router.post('/:id/push-sap', async (req, res) => {
   try {
     if (!['finance','executive'].includes(req.user.role)) return res.status(403).json({ error: 'Not authorized' });
+
+    // Find all journals for this advance that haven't been posted
     var { rows: journals } = await db.query(
-      "SELECT j.* FROM gl_journals j WHERE j.doc_id=$1 AND j.sap_status='error'", [req.params.id]);
-    if (!journals.length) return res.status(404).json({ error: 'No failed journals' });
+      "SELECT j.* FROM gl_journals j WHERE j.doc_id=$1 OR j.doc_id IN (SELECT id FROM advance_settlements WHERE advance_id=$1) OR j.doc_id IN (SELECT id FROM advance_payments WHERE advance_id=$1) ORDER BY j.created_at",
+      [req.params.id]);
+
+    // Filter to only un-posted
+    journals = journals.filter(function(j) { return j.sap_status !== 'posted'; });
+    if (!journals.length) return res.json({ results: [], message: 'All journals already posted or no journals found' });
+
     var results = [];
     for (var j of journals) {
       var { rows: jLines } = await db.query('SELECT * FROM gl_journal_lines WHERE journal_id=$1 ORDER BY line_num', [j.id]);
@@ -770,12 +742,23 @@ router.post('/:id/retry-sap', async (req, res) => {
         if (!sapResult.skipped) {
           await db.query('UPDATE gl_journals SET sap_doc_num=$1, sap_status=$2, sap_error=NULL WHERE id=$3', [sapResult.sapDocNum, 'posted', j.id]);
           results.push({ journal_id: j.id, status: 'posted', sap_doc_num: sapResult.sapDocNum });
+        } else {
+          await db.query("UPDATE gl_journals SET sap_status='skipped' WHERE id=$1", [j.id]);
+          results.push({ journal_id: j.id, status: 'skipped' });
         }
       } catch (e) {
-        await db.query('UPDATE gl_journals SET sap_error=$1 WHERE id=$2', [e.message, j.id]);
+        await db.query('UPDATE gl_journals SET sap_status=$1, sap_error=$2 WHERE id=$3', ['error', e.message, j.id]);
         results.push({ journal_id: j.id, status: 'error', error: e.message });
       }
     }
+
+    // Update advance sap_status
+    var anyPosted = results.some(function(r) { return r.status === 'posted'; });
+    var anyError = results.some(function(r) { return r.status === 'error'; });
+    var sapStatus = anyPosted ? 'posted' : anyError ? 'error' : 'skipped';
+    var sapDocNum = results.find(function(r) { return r.sap_doc_num; })?.sap_doc_num || null;
+    await db.query('UPDATE advance_requests SET sap_status=$1, sap_doc_num=$2 WHERE id=$3', [sapStatus, sapDocNum, req.params.id]);
+
     res.json({ results });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
