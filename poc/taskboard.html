@@ -477,6 +477,7 @@
     async function onProjectChange() {
       const sel = document.getElementById('projectSelect');
       currentProjectId = sel.value;
+      if (currentProjectId) sessionStorage.setItem('sda_selected_project', currentProjectId);
       if (!currentProjectId) {
         allTasks = [];
         projectMembers = [];
@@ -517,11 +518,14 @@
           opt.textContent = (p.code || '') + ' \u2014 ' + (p.name || '');
           sel.appendChild(opt);
         });
-        // Auto-select first project if available
-        if (projects.length > 0) {
+        // Restore last selected project or auto-select first
+        var savedProject = sessionStorage.getItem('sda_selected_project');
+        if (savedProject && projects.find(function(p) { return p.id === savedProject; })) {
+          sel.value = savedProject;
+        } else if (projects.length > 0) {
           sel.value = projects[0].id;
-          onProjectChange();
         }
+        if (sel.value) onProjectChange();
       } catch (err) {
         document.getElementById('kanbanBoard').innerHTML = '<div style="grid-column:1/-1;">' + emptyMsg('Failed to load projects: ' + err.message) + '</div>';
       }
