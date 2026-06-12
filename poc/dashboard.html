@@ -863,9 +863,13 @@
         .filter(el => config.widgets[el.dataset.widget])
         .sort((a, b) => config.widgets[a.dataset.widget].order - config.widgets[b.dataset.widget].order);
 
-      // Move KPI before grid
+      // Move KPI before grid (respect visibility)
       sorted.forEach(w => {
-        if (w.dataset.widget === 'kpi') grid.parentNode.insertBefore(w, grid);
+        if (w.dataset.widget === 'kpi') {
+          var kpiConf = config.widgets.kpi;
+          w.style.display = (kpiConf && kpiConf.visible) || customizeMode ? '' : 'none';
+          grid.parentNode.insertBefore(w, grid);
+        }
       });
 
       // Determine column count
@@ -888,7 +892,12 @@
       nonKpi.forEach(w => {
         const wConf = config.widgets[w.dataset.widget];
         const isVisible = wConf.visible || customizeMode;
-        if (!isVisible) return;
+        if (!isVisible) {
+          // Ensure hidden widgets are truly hidden and parked outside grid
+          w.style.display = 'none';
+          grid.parentNode.insertBefore(w, grid.nextSibling);
+          return;
+        }
 
         if (wConf.span === 'full') {
           // Full width: insert before grid as standalone
