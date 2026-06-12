@@ -221,45 +221,37 @@
             </div>
           </div>
         </div>
+        <!-- Budget Control Settings -->
+        <div style="margin:0 20px 16px;padding-top:16px;border-top:1px solid var(--border-light);">
+          <label class="form-label" style="font-size:13px;font-weight:700;margin-bottom:12px;">Budget Control</label>
+          <div class="form-group">
+            <label class="form-label">Control Mode</label>
+            <select class="form-input" id="bg-control-mode" onchange="updateControlPreview()">
+              <option value="warn">Warn (alert when near limit, can still create docs)</option>
+              <option value="block">Block (block when over limit)</option>
+              <option value="none">None (no control)</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Warn at (%)</label>
+              <input type="number" class="form-input" id="bg-warn-threshold" value="80" min="0" max="100" step="5" oninput="updateControlPreview()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Block at (%) - Block mode only</label>
+              <input type="number" class="form-input" id="bg-block-threshold" value="100" min="0" max="200" step="5" oninput="updateControlPreview()">
+            </div>
+          </div>
+          <div id="bg-control-preview" style="padding:10px 14px;background:var(--bg-light);border-radius:var(--radius);font-size:12px;"></div>
+        </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closeBudgetModal()">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" id="bg-save-btn" onclick="saveBudget()">บันทึก</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeBudgetModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" id="bg-save-btn" onclick="saveBudget()">Save</button>
         </div>
       </div>
     </div>
 
-    <!-- Transfer Modal -->
-    <div class="modal-overlay" id="transfer-modal" onclick="if(event.target===this)closeTransferModal()">
-      <div class="modal-box" style="width:460px;">
-        <div class="modal-header">
-          <h3>โอนงบระหว่างรายการ</h3>
-          <button class="modal-close" onclick="closeTransferModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="tf-budget-id">
-          <div class="form-group">
-            <label class="form-label">โอนจาก</label>
-            <select class="form-input" id="tf-from"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">โอนไป</label>
-            <select class="form-input" id="tf-to"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">จำนวนเงิน (฿)</label>
-            <input type="number" class="form-input" id="tf-amount" min="1" placeholder="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">เหตุผล</label>
-            <input type="text" class="form-input" id="tf-reason" placeholder="เหตุผลการโอน">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closeTransferModal()">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" onclick="saveTransfer()">โอนงบ</button>
-        </div>
-      </div>
-    </div>
+    <!-- Transfer Modal removed -->
 
   </main>
   </div>
@@ -332,7 +324,11 @@
                      '<button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="event.stopPropagation();rejectBudget(\''+b.id+'\')">Reject</button>';
       }
       const revLabel = b.revision > 0 ? ' <span style="font-size:10px;color:var(--text-muted);">(Rev.'+b.revision+')</span>' : '';
-      const controlBadge = b.control_mode === 'block' ? '<span class="var-badge over" style="font-size:9px;">Block Mode</span>' : b.control_mode === 'warn' ? '<span class="var-badge neutral" style="font-size:9px;">Warn '+b.warn_threshold+'%</span>' : '';
+      const controlBadge = b.control_mode === 'block'
+        ? '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--danger-bg);color:var(--danger);">Block '+b.block_threshold+'%</span><span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--warning-bg);color:var(--warning);margin-left:4px;">Warn '+b.warn_threshold+'%</span>'
+        : b.control_mode === 'warn'
+        ? '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--warning-bg);color:var(--warning);">Warn '+b.warn_threshold+'%</span>'
+        : '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--bg-hover);color:var(--text-muted);">No Control</span>';
 
       // Budget status badge
       const bTotal = parseFloat(b.total_budget) || 0;
@@ -377,9 +373,6 @@
           <div style="padding:12px 20px;border-top:1px solid var(--border-light);display:flex;flex-wrap:wrap;gap:8px;">
             <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleSources('${b.project_id}','${uid}')" id="src-btn-${uid}" style="font-size:11px;">
               ที่มายอด
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openTransfer('${b.id}')" style="font-size:11px;">
-              โอนงบ
             </button>
             <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleRevisions('${b.id}','${uid}')" id="rev-btn-${uid}" style="font-size:11px;">
               ประวัติแก้ไข
@@ -671,6 +664,11 @@
       addLineRow(); addLineRow(); addLineRow();
       autoFillBudgetCode();
       updateLineTotal();
+      // Set control defaults for new budget
+      document.getElementById('bg-control-mode').value = 'warn';
+      document.getElementById('bg-warn-threshold').value = 80;
+      document.getElementById('bg-block-threshold').value = 100;
+      updateControlPreview();
       document.getElementById('budget-modal').classList.add('show');
     }
 
@@ -730,8 +728,13 @@
         } else { addLineRow(); }
       } catch(e) { addLineRow(); }
       updateLineTotal();
+      // Pre-fill control settings
+      document.getElementById('bg-control-mode').value = b.control_mode || 'warn';
+      document.getElementById('bg-warn-threshold').value = b.warn_threshold || 80;
+      document.getElementById('bg-block-threshold').value = b.block_threshold || 100;
+      updateControlPreview();
       const saveBtn = document.getElementById('bg-save-btn');
-      saveBtn.textContent = 'อัปเดต';
+      saveBtn.textContent = 'Update';
       saveBtn.setAttribute('onclick', 'saveEditBudget()');
       document.getElementById('budget-modal').classList.add('show');
     }
@@ -759,7 +762,11 @@
       const btn = document.getElementById('bg-save-btn');
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
       try {
-        await API.put('/budget/' + editingBudgetId, { project_id: projectId, code, name, fiscal_year: parseInt(year), lines });
+        await API.put('/budget/' + editingBudgetId, { project_id: projectId, code, name, fiscal_year: parseInt(year), lines,
+          control_mode: document.getElementById('bg-control-mode').value || 'warn',
+          warn_threshold: parseFloat(document.getElementById('bg-warn-threshold').value) || 80,
+          block_threshold: parseFloat(document.getElementById('bg-block-threshold').value) || 100
+        });
         closeBudgetModal();
         dataLoaded = false;
         await loadMaster();
@@ -857,7 +864,11 @@
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
 
       try {
-        await API.createBudget({ project_id: projectId, code, name, fiscal_year: parseInt(year), lines });
+        await API.createBudget({ project_id: projectId, code, name, fiscal_year: parseInt(year), lines,
+          control_mode: document.getElementById('bg-control-mode').value || 'warn',
+          warn_threshold: parseFloat(document.getElementById('bg-warn-threshold').value) || 80,
+          block_threshold: parseFloat(document.getElementById('bg-block-threshold').value) || 100
+        });
         closeBudgetModal();
         dataLoaded = false; // force reload
         await loadMaster();
@@ -879,39 +890,20 @@
       catch(e) { b.status = old; b.reject_reason = ''; reRenderCard(id); showToast('Error: '+e.message, 'error'); }
     }
 
-    // ═══ Budget Transfer ═══
-    let transferLines = [];
-    async function openTransfer(budgetId) {
-      document.getElementById('tf-budget-id').value = budgetId;
-      try {
-        const d = await API.getBudget(budgetId);
-        transferLines = d.lines || [];
-        const opts = transferLines.map(l => `<option value="${l.id}">${l.name} (฿${Number(parseFloat(l.budget_amount)||0).toLocaleString()})</option>`).join('');
-        document.getElementById('tf-from').innerHTML = opts;
-        document.getElementById('tf-to').innerHTML = opts;
-        document.getElementById('tf-amount').value = '';
-        document.getElementById('tf-reason').value = '';
-        document.getElementById('transfer-modal').classList.add('show');
-      } catch(e) { showToast('Error loading lines: ' + e.message, 'error'); }
-    }
-    function closeTransferModal() { document.getElementById('transfer-modal').classList.remove('show'); }
-
-    async function saveTransfer() {
-      const budgetId = document.getElementById('tf-budget-id').value;
-      const from = document.getElementById('tf-from').value;
-      const to = document.getElementById('tf-to').value;
-      const amount = parseFloat(document.getElementById('tf-amount').value);
-      const reason = document.getElementById('tf-reason').value;
-      if (!from || !to || from === to) { showToast('กรุณาเลือกรายการที่ต่างกัน', 'error'); return; }
-      if (!amount || amount <= 0) { showToast('กรุณากรอกจำนวนเงิน', 'error'); return; }
-      try {
-        await API.post('/budget/' + budgetId + '/transfer', { from_line_id: from, to_line_id: to, amount, reason });
-        closeTransferModal();
-        dataLoaded = false;
-        if (currentTab === 'master') loadMaster();
-        else if (currentTab === 'project') loadProjectBudget();
-        else loadComparison();
-      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    // === Budget Control Preview ===
+    function updateControlPreview() {
+      var mode = document.getElementById('bg-control-mode').value;
+      var warn = document.getElementById('bg-warn-threshold').value;
+      var block = document.getElementById('bg-block-threshold').value;
+      var el = document.getElementById('bg-control-preview');
+      if (!el) return;
+      if (mode === 'none') {
+        el.innerHTML = '<span style="color:var(--text-muted);">No control - unlimited spending</span>';
+      } else if (mode === 'warn') {
+        el.innerHTML = '<span style="color:var(--warning);">At ' + warn + '% usage: show warning</span><br><span style="color:var(--text-muted);">No blocking - can exceed 100%</span>';
+      } else {
+        el.innerHTML = '<span style="color:var(--warning);">At ' + warn + '% usage: show warning</span><br><span style="color:var(--danger);">At ' + block + '% usage: BLOCK - cannot create PR/PO/Expense</span>';
+      }
     }
 
     // ═══ Revision History ═══
@@ -929,24 +921,10 @@
       container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Loading...</div>';
       try {
         const revisions = await API.get('/budget/' + budgetId + '/revisions');
-        const transfers = await API.get('/budget/' + budgetId + '/transfers');
         let html = '';
-
-        if (transfers.length) {
-          html += '<div class="src-section"><h4>การโอนงบ <span class="src-badge">' + transfers.length + ' รายการ</span></h4>';
-          html += '<table class="src-table"><thead><tr><th>วันที่</th><th>จาก</th><th>ไป</th><th style="text-align:right;">จำนวน</th><th>เหตุผล</th><th>โดย</th></tr></thead><tbody>';
-          transfers.forEach(t => {
-            html += `<tr><td>${new Date(t.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</td>
-              <td>${t.from_line_name||'-'}</td><td>${t.to_line_name||'-'}</td>
-              <td class="amt">${fmtMoney(parseFloat(t.amount))}</td>
-              <td>${t.reason||'-'}</td><td>${t.transferred_by_name||'-'}</td></tr>`;
-          });
-          html += '</tbody></table></div>';
-        }
-
         if (revisions.length) {
-          html += '<div class="src-section"><h4>ประวัติแก้ไขงบ <span class="src-badge">' + revisions.length + ' versions</span></h4>';
-          html += '<table class="src-table"><thead><tr><th>Version</th><th>วันที่</th><th style="text-align:right;">งบเดิม</th><th style="text-align:right;">งบใหม่</th><th>เหตุผล</th><th>โดย</th></tr></thead><tbody>';
+          html += '<div class="src-section"><h4>Revision History <span class="src-badge">' + revisions.length + ' versions</span></h4>';
+          html += '<table class="src-table"><thead><tr><th>Version</th><th>Date</th><th style="text-align:right;">Old Budget</th><th style="text-align:right;">New Budget</th><th>Reason</th><th>By</th></tr></thead><tbody>';
           revisions.forEach(r => {
             html += `<tr><td>Rev.${r.version}</td>
               <td>${new Date(r.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}</td>
@@ -955,10 +933,8 @@
               <td>${r.reason||'-'}</td><td>${r.revised_by_name||'-'}</td></tr>`;
           });
           html += '</tbody></table></div>';
-        }
-
-        if (!transfers.length && !revisions.length) {
-          html = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px;">ยังไม่มีประวัติการแก้ไข</div>';
+        } else {
+          html = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px;">No revision history</div>';
         }
         container.innerHTML = html;
       } catch(e) { container.innerHTML = '<div style="color:var(--danger);font-size:12px;">Error: ' + e.message + '</div>'; }
