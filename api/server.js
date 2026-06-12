@@ -87,6 +87,9 @@ const rateLimit = require('express-rate-limit');
 // out; 1000/min still stops a runaway script but never trips normal multi-user use.
 app.use('/api/', rateLimit({ windowMs: 60000, max: 1000, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests' } }));
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Serve static POC files.
 // Assets (css/js/img) cache for 1h so page navigation doesn't re-fetch them every time;
 // HTML pages stay no-cache (revalidate via ETag → cheap 304) so deploys show up immediately.

@@ -106,7 +106,7 @@
 
     <!-- Filters -->
     <div class="filter-bar">
-      <select class="form-select" id="filter-project" style="width:220px;" onchange="renderList()"><option value="">All Projects</option></select>
+      <select class="form-select searchable" id="filter-project" style="width:220px;" onchange="renderList()"><option value="">All Projects</option></select>
       <select class="form-select" id="filter-type" style="width:140px;" onchange="renderList()">
         <option value="">All Types</option>
         <option value="advance">Advance</option>
@@ -122,7 +122,7 @@
         <option value="settled">Settled</option>
         <option value="overdue">Overdue</option>
       </select>
-      <select class="form-select" id="filter-employee" style="width:180px;" onchange="renderList()"><option value="">All Employees</option></select>
+      <select class="form-select searchable" id="filter-employee" style="width:180px;" onchange="renderList()"><option value="">All Employees</option></select>
     </div>
 
     <!-- List -->
@@ -142,8 +142,8 @@
             </label>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Project</label><select class="form-input" id="f-project"></select></div>
-            <div class="form-group"><label class="form-label">Employee</label><select class="form-input" id="f-employee"></select></div>
+            <div class="form-group"><label class="form-label">Project</label><select class="form-input searchable" id="f-project"></select></div>
+            <div class="form-group"><label class="form-label">Employee</label><select class="form-input searchable" id="f-employee"></select></div>
           </div>
           <div class="form-group"><label class="form-label">Description / Purpose</label><input type="text" class="form-input" id="f-desc" placeholder="Purpose of advance"></div>
           <div class="form-row" id="amount-row">
@@ -317,11 +317,13 @@
       ].map(t => `<div class="main-tab${t.key===tabFilter?' active':''}" onclick="filterTab('${t.key}',this)">${t.label}<span class="tab-count">${counts[t.key]||0}</span></div>`).join('');
     }
 
-    let tabFilter = 'all';
+    var _urlTab = new URLSearchParams(location.search).get('tab');
+    let tabFilter = _urlTab || 'all';
     function filterTab(tab, el) {
       tabFilter = tab;
       document.querySelectorAll('#main-tabs .main-tab').forEach(t => t.classList.remove('active'));
       if (el) el.classList.add('active');
+      savePageState('tab', tab);
       renderList();
     }
 
@@ -816,27 +818,30 @@
     }
     function closePayModal() { document.getElementById('pay-modal').classList.remove('show'); }
     async function savePayment() {
-      const id = document.getElementById('p-adv-id').value;
-      const amount = parseFloat(document.getElementById('p-amount').value);
-      const ref = document.getElementById('p-ref').value.trim();
+      var id = document.getElementById('p-adv-id').value;
+      var ref = document.getElementById('p-ref').value.trim();
       if (!ref) { showToast('Reference is required', 'error'); return; }
+      var formData = new FormData();
+      formData.append('amount', document.getElementById('p-amount').value);
+      formData.append('payment_method', document.getElementById('p-method').value);
+      formData.append('bank_account_id', document.getElementById('p-bank').value || '');
+      formData.append('reference', ref);
+      formData.append('remarks', document.getElementById('p-remarks').value);
+      formData.append('payment_date', document.getElementById('p-date').value || '');
+      var file = document.getElementById('p-attachment').files[0];
+      if (file) formData.append('attachment', file);
       try {
-        await API.post('/advance/'+id+'/pay', {
-          amount,
-          payment_method: document.getElementById('p-method').value,
-          bank_account_id: document.getElementById('p-bank').value || null,
-          reference: ref,
-          remarks: document.getElementById('p-remarks').value,
-          payment_date: document.getElementById('p-date').value || null
+        var token = localStorage.getItem('sda_token');
+        var resp = await fetch('/api/advance/' + id + '/pay', {
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData
         });
+        if (!resp.ok) throw new Error((await resp.json()).error || 'Failed');
         closePayModal(); await loadData();
+        showToast('Payment recorded', 'success');
       } catch(e) { showToast('Error: '+e.message, 'error'); }
     }
 
-    function closePayAndReload() {
-      document.getElementById('pay-modal').classList.remove('show');
-      setTimeout(() => location.reload(), 100);
-    }
+    // closePayAndReload removed (dead code)
 
     // ═══ Clear Modal ═══
     let settleAdvAmount = 0;
@@ -952,17 +957,24 @@
     function closeReturnModal() { document.getElementById('return-modal').classList.remove('show'); }
 
     async function saveReturnReimburse() {
-      const id = document.getElementById('r-adv-id').value;
-      const action = document.getElementById('r-action').value;
-      const endpoint = action === 'return' ? '/advance/'+id+'/receive-return' : '/advance/'+id+'/pay-reimburse';
+      var id = document.getElementById('r-adv-id').value;
+      var action = document.getElementById('r-action').value;
+      var endpoint = '/api/advance/' + id + (action === 'return' ? '/receive-return' : '/pay-reimburse');
+      var formData = new FormData();
+      formData.append('bank_account_id', document.getElementById('r-bank').value || '');
+      formData.append('reference', document.getElementById('r-ref').value);
+      formData.append('remarks', document.getElementById('r-remarks').value);
+      var file = document.getElementById('r-attachment').files[0];
+      if (file) formData.append('attachment', file);
       try {
-        await API.post(endpoint, {
-          bank_account_id: document.getElementById('r-bank').value || null,
-          reference: document.getElementById('r-ref').value,
-          remarks: document.getElementById('r-remarks').value
+        var token = localStorage.getItem('sda_token');
+        var resp = await fetch(endpoint, {
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData
         });
+        if (!resp.ok) throw new Error((await resp.json()).error || 'Failed');
         closeReturnModal();
         await loadData();
+        showToast('Saved', 'success');
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
@@ -975,8 +987,7 @@
 
     function closeReturnAndReload() {
       document.getElementById('return-modal').classList.remove('show');
-      // Restore modal content on next open
-      setTimeout(() => location.reload(), 100);
+      loadData();
     }
 
     async function loadJournal(journalId, containerId) {
@@ -1007,15 +1018,7 @@
       } catch(e) { el.innerHTML = '<div style="color:var(--danger);font-size:11px;">Error loading GL</div>'; }
     }
 
-    function exportCSV() {
-      const list = getFiltered();
-      const rows = [['Doc','Date','Employee','Description','Amount','Paid','Settled','Balance','Status','Project']];
-      list.forEach(a => { rows.push([a.doc_number,a.doc_date,a.employee_name,a.description,a.amount,a.paid_amount,a.settled_amount,a.balance,a.status,a.project_code||'']); });
-      const csv = rows.map(r => r.map(c => '"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
-      const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'advance_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-    }
+    // exportCSV removed (replaced by exportAdvanceExcel)
 
     function exportAdvanceExcel() {
       const list = getFiltered();

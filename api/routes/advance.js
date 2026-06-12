@@ -1,7 +1,29 @@
 const router = require('express').Router();
 const db = require('../db');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { authenticate, getUserProjectIds, checkPermission } = require('../middleware/auth');
 router.use(authenticate);
+
+// File upload config
+const uploadDir = path.join(__dirname, '..', 'uploads', 'advance');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, 'adv-' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + ext);
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg','.jpeg','.png','.pdf','.webp'];
+    cb(null, allowed.includes(path.extname(file.originalname).toLowerCase()));
+  }
+});
 
 // Helper: run multi-step operations inside a transaction
 async function withTransaction(fn) {
@@ -375,7 +397,7 @@ router.post('/:id/reject', async (req, res) => {
 // ═══ Payments (Finance records payment) ═══
 
 // POST /api/advance/:id/pay
-router.post('/:id/pay', async (req, res) => {
+router.post('/:id/pay', upload.single('attachment'), async (req, res) => {
   try {
     if (!['finance','executive'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only finance can record payment' });
@@ -583,7 +605,7 @@ router.post('/:id/settle', async (req, res) => {
 
 
 // POST /api/advance/:id/receive-return — Record employee returning money
-router.post('/:id/receive-return', async (req, res) => {
+router.post('/:id/receive-return', upload.single('attachment'), async (req, res) => {
   try {
     if (!['finance','executive'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only finance can receive return' });
@@ -632,7 +654,7 @@ router.post('/:id/receive-return', async (req, res) => {
 });
 
 // POST /api/advance/:id/pay-reimburse — Company pays extra to employee
-router.post('/:id/pay-reimburse', async (req, res) => {
+router.post('/:id/pay-reimburse', upload.single('attachment'), async (req, res) => {
   try {
     if (!['finance','executive'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only finance can pay reimburse' });
