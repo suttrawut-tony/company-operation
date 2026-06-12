@@ -161,15 +161,7 @@
       <div id="projectBudgetContent">
         <div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>
       </div>
-      <div id="monthlyDistributionSection" style="display:none;">
-        <div style="margin-top:24px;border-top:2px dashed var(--border);padding-top:20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h3 style="font-size:15px;font-weight:700;">📊 งบรายเดือน (Monthly Distribution)</h3>
-            <button class="btn btn-secondary btn-sm" onclick="distributeBudgetEvenly()">กระจายเฉลี่ย 12 เดือน</button>
-          </div>
-          <div id="monthlyGrid"></div>
-        </div>
-      </div>
+      <!-- Monthly Distribution section removed -->
     </div>
 
     <!-- ═══ Tab 3: Comparison View ═══ -->
@@ -486,8 +478,7 @@
     async function loadProjectBudget(forceProjectId) {
       const projId = forceProjectId || document.getElementById('projBudgetSelect').value;
       const container = document.getElementById('projectBudgetContent');
-      const monthlySection = document.getElementById('monthlyDistributionSection');
-      if (!projId) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>'; if(monthlySection) monthlySection.style.display='none'; return; }
+      if (!projId) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">เลือกโปรเจกต์เพื่อดูงบประมาณ</div>'; return; }
 
       // Reload data if empty
       if (!allBudgets.length || !allProjects.length) {
@@ -536,13 +527,7 @@
         try { const d = await API.getBudget(bid); renderLines(uid, d.lines || []); } catch(e) { renderLines(uid, []); }
       }
 
-      // Show monthly distribution section
-      if (monthlySection && projBudgets.length) {
-        monthlySection.style.display = 'block';
-        const firstBudget = projBudgets[0];
-        const totalBudget = projBudgets.reduce((s,b) => s + (parseFloat(b.total_budget)||0), 0);
-        renderMonthlyGrid(firstBudget.id, totalBudget);
-      }
+      // Monthly distribution section removed
     }
 
     function viewProjectBudget(projectId) {
@@ -1101,55 +1086,7 @@
       container.innerHTML = html;
     }
 
-    // ═══ Monthly Distribution ═══
-    function renderMonthlyGrid(budgetId, totalBudget) {
-      const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-      const grid = document.getElementById('monthlyGrid');
-      if (!grid) return;
-
-      API.get('/budget/' + budgetId + '/periods').then(periods => {
-        const periodMap = {};
-        periods.forEach(p => { periodMap[p.period_month] = p; });
-
-        let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
-        html += '<thead><tr style="background:var(--bg-light);"><th style="padding:8px;text-align:left;">เดือน</th><th style="padding:8px;text-align:right;">งบจัดสรร</th><th style="padding:8px;text-align:right;">เบิกจ่าย</th><th style="padding:8px;text-align:right;">คงเหลือ</th><th style="padding:8px;width:120px;">สัดส่วน</th></tr></thead><tbody>';
-
-        let totalAllocated = 0, totalActual = 0;
-        for (let m = 1; m <= 12; m++) {
-          const p = periodMap[m] || { budget_amount: 0, actual_amount: 0 };
-          const allocated = parseFloat(p.budget_amount) || 0;
-          const actual = parseFloat(p.actual_amount) || 0;
-          const remaining = allocated - actual;
-          const pct = allocated > 0 ? Math.round(actual / allocated * 100) : 0;
-          totalAllocated += allocated;
-          totalActual += actual;
-
-          const barColor = pct > 100 ? 'var(--danger)' : pct > 80 ? 'var(--warning)' : 'var(--success)';
-          html += `<tr style="border-bottom:1px solid var(--border-light);">
-            <td style="padding:8px;font-weight:500;">${months[m-1]}</td>
-            <td style="padding:8px;text-align:right;font-family:monospace;">${allocated ? allocated.toLocaleString() : '-'}</td>
-            <td style="padding:8px;text-align:right;font-family:monospace;">${actual ? actual.toLocaleString() : '-'}</td>
-            <td style="padding:8px;text-align:right;font-family:monospace;color:${remaining < 0 ? 'var(--danger)' : 'inherit'}">${allocated ? remaining.toLocaleString() : '-'}</td>
-            <td style="padding:8px;"><div style="height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${Math.min(pct,100)}%;background:${barColor};border-radius:4px;"></div></div></td>
-          </tr>`;
-        }
-        html += `<tr style="font-weight:700;border-top:2px solid var(--border);"><td style="padding:8px;">รวมทั้งปี</td><td style="padding:8px;text-align:right;font-family:monospace;">${totalAllocated.toLocaleString()}</td><td style="padding:8px;text-align:right;font-family:monospace;">${totalActual.toLocaleString()}</td><td style="padding:8px;text-align:right;font-family:monospace;">${(totalAllocated-totalActual).toLocaleString()}</td><td></td></tr>`;
-        html += '</tbody></table>';
-        grid.innerHTML = html;
-      }).catch(() => {
-        grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">ยังไม่มีข้อมูลงบรายเดือน</div>';
-      });
-    }
-
-    function distributeBudgetEvenly() {
-      const projId = document.getElementById('projBudgetSelect').value;
-      if (!projId) { showToast('กรุณาเลือกโปรเจกต์ก่อน', 'warning'); return; }
-      const projBudgets = allBudgets.filter(b => b.project_id === projId);
-      if (!projBudgets.length) { showToast('ไม่มี Budget สำหรับโปรเจกต์นี้', 'warning'); return; }
-      const totalBudget = projBudgets.reduce((s,b) => s + (parseFloat(b.total_budget)||0), 0);
-      const monthly = Math.round(totalBudget / 12);
-      showToast('งบเฉลี่ยต่อเดือน: ฿' + monthly.toLocaleString(), 'success');
-    }
+    // Monthly Distribution section removed
 
     // Close on ESC
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBudgetModal(); });
