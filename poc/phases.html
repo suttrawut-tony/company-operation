@@ -886,7 +886,8 @@
           <td style="padding:6px;">${p.expected_date||'-'}</td>
           <td style="padding:6px;">${invoiceCell}</td>
           <td style="padding:6px;">
-            <div style="display:flex;gap:4px;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              ${p.status === 'invoiced' ? '<button class="btn btn-sm btn-success" style="font-size:10px;padding:3px 8px;" onclick="openReceiveModal(\'' + p.id + '\',' + p.net_amount + ')">Receive</button>' : ''}
               <button class="btn btn-sm" style="font-size:10px;padding:3px 8px;" onclick="openEditPayment('${p.id}')">Edit</button>
               ${canDelete ? '<button class="btn btn-sm" style="font-size:10px;padding:3px 8px;color:var(--danger);border-color:var(--danger);" onclick="deletePayment(\'' + p.id + '\')">Del</button>' : ''}
             </div>
@@ -988,6 +989,45 @@
           invoice_date: new Date().toISOString().slice(0,10)
         });
         showToast('Invoice saved', 'success');
+        loadFinanceDashboard();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    // Receive payment modal
+    function openReceiveModal(paymentId, netAmount) {
+      let m = document.getElementById('recv-modal');
+      if (!m) { m = document.createElement('div'); m.id = 'recv-modal'; m.className = 'modal-overlay'; m.onclick = function(e) { if (e.target===m) m.classList.remove('show'); }; document.body.appendChild(m); }
+      m.innerHTML = '<div class="modal-box" style="width:420px;">' +
+        '<div class="modal-header"><h3>Receive Payment</h3><button class="modal-close" onclick="document.getElementById(\'recv-modal\').classList.remove(\'show\')">&times;</button></div>' +
+        '<div class="modal-body">' +
+          '<div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;text-align:center;"><div style="font-size:10px;color:var(--text-muted);font-weight:600;">NET AMOUNT</div><div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:4px;">' + fmtMoney(netAmount) + '</div></div>' +
+          '<div class="form-group"><label class="form-label">Received Amount</label><input class="form-input" type="number" id="recv-amount" value="' + netAmount + '" step="0.01"></div>' +
+          '<div class="form-group"><label class="form-label">WHT (Withholding Tax)</label><input class="form-input" type="number" id="recv-wht" value="0" step="0.01"></div>' +
+          '<div class="form-group"><label class="form-label">Received Date</label><input class="form-input" type="date" id="recv-date" value="' + new Date().toISOString().slice(0,10) + '"></div>' +
+          '<div class="form-group"><label class="form-label">Payment Method</label><select class="form-input" id="recv-method"><option value="transfer">Bank Transfer</option><option value="cheque">Cheque</option><option value="cash">Cash</option></select></div>' +
+          '<div class="form-group"><label class="form-label">Remarks</label><input class="form-input" id="recv-remarks"></div>' +
+        '</div>' +
+        '<div class="modal-footer"><button class="btn btn-secondary" onclick="document.getElementById(\'recv-modal\').classList.remove(\'show\')">Cancel</button><button class="btn btn-primary" onclick="saveReceive(\'' + paymentId + '\')">Confirm Receive</button></div>' +
+      '</div>';
+      m.classList.add('show');
+    }
+
+    async function saveReceive(paymentId) {
+      var received = parseFloat(document.getElementById('recv-amount').value) || 0;
+      var wht = parseFloat(document.getElementById('recv-wht').value) || 0;
+      if (received <= 0) { showToast('Received amount required', 'error'); return; }
+      try {
+        await API.put('/projects/payment-schedule/' + paymentId, {
+          received_amount: received,
+          wht_amount: wht,
+          actual_net: received - wht,
+          received_date: document.getElementById('recv-date').value,
+          payment_method: document.getElementById('recv-method').value,
+          status: 'paid',
+          remarks: document.getElementById('recv-remarks').value || null
+        });
+        document.getElementById('recv-modal').classList.remove('show');
+        showToast('Payment received', 'success');
         loadFinanceDashboard();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
