@@ -165,7 +165,7 @@
         <option value="pending">Pending</option>
         <option value="approved">Approved</option>
         <option value="paid">Paid</option>
-        <option value="sent_to_sap">Synced to SAP</option>
+        <option value="sent_to_erp">Synced to ERP</option>
       </select>
       <select class="form-select" id="exp-filter-project" onchange="renderExpenses()" style="width:180px;">
         <option value="">All Projects</option>
@@ -346,7 +346,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Account Code (SAP)</label>
+            <label class="form-label">Account Code (ERP)</label>
             <select class="form-select">
               <option>Select account...</option>
               <option>522501 - ค่าธรรมเนียมธนาคาร</option>
@@ -411,7 +411,7 @@
           <div class="timeline-item">
             <div class="timeline-dot pending">&#9889;</div>
             <div class="timeline-content">
-              <h4>Sync to SAP</h4>
+              <h4>Sync to ERP</h4>
               <div class="detail">Auto create AP Invoice (OPCH)</div>
             </div>
           </div>
@@ -481,7 +481,7 @@
       const pendingAmt = allExpenses.filter(e => e.status.includes('pending')).reduce((s,e) => s + parseFloat(e.amount||0), 0);
       const pendingCount = allExpenses.filter(e => e.status.includes('pending')).length;
       const approvedAmt = allExpenses.filter(e => e.status === 'approved').reduce((s,e) => s + parseFloat(e.amount||0), 0);
-      const syncedAmt = allExpenses.filter(e => e.status === 'sent_to_sap' || e.status === 'paid').reduce((s,e) => s + parseFloat(e.amount||0), 0);
+      const syncedAmt = allExpenses.filter(e => e.status === 'sent_to_erp' || e.status === 'paid').reduce((s,e) => s + parseFloat(e.amount||0), 0);
       document.getElementById('exp-stats').innerHTML = `
         <div class="exp-stat"><div class="label">Total</div><div class="value">${fmtMoney(total)}</div><div class="sub">${allExpenses.length} transactions</div></div>
         <div class="exp-stat"><div class="label">Pending</div><div class="value" style="color:var(--warning);">${fmtMoney(pendingAmt)}</div><div class="sub">${pendingCount} items</div></div>
@@ -515,7 +515,7 @@
 
       document.getElementById('exp-list').innerHTML = list.map(e => {
         const isAdv = e.expense_type === 'advance' || e.expense_type === 'advance_clear';
-        const iconBg = isAdv ? 'var(--info-bg)' : e.status.includes('pending') ? 'var(--warning-bg)' : e.status === 'approved' ? 'var(--success-bg)' : e.status === 'sent_to_sap' || e.status === 'paid' ? 'var(--primary-light)' : 'var(--bg-hover)';
+        const iconBg = isAdv ? 'var(--info-bg)' : e.status.includes('pending') ? 'var(--warning-bg)' : e.status === 'approved' ? 'var(--success-bg)' : e.status === 'sent_to_erp' || e.status === 'paid' ? 'var(--primary-light)' : 'var(--bg-hover)';
         const rowBg = isAdv ? 'background:rgba(59,130,246,0.03);' : '';
         const typeBadge = e.expense_type !== 'reimbursement' ? `<span class="badge badge-info" style="font-size:9px;">${e.expense_type.replace('_',' ')}</span>` : '';
         const sapRef = e.sap_doc_num ? `<div style="font-size:var(--text-2xs);color:var(--info);font-weight:600;font-family:var(--font-mono);">OPCH #${e.sap_doc_num}</div>` : '';

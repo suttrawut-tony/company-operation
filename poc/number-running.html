@@ -48,7 +48,7 @@
 
     <!-- Format Breakdown -->
     <div class="card" style="margin-bottom:20px;">
-      <div class="card-header"><h2>Document Number Format</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">Based on SAP Blueprint</span></div>
+      <div class="card-header"><h2>Document Number Format</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">Based on ERP Blueprint</span></div>
       <div class="card-body">
         <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:8px;">Format: <strong>Prefix + Year(YY) + Month(MM) + Running(4 digits)</strong></div>
         <div class="format-parts" id="format-parts">Loading...</div>
@@ -68,7 +68,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><h2>SAP Synced Documents</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">From SAP Blueprint</span></div>
+        <div class="card-header"><h2>ERP Synced Documents</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">From ERP Blueprint</span></div>
         <div class="table-container">
           <table class="nr-table">
             <thead><tr><th>Document</th><th>SAP Prefix</th><th>Range</th><th>Status</th></tr></thead>
@@ -100,7 +100,7 @@
       try {
         const series = await API.getNumberSeries();
         const synced = series.filter(s => s.sap_synced);
-        document.getElementById('sync-status').innerHTML = synced.length > 0 ? '&#10003; SAP Synced' : 'Web Only';
+        document.getElementById('sync-status').innerHTML = synced.length > 0 ? '&#10003; ERP Synced' : 'Web Only';
         document.getElementById('sync-status').className = 'badge badge-' + (synced.length > 0 ? 'success' : 'gray') + ' badge-dot';
 
         // Format breakdown from first series

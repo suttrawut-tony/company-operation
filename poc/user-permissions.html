@@ -430,7 +430,7 @@
           </div>
           <div class="user-meta-grid">
             <div class="user-meta-item"><span class="lbl">Role</span><span class="role-pill ${u.role}">${ROLE_NAMES[u.role]}</span></div>
-            <div class="user-meta-item"><span class="lbl">SAP License</span><span style="font-size:11px;padding:2px 8px;background:var(--bg-hover);border-radius:4px;">${u.sap_license || '-'}</span></div>
+            <div class="user-meta-item"><span class="lbl">ERP License</span><span style="font-size:11px;padding:2px 8px;background:var(--bg-hover);border-radius:4px;">${u.sap_license || '-'}</span></div>
             <div class="user-meta-item"><span class="lbl">Can Approve</span><span style="font-size:11px;padding:2px 8px;border-radius:4px;${u.can_approve?'background:var(--success-bg);color:var(--success);':'background:var(--bg-hover);color:var(--text-muted);'}">${u.can_approve ? 'Yes — ' + limitText : 'No'}</span></div>
             ${u.email ? `<div class="user-meta-item"><span class="lbl">Email</span><span style="font-size:11px;color:var(--text-muted);">${u.email}</span></div>` : ''}
             <div class="user-meta-item" style="flex-wrap:wrap;gap:4px;">

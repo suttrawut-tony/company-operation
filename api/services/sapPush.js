@@ -1,6 +1,6 @@
 /**
- * Push GL Journal to SAP B1 as Journal Entry
- * Non-blocking: returns result or { skipped: true } if SAP not configured
+ * Push GL Journal to ERP as Journal Entry
+ * Non-blocking: returns result or { skipped: true } if ERP not configured
  */
 const sapClient = require('./sapClient');
 

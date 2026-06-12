@@ -7,7 +7,7 @@ const { authenticate, getUserProjectIds, checkPermission } = require('../middlew
 router.use(authenticate);
 const { pushJournalToSAP } = require('../services/sapPush');
 
-// SAP push is manual — use POST /:id/push-sap endpoint
+// SAP push is manual — use POST /:id/push-erp endpoint
 
 // File upload config
 const uploadDir = path.join(__dirname, '..', 'uploads', 'advance');
@@ -720,8 +720,8 @@ router.post('/:id/confirm-return', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/advance/:id/push-sap — Manual push GL Journals to SAP
-router.post('/:id/push-sap', async (req, res) => {
+// POST /api/advance/:id/push-erp — Manual push GL Journals to SAP
+router.post('/:id/push-erp', async (req, res) => {
   try {
     if (!['finance','executive'].includes(req.user.role)) return res.status(403).json({ error: 'Not authorized' });
 

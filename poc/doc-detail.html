@@ -394,7 +394,7 @@
         ${isDraft && !isEditing ? '<button class="erp-btn primary" onclick="submitDoc()">Submit</button>' : ''}
         ${isPending ? '<button class="erp-btn success" onclick="approveDoc()">Approve</button>' : ''}
         ${isPending ? '<button class="erp-btn danger" onclick="rejectDoc()">Reject</button>' : ''}
-        ${!isNew && docType==='pr' && (doc.status==='approved'||doc.status==='sent_to_sap') ? '<button class="erp-btn primary" onclick="copyToPO()">Copy To PO</button>' : ''}
+        ${!isNew && docType==='pr' && (doc.status==='approved'||doc.status==='sent_to_erp') ? '<button class="erp-btn primary" onclick="copyToPO()">Copy To PO</button>' : ''}
         ${!isNew ? '<button class="erp-btn" onclick="copyDoc()">Copy To</button>' : ''}
         ${!isNew && isDraft ? '<button class="erp-btn danger" onclick="cancelDoc()">Cancel</button>' : ''}
         ${!isNew ? '<button class="erp-btn" onclick="window.print()">Print</button>' : ''}
@@ -414,7 +414,7 @@
           <div class="erp-field"><label>Project</label><input value="${doc.project_code||''}" ${ro} placeholder="SDA-2026-XXX"></div>
           <div class="erp-field"><label>Requester</label><input value="${doc.requester_name||''}" readonly></div>
           <div class="erp-field"><label>Created</label><input value="${fmtDate(doc.created_at)}" readonly></div>
-          ${doc.sap_doc_num ? '<div class="erp-field"><label>SAP Reference</label><input value="'+doc.sap_object_type+' #'+doc.sap_doc_num+'" readonly style="color:var(--info);font-weight:600;"></div>' : ''}
+          ${doc.sap_doc_num ? '<div class="erp-field"><label>ERP Reference</label><input value="'+doc.sap_object_type+' #'+doc.sap_doc_num+'" readonly style="color:var(--info);font-weight:600;"></div>' : ''}
         `;
       } else {
         // Build project options from API cache
@@ -440,7 +440,7 @@
           <div class="erp-field"><label>WHT Code</label><select ${dis}><option value="">ไม่มี</option><option value="5360">5360 — ค่าบริการ 3%</option><option value="5362">5362 — ค่าจ้างเหมา 3%</option><option value="5350">5350 — ค่าขนส่ง 1%</option><option value="5361">5361 — ค่าเช่า 5%</option></select></div>
           <div class="erp-field"><label>Requester</label><input value="${doc.requester_name||doc.creator_name||''}" readonly></div>
           <div class="erp-field"><label>Created</label><input value="${fmtDate(doc.created_at)}" readonly></div>
-          ${doc.sap_doc_num ? '<div class="erp-field"><label>SAP Reference</label><input value="'+(doc.sap_object_type||'OPRQ')+' #'+doc.sap_doc_num+'" readonly style="color:var(--info);font-weight:600;font-family:var(--font-mono);"></div>' : ''}
+          ${doc.sap_doc_num ? '<div class="erp-field"><label>ERP Reference</label><input value="'+(doc.sap_object_type||'OPRQ')+' #'+doc.sap_doc_num+'" readonly style="color:var(--info);font-weight:600;font-family:var(--font-mono);"></div>' : ''}
           <div class="erp-field span4"><label>Remarks</label><input value="${doc.remarks||''}" ${ro} placeholder="หมายเหตุ..."></div>
         `;
       }
@@ -562,7 +562,7 @@
           <div style="font-size:var(--text-base);font-weight:600;margin-bottom:16px;">Document Flow Chain</div>
           <div style="display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;" id="doc-flow-chain"></div>
           <div style="margin-top:16px;font-size:var(--text-xs);color:var(--text-muted);">
-            SAP Objects: PR (OPRQ) &rarr; PO (OPOR) &rarr; Sent to SAP &rarr; SAP Document (received)
+            ERP Objects: PR (OPRQ) &rarr; PO (OPOR) &rarr; Sent to ERP &rarr; ERP Document (received)
           </div>
         </div>
 
@@ -721,9 +721,9 @@
       ];
       if (amount > 10000) steps.push({ label:'Finance', st: ['draft','pending_manager','pending_finance'].includes(s)?s==='pending_finance'?'current':'pending':'done' });
       if (amount > 100000) steps.push({ label:'Executive', st: ['draft','pending_manager','pending_finance','pending_executive'].includes(s)?s==='pending_executive'?'current':'pending':'done' });
-      steps.push({ label:'Budget Deduction', st: ['approved','paid','sent_to_sap','received'].includes(s)?'done':'pending', sub:'Auto' });
+      steps.push({ label:'Budget Deduction', st: ['approved','paid','sent_to_erp','received'].includes(s)?'done':'pending', sub:'Auto' });
       if (window._sapConfigured) {
-        steps.push({ label:'Push to SAP', st: ['sent_to_sap','received'].includes(s)?'done':'pending', sub: doc.sap_doc_num?'SAP #'+doc.sap_doc_num:'' });
+        steps.push({ label:'Push to ERP', st: ['sent_to_erp','received'].includes(s)?'done':'pending', sub: doc.sap_doc_num?'ERP #'+doc.sap_doc_num:'' });
       }
       return steps;
     }
@@ -943,7 +943,7 @@
     function renderDocFlowChain(doc, docType) {
       const chain = doc.chain || {};
       const arrow = '<span style="color:var(--text-muted);font-size:20px;">&rarr;</span>';
-      const doneStatuses = ['approved','sent_to_sap','received','posted','paid','completed'];
+      const doneStatuses = ['approved','sent_to_erp','received','posted','paid','completed'];
 
       const nodeStyle = 'padding:14px 18px;border-radius:var(--radius-lg);font-size:13px;text-align:center;min-width:150px;width:150px;display:flex;flex-direction:column;justify-content:center;';
 
@@ -981,7 +981,7 @@
           const border = isDone ? 'border:2px solid var(--success);background:var(--success-bg);' : 'border:2px solid var(--info);background:#e0f2fe;';
           return `<div style="${nodeStyle}${border}">
             <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">${label}${isDone ? '<span style="color:var(--success);font-size:14px;margin-left:4px;">&#10003;</span>' : ''}</div>
-            <div style="font-weight:700;margin:4px 0;color:#0369a1;">SAP #${sapDocNum}</div>
+            <div style="font-weight:700;margin:4px 0;color:#0369a1;">ERP #${sapDocNum}</div>
             ${objectType ? '<div style="font-size:10px;color:var(--text-muted);">'+objectType+'</div>' : ''}
           </div>`;
         } else {
@@ -994,39 +994,39 @@
 
       let nodes = [];
 
-      // Sent to SAP node — shows "Sent" when status is sent_to_sap or received
+      // Sent to ERP node — shows "Sent" when status is sent_to_erp or received
       function sentToSapNode(status) {
-        const isSent = ['sent_to_sap','received'].includes(status);
+        const isSent = ['sent_to_erp','received'].includes(status);
         if (isSent) {
           return `<div style="${nodeStyle}border:2px solid var(--success);background:var(--success-bg);">
-            <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Sent to SAP<span style="color:var(--success);font-size:14px;margin-left:4px;">&#10003;</span></div>
+            <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Sent to ERP<span style="color:var(--success);font-size:14px;margin-left:4px;">&#10003;</span></div>
             <div style="font-weight:600;margin-top:4px;color:var(--success);">Sent</div>
           </div>`;
         }
         return `<div style="${nodeStyle}border:1px dashed var(--border);color:var(--text-muted);">
-          <div style="font-size:10px;font-weight:600;text-transform:uppercase;">Sent to SAP</div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;">Sent to ERP</div>
           <div style="margin-top:4px;">Pending</div>
         </div>`;
       }
 
       if (docType === 'pr') {
-        // PR → PO → Sent to SAP → SAP Document (received)
+        // PR → PO → Sent to ERP → ERP Document (received)
         nodes.push(flowNode('Purchase Request', doc.doc_number, doc.status, 'pr', true));
         nodes.push(arrow);
         nodes.push(flowNode('Purchase Order', chain.po?.doc_number, chain.po?.status, 'po', false));
         nodes.push(arrow);
         nodes.push(sentToSapNode(doc.status));
         nodes.push(arrow);
-        nodes.push(sapNode('SAP Document', doc.sap_doc_num, 'OPRQ', doc.status === 'received'));
+        nodes.push(sapNode('ERP Document', doc.sap_doc_num, 'OPRQ', doc.status === 'received'));
       } else if (docType === 'po') {
-        // PR → PO → Sent to SAP → SAP Document (received)
+        // PR → PO → Sent to ERP → ERP Document (received)
         nodes.push(flowNode('Purchase Request', chain.pr?.doc_number, chain.pr?.status, 'pr', false));
         nodes.push(arrow);
         nodes.push(flowNode('Purchase Order', doc.doc_number, doc.status, 'po', true));
         nodes.push(arrow);
         nodes.push(sentToSapNode(doc.status));
         nodes.push(arrow);
-        nodes.push(sapNode('SAP Document', doc.sap_doc_num, 'OPOR', doc.status === 'received'));
+        nodes.push(sapNode('ERP Document', doc.sap_doc_num, 'OPOR', doc.status === 'received'));
       } else {
         nodes.push(flowNode(docType.toUpperCase(), doc.doc_number, doc.status, docType, true));
       }

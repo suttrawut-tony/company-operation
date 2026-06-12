@@ -1,5 +1,5 @@
 /**
- * SAP B1 Service Layer Client (singleton)
+ * ERP (SAP B1) Service Layer Client (singleton)
  * Env vars: SAP_HOST, SAP_COMPANY_DB, SAP_USER, SAP_PASSWORD
  */
 const https = require('https');

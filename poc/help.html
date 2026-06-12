@@ -84,6 +84,15 @@
       <a href="#user-permission">ผู้ใช้งาน & สิทธิ์</a>
       <a href="#setup">ตั้งค่าระบบ</a>
       <a href="#roles">บทบาทผู้ใช้งาน</a>
+      <a href="#my-tasks">งานของฉัน</a>
+      <a href="#quotation">ใบเสนอราคา</a>
+      <a href="#booking">การจอง</a>
+      <a href="#journal">บันทึกบัญชี</a>
+      <a href="#number-running">เลขที่เอกสาร</a>
+      <a href="#reports">รายงาน</a>
+      <a href="#sow">SOW Generator</a>
+      <a href="#pricing">แพ็กเกจ</a>
+      <a href="#shortcuts">คีย์ลัด</a>
     </div>
 
     <!-- ═══════════ หน้าหลัก ═══════════ -->
@@ -778,6 +787,349 @@
           </table>
         </div>
         <div class="tip-box">💡 ระบบใช้งานได้เต็มที่โดยไม่ต้องเชื่อม SAP เมื่อพร้อมเชื่อมต่อจะเพิ่มปุ่ม Push to SAP</div>
+      </div>
+    </div>
+
+    <!-- ═══ งานของฉัน ═══ -->
+
+    <div class="guide-section" id="my-tasks">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        งานของฉัน (My Tasks) <span class="badge badge-main">หน้าหลัก</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>รวมงานทั้งหมดที่ได้รับมอบหมายจากทุกโปรเจค ดูแบบรายวัน สัปดาห์ เดือน หรือแยกตามโปรเจคได้</p>
+        </div>
+        <div class="guide-block">
+          <h4>มุมมอง</h4>
+          <table class="guide-table">
+            <tr><th>มุมมอง</th><th>คำอธิบาย</th></tr>
+            <tr><td>Day</td><td>ดูงานวันนี้เรียงตามเวลา</td></tr>
+            <tr><td>Week</td><td>ดูงานทั้งสัปดาห์แบบ Gantt-like</td></tr>
+            <tr><td>Month</td><td>ดูภาพรวมงานทั้งเดือน</td></tr>
+            <tr><td>By Project</td><td>แยกงานตามโปรเจค</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>สลับมุมมองด้วยปุ่มด้านบน</li>
+            <li>กดที่การ์ดงานเพื่อดูรายละเอียดหรือเปลี่ยนสถานะ</li>
+            <li>กด <strong>Export Excel</strong> เพื่อดาวน์โหลดรายการงานทั้งหมด</li>
+            <li>งานแสดงสีตาม Priority: แดง = Urgent, ส้ม = High, ฟ้า = Medium, เทา = Low</li>
+          </ul>
+        </div>
+        <div class="tip-box">💡 งานที่ใกล้ครบกำหนดจะแสดง badge สีแดง เพื่อเตือนให้ทำก่อน</div>
+      </div>
+    </div>
+
+    <!-- ═══ ใบเสนอราคา ═══ -->
+
+    <div class="guide-section" id="quotation">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        ใบเสนอราคา (Sales Quotation) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>สร้างใบเสนอราคาให้ลูกค้า ระบุรายการสินค้า/บริการ ส่วนลด VAT ส่งลูกค้ารอตอบรับ หรือสร้างจาก Booking ก็ได้</p>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะเอกสาร</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Draft (ร่าง)</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Sent (ส่งลูกค้า)</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Accepted (ยอมรับ)</span><span class="flow-arrow-sm">/</span>
+            <span class="flow-step-box">Rejected (ปฏิเสธ)</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>กด <strong>+ สร้างใบเสนอราคา</strong> จากหน้ารายการ</li>
+            <li>กรอกข้อมูลลูกค้า ไซต์ ขนาดระบบ ประเภทหลังคา</li>
+            <li>เพิ่มรายการสินค้าจาก Item Master (ค้นหาได้ทั้งรหัสและชื่อ)</li>
+            <li>ระบุส่วนลด % ระบบคำนวณ VAT 7% ให้อัตโนมัติ</li>
+            <li>กด <strong>Save</strong> บันทึก &rarr; กด <strong>Send to Customer</strong> ส่งลูกค้า</li>
+            <li>ลูกค้าตอบรับ &rarr; กด <strong>Customer Accepted</strong></li>
+            <li>กด <strong>Print</strong> พิมพ์ใบเสนอราคาได้ทุกเมื่อ</li>
+            <li>กด <strong>Copy to New</strong> คัดลอกเป็นใบเสนอราคาใหม่ (เช่น แก้ราคาแล้วส่งใหม่)</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>สร้างจาก Booking</h4>
+          <p>ถ้ามี Booking (นัดสำรวจ/ติดตั้ง) ที่ยังไม่ได้สร้าง SQ ระบบจะแสดงใน Dashboard เป็น "รอสร้างใบเสนอราคา" กด Convert ได้เลย ข้อมูลลูกค้าและไซต์จะถูกดึงมาให้อัตโนมัติ</p>
+        </div>
+        <div class="guide-block">
+          <h4>Document Navigation</h4>
+          <p>ในหน้ารายละเอียด SQ กดปุ่ม <strong>&laquo; &raquo;</strong> ด้านบนเพื่อเลื่อนดูเอกสารตัวอื่นได้ทันที ไม่ต้องกลับหน้ารายการ</p>
+        </div>
+        <div class="tip-box">💡 เลขที่ SQ ถูกสร้างอัตโนมัติ (SQ-YYYYMM-001) ไม่ต้องกรอกเอง</div>
+      </div>
+    </div>
+
+    <!-- ═══ การจอง ═══ -->
+
+    <div class="guide-section" id="booking">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        การจอง (Booking) <span class="badge badge-res">ทรัพยากร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ระบบจองทรัพยากร 3 ประเภท แสดงเป็นปฏิทินแบบ Google Calendar ดูว่าทรัพยากรไหนว่าง/ไม่ว่างได้ทันที</p>
+        </div>
+        <div class="guide-block">
+          <h4>ประเภทการจอง</h4>
+          <table class="guide-table">
+            <tr><th>ประเภท</th><th>คำอธิบาย</th><th>ข้อมูลที่ต้องกรอก</th></tr>
+            <tr><td>รถ (Vehicle)</td><td>จองรถบริษัทไปทำงาน</td><td>เลือกรถ, วันที่, โปรเจค</td></tr>
+            <tr><td>ช่างเทคนิค (Technician)</td><td>จองช่างไปติดตั้ง/ซ่อม</td><td>เลือกช่าง, วันที่, ไซต์งาน</td></tr>
+            <tr><td>ตั๋วเครื่องบิน (Flight)</td><td>จองเที่ยวบินให้ทีมงาน</td><td>เที่ยวบิน, สนามบินต้นทาง/ปลายทาง</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>มุมมองปฏิทิน</h4>
+          <ul>
+            <li><strong>Day</strong> — ดูทีละวัน แสดง booking เรียงตามเวลา</li>
+            <li><strong>Week</strong> — ดูทั้งสัปดาห์ แต่ละคอลัมน์คือ 1 วัน</li>
+            <li><strong>Month</strong> — ดูภาพรวมทั้งเดือน</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>กดปุ่ม <strong>+ จอง</strong> ที่ Sidebar ซ้าย เลือกประเภท</li>
+            <li>กรอกข้อมูล เลือกทรัพยากร วันที่ โปรเจค</li>
+            <li>ระบบเช็คว่าทรัพยากรว่างให้อัตโนมัติ (Availability Check)</li>
+            <li>ใช้ <strong>Sidebar Filter</strong> กรองดู booking ตามประเภท/สถานะ</li>
+            <li><strong>Drag-to-Copy</strong> — ลาก booking ที่มีอยู่ไปวางวันอื่นเพื่อคัดลอก</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะการจอง</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Pending</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Approved</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Checked Out</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Checked In</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>เชื่อมกับ Job Order</h4>
+          <p>ถ้ามี Job Order (ใบสั่งงาน) ที่ระบุว่าต้องใช้รถ/ช่าง/เครื่องบิน สามารถสร้าง Booking จาก JO ได้เลย ข้อมูลจะถูกดึงมาให้อัตโนมัติ</p>
+        </div>
+        <div class="tip-box">💡 Booking ที่ Approved แล้วสามารถ Convert เป็นใบเสนอราคา (SQ) ได้ทันทีจาก Dashboard</div>
+      </div>
+    </div>
+
+    <!-- ═══ บันทึกบัญชี ═══ -->
+
+    <div class="guide-section" id="journal">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        บันทึกรายการบัญชี (Journal Entries) <span class="badge badge-doc">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>บันทึกรายการบัญชีที่สร้างจากระบบ เช่น การจ่ายเงินทดรอง การเคลียร์เงินสดย่อย ระบบสร้าง Journal Entry ให้อัตโนมัติ</p>
+        </div>
+        <div class="guide-block">
+          <h4>ประเภทรายการ</h4>
+          <table class="guide-table">
+            <tr><th>ที่มา</th><th>Dr (เดบิต)</th><th>Cr (เครดิต)</th></tr>
+            <tr><td>จ่ายเงินทดรอง</td><td>113103 ลูกหนี้พนักงาน</td><td>111201 ธนาคาร</td></tr>
+            <tr><td>เคลียร์เงินทดรอง</td><td>522xxx ค่าใช้จ่าย</td><td>113103 ลูกหนี้พนักงาน</td></tr>
+            <tr><td>เบิกเงินสดย่อย</td><td>522xxx ค่าใช้จ่าย</td><td>111101 เงินสดย่อย</td></tr>
+            <tr><td>เติมเงินสดย่อย</td><td>111101 เงินสดย่อย</td><td>111201 ธนาคาร</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>ดูรายการ Journal ทั้งหมดที่ระบบสร้างให้</li>
+            <li>กรองตามวันที่ โปรเจค หรือประเภท</li>
+            <li>กดที่รายการเพื่อดู Dr/Cr detail</li>
+            <li>รายการถูกสร้างอัตโนมัติ ไม่ต้องลงมือทำ</li>
+          </ul>
+        </div>
+        <div class="info-box">Journal Entries สร้างอัตโนมัติจากการอนุมัติเอกสารในระบบ ไม่ต้องสร้างเองยกเว้นรายการพิเศษ</div>
+      </div>
+    </div>
+
+    <!-- ═══ เลขที่เอกสาร ═══ -->
+
+    <div class="guide-section" id="number-running">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        เลขที่เอกสารอัตโนมัติ (Number Running) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ระบบสร้างเลขที่เอกสารอัตโนมัติทุกประเภท ตามรูปแบบ Prefix + ปีเดือน + ลำดับ เลขจะไม่ซ้ำกัน</p>
+        </div>
+        <div class="guide-block">
+          <h4>รูปแบบเลขที่เอกสาร</h4>
+          <table class="guide-table">
+            <tr><th>Prefix</th><th>เอกสาร</th><th>ตัวอย่าง</th></tr>
+            <tr><td>PR</td><td>ใบขอซื้อ (Purchase Request)</td><td>PR26060001</td></tr>
+            <tr><td>PO</td><td>ใบสั่งซื้อ (Purchase Order)</td><td>PO26060001</td></tr>
+            <tr><td>SQ</td><td>ใบเสนอราคา (Sales Quotation)</td><td>SQ-202606-001</td></tr>
+            <tr><td>JO</td><td>ใบสั่งงาน (Job Order)</td><td>JO-202606-001</td></tr>
+            <tr><td>ADV</td><td>เงินทดรองจ่าย</td><td>ADV26060001</td></tr>
+            <tr><td>CLR</td><td>เคลียร์เงินทดรอง</td><td>CLR26060001</td></tr>
+            <tr><td>PCF</td><td>กองทุนเงินสดย่อย</td><td>PCF26060001</td></tr>
+            <tr><td>PCD</td><td>เบิกจ่ายเงินสดย่อย</td><td>PCD26060001</td></tr>
+            <tr><td>PCR</td><td>เติมเงินสดย่อย</td><td>PCR26060001</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>การจัดการ</h4>
+          <ul>
+            <li>ดูเลข running ปัจจุบันของแต่ละประเภทเอกสาร</li>
+            <li>ดูสถานะ Sync กับ SAP (ถ้าเชื่อมต่อ)</li>
+            <li>เลขที่ reset อัตโนมัติทุกเดือน (ขึ้นอยู่กับรูปแบบ)</li>
+          </ul>
+        </div>
+        <div class="info-box">เลขที่เอกสารถูกสร้างอัตโนมัติตอน Save ไม่ต้องกำหนดเอง และไม่สามารถแก้ไขได้</div>
+      </div>
+    </div>
+
+    <!-- ═══ รายงาน ═══ -->
+
+    <div class="guide-section" id="reports">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        รายงาน (Reports) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>รายงานสรุปข้อมูลต่าง ๆ ในระบบ สำหรับผู้บริหารและทีมการเงิน</p>
+        </div>
+        <div class="guide-block">
+          <h4>รายงานที่มี</h4>
+          <table class="guide-table">
+            <tr><th>รายงาน</th><th>คำอธิบาย</th><th>เหมาะกับ</th></tr>
+            <tr><td>Budget Summary</td><td>สรุปงบทั้งหมด: ตั้ง, ใช้, เหลือ แยกตามโปรเจค</td><td>Executive, PM</td></tr>
+            <tr><td>Project Progress</td><td>ความคืบหน้าโปรเจค: Phase, % complete, timeline</td><td>PM, Executive</td></tr>
+            <tr><td>Approval Aging</td><td>เอกสารที่รออนุมัตินานเท่าไหร่ เรียงจากเก่าสุด</td><td>Manager, Executive</td></tr>
+            <tr><td>Cash Flow Overview</td><td>กระแสเงินสด: รับ-จ่าย รายเดือน</td><td>Finance, Executive</td></tr>
+            <tr><td>Expense Monthly</td><td>ค่าใช้จ่ายรายเดือน แยกตามหมวด/โปรเจค</td><td>Finance, PM</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>เลือกรายงานที่ต้องการ</li>
+            <li>กำหนดช่วงวันที่ โปรเจค หรือเงื่อนไขอื่น</li>
+            <li>กด <strong>Generate</strong> สร้างรายงาน</li>
+            <li>กด <strong>Export PDF</strong> หรือ <strong>Export Excel</strong> ดาวน์โหลด</li>
+          </ul>
+        </div>
+        <div class="tip-box">💡 รายงาน Budget Summary ช่วยดูว่าโปรเจคไหนใช้งบเกิน/ต่ำกว่าแผนได้ในหน้าเดียว</div>
+      </div>
+    </div>
+
+    <!-- ═══ SOW Generator ═══ -->
+
+    <div class="guide-section" id="sow">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        สร้าง SOW อัตโนมัติ (SOW Generator) <span class="badge badge-sys">เครื่องมือ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>สร้างเอกสาร Statement of Work (SOW) สำหรับเสนอลูกค้า ด้วย Step-by-step wizard กรอกข้อมูลแต่ละส่วนตามลำดับ</p>
+        </div>
+        <div class="guide-block">
+          <h4>ขั้นตอนการสร้าง</h4>
+          <table class="guide-table">
+            <tr><th>Step</th><th>กรอกอะไร</th></tr>
+            <tr><td>1. ข้อมูลทั่วไป</td><td>ชื่อโครงการ, ลูกค้า, ผู้ให้บริการ, เลขที่เอกสาร</td></tr>
+            <tr><td>2. ขอบเขตงาน</td><td>เลือก Modules ที่อยู่ในขอบเขต, Out of Scope</td></tr>
+            <tr><td>3. Deliverables</td><td>รายการสิ่งส่งมอบ เช่น Source Code, คู่มือ, Training</td></tr>
+            <tr><td>4. Timeline</td><td>แบ่ง Phase พร้อมระยะเวลา</td></tr>
+            <tr><td>5. ทีมงาน</td><td>บทบาทฝั่งผู้ให้บริการและลูกค้า</td></tr>
+            <tr><td>6. เงื่อนไข</td><td>สมมติฐาน, Change Management, Commercial Terms</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li>เข้าหน้า SOW Generator จาก sidebar หรือ URL โดยตรง</li>
+            <li>กรอกข้อมูลแต่ละ Step แล้วกด <strong>Next</strong></li>
+            <li>ดู Preview เอกสาร SOW ฉบับสมบูรณ์</li>
+            <li>กด <strong>Print</strong> หรือ <strong>Download</strong> เพื่อส่งลูกค้า</li>
+          </ul>
+        </div>
+        <div class="tip-box">💡 SOW Generator ใช้ template มาตรฐานของบริษัท ปรับ modules/scope ได้ตามโปรเจค</div>
+      </div>
+    </div>
+
+    <!-- ═══ แพ็กเกจ ═══ -->
+
+    <div class="guide-section" id="pricing">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        แพ็กเกจการใช้งาน (Pricing & Plans) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ระบบมี 3 แพ็กเกจ เลือกได้ตามขนาดองค์กรและฟีเจอร์ที่ต้องการ สมัครใหม่ได้ทดลองใช้ฟรี 14 วัน</p>
+        </div>
+        <div class="guide-block">
+          <h4>เปรียบเทียบแพ็กเกจ</h4>
+          <table class="guide-table">
+            <tr><th>ฟีเจอร์</th><th>Starter</th><th>Professional</th><th>Enterprise</th></tr>
+            <tr><td>จำนวนโปรเจค</td><td>3</td><td>ไม่จำกัด</td><td>ไม่จำกัด</td></tr>
+            <tr><td>จำนวนผู้ใช้</td><td>5</td><td>25</td><td>ไม่จำกัด</td></tr>
+            <tr><td>Dashboard, Project, Task</td><td>ได้</td><td>ได้</td><td>ได้</td></tr>
+            <tr><td>PR/PO, Budget, Expense</td><td>ได้</td><td>ได้</td><td>ได้</td></tr>
+            <tr><td>Booking, Vehicle, OT, Travel</td><td>-</td><td>ได้</td><td>ได้</td></tr>
+            <tr><td>Quotation, Job Order</td><td>-</td><td>ได้</td><td>ได้</td></tr>
+            <tr><td>Reports, Export Excel</td><td>พื้นฐาน</td><td>ครบ</td><td>ครบ + Custom</td></tr>
+            <tr><td>SAP B1 Integration</td><td>-</td><td>-</td><td>ได้</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>Trial Period</h4>
+          <ul>
+            <li>สมัครใหม่ได้ทดลองใช้ <strong>14 วัน</strong> ฟรี (แพ็กเกจ Starter)</li>
+            <li>หลังหมด Trial สามารถอัปเกรดหรือต่ออายุได้</li>
+            <li>Module ที่ไม่ได้อยู่ในแพ็กเกจจะถูกซ่อนจากเมนู</li>
+          </ul>
+        </div>
+        <div class="info-box">ติดต่อทีมขายสำหรับแพ็กเกจ Enterprise หรือต้องการ Customize เพิ่มเติม</div>
+      </div>
+    </div>
+
+    <!-- ═══ คีย์ลัด ═══ -->
+
+    <div class="guide-section" id="shortcuts">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        คีย์ลัดและเทคนิค (Keyboard Shortcuts) <span class="badge badge-sys">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>คีย์ลัดที่ใช้ได้</h4>
+          <table class="guide-table">
+            <tr><th>คีย์</th><th>หน้า</th><th>การทำงาน</th></tr>
+            <tr><td><span class="key-badge">Esc</span></td><td>ทุกหน้า</td><td>ปิด Modal / ยกเลิกแก้ไข</td></tr>
+            <tr><td><span class="key-badge">Ctrl</span> + <span class="key-badge">P</span></td><td>SQ Detail, Doc Detail</td><td>พิมพ์เอกสาร</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>เทคนิคการใช้งาน</h4>
+          <ul>
+            <li><strong>ค้นหาสินค้า</strong> — พิมพ์ชื่อหรือรหัสในช่อง Item Code dropdown ได้เลย ไม่ต้องเลื่อนหา</li>
+            <li><strong>Export Excel</strong> — ทุกหน้ารายการมีปุ่ม Export Excel มุมขวาบน</li>
+            <li><strong>Document Navigation</strong> — ใน Doc Detail / SQ Detail กดปุ่ม &laquo; &raquo; เลื่อนดูเอกสารตัวอื่นได้</li>
+            <li><strong>Sidebar ย่อ</strong> — กดปุ่มลูกศรที่ sidebar เพื่อย่อ/ขยาย ได้พื้นที่จอมากขึ้น</li>
+            <li><strong>Mobile</strong> — ระบบใช้งานได้บนมือถือ sidebar จะเป็นแบบ overlay</li>
+          </ul>
+        </div>
+        <div class="tip-box">💡 ทุกหน้ารองรับ browser Chrome, Firefox, Edge, Safari เวอร์ชันล่าสุด</div>
       </div>
     </div>
 

@@ -436,8 +436,8 @@ document.addEventListener('click', (e) => {
 window.ICONS = ICONS;
 window.icon = icon;
 
-// ═══ SAP status check — hide SAP buttons if not configured ═══
-window._sapConfigured = null;
+// ═══ ERP status check — hide ERP buttons if not configured ═══
+window._erpConfigured = null;
 async function checkSapStatus() {
   try {
     const token = localStorage.getItem('sda_token');
@@ -445,11 +445,11 @@ async function checkSapStatus() {
     const resp = await fetch('/api/sap/status', { headers: { 'Authorization': 'Bearer ' + token } });
     if (resp.ok) {
       const data = await resp.json();
-      window._sapConfigured = !!data.connected;
+      window._erpConfigured = !!data.connected;
     }
-  } catch(e) { window._sapConfigured = false; }
-  // Hide all SAP-related buttons/elements if not configured
-  if (!window._sapConfigured) {
+  } catch(e) { window._erpConfigured = false; }
+  // Hide all ERP-related buttons/elements if not configured
+  if (!window._erpConfigured) {
     document.querySelectorAll('[data-sap], .sap-only').forEach(el => {
       el.style.display = 'none';
     });
