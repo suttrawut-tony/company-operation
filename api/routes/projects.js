@@ -37,7 +37,7 @@ async function recalcPhaseProgress(phaseId) {
   var allDone = steps.every(function(s) { return s.status === 'done'; });
   var anyActive = steps.some(function(s) { return s.status === 'done' || s.status === 'active'; });
   var phaseStatus = allDone ? 'completed' : anyActive ? 'active' : 'upcoming';
-  await db.query('UPDATE phases SET progress=$1, status=$2 WHERE id=$3', [phaseProgress, phaseStatus, phaseId]);
+  await db.query('UPDATE phases SET progress=$1, status=$2::phase_status WHERE id=$3', [phaseProgress, phaseStatus, phaseId]);
 }
 
 // GET /api/projects

@@ -16,10 +16,10 @@ UPDATE phases p SET
     THEN ROUND(ss.done_steps::numeric / ss.total_steps * 100)
     ELSE p.progress
   END,
-  status = CASE
+  status = (CASE
     WHEN ss.all_done THEN 'completed'
     WHEN ss.any_active THEN 'active'
     ELSE 'upcoming'
-  END
+  END)::phase_status
 FROM step_stats ss
 WHERE p.id = ss.phase_id;
