@@ -161,29 +161,7 @@
         <div id="payment-schedule-table" style="padding:0 16px 16px;"></div>
       </div>
 
-      <!-- Phase Cost Summary -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header" style="padding:14px 20px;">
-          <h3 style="font-size:14px;font-weight:700;">Phase Cost Summary (สรุปต้นทุน)</h3>
-        </div>
-        <div id="cost-summary-table" style="padding:0 16px 16px;"></div>
-      </div>
-
-      <!-- Phase P&L Table -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header" style="padding:14px 20px;">
-          <h3 style="font-size:14px;font-weight:700;">Phase Profit & Loss</h3>
-        </div>
-        <div id="phase-pl-table" style="padding:0 16px 16px;"></div>
-      </div>
-
-      <!-- Cash Flow -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header" style="padding:14px 20px;">
-          <h3 style="font-size:14px;font-weight:700;">Cash Flow (กระแสเงินสด)</h3>
-        </div>
-        <div id="cashflow-table" style="padding:0 16px 16px;"></div>
-      </div>
+      <!-- Phase Cost Summary, P&L, Cash Flow — removed, kept Finance Summary + Payment Schedule -->
     </div>
 
     <div class="phase-timeline" id="phase-timeline">
@@ -857,16 +835,12 @@
       if (!currentProjectId) { document.getElementById('finance-section').style.display = 'none'; return; }
       document.getElementById('finance-section').style.display = '';
       try {
-        const [fin, schedule, costSummary] = await Promise.all([
+        const [fin, schedule] = await Promise.all([
           API.get('/projects/' + currentProjectId + '/finance-summary'),
-          API.get('/projects/' + currentProjectId + '/payment-schedule'),
-          API.get('/projects/' + currentProjectId + '/cost-summary')
+          API.get('/projects/' + currentProjectId + '/payment-schedule')
         ]);
         renderFinanceSummary(fin);
         renderPaymentSchedule(schedule);
-        renderCostSummary(costSummary);
-        renderPhasePL(fin);
-        renderCashFlow(fin.cash_flow || []);
       } catch(e) { console.error('Finance load error:', e); }
     }
 
@@ -895,8 +869,12 @@
         return `<span class="badge badge-${c}" style="font-size:9px;">${s}</span>`;
       };
       let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Term</th><th>Phase</th><th style="text-align:right;">%</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Retention</th><th style="text-align:right;">Net</th><th>Status</th><th>Expected</th><th>Received</th><th>Actions</th></tr></thead><tbody>`;
+        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Term</th><th>Phase</th><th style="text-align:right;">%</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Retention</th><th style="text-align:right;">Net</th><th>Status</th><th>Expected</th><th>Invoice No.</th><th>Actions</th></tr></thead><tbody>`;
       for (const p of payments) {
+        const invoiceCell = p.invoice_number
+          ? '<span style="font-family:var(--font-mono);font-weight:600;">' + p.invoice_number + '</span>'
+          : '<input type="text" placeholder="Invoice #" style="font-size:10px;padding:3px 6px;width:90px;border:1px solid var(--border);border-radius:4px;" onblur="saveInvoiceNumber(\'' + p.id + '\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur();">';
+        const canDelete = p.status === 'pending' || p.status === 'invoiced';
         html += `<tr style="border-bottom:1px solid var(--border-light);">
           <td style="padding:6px 8px;font-weight:600;">${p.payment_term||''}</td>
           <td style="padding:6px;">${p.phase_name||'-'}</td>
@@ -906,83 +884,23 @@
           <td style="text-align:right;padding:6px;font-weight:600;">฿${fmtNum(p.net_amount)}</td>
           <td style="padding:6px;">${statusBadgePS(p.status)}</td>
           <td style="padding:6px;">${p.expected_date||'-'}</td>
-          <td style="padding:6px;color:var(--success);font-weight:600;">${p.received_amount > 0 ? '฿'+fmtNum(p.received_amount) : '-'}</td>
+          <td style="padding:6px;">${invoiceCell}</td>
           <td style="padding:6px;">
-            ${p.status==='pending'?'<button class="btn btn-sm" style="font-size:10px;" onclick="invoicePayment(\''+p.id+'\')">Invoice</button>':''}
-            ${p.status==='invoiced'?'<button class="btn btn-sm btn-success" style="font-size:10px;" onclick="receivePayment(\''+p.id+'\','+p.amount+')">Receive</button>':''}
+            <div style="display:flex;gap:4px;">
+              <button class="btn btn-sm" style="font-size:10px;padding:3px 8px;" onclick="openEditPayment('${p.id}')">Edit</button>
+              ${canDelete ? '<button class="btn btn-sm" style="font-size:10px;padding:3px 8px;color:var(--danger);border-color:var(--danger);" onclick="deletePayment(\'' + p.id + '\')">Del</button>' : ''}
+            </div>
           </td>
         </tr>`;
       }
       html += '</tbody></table>';
-      // Progress bar
       const s = data.summary;
       const pct = s.total_contract > 0 ? Math.round(s.total_received / s.total_contract * 100) : 0;
       html += `<div style="margin-top:12px;"><div style="height:8px;background:var(--bg-hover);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--success);border-radius:4px;"></div></div><div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${pct}% received (฿${fmtNum(s.total_received)} / ฿${fmtNum(s.total_contract)})</div></div>`;
       document.getElementById('payment-schedule-table').innerHTML = html;
     }
 
-    function renderCostSummary(data) {
-      const phases = data.phases || [];
-      if (!phases.length) { document.getElementById('cost-summary-table').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:16px;font-size:12px;">No phase costs recorded</div>'; return; }
-      let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Phase</th><th style="text-align:right;">Planned</th><th style="text-align:right;">Actual</th><th style="text-align:right;">Variance</th><th style="text-align:right;">% Used</th></tr></thead><tbody>`;
-      for (const p of phases) {
-        const variance = parseFloat(p.cost_variance||0);
-        const vColor = variance >= 0 ? 'var(--success)' : 'var(--danger)';
-        html += `<tr style="border-bottom:1px solid var(--border-light);">
-          <td style="padding:6px 8px;font-weight:600;">${p.name}</td>
-          <td style="text-align:right;padding:6px;">฿${fmtNum(p.planned_cost)}</td>
-          <td style="text-align:right;padding:6px;">฿${fmtNum(p.actual_cost)}</td>
-          <td style="text-align:right;padding:6px;color:${vColor};font-weight:600;">${variance>=0?'+':''}฿${fmtNum(variance)}</td>
-          <td style="text-align:right;padding:6px;">${p.pct_used||0}%</td>
-        </tr>`;
-      }
-      html += `<tr style="font-weight:700;border-top:2px solid var(--border);"><td style="padding:8px;">TOTAL</td>
-        <td style="text-align:right;padding:8px;">฿${fmtNum(data.total_planned)}</td>
-        <td style="text-align:right;padding:8px;">฿${fmtNum(data.total_actual)}</td>
-        <td style="text-align:right;padding:8px;color:${data.total_variance>=0?'var(--success)':'var(--danger)'};">${data.total_variance>=0?'+':''}฿${fmtNum(data.total_variance)}</td>
-        <td></td></tr></tbody></table>`;
-      document.getElementById('cost-summary-table').innerHTML = html;
-    }
-
-    function renderPhasePL(fin) {
-      const phases = fin.phases || [];
-      if (!phases.length) { document.getElementById('phase-pl-table').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:16px;font-size:12px;">No data</div>'; return; }
-      let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Phase</th><th>Status</th><th style="text-align:right;">Revenue</th><th style="text-align:right;">Received</th><th style="text-align:right;">Cost Plan</th><th style="text-align:right;">Cost Actual</th><th style="text-align:right;">Profit</th><th style="text-align:right;">Margin</th></tr></thead><tbody>`;
-      for (const p of phases) {
-        const profitColor = p.profit >= 0 ? 'var(--success)' : 'var(--danger)';
-        html += `<tr style="border-bottom:1px solid var(--border-light);">
-          <td style="padding:6px 8px;font-weight:600;">${p.phase_name}</td>
-          <td style="padding:6px;">${statusBadge(p.status)}</td>
-          <td style="text-align:right;padding:6px;">฿${fmtNum(p.revenue.amount)}</td>
-          <td style="text-align:right;padding:6px;color:var(--success);">฿${fmtNum(p.revenue.received)}</td>
-          <td style="text-align:right;padding:6px;">฿${fmtNum(p.cost.planned)}</td>
-          <td style="text-align:right;padding:6px;">฿${fmtNum(p.cost.actual)}</td>
-          <td style="text-align:right;padding:6px;color:${profitColor};font-weight:700;">฿${fmtNum(p.profit)}</td>
-          <td style="text-align:right;padding:6px;font-weight:600;">${p.margin_pct}%</td>
-        </tr>`;
-      }
-      html += '</tbody></table>';
-      document.getElementById('phase-pl-table').innerHTML = html;
-    }
-
-    function renderCashFlow(cashFlow) {
-      if (!cashFlow.length) { document.getElementById('cashflow-table').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:16px;font-size:12px;">No cash flow data yet</div>'; return; }
-      let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Month</th><th style="text-align:right;">Inflow</th><th style="text-align:right;">Outflow</th><th style="text-align:right;">Net</th><th style="text-align:right;">Cumulative</th></tr></thead><tbody>`;
-      for (const m of cashFlow) {
-        html += `<tr style="border-bottom:1px solid var(--border-light);">
-          <td style="padding:6px 8px;font-weight:600;">${m.month}</td>
-          <td style="text-align:right;padding:6px;color:var(--success);">฿${fmtNum(m.inflow)}</td>
-          <td style="text-align:right;padding:6px;color:var(--danger);">฿${fmtNum(m.outflow)}</td>
-          <td style="text-align:right;padding:6px;color:${m.net>=0?'var(--success)':'var(--danger)'};font-weight:600;">฿${fmtNum(m.net)}</td>
-          <td style="text-align:right;padding:6px;font-weight:700;">฿${fmtNum(m.cumulative)}</td>
-        </tr>`;
-      }
-      html += '</tbody></table>';
-      document.getElementById('cashflow-table').innerHTML = html;
-    }
+    // renderCostSummary, renderPhasePL, renderCashFlow — removed
 
     // ═══ Payment Actions ═══
     async function generatePaymentSchedule() {
@@ -994,60 +912,91 @@
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
-    function openPaymentModal() {
+    // Payment modal — supports both create and edit mode
+    let editPaymentId = null;
+
+    function openPaymentModal(paymentId) {
+      editPaymentId = paymentId || null;
       const phases = currentPhases || [];
-      const opts = phases.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      const opts = phases.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('');
       let m = document.getElementById('pmt-modal');
-      if (!m) { m = document.createElement('div'); m.id = 'pmt-modal'; m.className = 'modal-overlay'; m.onclick = (e) => { if (e.target===m) m.classList.remove('show'); }; document.body.appendChild(m); }
-      m.innerHTML = `<div class="modal-box" style="width:480px;">
-        <div class="modal-header"><h3>Add Payment Term</h3><button class="modal-close" onclick="document.getElementById('pmt-modal').classList.remove('show')">&times;</button></div>
-        <div class="modal-body">
-          <div class="form-group"><label class="form-label">Term Name</label><input class="form-input" id="pmt-term" placeholder="e.g. งวดที่ 1"></div>
-          <div class="form-group"><label class="form-label">Phase</label><select class="form-input" id="pmt-phase"><option value="">-- Select --</option>${opts}</select></div>
-          <div class="form-group"><label class="form-label">Percentage (%)</label><input class="form-input" type="number" id="pmt-pct" min="0" max="100" step="0.01"></div>
-          <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="pmt-desc"></div>
-          <div class="form-group"><label class="form-label">Expected Date</label><input class="form-input" type="date" id="pmt-date"></div>
-        </div>
-        <div class="modal-footer"><button class="btn btn-secondary" onclick="document.getElementById('pmt-modal').classList.remove('show')">Cancel</button><button class="btn btn-primary" onclick="savePaymentTerm()">Save</button></div>
-      </div>`;
+      if (!m) { m = document.createElement('div'); m.id = 'pmt-modal'; m.className = 'modal-overlay'; m.onclick = function(e) { if (e.target===m) m.classList.remove('show'); }; document.body.appendChild(m); }
+      m.innerHTML = '<div class="modal-box" style="width:480px;">' +
+        '<div class="modal-header"><h3>' + (editPaymentId ? 'Edit Payment Term' : 'Add Payment Term') + '</h3><button class="modal-close" onclick="document.getElementById(\'pmt-modal\').classList.remove(\'show\')">&times;</button></div>' +
+        '<div class="modal-body">' +
+          '<div class="form-group"><label class="form-label">Term Name</label><input class="form-input" id="pmt-term" placeholder="e.g. งวดที่ 1"></div>' +
+          '<div class="form-group"><label class="form-label">Phase</label><select class="form-input" id="pmt-phase"><option value="">-- Select --</option>' + opts + '</select></div>' +
+          '<div class="form-group"><label class="form-label">Percentage (%)</label><input class="form-input" type="number" id="pmt-pct" min="0" max="100" step="0.01"></div>' +
+          '<div class="form-group"><label class="form-label">Description</label><input class="form-input" id="pmt-desc"></div>' +
+          '<div class="form-group"><label class="form-label">Expected Date</label><input class="form-input" type="date" id="pmt-date"></div>' +
+          '<div class="form-group"><label class="form-label">Invoice Number</label><input class="form-input" id="pmt-invoice" placeholder="Invoice #"></div>' +
+          '<div class="form-group"><label class="form-label">Remarks</label><input class="form-input" id="pmt-remarks"></div>' +
+        '</div>' +
+        '<div class="modal-footer"><button class="btn btn-secondary" onclick="document.getElementById(\'pmt-modal\').classList.remove(\'show\')">Cancel</button><button class="btn btn-primary" onclick="savePaymentTerm()">' + (editPaymentId ? 'Update' : 'Save') + '</button></div>' +
+      '</div>';
+      if (editPaymentId) prefillPaymentModal(editPaymentId);
       m.classList.add('show');
     }
 
+    function openEditPayment(paymentId) { openPaymentModal(paymentId); }
+
+    async function prefillPaymentModal(paymentId) {
+      try {
+        var schedule = await API.get('/projects/' + currentProjectId + '/payment-schedule');
+        var p = (schedule.payments || []).find(function(x) { return x.id === paymentId; });
+        if (!p) return;
+        document.getElementById('pmt-term').value = p.payment_term || '';
+        document.getElementById('pmt-phase').value = p.phase_id || '';
+        document.getElementById('pmt-pct').value = p.percentage || '';
+        document.getElementById('pmt-desc').value = p.description || '';
+        document.getElementById('pmt-date').value = p.expected_date ? p.expected_date.substring(0,10) : '';
+        document.getElementById('pmt-invoice').value = p.invoice_number || '';
+        document.getElementById('pmt-remarks').value = p.remarks || '';
+      } catch(e) { console.error('Prefill error:', e); }
+    }
+
     async function savePaymentTerm() {
+      var body = {
+        payment_term: document.getElementById('pmt-term').value,
+        phase_id: document.getElementById('pmt-phase').value || null,
+        percentage: parseFloat(document.getElementById('pmt-pct').value) || 0,
+        description: document.getElementById('pmt-desc').value,
+        expected_date: document.getElementById('pmt-date').value || null,
+        invoice_number: document.getElementById('pmt-invoice').value || null,
+        remarks: document.getElementById('pmt-remarks').value || null,
+      };
+      if (body.invoice_number) body.invoice_date = new Date().toISOString().slice(0,10);
       try {
-        await API.post('/projects/' + currentProjectId + '/payment-schedule', {
-          payment_term: document.getElementById('pmt-term').value,
-          phase_id: document.getElementById('pmt-phase').value || null,
-          percentage: parseFloat(document.getElementById('pmt-pct').value) || 0,
-          description: document.getElementById('pmt-desc').value,
-          expected_date: document.getElementById('pmt-date').value || null
-        });
+        if (editPaymentId) {
+          await API.put('/projects/payment-schedule/' + editPaymentId, body);
+          showToast('Updated', 'success');
+        } else {
+          await API.post('/projects/' + currentProjectId + '/payment-schedule', body);
+          showToast('Added', 'success');
+        }
         document.getElementById('pmt-modal').classList.remove('show');
+        editPaymentId = null;
         loadFinanceDashboard();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
-    async function invoicePayment(paymentId) {
-      const invNum = prompt('Invoice Number:');
-      if (!invNum) return;
-      try {
-        await API.put('/projects/payment-schedule/' + paymentId, { invoice_number: invNum, invoice_date: new Date().toISOString().slice(0,10) });
-        loadFinanceDashboard();
-      } catch(e) { showToast('Error: ' + e.message, 'error'); }
-    }
-
-    async function receivePayment(paymentId, amount) {
-      const received = prompt('Received Amount:', amount);
-      if (!received) return;
-      const wht = prompt('WHT Amount (ภาษีหัก ณ ที่จ่าย):', '0');
+    async function saveInvoiceNumber(paymentId, invoiceNum) {
+      if (!invoiceNum || !invoiceNum.trim()) return;
       try {
         await API.put('/projects/payment-schedule/' + paymentId, {
-          received_amount: parseFloat(received),
-          wht_amount: parseFloat(wht || 0),
-          actual_net: parseFloat(received) - parseFloat(wht || 0),
-          received_date: new Date().toISOString().slice(0,10),
-          payment_method: 'transfer'
+          invoice_number: invoiceNum.trim(),
+          invoice_date: new Date().toISOString().slice(0,10)
         });
+        showToast('Invoice saved', 'success');
+        loadFinanceDashboard();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function deletePayment(paymentId) {
+      if (!confirm('Delete this payment term?')) return;
+      try {
+        await API.del('/projects/payment-schedule/' + paymentId);
+        showToast('Deleted', 'success');
         loadFinanceDashboard();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
