@@ -4,6 +4,42 @@ const { authenticate, projectAccessFilter, requireProjectAccess, requireRole } =
 
 router.use(authenticate);
 
+// === Auto-recalc phase progress + status from steps/subtasks ===
+async function recalcStepStatus(stepId) {
+  const { rows: subs } = await db.query('SELECT status FROM step_subtasks WHERE step_id=$1', [stepId]);
+  if (!subs.length) return null;
+  var allDone = subs.every(function(s) { return s.status === 'done'; });
+  var anyActive = subs.some(function(s) { return s.status === 'done' || s.status === 'active'; });
+  var stepStatus = allDone ? 'done' : anyActive ? 'active' : 'pending';
+  await db.query(
+    "UPDATE phase_steps SET status=$1, completed_at=CASE WHEN $1='done' THEN NOW() ELSE NULL END WHERE id=$2",
+    [stepStatus, stepId]);
+  return stepStatus;
+}
+
+async function recalcPhaseProgress(phaseId) {
+  const { rows: steps } = await db.query('SELECT id, status FROM phase_steps WHERE phase_id=$1', [phaseId]);
+  if (!steps.length) return;
+  var totalProgress = 0;
+  for (var i = 0; i < steps.length; i++) {
+    var step = steps[i];
+    var { rows: subs } = await db.query('SELECT status FROM step_subtasks WHERE step_id=$1', [step.id]);
+    var stepProg;
+    if (subs.length > 0) {
+      var subDone = subs.filter(function(s) { return s.status === 'done'; }).length;
+      stepProg = Math.round(subDone / subs.length * 100);
+    } else {
+      stepProg = step.status === 'done' ? 100 : step.status === 'active' ? 50 : 0;
+    }
+    totalProgress += stepProg;
+  }
+  var phaseProgress = Math.round(totalProgress / steps.length);
+  var allDone = steps.every(function(s) { return s.status === 'done'; });
+  var anyActive = steps.some(function(s) { return s.status === 'done' || s.status === 'active'; });
+  var phaseStatus = allDone ? 'completed' : anyActive ? 'active' : 'upcoming';
+  await db.query('UPDATE phases SET progress=$1, status=$2 WHERE id=$3', [phaseProgress, phaseStatus, phaseId]);
+}
+
 // GET /api/projects
 // Filtered by role: executive/finance/accounting see all, others see only their projects
 router.get('/', async (req, res) => {
@@ -283,6 +319,7 @@ router.post('/:id/phases/:phaseId/steps', requireProjectAccess, requireRole('pm'
       [req.params.phaseId, name, maxRows[0].next, assigned_to || null, start_date || null, end_date || null]
     );
     res.status(201).json(rows[0]);
+    recalcPhaseProgress(req.params.phaseId).catch(e => console.error('recalc error:', e));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -300,6 +337,8 @@ router.put('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requireRo
     );
     if (!rows[0]) return res.status(404).json({ error: 'Step not found' });
     res.json(rows[0]);
+    // Recalc phase progress after step update
+    recalcPhaseProgress(req.params.phaseId).catch(e => console.error('recalc error:', e));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -310,6 +349,7 @@ router.delete('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requir
       'DELETE FROM phase_steps WHERE id = $1 AND phase_id = $2', [req.params.stepId, req.params.phaseId]);
     if (!rowCount) return res.status(404).json({ error: 'Step not found' });
     res.json({ success: true });
+    recalcPhaseProgress(req.params.phaseId).catch(e => console.error('recalc error:', e));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -325,6 +365,10 @@ router.post('/:id/subtasks', requireProjectAccess, requireRole('pm','executive')
       'INSERT INTO step_subtasks (step_id, name, sort_order, assigned_to, due_date) VALUES ($1,$2,$3,$4,$5) RETURNING *',
       [step_id, name, maxRows[0].next, assigned_to || null, due_date || null]);
     res.status(201).json(rows[0]);
+    // Recalc step → phase
+    recalcStepStatus(step_id).then(function() {
+      return db.query('SELECT phase_id FROM phase_steps WHERE id=$1', [step_id]);
+    }).then(function(r) { if (r.rows[0]) recalcPhaseProgress(r.rows[0].phase_id); }).catch(function(e) { console.error('recalc error:', e); });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -340,15 +384,28 @@ router.put('/:id/subtasks/:subId', requireProjectAccess, requireRole('pm','execu
       [name, status, assigned_to, due_date, req.params.subId]);
     if (!rows[0]) return res.status(404).json({ error: 'Subtask not found' });
     res.json(rows[0]);
+    // Recalc step → phase
+    var sub = rows[0];
+    recalcStepStatus(sub.step_id).then(function() {
+      return db.query('SELECT phase_id FROM phase_steps WHERE id=$1', [sub.step_id]);
+    }).then(function(r) { if (r.rows[0]) recalcPhaseProgress(r.rows[0].phase_id); }).catch(function(e) { console.error('recalc error:', e); });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // DELETE /api/projects/:id/subtasks/:subId — Delete subtask
 router.delete('/:id/subtasks/:subId', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
   try {
+    // Get step_id before deleting
+    const { rows: [subInfo] } = await db.query('SELECT step_id FROM step_subtasks WHERE id=$1', [req.params.subId]);
     const { rowCount } = await db.query('DELETE FROM step_subtasks WHERE id=$1', [req.params.subId]);
     if (!rowCount) return res.status(404).json({ error: 'Subtask not found' });
     res.json({ success: true });
+    // Recalc step → phase
+    if (subInfo) {
+      recalcStepStatus(subInfo.step_id).then(function() {
+        return db.query('SELECT phase_id FROM phase_steps WHERE id=$1', [subInfo.step_id]);
+      }).then(function(r) { if (r.rows[0]) recalcPhaseProgress(r.rows[0].phase_id); }).catch(function(e) { console.error('recalc error:', e); });
+    }
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
