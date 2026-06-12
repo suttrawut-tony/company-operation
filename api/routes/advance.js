@@ -5,6 +5,24 @@ const path = require('path');
 const fs = require('fs');
 const { authenticate, getUserProjectIds, checkPermission } = require('../middleware/auth');
 router.use(authenticate);
+const { pushJournalToSAP } = require('../services/sapPush');
+
+// Helper: push journal to SAP + update DB status (non-blocking on error)
+async function tryPushSAP(journalId, journal, lines, projectCode) {
+  try {
+    var result = await pushJournalToSAP(journal, lines, projectCode);
+    if (!result.skipped) {
+      await db.query('UPDATE gl_journals SET sap_doc_num=$1, sap_status=$2 WHERE id=$3', [result.sapDocNum, 'posted', journalId]);
+    } else {
+      await db.query("UPDATE gl_journals SET sap_status='skipped' WHERE id=$1", [journalId]);
+    }
+    return result;
+  } catch (e) {
+    console.error('SAP push failed:', e.message);
+    await db.query('UPDATE gl_journals SET sap_status=$1, sap_error=$2 WHERE id=$3', ['error', e.message, journalId]);
+    return { skipped: false, error: e.message };
+  }
+}
 
 // File upload config
 const uploadDir = path.join(__dirname, '..', 'uploads', 'advance');
@@ -140,10 +158,12 @@ router.post('/settlement/:id/approve', async (req, res) => {
       if (difference === 0) {
         await client.query("UPDATE advance_requests SET status='settled', updated_at=NOW() WHERE id=$1", [s.advance_id]);
       }
-      return rows[0];
+      return { settlement: rows[0], journal, lines: sLines.map(l => ({ gl_account: l.sap_account || catAccounts[l.category] || '522709', debit: parseFloat(l.amount), credit: 0, account_name: l.description || l.category })).concat([{ gl_account: '113103', debit: 0, credit: totalExpense, account_name: 'Employee Receivable' }]) };
     });
 
-    res.json(result);
+    res.json(result.settlement);
+    // Push to SAP (fire-and-forget)
+    tryPushSAP(result.journal.id, result.journal, result.lines).catch(function() {});
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -496,6 +516,11 @@ router.post('/:id/pay', upload.single('attachment'), async (req, res) => {
       } catch(_) {}
 
       res.status(201).json({ ...payment, journal, auto_settled: true });
+      // Push reimburse GL to SAP
+      tryPushSAP(journal.id, journal, [
+        { gl_account: '522709', debit: payAmt, credit: 0, account_name: 'Reimburse Expense' },
+        { gl_account: bankGL, debit: 0, credit: payAmt, account_name: bankName }
+      ]).catch(function() {});
     } else {
       // ═══ Advance: GL Dr. Employee Receivable / Cr. Bank ═══
       const { rows: [journal] } = await db.query(
@@ -533,6 +558,11 @@ router.post('/:id/pay', upload.single('attachment'), async (req, res) => {
       } catch(_) {}
 
       res.status(201).json({ ...payment, journal, due_date: dueDateStr });
+      // Push advance GL to SAP
+      tryPushSAP(journal.id, journal, [
+        { gl_account: '113103', debit: payAmt, credit: 0, account_name: 'Employee Receivable' },
+        { gl_account: bankGL, debit: 0, credit: payAmt, account_name: bankName }
+      ]).catch(function() {});
     }
 
     req.broadcast('advance_updated', { id: req.params.id });
@@ -649,6 +679,10 @@ router.post('/:id/receive-return', upload.single('attachment'), async (req, res)
     });
 
     res.json({ success: true, amount_returned: balance, journal: result.journal });
+    tryPushSAP(result.journal.id, result.journal, [
+      { gl_account: '111201', debit: balance, credit: 0, account_name: 'Bank' },
+      { gl_account: '113103', debit: 0, credit: balance, account_name: 'Employee Receivable' }
+    ]).catch(function() {});
     req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -699,6 +733,10 @@ router.post('/:id/pay-reimburse', upload.single('attachment'), async (req, res) 
     });
 
     res.json({ success: true, amount_reimbursed: reimbAmt, journal: result.journal });
+    tryPushSAP(result.journal.id, result.journal, [
+      { gl_account: '113103', debit: reimbAmt, credit: 0, account_name: 'Employee Receivable' },
+      { gl_account: '111201', debit: 0, credit: reimbAmt, account_name: 'Bank' }
+    ]).catch(function() {});
     req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -714,6 +752,31 @@ router.post('/:id/confirm-return', async (req, res) => {
     if (!rows[0]) return res.status(404).json({ error: 'Not found or no balance to return' });
     res.json(rows[0]);
     req.broadcast('advance_updated', { id: req.params.id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/advance/:id/retry-sap — Retry failed SAP push
+router.post('/:id/retry-sap', async (req, res) => {
+  try {
+    if (!['finance','executive'].includes(req.user.role)) return res.status(403).json({ error: 'Not authorized' });
+    var { rows: journals } = await db.query(
+      "SELECT j.* FROM gl_journals j WHERE j.doc_id=$1 AND j.sap_status='error'", [req.params.id]);
+    if (!journals.length) return res.status(404).json({ error: 'No failed journals' });
+    var results = [];
+    for (var j of journals) {
+      var { rows: jLines } = await db.query('SELECT * FROM gl_journal_lines WHERE journal_id=$1 ORDER BY line_num', [j.id]);
+      try {
+        var sapResult = await pushJournalToSAP(j, jLines);
+        if (!sapResult.skipped) {
+          await db.query('UPDATE gl_journals SET sap_doc_num=$1, sap_status=$2, sap_error=NULL WHERE id=$3', [sapResult.sapDocNum, 'posted', j.id]);
+          results.push({ journal_id: j.id, status: 'posted', sap_doc_num: sapResult.sapDocNum });
+        }
+      } catch (e) {
+        await db.query('UPDATE gl_journals SET sap_error=$1 WHERE id=$2', [e.message, j.id]);
+        results.push({ journal_id: j.id, status: 'error', error: e.message });
+      }
+    }
+    res.json({ results });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

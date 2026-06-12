@@ -2,14 +2,18 @@ const router = require('express').Router();
 const { authenticate, requireRole } = require('../middleware/auth');
 router.use(authenticate);
 
-// FIXED: SAP proxy routes — stubs with clear status flag
-// Real connection requires SAP_HOST/SAP_USER/SAP_PASSWORD env vars
-const sapConfigured = !!(process.env.SAP_HOST && process.env.SAP_USER);
+// SAP Service Layer integration
+const sapClient = require('../services/sapClient');
+const sapConfigured = sapClient.isConfigured();
 
-// GET /api/sap/vendors — search SAP BusinessPartners
-// GET /api/sap/status — check if SAP is configured
+// GET /api/sap/status
 router.get('/status', (req, res) => {
-  res.json({ connected: sapConfigured, message: sapConfigured ? 'SAP configured' : 'SAP not configured — set SAP_HOST + SAP_USER env vars' });
+  res.json({
+    connected: sapConfigured,
+    host: sapConfigured ? '***configured***' : null,
+    company_db: process.env.SAP_COMPANY_DB || null,
+    message: sapConfigured ? 'SAP configured' : 'SAP not configured — set SAP_HOST, SAP_COMPANY_DB, SAP_USER, SAP_PASSWORD env vars'
+  });
 });
 
 router.get('/vendors', async (req, res) => {
