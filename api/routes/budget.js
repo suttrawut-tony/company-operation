@@ -290,15 +290,34 @@ router.get('/:id/transfers', async (req, res) => {
 
 // ═══ CRUD: Edit + Delete ═══
 
-// PUT /api/budget/:id — Edit budget (draft only)
+// PUT /api/budget/:id — Edit budget
+// Permission: executive=any status, finance=draft/rejected/revised, pm=draft (own project)
 router.put('/:id', async (req, res) => {
   try {
     const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!b) return res.status(404).json({ error: 'Not found' });
-    if (b.status !== 'draft' && req.user.role !== 'executive') {
-      return res.status(400).json({ error: 'INVALID_STATUS', message: 'แก้ไขได้เฉพาะสถานะ draft' });
+
+    const role = req.user.role;
+    const canEdit = role === 'executive'
+      || (role === 'finance' && ['draft','rejected','revised'].includes(b.status))
+      || (role === 'pm' && b.status === 'draft');
+    if (!canEdit) return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'ไม่มีสิทธิ์แก้ไข budget สถานะ ' + b.status });
+
+    // If approved → snapshot + change to revised
+    if (b.status === 'approved') {
+      const { rows: oldLines } = await db.query('SELECT * FROM budget_lines WHERE budget_id=$1 ORDER BY sort_order', [req.params.id]);
+      const newVersion = (b.revision || 0) + 1;
+      await db.query(
+        `INSERT INTO budget_revisions (budget_id, version, reason, old_total_budget, new_total_budget, changes, revised_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [req.params.id, newVersion, 'Edited approved budget', parseFloat(b.total_budget), parseFloat(b.total_budget),
+         JSON.stringify(oldLines.map(l => ({ name: l.name, old_budget: l.budget_amount, old_tor: l.tor_amount }))),
+         req.user.id]);
+      // Force status to revised
+      req.body.status = 'revised';
     }
-    const fields = ['name','fiscal_year','notes','warn_threshold','block_threshold','control_mode'];
+
+    const fields = ['name','fiscal_year','notes','warn_threshold','block_threshold','control_mode','status'];
     const sets = []; const params = []; let idx = 1;
     for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
@@ -309,13 +328,26 @@ router.put('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/budget/:id — Cancel budget (draft only, soft delete)
+// POST /api/budget/:id/resubmit — Resubmit revised budget for approval
+router.post('/:id/resubmit', async (req, res) => {
+  try {
+    const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1', [req.params.id]);
+    if (!b) return res.status(404).json({ error: 'Not found' });
+    if (b.status !== 'revised') return res.status(400).json({ error: 'Can only resubmit revised budgets' });
+    const { rows } = await db.query(
+      "UPDATE budgets SET status='pending_manager', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
+    res.json(rows[0]);
+    req.broadcast('budget_updated', { id: req.params.id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/budget/:id — Cancel budget (draft/rejected only, soft delete)
 router.delete('/:id', async (req, res) => {
   try {
     const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!b) return res.status(404).json({ error: 'Not found' });
-    if (b.status !== 'draft' && req.user.role !== 'executive') {
-      return res.status(400).json({ error: 'INVALID_STATUS', message: 'ลบได้เฉพาะสถานะ draft' });
+    if (!['draft','rejected'].includes(b.status) && req.user.role !== 'executive') {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: 'ลบได้เฉพาะสถานะ draft หรือ rejected' });
     }
     const { rows } = await db.query(
       "UPDATE budgets SET status='rejected', reject_reason='Cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);

@@ -392,8 +392,10 @@
             <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleRevisions('${b.id}','${uid}')" id="rev-btn-${uid}" style="font-size:11px;">
               ประวัติแก้ไข
             </button>
-            ${(st === 'draft' && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openEditBudget(\''+b.id+'\')" style="font-size:11px;">&#9998; แก้ไข</button>' : ''}
-            ${(st === 'draft' && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteBudget(\''+b.id+'\',\''+b.code+'\')">&#128465; ลบ</button>' : ''}
+            ${canEditBudget(st, userRole, b) ? '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openEditBudget(\''+b.id+'\')" style="font-size:11px;">Edit</button>' : ''}
+            ${(['draft','rejected'].includes(st) && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteBudget(\''+b.id+'\',\''+b.code+'\')">Del</button>' : ''}
+            ${st === 'revised' && ['finance','executive','pm'].includes(userRole) ? '<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="event.stopPropagation();resubmitBudget(\''+b.id+'\')">Resubmit</button>' : ''}
+            ${st === 'revised' && userRole === 'executive' ? '<button class="btn btn-success btn-sm" style="font-size:11px;" onclick="event.stopPropagation();fastApprove(\''+b.id+'\')">Approve Now</button>' : ''}
             ${controlBadge}
             ${b.reject_reason ? '<span style="font-size:11px;color:var(--danger);">Rejected: '+b.reject_reason+'</span>' : ''}
           </div>
@@ -688,6 +690,35 @@
     }
 
     // ═══ Edit Budget ═══
+    // Permission check: who can edit which status
+    function canEditBudget(status, role, budget) {
+      if (role === 'executive') return true;
+      if (role === 'finance' && ['draft','rejected','revised'].includes(status)) return true;
+      if (role === 'pm' && status === 'draft') return true;
+      return false;
+    }
+
+    async function resubmitBudget(budgetId) {
+      if (!confirm('Send revised budget for re-approval?')) return;
+      try {
+        await API.post('/budget/' + budgetId + '/resubmit');
+        showToast('Resubmitted for approval', 'success');
+        dataLoaded = false; await loadMaster();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function fastApprove(budgetId) {
+      if (!confirm('Approve revised budget immediately?')) return;
+      try {
+        // First resubmit to pending_manager, then approve through
+        await API.post('/budget/' + budgetId + '/resubmit');
+        await API.post('/budget/' + budgetId + '/approve');
+        await API.post('/budget/' + budgetId + '/approve');
+        showToast('Approved', 'success');
+        dataLoaded = false; await loadMaster();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
     async function openEditBudget(budgetId) {
       const b = allBudgets.find(x => x.id === budgetId);
       if (!b) return;
@@ -722,6 +753,11 @@
 
     async function saveEditBudget() {
       if (!editingBudgetId) return;
+      // Warn if editing approved budget
+      var original = allBudgets.find(function(x) { return x.id === editingBudgetId; });
+      if (original && original.status === 'approved') {
+        if (!confirm('This budget is approved. Editing will change status to "Revised" and require re-approval. Continue?')) return;
+      }
       const projectId = document.getElementById('bg-project').value;
       const code = document.getElementById('bg-code').value.trim();
       const name = document.getElementById('bg-name').value.trim();
