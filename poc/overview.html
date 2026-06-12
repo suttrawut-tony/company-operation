@@ -175,6 +175,7 @@
     let currentProjectId = null;
     async function loadProject(projectId) {
       currentProjectId = projectId;
+      if (projectId) savePageState('project', projectId);
       try {
         const allProjects = await API.getProjects();
         const select = document.getElementById('project-select');
@@ -783,8 +784,8 @@
 
     // FIXED: Auth guard
     if (!API.requireAuth()) throw new Error('Not authenticated');
-    const params = new URLSearchParams(window.location.search);
-    loadProject(params.get('id'));
+    var _initProjectId = restorePageState('project') || new URLSearchParams(window.location.search).get('id');
+    loadProject(_initProjectId);
   </script>
 </body>
 </html>

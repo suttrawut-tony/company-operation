@@ -138,7 +138,13 @@
     function navDoc(dir) {
       var newIdx = currentIdx + dir;
       if (newIdx < 0 || newIdx >= allDocs.length) return;
-      loadDocByIdx(newIdx).then(render);
+      loadDocByIdx(newIdx).then(function() {
+        var url = new URL(window.location);
+        url.searchParams.set('id', allDocs[newIdx].id);
+        url.searchParams.delete('mode');
+        history.replaceState(null, '', url);
+        render();
+      });
     }
 
     // === Render ===

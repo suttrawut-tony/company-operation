@@ -738,6 +738,10 @@
     function navDoc(dir) {
       currentIdx = Math.max(0, Math.min(allDocs.length-1, currentIdx + dir));
       doc = allDocs[currentIdx];
+      // Update URL to current doc
+      var url = new URL(window.location);
+      url.searchParams.set('doc', doc.doc_number);
+      history.replaceState(null, '', url);
       lines = [];
       if (docType === 'pr') API.getPR(doc.id).then(d => { lines = d.lines||[]; doc.chain = d.chain; render(); renderDocFlowChain(doc, docType); }).catch(() => render());
       else if (docType === 'po') API.getPO(doc.id).then(d => { lines = d.lines||[]; doc.chain = d.chain; render(); renderDocFlowChain(doc, docType); }).catch(() => render());

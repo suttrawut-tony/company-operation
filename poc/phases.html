@@ -466,7 +466,7 @@
         return;
       }
       currentProjectId = id;
-      sessionStorage.setItem('sda_selected_project', id);
+      savePageState('project', id);
       document.getElementById('phase-timeline').innerHTML = emptyMsg('Loading phases...');
       try {
         const phases = await API.get('/projects/' + id + '/phases');
@@ -487,9 +487,9 @@
           `<option value="${p.id}">${p.code || p.project_code || ''} — ${p.name || p.project_name || ''}</option>`
         ).join('');
 
-        // Restore last selected project or auto-select first
-        var savedProject = sessionStorage.getItem('sda_selected_project');
-        if (savedProject && list.find(function(p) { return p.id === savedProject; })) {
+        // Restore: URL param > localStorage > first
+        var savedProject = restorePageState('project');
+        if (savedProject && list.find(function(p) { return String(p.id) === String(savedProject); })) {
           sel.value = savedProject;
         } else if (list.length) {
           sel.value = list[0].id;

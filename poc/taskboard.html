@@ -477,7 +477,7 @@
     async function onProjectChange() {
       const sel = document.getElementById('projectSelect');
       currentProjectId = sel.value;
-      if (currentProjectId) sessionStorage.setItem('sda_selected_project', currentProjectId);
+      if (currentProjectId) savePageState('project', currentProjectId);
       if (!currentProjectId) {
         allTasks = [];
         projectMembers = [];
@@ -518,9 +518,9 @@
           opt.textContent = (p.code || '') + ' \u2014 ' + (p.name || '');
           sel.appendChild(opt);
         });
-        // Restore last selected project or auto-select first
-        var savedProject = sessionStorage.getItem('sda_selected_project');
-        if (savedProject && projects.find(function(p) { return p.id === savedProject; })) {
+        // Restore: URL param > localStorage > first
+        var savedProject = restorePageState('project');
+        if (savedProject && projects.find(function(p) { return String(p.id) === String(savedProject); })) {
           sel.value = savedProject;
         } else if (projects.length > 0) {
           sel.value = projects[0].id;

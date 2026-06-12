@@ -3,6 +3,19 @@
  * ใช้ร่วมกันทุกหน้าที่ดึง data จาก API
  */
 
+// === State Persistence (URL param + localStorage) ===
+function savePageState(key, value) {
+  var url = new URL(window.location);
+  url.searchParams.set(key, value);
+  history.replaceState(null, '', url);
+  localStorage.setItem('sda_' + key, value);
+}
+function restorePageState(key) {
+  var fromURL = new URLSearchParams(location.search).get(key);
+  if (fromURL) return fromURL;
+  return localStorage.getItem('sda_' + key) || null;
+}
+
 function fmtMoney(n) {
   n = parseFloat(n) || 0;
   return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0 });
