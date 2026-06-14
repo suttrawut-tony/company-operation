@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOW Template — Statement of Work</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ─── SOW Document Styles ─── */
+    .sow-container {
+      max-width: 900px;
+      margin: 32px auto;
+      padding: 0 24px 64px;
+    }
+
+    .sow-doc {
+      background: var(--bg-white);
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+      padding: 48px 56px;
+      line-height: 1.8;
+      color: var(--text-primary);
+    }
+
+    /* Cover / Title */
+    .sow-cover {
+      text-align: center;
+      padding: 40px 0 32px;
+      border-bottom: 2px solid var(--primary);
+      margin-bottom: 32px;
+    }
+    .sow-cover h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 0 0 4px;
+    }
+    .sow-cover .subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Section headings */
+    .sow-doc h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 40px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sow-doc h2 .sec-num {
+      background: var(--primary);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .sow-doc h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 24px 0 12px;
+    }
+
+    /* Tables */
+    .sow-doc table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 14px;
+    }
+    .sow-doc table th {
+      background: var(--bg-light);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+    .sow-doc table td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .sow-doc table tr:hover td {
+      background: var(--bg-hover);
+    }
+
+    /* Info table (cover) */
+    .info-table td:first-child {
+      font-weight: 600;
+      width: 160px;
+      white-space: nowrap;
+      color: var(--text-secondary);
+    }
+
+    /* Placeholder highlights */
+    .ph {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px dashed #f59e0b;
+      cursor: help;
+    }
+
+    /* Paragraphs */
+    .sow-doc p {
+      margin: 12px 0;
+      font-size: 15px;
+    }
+
+    /* Ordered / unordered lists */
+    .sow-doc ol, .sow-doc ul {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+    .sow-doc li {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .sow-doc li strong {
+      color: var(--text-primary);
+    }
+
+    /* Blockquote (notes) */
+    .sow-doc blockquote {
+      border-left: 4px solid var(--primary);
+      background: var(--primary-light);
+      margin: 16px 0;
+      padding: 12px 20px;
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    /* Signature block */
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .sig-box {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .sig-box .sig-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .sig-box .sig-line {
+      border-bottom: 1px solid var(--text-muted);
+      height: 48px;
+      margin: 16px 0 8px;
+    }
+    .sig-box .sig-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .sig-box .sig-title {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Timeline visual */
+    .timeline-phase {
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+      margin: 8px 0;
+    }
+    .timeline-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 28px;
+      flex-shrink: 0;
+    }
+    .timeline-dot .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 3px solid var(--primary-light);
+      flex-shrink: 0;
+    }
+    .timeline-dot .line {
+      width: 2px;
+      flex: 1;
+      background: var(--border);
+    }
+    .timeline-content {
+      flex: 1;
+      padding-bottom: 20px;
+    }
+    .timeline-content .phase-name {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .timeline-content .phase-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .timeline-content .phase-time {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-top: 6px;
+    }
+
+    /* Print */
+    @media print {
+      .sow-container { margin: 0; padding: 0; }
+      .sow-doc { box-shadow: none; padding: 24px; }
+      .page-header, .toolbar { display: none !important; }
+      .sow-doc h2 { break-after: avoid; }
+      .sow-doc table { break-inside: avoid; }
+    }
+
+    /* Top bar */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 900px;
+      margin: 24px auto 0;
+      padding: 0 24px;
+    }
+    .toolbar h1 { font-size: 22px; font-weight: 700; }
+    .toolbar .actions { display: flex; gap: 8px; }
+    .toolbar .btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-white);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all .15s;
+    }
+    .toolbar .btn:hover { background: var(--bg-hover); }
+    .toolbar .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .toolbar .btn-primary:hover { background: var(--primary-hover); }
+
+    /* Footer */
+    .sow-footer {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body style="background:var(--bg-body);">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <h1>SOW Template</h1>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">Print / PDF</button>
+      <button class="btn btn-primary" onclick="highlightPlaceholders()">Highlight {{...}}</button>
+    </div>
+  </div>
+
+  <div class="sow-container">
+    <div class="sow-doc">
+
+      <!-- ═══ Cover ═══ -->
+      <div class="sow-cover">
+        <div class="subtitle">Sala Daeng Company Limited</div>
+        <h1>Statement of Work (SOW)</h1>
+        <p style="color:var(--text-secondary);font-size:14px;margin:8px 0 0;">
+          คำอธิบายขอบเขตการทำงาน
+        </p>
+      </div>
+
+      <!-- ═══ 1. Cover Info ═══ -->
+      <h2><span class="sec-num">1</span> ปกเอกสาร (Cover Page)</h2>
+      <table class="info-table">
+        <tr><td>เลขที่เอกสาร</td><td><span class="ph">{{เลขที่ SOW เช่น SLD-SOW-2026-XXX}}</span></td></tr>
+        <tr><td>โครงการ</td><td><span class="ph">{{ชื่อโครงการ เช่น SAP Business One Implementation}}</span></td></tr>
+        <tr><td>ระบบ ERP</td><td><span class="ph">{{SAP Business One (HANA/SQL) / Oracle NetSuite}}</span></td></tr>
+        <tr><td>ลูกค้า</td><td><span class="ph">{{ชื่อบริษัทลูกค้า (TH)}}</span><br><span class="ph">{{Customer Company Name (EN)}}</span></td></tr>
+        <tr><td>ที่อยู่ลูกค้า</td><td><span class="ph">{{ที่อยู่ลูกค้า}}</span></td></tr>
+        <tr><td>ผู้ให้บริการ</td><td>บริษัท ศาลาแดง จำกัด (Sala Daeng Company Limited)</td></tr>
+        <tr><td>จัดทำโดย</td><td><span class="ph">{{ชื่อผู้จัดทำ}}</span></td></tr>
+        <tr><td>วันที่</td><td><span class="ph">{{วันที่ออกเอกสาร}}</span></td></tr>
+        <tr><td>เวอร์ชัน</td><td>v1.0</td></tr>
+      </table>
+
+      <!-- ═══ 2. Executive Summary ═══ -->
+      <h2><span class="sec-num">2</span> บทสรุปผู้บริหาร (Executive Summary)</h2>
+      <p>
+        บริษัท ศาลาแดง จำกัด ("SLD") มีความยินดีนำเสนอขอบเขตการทำงานสำหรับโครงการวางระบบ
+        <span class="ph">{{SAP Business One / Oracle NetSuite}}</span> ให้กับ
+        <span class="ph">{{ชื่อบริษัทลูกค้า}}</span> ("ลูกค้า")
+        โดยโครงการนี้มีวัตถุประสงค์เพื่อ<span class="ph">{{สรุปเป้าหมายหลัก เช่น ยกระดับระบบ ERP ให้ครบวงจร ครอบคลุมงานบัญชี-การเงิน จัดซื้อ ขาย และคลังสินค้า}}</span>
+      </p>
+      <p>
+        ระบบ ERP จะช่วยให้ลูกค้าสามารถ<span class="ph">{{ระบุ value proposition หลัก เช่น ลดขั้นตอนงานซ้ำซ้อน เพิ่มความถูกต้องของข้อมูลทางการเงิน}}</span>
+        ทั้งนี้ SLD จะดำเนินการตามมาตรฐาน Implementation Methodology ที่ผ่านการพิสูจน์จากโครงการกว่า 50 องค์กรในประเทศไทยและภูมิภาค
+      </p>
+
+      <!-- ═══ 3. Objectives ═══ -->
+      <h2><span class="sec-num">3</span> วัตถุประสงค์โครงการ (Project Objectives)</h2>
+      <table>
+        <thead><tr><th style="width:40px">#</th><th>วัตถุประสงค์</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>วางระบบ <span class="ph">{{SAP B1 / NetSuite}}</span> ให้ครอบคลุมกระบวนการทางธุรกิจหลักตามขอบเขตที่กำหนด</td></tr>
+          <tr><td>2</td><td><span class="ph">{{วัตถุประสงค์ด้านการเงิน เช่น ปิดบัญชีรายเดือนภายใน 5 วันทำงาน จัดทำรายงานภาษี ภ.พ.30, ภ.ง.ด. ถูกต้อง}}</span></td></tr>
+          <tr><td>3</td><td><span class="ph">{{วัตถุประสงค์ด้าน operation เช่น ลดเวลาจัดทำเอกสารจัดซื้อ-ขาย-คลังลงอย่างน้อย 30%}}</span></td></tr>
+          <tr><td>4</td><td><span class="ph">{{วัตถุประสงค์ด้าน data เช่น รวมศูนย์ข้อมูลองค์กรในระบบเดียว}}</span></td></tr>
+          <tr><td>5</td><td><span class="ph">{{วัตถุประสงค์ด้านการเติบโต เช่น รองรับการขยายสาขาในอนาคต}}</span></td></tr>
+        </tbody>
+      </table>
+
+      <!-- ═══ 4. Scope ═══ -->
+      <h2><span class="sec-num">4</span> ขอบเขตงาน (Scope of Work)</h2>
+
+      <h3>4.1 ขอบเขตที่รวมในโครงการ (In-Scope)</h3>
+      <table>
+        <thead><tr><th style="width:30px">#</th><th style="width:200px">โมดูล (Module)</th><th>รายละเอียดหลัก</th><th style="width:160px">หมายเหตุ</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>บัญชีและการเงิน</strong><br>(Financials)</td><td>ผังบัญชี (Chart of Accounts), บัญชีแยกประเภท (General Ledger), บันทึกรายวัน (Journal Entry), งบกำไรขาดทุน, งบดุล, งบทดลอง</td><td><span class="ph">{{มาตรฐานบัญชี}}</span></td></tr>
+          <tr><td>2</td><td><strong>ลูกหนี้การค้า</strong><br>(Accounts Receivable)</td><td>ใบแจ้งหนี้ขาย (AR Invoice), ใบลดหนี้ (Credit Memo), รับชำระเงิน (Incoming Payment), รายงานอายุลูกหนี้</td><td></td></tr>
+          <tr><td>3</td><td><strong>เจ้าหนี้การค้า</strong><br>(Accounts Payable)</td><td>ใบแจ้งหนี้ซื้อ (AP Invoice), ใบลดหนี้ซื้อ, จ่ายชำระเงิน (Outgoing Payment), รายงานอายุเจ้าหนี้</td><td></td></tr>
+          <tr><td>4</td><td><strong>จัดซื้อ</strong><br>(Purchasing)</td><td>ใบขอซื้อ (Purchase Request), ใบสั่งซื้อ (Purchase Order), รับสินค้าตาม PO (Goods Receipt PO)</td><td></td></tr>
+          <tr><td>5</td><td><strong>การขาย</strong><br>(Sales)</td><td>ใบเสนอราคา (Sales Quotation), ใบสั่งขาย (Sales Order), ใบส่งของ (Delivery), ใบแจ้งหนี้ขาย</td><td></td></tr>
+          <tr><td>6</td><td><strong>คลังสินค้า</strong><br>(Inventory)</td><td>ข้อมูลสินค้าหลัก (Item Master), คลังสินค้า (Warehouse), รับ/เบิก/โอนสินค้า</td><td><span class="ph">{{up to N warehouses}}</span></td></tr>
+          <tr><td>7</td><td><strong>สินทรัพย์ถาวร</strong><br>(Fixed Assets)</td><td>ทะเบียนสินทรัพย์, ค่าเสื่อมราคา (Depreciation), ตัดจำหน่าย (Disposal)</td><td><span class="ph">{{รวม/ไม่รวม}}</span></td></tr>
+          <tr><td>8</td><td><strong>รายงาน</strong><br>(Reporting)</td><td>รายงานทางการเงินมาตรฐาน, รายงานภาษี (VAT, WHT)</td><td><span class="ph">{{up to N reports}}</span></td></tr>
+          <tr><td>9</td><td><strong>ความปลอดภัย</strong><br>(Security)</td><td>กำหนดสิทธิ์ผู้ใช้ (User Role), ขั้นตอนอนุมัติ (Approval), Audit Trail</td><td><span class="ph">{{up to N roles}}</span></td></tr>
+          <tr><td>10</td><td><strong>การย้ายข้อมูล</strong><br>(Data Migration)</td><td>ย้ายข้อมูลหลัก: ผังบัญชี, ลูกค้า, ผู้จำหน่าย, สินค้า</td><td><span class="ph">{{up to N records}}</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 ขอบเขตที่ไม่รวมในโครงการ (Out of Scope)</h3>
+      <blockquote>สิ่งต่อไปนี้ <strong>ไม่</strong> รวมอยู่ในโครงการนี้ หากต้องการเพิ่มเติมจะดำเนินการผ่านกระบวนการ Change Request</blockquote>
+      <ol>
+        <li>ข้อมูลรายการค้า (Transaction Data) และการบันทึกข้อมูลเก่า (Historical Data Entry)</li>
+        <li>การพัฒนาโปรแกรมเพิ่มเติม (Program Customization / Add-On) และ Integration นอก Scope</li>
+        <li>ยอดยกมา (Opening Balance) <span class="ph">{{ระบุ: รวม/ไม่รวม}}</span></li>
+        <li>โมดูลที่ไม่ได้ระบุข้างต้น เช่น <span class="ph">{{CRM, Manufacturing, HR/Payroll}}</span></li>
+        <li>ฮาร์ดแวร์ เซิร์ฟเวอร์ และค่าลิขสิทธิ์ซอฟต์แวร์ (Hardware / Server / License)</li>
+        <li>การสนับสนุนหลังสิ้นสุดระยะ Support Period</li>
+        <li>รายงานพิเศษนอกเหนือจาก <span class="ph">{{จำนวน}}</span> รายงานที่ระบุไว้</li>
+        <li>การแก้ไขข้อผิดพลาดจากซอฟต์แวร์บุคคลที่สาม (Third-Party)</li>
+      </ol>
+
+      <!-- ═══ 5. Deliverables ═══ -->
+      <h2><span class="sec-num">5</span> สิ่งส่งมอบ (Deliverables)</h2>
+      <table>
+        <thead><tr><th style="width:30px">#</th><th style="width:200px">สิ่งส่งมอบ</th><th>รายละเอียด</th><th style="width:180px">เกณฑ์รับงาน</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>เอกสารพิมพ์เขียว</strong><br>(Business Blueprint)</td><td>สรุปกระบวนการ AS-IS / TO-BE, ออกแบบระบบ, ข้อตกลง Configuration</td><td>ลูกค้าลงนามอนุมัติ</td></tr>
+          <tr><td>2</td><td><strong>ระบบที่ตั้งค่าแล้ว</strong><br>(Configured System)</td><td>ระบบตั้งค่าครบตาม Blueprint บน Test &amp; Production</td><td>ทำงานได้ตาม Blueprint</td></tr>
+          <tr><td>3</td><td><strong>รายงานย้ายข้อมูล</strong><br>(Migration Report)</td><td>สรุปผลการย้าย Master Data พร้อม Validation</td><td>ข้อมูลถูกต้องครบถ้วน</td></tr>
+          <tr><td>4</td><td><strong>ผล UAT</strong><br>(UAT Sign-off)</td><td>บันทึกผลทดสอบระบบโดยผู้ใช้งานจริง</td><td>ลูกค้าลงนามรับรอง</td></tr>
+          <tr><td>5</td><td><strong>การฝึกอบรม</strong><br>(Training)</td><td>ฝึก Key User <span class="ph">{{up to N sessions}}</span> พร้อมคู่มือ</td><td>ผู้ใช้ปฏิบัติงานได้</td></tr>
+          <tr><td>6</td><td><strong>Hypercare Support</strong></td><td>สนับสนุนหลัง Go-Live <span class="ph">{{10 Man-Days}}</span></td><td>ครบระยะ Hypercare</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ═══ 6. Timeline ═══ -->
+      <h2><span class="sec-num">6</span> แผนการดำเนินงาน (Project Timeline)</h2>
+
+      <div style="margin:16px 0 8px;">
+        <div class="timeline-phase">
+          <div class="timeline-dot"><div class="dot"></div><div class="line"></div></div>
+          <div class="timeline-content">
+            <div class="phase-name">P1: เตรียมงานและพิมพ์เขียว (Preparation &amp; Blueprint)</div>
+            <div class="phase-detail">Kick-off Meeting, สำรวจกระบวนการธุรกิจ (AS-IS), ออกแบบ TO-BE, จัดทำ Blueprint</div>
+            <div class="phase-time"><span class="ph">{{สัปดาห์ที่ 1-3}}</span></div>
+          </div>
+        </div>
+        <div class="timeline-phase">
+          <div class="timeline-dot"><div class="dot"></div><div class="line"></div></div>
+          <div class="timeline-content">
+            <div class="phase-name">P2: ตั้งค่าและพัฒนา (Configuration &amp; Development)</div>
+            <div class="phase-detail">ตั้งค่าระบบตาม Blueprint, พัฒนารายงาน, ตั้งค่าสิทธิ์ผู้ใช้, ขั้นตอนอนุมัติ</div>
+            <div class="phase-time"><span class="ph">{{สัปดาห์ที่ 4-8}}</span></div>
+          </div>
+        </div>
+        <div class="timeline-phase">
+          <div class="timeline-dot"><div class="dot"></div><div class="line"></div></div>
+          <div class="timeline-content">
+            <div class="phase-name">P3: ย้ายข้อมูลและทดสอบ (Data Migration &amp; UAT)</div>
+            <div class="phase-detail">นำเข้าข้อมูลหลัก, ทดสอบระบบ (UAT), แก้ไขปัญหาที่พบ</div>
+            <div class="phase-time"><span class="ph">{{สัปดาห์ที่ 9-12}}</span></div>
+          </div>
+        </div>
+        <div class="timeline-phase">
+          <div class="timeline-dot"><div class="dot"></div><div class="line"></div></div>
+          <div class="timeline-content">
+            <div class="phase-name">P4: ฝึกอบรมและเปิดใช้งาน (Training &amp; Go-Live)</div>
+            <div class="phase-detail">ฝึกอบรม Key User, เตรียม Production database, Cutover, เปิดใช้ระบบจริง</div>
+            <div class="phase-time"><span class="ph">{{สัปดาห์ที่ 13-14}}</span></div>
+          </div>
+        </div>
+        <div class="timeline-phase">
+          <div class="timeline-dot"><div class="dot"></div><div class="line" style="background:transparent;"></div></div>
+          <div class="timeline-content">
+            <div class="phase-name">P5: สนับสนุนหลังเปิดใช้งาน (Hypercare)</div>
+            <div class="phase-detail">ดูแลระบบหลัง Go-Live, แก้ไขปัญหาเร่งด่วน, ปรับแต่งเพิ่มเติมเล็กน้อย</div>
+            <div class="phase-time"><span class="ph">{{สัปดาห์ที่ 15-16}}</span></div>
+          </div>
+        </div>
+      </div>
+      <blockquote>ระยะเวลารวมโดยประมาณ: <strong><span class="ph">{{16 สัปดาห์ / 4 เดือน}}</span></strong> — ขึ้นอยู่กับความพร้อมของทั้งสองฝ่าย</blockquote>
+
+      <!-- ═══ 7. Team ═══ -->
+      <h2><span class="sec-num">7</span> ทีมงานโครงการ (Project Team)</h2>
+
+      <h3>ฝั่งผู้ให้บริการ (Sala Daeng Company Limited)</h3>
+      <table>
+        <thead><tr><th>บทบาท (Role)</th><th>ชื่อ</th><th>ความรับผิดชอบ</th></tr></thead>
+        <tbody>
+          <tr><td>Delivery Manager</td><td><span class="ph">{{ชื่อ DM}}</span></td><td>อนุมัติขอบเขตงาน กำกับดูแลคุณภาพโดยรวม</td></tr>
+          <tr><td>Solution Consultant / PM</td><td><span class="ph">{{ชื่อ SC/PM}}</span></td><td>บริหารโครงการ วางแผน ประสานงาน รายงานสถานะ</td></tr>
+          <tr><td>Functional Consultant</td><td><span class="ph">{{ชื่อ FC}}</span></td><td>ออกแบบ-ตั้งค่าระบบ ฝึกอบรม สนับสนุน UAT</td></tr>
+          <tr><td>Technical Consultant</td><td><span class="ph">{{ชื่อ TC}}</span></td><td>พัฒนารายงาน ย้ายข้อมูล เชื่อมต่อระบบ</td></tr>
+        </tbody>
+      </table>
+
+      <h3>ฝั่งลูกค้า (<span class="ph">{{ชื่อบริษัทลูกค้า}}</span>)</h3>
+      <table>
+        <thead><tr><th>บทบาท (Role)</th><th>ชื่อ</th><th>ความรับผิดชอบ</th></tr></thead>
+        <tbody>
+          <tr><td>Project Sponsor</td><td><span class="ph">{{ชื่อผู้บริหาร}}</span></td><td>อนุมัติงบประมาณ ตัดสินใจระดับนโยบาย</td></tr>
+          <tr><td>Project Coordinator</td><td><span class="ph">{{ชื่อผู้ประสานงาน}}</span></td><td>ประสานงานภายใน จัดเตรียมข้อมูล นัดหมาย</td></tr>
+          <tr><td>Key User(s)</td><td><span class="ph">{{ชื่อ Key User}}</span></td><td>เข้าร่วม Blueprint, UAT, Training</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ═══ 8. Assumptions ═══ -->
+      <h2><span class="sec-num">8</span> สมมติฐานโครงการ (Project Assumptions)</h2>
+      <blockquote>สมมติฐานเหล่านี้เป็นพื้นฐานในการประเมินขอบเขตและค่าใช้จ่าย หากเปลี่ยนแปลง อาจส่งผลต่อ timeline และค่าใช้จ่าย</blockquote>
+      <ol>
+        <li><strong>ระยะเวลา SOW (SOW Term):</strong> บริการมีผลภายใน 12 เดือนนับจากวันออกใบแจ้งหนี้</li>
+        <li><strong>ข้อจำกัดขอบเขต (Scope Limitation):</strong> จำกัดเฉพาะ Section 4.1 งานนอกขอบเขตผ่าน Change Request</li>
+        <li><strong>การให้บริการ (Service Delivery):</strong> ดำเนินการแบบ Remote <span class="ph">{{ยกเว้นกรณี Onsite}}</span></li>
+        <li><strong>ความพร้อมลูกค้า (Customer Resources):</strong> ลูกค้าจัด Key User และผู้มีอำนาจตัดสินใจเข้าร่วมตามกำหนด</li>
+        <li><strong>คุณภาพข้อมูล (Data Quality):</strong> ลูกค้ารับผิดชอบความถูกต้องของ Master Data ที่จัดเตรียม</li>
+        <li><strong>การยกเลิก/เลื่อนนัด (Cancellation):</strong> ยกเลิกซ้ำโดยไม่แจ้งล่วงหน้าอาจมีค่าใช้จ่ายเพิ่ม</li>
+        <li><strong>รูปแบบรายงาน (Report Templates):</strong> ใช้ Template มาตรฐาน SLD ปรับแต่งเพิ่มเป็นงานนอก Scope</li>
+        <li><strong>จำนวนฐานข้อมูล (Database):</strong> จำกัด <span class="ph">{{1}}</span> Production + <span class="ph">{{1}}</span> Test</li>
+        <li><strong>ปริมาณข้อมูล (Data Volume):</strong> เกิน limit ที่ระบุ SLD สงวนสิทธิ์ออก Change Order</li>
+        <li><strong>ชำระเงิน (Payment):</strong> ชำระก่อน Project Kick-Off ตาม Section 10</li>
+      </ol>
+
+      <!-- ═══ 9. Change Management ═══ -->
+      <h2><span class="sec-num">9</span> การบริหารการเปลี่ยนแปลง (Change Management)</h2>
+      <table>
+        <thead><tr><th style="width:40px">ขั้นตอน</th><th style="width:130px">กิจกรรม</th><th>รายละเอียด</th><th style="width:100px">ผู้รับผิดชอบ</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>ยื่นคำขอ</td><td>แจ้งความต้องการเพิ่มเติมเป็นลายลักษณ์อักษร</td><td>ลูกค้า</td></tr>
+          <tr><td>2</td><td>ประเมินผลกระทบ</td><td>SLD ประเมินผลกระทบต่อเวลา ขอบเขต ค่าใช้จ่าย ภายใน 5 วันทำงาน</td><td>SLD</td></tr>
+          <tr><td>3</td><td>อนุมัติ</td><td>ทั้งสองฝ่ายลงนาม Change Order ก่อนดำเนินการ</td><td>ทั้งสองฝ่าย</td></tr>
+          <tr><td>4</td><td>ดำเนินการ</td><td>SLD ดำเนินงานตาม Change Order ที่อนุมัติแล้ว</td><td>SLD</td></tr>
+        </tbody>
+      </table>
+      <blockquote><strong>สำคัญ:</strong> SLD จะ <strong>ไม่</strong> ดำเนินงานนอกขอบเขตใดๆ หากไม่ได้รับอนุมัติ Change Order เป็นลายลักษณ์อักษร</blockquote>
+
+      <!-- ═══ 10. Commercial Terms ═══ -->
+      <h2><span class="sec-num">10</span> เงื่อนไขค่าบริการ (Commercial Terms)</h2>
+
+      <h3>ค่าบริการ</h3>
+      <table>
+        <thead><tr><th>รายการ</th><th style="text-align:right">จำนวน</th></tr></thead>
+        <tbody>
+          <tr><td>เวลาดำเนินงานรวม (Total Effort)</td><td style="text-align:right"><span class="ph">{{จำนวน}}</span> Man-Days</td></tr>
+          <tr><td>ค่าบริการรวม (Total Fee)</td><td style="text-align:right"><span class="ph">{{จำนวนเงิน}}</span> บาท</td></tr>
+          <tr><td>ภาษีมูลค่าเพิ่ม (VAT 7%)</td><td style="text-align:right"><span class="ph">{{จำนวนเงิน}}</span> บาท</td></tr>
+          <tr style="font-weight:700;background:var(--bg-light)"><td>รวมทั้งสิ้น</td><td style="text-align:right"><span class="ph">{{จำนวนเงิน}}</span> บาท</td></tr>
+        </tbody>
+      </table>
+
+      <h3>งวดการชำระเงิน</h3>
+      <table>
+        <thead><tr><th style="width:60px">งวดที่</th><th>เงื่อนไข</th><th style="width:200px;text-align:right">จำนวน</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>ลงนามอนุมัติ SOW และก่อนเริ่ม Kick-Off</td><td style="text-align:right"><span class="ph">{{จำนวนเงิน (XX%)}}</span></td></tr>
+          <tr><td>2</td><td>ส่งมอบ Blueprint ที่ผ่านการอนุมัติ</td><td style="text-align:right"><span class="ph">{{จำนวนเงิน (XX%)}}</span></td></tr>
+          <tr><td>3</td><td>ลงนาม UAT Sign-off</td><td style="text-align:right"><span class="ph">{{จำนวนเงิน (XX%)}}</span></td></tr>
+          <tr><td>4</td><td>Go-Live และเสร็จสิ้น Hypercare</td><td style="text-align:right"><span class="ph">{{จำนวนเงิน (XX%)}}</span></td></tr>
+        </tbody>
+      </table>
+      <blockquote>เงื่อนไขอื่นๆ เป็นไปตามสัญญาหลัก (Master Agreement) ระหว่างทั้งสองฝ่าย</blockquote>
+
+      <!-- ═══ 11. Sign-off ═══ -->
+      <h2><span class="sec-num">11</span> การลงนามอนุมัติ (Sign-off)</h2>
+      <p>ทั้งสองฝ่ายตกลงและยอมรับขอบเขตการทำงานตามที่ระบุไว้ในเอกสารฉบับนี้</p>
+
+      <div class="sig-grid">
+        <div class="sig-box">
+          <div class="sig-label">ลูกค้า: <span class="ph">{{ชื่อบริษัท}}</span></div>
+          <div style="font-size:12px;color:var(--text-muted)">Signed and agreed by</div>
+          <div class="sig-line"></div>
+          <div class="sig-name"><span class="ph">{{ชื่อผู้มีอำนาจ}}</span></div>
+          <div class="sig-title"><span class="ph">{{ตำแหน่ง}}</span></div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">วันที่: ___/___/___</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-label">Sala Daeng Company Limited</div>
+          <div style="font-size:12px;color:var(--text-muted)">&nbsp;</div>
+          <div class="sig-line"></div>
+          <div class="sig-name"><span class="ph">{{ชื่อ SC/PM}}</span></div>
+          <div class="sig-title">Solution Consultant</div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">วันที่: ___/___/___</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-label">Sala Daeng Company Limited</div>
+          <div style="font-size:12px;color:var(--text-muted)">(Services Authorization)</div>
+          <div class="sig-line"></div>
+          <div class="sig-name"><span class="ph">{{ชื่อ DM}}</span></div>
+          <div class="sig-title">Delivery Manager</div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">วันที่: ___/___/___</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="sow-footer">
+        เอกสารฉบับนี้จัดทำโดย บริษัท ศาลาแดง จำกัด (Sala Daeng Company Limited)<br>
+        เวอร์ชัน: v1.0 | วันที่: <span class="ph">{{วันที่ออกเอกสาร}}</span>
+      </div>
+
+    </div><!-- .sow-doc -->
+  </div><!-- .sow-container -->
+
+  <script>
+    function highlightPlaceholders() {
+      const all = document.querySelectorAll('.ph');
+      const isHighlighted = all[0]?.style.outline;
+      all.forEach(el => {
+        if (isHighlighted) {
+          el.style.outline = '';
+          el.style.animation = '';
+        } else {
+          el.style.outline = '2px solid #f59e0b';
+          el.style.animation = 'pulse .8s ease-in-out infinite alternate';
+        }
+      });
+      // inject pulse keyframe
+      if (!document.getElementById('ph-pulse')) {
+        const style = document.createElement('style');
+        style.id = 'ph-pulse';
+        style.textContent = '@keyframes pulse { from { outline-color: #f59e0b; } to { outline-color: #fbbf24; } }';
+        document.head.appendChild(style);
+      }
+    }
+  </script>
+</body>
+</html>

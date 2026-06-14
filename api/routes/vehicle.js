@@ -24,68 +24,80 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// GET /api/vehicle/bookings
+// GET /api/vehicle/bookings — reads from unified `bookings` table (booking_type='vehicle')
 router.get('/bookings', async (req, res) => {
   try {
     const { vehicle_id, start_date, end_date, project_id } = req.query;
     const projectIds = await getUserProjectIds(req.user);
-    let q = `SELECT vb.*, v.name AS vehicle_name, v.plate_number,
+    let q = `SELECT b.*, v.name AS vehicle_name, v.plate_number,
              u.first_name || ' ' || u.last_name AS booked_by_name,
              p.code AS project_code
-             FROM vehicle_bookings vb
-             JOIN vehicles v ON vb.vehicle_id = v.id
-             LEFT JOIN users u ON vb.booked_by = u.id
-             LEFT JOIN projects p ON vb.project_id = p.id
-             WHERE v.company_id = $1`;
+             FROM bookings b
+             LEFT JOIN vehicles v ON b.vehicle_id = v.id
+             LEFT JOIN users u ON b.booked_by = u.id
+             LEFT JOIN projects p ON b.project_id = p.id
+             WHERE b.company_id = $1 AND b.booking_type = 'vehicle'`;
     const params = [req.user.company_id];
-    if (projectIds !== null) { params.push(projectIds); params.push(req.user.id); q += ` AND (vb.project_id = ANY($${params.length - 1}) OR vb.booked_by = $${params.length})`; }
-    if (vehicle_id) { params.push(vehicle_id); q += ` AND vb.vehicle_id = $${params.length}`; }
-    if (start_date) { params.push(start_date); q += ` AND vb.end_date >= $${params.length}`; }
-    if (end_date) { params.push(end_date); q += ` AND vb.start_date <= $${params.length}`; }
-    if (project_id) { params.push(project_id); q += ` AND vb.project_id = $${params.length}`; }
-    q += ' ORDER BY vb.start_date';
+    if (projectIds !== null) { params.push(projectIds); params.push(req.user.id); q += ` AND (b.project_id = ANY($${params.length - 1}) OR b.booked_by = $${params.length})`; }
+    if (vehicle_id) { params.push(vehicle_id); q += ` AND b.vehicle_id = $${params.length}`; }
+    if (start_date) { params.push(start_date); q += ` AND b.end_date >= $${params.length}`; }
+    if (end_date) { params.push(end_date); q += ` AND b.start_date <= $${params.length}`; }
+    if (project_id) { params.push(project_id); q += ` AND b.project_id = $${params.length}`; }
+    q += ' ORDER BY b.start_date';
     const { rows } = await db.query(q, params);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/vehicle/bookings — check conflict + book
+// POST /api/vehicle/bookings — check conflict + book (writes to unified `bookings` table)
 router.post('/bookings', async (req, res) => {
   try {
     const { vehicle_id, project_id, start_date, end_date, purpose, passengers } = req.body;
-    // Conflict check
+    if (!vehicle_id) return res.status(400).json({ error: 'vehicle_id required' });
+    if (!start_date || !end_date) return res.status(400).json({ error: 'start_date and end_date required' });
+    // Conflict check against unified bookings table
     const { rows: conflicts } = await db.query(
-      `SELECT * FROM vehicle_bookings WHERE vehicle_id = $1
-       AND status NOT IN ('rejected','cancelled')
-       AND start_date <= $3 AND end_date >= $2`, [vehicle_id, start_date, end_date]);
+      `SELECT b.id, b.start_date, b.end_date, b.title, b.purpose,
+              v.name AS vehicle_name, v.plate_number,
+              u.first_name || ' ' || u.last_name AS booked_by_name
+       FROM bookings b
+       LEFT JOIN vehicles v ON b.vehicle_id = v.id
+       LEFT JOIN users u ON b.booked_by = u.id
+       WHERE b.vehicle_id = $1
+       AND b.status NOT IN ('rejected','cancelled')
+       AND b.start_date <= $3 AND b.end_date >= $2`, [vehicle_id, start_date, end_date]);
     if (conflicts.length) return res.status(409).json({ error: 'Booking conflict', conflicts });
 
     const { rows: [booking] } = await db.query(
-      `INSERT INTO vehicle_bookings (vehicle_id, project_id, start_date, end_date, purpose, passengers, booked_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [vehicle_id, project_id, start_date, end_date, purpose, passengers, req.user.id]);
+      `INSERT INTO bookings (company_id, booking_type, vehicle_id, project_id, start_date, end_date, purpose, passengers, booked_by, all_day)
+       VALUES ($1, 'vehicle', $2, $3, $4, $5, $6, $7, $8, true) RETURNING *`,
+      [req.user.company_id, vehicle_id, project_id || null, start_date, end_date, purpose, passengers, req.user.id]);
     res.status(201).json(booking);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/vehicle/bookings/:id/checkout
+// POST /api/vehicle/bookings/:id/checkout (unified bookings table + company_id check)
 router.post('/bookings/:id/checkout', async (req, res) => {
   try {
     const { km_start, fuel_start } = req.body;
     const { rows } = await db.query(
-      `UPDATE vehicle_bookings SET status='checked_out', km_start=$1, fuel_start=$2, checked_out_at=NOW()
-       WHERE id=$3 RETURNING *`, [km_start, fuel_start, req.params.id]);
+      `UPDATE bookings SET status='checked_out', km_start=$1, fuel_start=$2, checked_out_at=NOW(), updated_at=NOW()
+       WHERE id=$3 AND company_id=$4 AND booking_type='vehicle' RETURNING *`,
+      [km_start, fuel_start, req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Booking not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/vehicle/bookings/:id/checkin
+// POST /api/vehicle/bookings/:id/checkin (unified bookings table + company_id check)
 router.post('/bookings/:id/checkin', async (req, res) => {
   try {
     const { km_end, fuel_end, condition_notes } = req.body;
     const { rows } = await db.query(
-      `UPDATE vehicle_bookings SET status='checked_in', km_end=$1, fuel_end=$2, condition_notes=$3, checked_in_at=NOW()
-       WHERE id=$4 RETURNING *`, [km_end, fuel_end, condition_notes, req.params.id]);
+      `UPDATE bookings SET status='checked_in', km_end=$1, fuel_end=$2, condition_notes=$3, checked_in_at=NOW(), updated_at=NOW()
+       WHERE id=$4 AND company_id=$5 AND booking_type='vehicle' RETURNING *`,
+      [km_end, fuel_end, condition_notes, req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Booking not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -99,8 +111,8 @@ router.get('/availability', async (req, res) => {
     const days = parseInt(req.query.days) || 14;
     const { rows: vehicles } = await db.query('SELECT id, name, plate_number, status FROM vehicles WHERE company_id=$1 ORDER BY name', [req.user.company_id]);
     const { rows: bookings } = await db.query(
-      `SELECT vehicle_id, start_date, end_date, status FROM vehicle_bookings
-       WHERE vehicle_id IN (SELECT id FROM vehicles WHERE company_id=$1)
+      `SELECT vehicle_id, start_date, end_date, status FROM bookings
+       WHERE company_id=$1 AND booking_type='vehicle'
        AND status NOT IN ('rejected','cancelled')
        AND end_date >= $2 AND start_date <= ($2::date + ($3 || ' days')::interval)`, [req.user.company_id, startDate, days]);
     const { rows: maint } = await db.query(
@@ -201,8 +213,17 @@ router.put('/issues/:id', async (req, res) => {
 
 // ═══ Vehicle-specific sub-resources (/:id/...) ═══
 
+// Ownership guard: ensure vehicle belongs to user's company before accessing sub-resources
+async function ensureVehicleOwnership(req, res, next) {
+  try {
+    const { rows } = await db.query('SELECT id FROM vehicles WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!rows.length) return res.status(404).json({ error: 'Vehicle not found' });
+    next();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+}
+
 // GET /api/vehicle/:id/insurance
-router.get('/:id/insurance', async (req, res) => {
+router.get('/:id/insurance', ensureVehicleOwnership, async (req, res) => {
   try {
     const { rows } = await db.query('SELECT * FROM vehicle_insurance WHERE vehicle_id=$1 ORDER BY coverage_end DESC', [req.params.id]);
     res.json(rows);
@@ -210,7 +231,7 @@ router.get('/:id/insurance', async (req, res) => {
 });
 
 // POST /api/vehicle/:id/insurance
-router.post('/:id/insurance', async (req, res) => {
+router.post('/:id/insurance', ensureVehicleOwnership, async (req, res) => {
   try {
     const { insurance_type, policy_number, insurance_company, coverage_start, coverage_end, premium, coverage_amount, deductible, broker, broker_phone, remarks } = req.body;
     const { rows: [ins] } = await db.query(
@@ -222,7 +243,7 @@ router.post('/:id/insurance', async (req, res) => {
 });
 
 // GET /api/vehicle/:id/claims
-router.get('/:id/claims', async (req, res) => {
+router.get('/:id/claims', ensureVehicleOwnership, async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT c.*, i.policy_number, i.insurance_company
@@ -233,7 +254,7 @@ router.get('/:id/claims', async (req, res) => {
 });
 
 // POST /api/vehicle/:id/claims
-router.post('/:id/claims', async (req, res) => {
+router.post('/:id/claims', ensureVehicleOwnership, async (req, res) => {
   try {
     const { insurance_id, booking_id, claim_number, claim_date, claim_type, description, damage_amount, claim_amount, driver_name, police_report_number, repair_shop, remarks } = req.body;
     const { rows: [claim] } = await db.query(
@@ -245,7 +266,7 @@ router.post('/:id/claims', async (req, res) => {
 });
 
 // GET /api/vehicle/:id/maintenance
-router.get('/:id/maintenance', async (req, res) => {
+router.get('/:id/maintenance', ensureVehicleOwnership, async (req, res) => {
   try {
     const { rows } = await db.query('SELECT * FROM vehicle_maintenance WHERE vehicle_id=$1 ORDER BY service_date DESC', [req.params.id]);
     res.json(rows);
@@ -253,7 +274,7 @@ router.get('/:id/maintenance', async (req, res) => {
 });
 
 // POST /api/vehicle/:id/maintenance
-router.post('/:id/maintenance', async (req, res) => {
+router.post('/:id/maintenance', ensureVehicleOwnership, async (req, res) => {
   try {
     const { maintenance_type, description, km_at_service, service_date, completed_date, service_center, cost, invoice_number, next_service_km, next_service_date, remarks } = req.body;
     const { rows: [m] } = await db.query(
@@ -265,7 +286,7 @@ router.post('/:id/maintenance', async (req, res) => {
 });
 
 // GET /api/vehicle/:id/issues
-router.get('/:id/issues', async (req, res) => {
+router.get('/:id/issues', ensureVehicleOwnership, async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT i.*, u.first_name || ' ' || u.last_name AS reported_by_name
@@ -276,7 +297,7 @@ router.get('/:id/issues', async (req, res) => {
 });
 
 // POST /api/vehicle/:id/issues
-router.post('/:id/issues', async (req, res) => {
+router.post('/:id/issues', ensureVehicleOwnership, async (req, res) => {
   try {
     const { booking_id, issue_type, severity, description } = req.body;
     const { rows: [issue] } = await db.query(
@@ -288,16 +309,16 @@ router.post('/:id/issues', async (req, res) => {
 });
 
 // GET /api/vehicle/:id/schedule?months=3
-router.get('/:id/schedule', async (req, res) => {
+router.get('/:id/schedule', ensureVehicleOwnership, async (req, res) => {
   try {
     const months = parseInt(req.query.months) || 3;
     const endDate = new Date(); endDate.setMonth(endDate.getMonth() + months);
     const endStr = endDate.toISOString().slice(0, 10);
     const { rows: bookings } = await db.query(
-      `SELECT vb.*, u.first_name || ' ' || u.last_name AS booked_by_name, p.code AS project_code
-       FROM vehicle_bookings vb LEFT JOIN users u ON vb.booked_by = u.id LEFT JOIN projects p ON vb.project_id = p.id
-       WHERE vb.vehicle_id=$1 AND vb.status NOT IN ('rejected','cancelled') AND vb.end_date >= CURRENT_DATE AND vb.start_date <= $2
-       ORDER BY vb.start_date`, [req.params.id, endStr]);
+      `SELECT b.*, u.first_name || ' ' || u.last_name AS booked_by_name, p.code AS project_code
+       FROM bookings b LEFT JOIN users u ON b.booked_by = u.id LEFT JOIN projects p ON b.project_id = p.id
+       WHERE b.vehicle_id=$1 AND b.booking_type='vehicle' AND b.status NOT IN ('rejected','cancelled') AND b.end_date >= CURRENT_DATE AND b.start_date <= $2
+       ORDER BY b.start_date`, [req.params.id, endStr]);
     const { rows: maintenance } = await db.query(
       `SELECT * FROM vehicle_maintenance WHERE vehicle_id=$1 AND status IN ('scheduled','in_progress')
        AND service_date <= $2 ORDER BY service_date`, [req.params.id, endStr]);
@@ -316,28 +337,32 @@ router.delete('/:id', checkPermission(['executive','manager']), async (req, res)
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/vehicle/bookings/:id — Cancel booking (soft delete)
+// DELETE /api/vehicle/bookings/:id — Cancel booking (unified bookings table)
 router.delete('/bookings/:id', async (req, res) => {
   try {
-    const { rows: [b] } = await db.query('SELECT * FROM vehicle_bookings WHERE id=$1', [req.params.id]);
+    const { rows: [b] } = await db.query(
+      "SELECT * FROM bookings WHERE id=$1 AND company_id=$2 AND booking_type='vehicle'",
+      [req.params.id, req.user.company_id]);
     if (!b) return res.status(404).json({ error: 'Not found' });
     // Staff can only cancel own bookings
     if (req.user.role === 'staff' && b.booked_by !== req.user.id) {
       return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'คุณไม่มีสิทธิ์ยกเลิกการจองนี้' });
     }
-    if (['checked_in','cancelled'].includes(b.status)) {
+    if (['checked_in','cancelled','completed'].includes(b.status)) {
       return res.status(400).json({ error: 'INVALID_STATUS', message: 'ไม่สามารถยกเลิกการจองที่สถานะ ' + b.status });
     }
     const { rows } = await db.query(
-      "UPDATE vehicle_bookings SET status='cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
+      "UPDATE bookings SET status='cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/vehicle/bookings/:id — Edit booking
+// PUT /api/vehicle/bookings/:id — Edit booking (unified bookings table + conflict re-check)
 router.put('/bookings/:id', async (req, res) => {
   try {
-    const { rows: [b] } = await db.query('SELECT * FROM vehicle_bookings WHERE id=$1', [req.params.id]);
+    const { rows: [b] } = await db.query(
+      "SELECT * FROM bookings WHERE id=$1 AND company_id=$2 AND booking_type='vehicle'",
+      [req.params.id, req.user.company_id]);
     if (!b) return res.status(404).json({ error: 'Not found' });
     if (req.user.role === 'staff' && b.booked_by !== req.user.id) {
       return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'คุณไม่มีสิทธิ์แก้ไขการจองนี้' });
@@ -345,13 +370,25 @@ router.put('/bookings/:id', async (req, res) => {
     if (!['pending','approved'].includes(b.status)) {
       return res.status(400).json({ error: 'INVALID_STATUS', message: 'แก้ไขได้เฉพาะสถานะ pending/approved' });
     }
-    const fields = ['vehicle_id','start_date','end_date','purpose','passengers','project_id'];
+    // Re-check conflict if dates or vehicle changed
+    const newVehicle = req.body.vehicle_id || b.vehicle_id;
+    const newStart = req.body.start_date || b.start_date;
+    const newEnd = req.body.end_date || b.end_date;
+    if (req.body.vehicle_id || req.body.start_date || req.body.end_date) {
+      const { rows: conflicts } = await db.query(
+        `SELECT id FROM bookings WHERE vehicle_id=$1 AND id != $2
+         AND status NOT IN ('rejected','cancelled')
+         AND start_date <= $4 AND end_date >= $3`,
+        [newVehicle, req.params.id, newStart, newEnd]);
+      if (conflicts.length) return res.status(409).json({ error: 'Booking conflict', conflicts });
+    }
+    const fields = ['vehicle_id','start_date','end_date','purpose','passengers','project_id','title','remarks'];
     const sets = []; const params = []; let idx = 1;
     for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     sets.push('updated_at = NOW()');
     params.push(req.params.id);
-    const { rows } = await db.query(`UPDATE vehicle_bookings SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    const { rows } = await db.query(`UPDATE bookings SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

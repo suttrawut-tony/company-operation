@@ -361,6 +361,7 @@ function switchSection(id) {
   document.getElementById(`section-${id}`)?.classList.add('active');
   if (id === 'subscription') loadSubscriptionUI();
   if (id === 'modules') loadModuleTable();
+  if (id === 'approval') loadApprovalMatrix();
   if (id === 'vehicles') loadVehicleTable();
   if (id === 'manpower') loadManpowerTable();
 }
@@ -684,71 +685,259 @@ function renderCompanyProfile() {
 }
 
 // ═══════════════════════════════════════
-// 2. Approval Matrix
+// 2. Approval Matrix (Dynamic CRUD)
 // ═══════════════════════════════════════
+const APPROVAL_DOC_TYPES = [
+  { code: 'pr',        name: 'Purchase Request' },
+  { code: 'po',        name: 'Purchase Order' },
+  { code: 'expense',   name: 'Expense' },
+  { code: 'budget',    name: 'Budget' },
+  { code: 'advance',   name: 'Advance' },
+  { code: 'petty_cash',name: 'Petty Cash' },
+  { code: 'travel',    name: 'Travel' },
+  { code: 'ot',        name: 'Overtime' },
+  { code: 'vehicle',   name: 'Vehicle' },
+];
+const APPROVAL_ROLES = ['pm','finance','executive','accounting','procurement','admin'];
+const ROLE_LABELS = { pm:'Manager', finance:'Finance', executive:'Executive', accounting:'Accounting', procurement:'Procurement', admin:'Admin' };
+
+let allApprovalTemplates = [];
+
 function renderApprovalMatrix() {
-  const docTypes = [
-    { code: 'PR', name: 'Purchase Request' },
-    { code: 'PO', name: 'Purchase Order' },
-    { code: 'EXP', name: 'Expense' },
-    { code: 'BUD', name: 'Budget' },
-    { code: 'TRV', name: 'Travel' },
-    { code: 'OT', name: 'Overtime' },
-  ];
-  const roles = ['Manager', 'Finance', 'Executive'];
-
-  const matrixRows = [
-    { range: '≤ ฿10,000',         steps: ['Manager', '-', '-'] },
-    { range: '฿10,001 - ฿100,000', steps: ['Manager', 'Finance', '-'] },
-    { range: '> ฿100,000',        steps: ['Manager', 'Finance', 'Executive'] },
-  ];
-
-  const selectOpts = roles.map(r => `<option>${r}</option>`).join('') + '<option>-</option>';
-
   return `
   <div class="setup-section" id="section-approval">
     <div class="section-header">
       <h2>${sIcon(SECTIONS[3].icon, 20)} Approval Matrix</h2>
-      <p>Configure approval workflows by document type and amount range</p>
+      <p>กำหนด Approval Workflow ตามประเภทเอกสารและวงเงิน</p>
     </div>
-    ${docTypes.map(dt => `
-    <div class="card mb-16">
-      <div class="card-header">
-        <h2><span class="code-cell">${dt.code}</span> ${dt.name}</h2>
+    <div id="approval-matrix-container">
+      <div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div>
+    </div>
+  </div>`;
+}
+
+async function loadApprovalMatrix() {
+  try {
+    const data = await API.get('/approvals/templates');
+    allApprovalTemplates = data || [];
+    renderApprovalCards();
+  } catch(e) {
+    document.getElementById('approval-matrix-container').innerHTML =
+      '<div style="padding:20px;color:var(--danger);">Error: '+e.message+'</div>';
+  }
+}
+
+function renderApprovalCards() {
+  const container = document.getElementById('approval-matrix-container');
+  if (!container) return;
+  let html = '';
+
+  APPROVAL_DOC_TYPES.forEach(dt => {
+    const templates = allApprovalTemplates
+      .filter(t => t.doc_type === dt.code)
+      .sort((a, b) => Number(a.min_amount) - Number(b.min_amount));
+
+    html += `<div class="card mb-16">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h2><span class="code-cell">${dt.code.toUpperCase()}</span> ${dt.name}</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddApprovalRule('${dt.code}')">+ เพิ่มเงื่อนไข</button>
       </div>
       <div class="card-body" style="padding:0;">
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Amount Range</th>
-                <th>Step 1</th>
-                <th>Step 2</th>
-                <th>Step 3</th>
+                <th style="width:30%;">วงเงิน</th>
+                <th>ขั้นตอนอนุมัติ</th>
+                <th style="width:80px;text-align:center;">สถานะ</th>
+                <th style="width:120px;text-align:center;">จัดการ</th>
               </tr>
             </thead>
-            <tbody>
-              ${matrixRows.map(row => `
-              <tr>
-                <td style="font-weight:600;">${row.range}</td>
-                ${row.steps.map(s => `
-                <td>
-                  <select class="inline-select">
-                    ${['Manager','Finance','Executive','-'].map(opt => `<option${opt === s ? ' selected' : ''}>${opt}</option>`).join('')}
-                  </select>
-                </td>`).join('')}
-              </tr>`).join('')}
-            </tbody>
-          </table>
+            <tbody>`;
+    if (templates.length === 0) {
+      html += '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">ยังไม่มีเงื่อนไข — กด "+ เพิ่มเงื่อนไข" เพื่อเริ่มต้น</td></tr>';
+    } else {
+      templates.forEach(t => {
+        const minF = Number(t.min_amount).toLocaleString();
+        const maxF = Number(t.max_amount) >= 999999999 ? '∞' : Number(t.max_amount).toLocaleString();
+        const rangeText = maxF === '∞' ? '> ฿' + minF : '฿' + minF + ' — ฿' + maxF;
+        const stepsHtml = (t.steps || []).map((s, i) =>
+          '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:var(--primary-light,#e0f2fe);color:var(--primary);margin:2px;">'
+          + (i+1) + '. ' + (ROLE_LABELS[s.role] || s.role)
+          + '</span>'
+        ).join(' → ');
+        const activeHtml = t.is_active
+          ? '<span style="color:var(--success);font-weight:600;font-size:11px;">Active</span>'
+          : '<span style="color:var(--text-muted);font-size:11px;">Inactive</span>';
+        html += `<tr style="opacity:${t.is_active?1:0.5};">
+          <td style="font-weight:600;">${rangeText}</td>
+          <td>${stepsHtml}</td>
+          <td style="text-align:center;">${activeHtml}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-sm btn-secondary" style="font-size:10px;margin:1px;" onclick="openEditApprovalRule('${t.id}')">แก้ไข</button>
+            <button class="btn btn-sm" style="font-size:10px;margin:1px;color:var(--danger);border:1px solid var(--danger);" onclick="deleteApprovalRule('${t.id}')">ลบ</button>
+          </td>
+        </tr>`;
+      });
+    }
+    html += '</tbody></table></div></div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function openAddApprovalRule(docType) {
+  const dt = APPROVAL_DOC_TYPES.find(d => d.code === docType);
+  openApprovalRuleModal(null, docType, dt ? dt.name : docType);
+}
+
+function openEditApprovalRule(templateId) {
+  const t = allApprovalTemplates.find(x => x.id === templateId);
+  if (!t) return;
+  const dt = APPROVAL_DOC_TYPES.find(d => d.code === t.doc_type);
+  openApprovalRuleModal(t, t.doc_type, dt ? dt.name : t.doc_type);
+}
+
+function openApprovalRuleModal(existing, docType, docName) {
+  const isEdit = !!existing;
+  const steps = existing ? (existing.steps || []) : [{ role: 'pm', action: 'approve' }];
+  const minAmt = existing ? existing.min_amount : '';
+  const maxAmt = existing ? (Number(existing.max_amount) >= 999999999 ? '' : existing.max_amount) : '';
+  const isActive = existing ? existing.is_active : true;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay show';
+  modal.id = 'approval-rule-modal';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+  const roleOptions = APPROVAL_ROLES.map(r => '<option value="'+r+'">'+ROLE_LABELS[r]+'</option>').join('');
+
+  let stepsHtml = '';
+  steps.forEach((s, i) => {
+    stepsHtml += buildStepRow(i, s.role, roleOptions);
+  });
+
+  modal.innerHTML = `<div class="modal-box" style="width:480px;">
+    <div class="modal-header">
+      <h3>${isEdit ? 'แก้ไข' : 'เพิ่ม'}เงื่อนไข — ${docName}</h3>
+      <button class="modal-close" onclick="document.getElementById('approval-rule-modal').remove()">&times;</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">วงเงินขั้นต่ำ (฿)</label>
+          <input type="number" id="ar-min" class="inline-input" style="width:100%;" value="${minAmt}" placeholder="0">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">วงเงินสูงสุด (฿) <span style="color:var(--text-muted);font-weight:400;">ว่าง = ไม่จำกัด</span></label>
+          <input type="number" id="ar-max" class="inline-input" style="width:100%;" value="${maxAmt}" placeholder="ไม่จำกัด">
         </div>
       </div>
-    </div>`).join('')}
-    <div class="card-actions" style="border:none;margin-top:0;padding-top:0;">
-      <button class="btn btn-primary" onclick="showToast('Approval matrix saved')">
-        ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save All Changes
-      </button>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">ขั้นตอนอนุมัติ</label>
+        <div id="ar-steps" style="display:flex;flex-direction:column;gap:6px;">
+          ${stepsHtml}
+        </div>
+        <button class="btn btn-sm btn-secondary" style="margin-top:6px;font-size:11px;" onclick="addApprovalStep()">+ เพิ่มขั้นตอน</button>
+      </div>
+      ${isEdit ? `<div>
+        <label style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="ar-active" ${isActive ? 'checked' : ''}> Active
+        </label>
+      </div>` : ''}
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary" onclick="document.getElementById('approval-rule-modal').remove()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveApprovalRule('${docType}', ${isEdit ? "'"+existing.id+"'" : 'null'})">${isEdit ? 'บันทึก' : 'เพิ่ม'}</button>
     </div>
   </div>`;
+  document.body.appendChild(modal);
+}
+
+function buildStepRow(index, selectedRole, roleOptions) {
+  return `<div class="ar-step-row" style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:11px;font-weight:600;min-width:40px;">Step ${index+1}</span>
+    <select class="inline-select ar-role-select" style="flex:1;">
+      ${APPROVAL_ROLES.map(r => '<option value="'+r+'"'+(r===selectedRole?' selected':'')+'>'+ROLE_LABELS[r]+'</option>').join('')}
+    </select>
+    <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border:1px solid var(--danger);padding:2px 6px;" onclick="removeApprovalStep(this)">✕</button>
+  </div>`;
+}
+
+function addApprovalStep() {
+  const container = document.getElementById('ar-steps');
+  if (!container) return;
+  const index = container.querySelectorAll('.ar-step-row').length;
+  const div = document.createElement('div');
+  div.innerHTML = buildStepRow(index, 'finance', '');
+  container.appendChild(div.firstElementChild);
+  renumberSteps();
+}
+
+function removeApprovalStep(btn) {
+  const container = document.getElementById('ar-steps');
+  if (container.querySelectorAll('.ar-step-row').length <= 1) {
+    showToast('ต้องมีอย่างน้อย 1 ขั้นตอน', 'warning');
+    return;
+  }
+  btn.closest('.ar-step-row').remove();
+  renumberSteps();
+}
+
+function renumberSteps() {
+  document.querySelectorAll('#ar-steps .ar-step-row').forEach((row, i) => {
+    row.querySelector('span').textContent = 'Step ' + (i+1);
+  });
+}
+
+async function saveApprovalRule(docType, templateId) {
+  const minVal = document.getElementById('ar-min').value;
+  const maxVal = document.getElementById('ar-max').value;
+  const minAmount = minVal === '' ? 0 : Number(minVal);
+  const maxAmount = maxVal === '' ? 999999999 : Number(maxVal);
+
+  if (minAmount < 0 || (maxVal !== '' && maxAmount < minAmount)) {
+    showToast('วงเงินไม่ถูกต้อง', 'error');
+    return;
+  }
+
+  const stepRows = document.querySelectorAll('#ar-steps .ar-step-row');
+  const steps = [];
+  stepRows.forEach(row => {
+    const role = row.querySelector('.ar-role-select').value;
+    steps.push({ role, action: 'approve' });
+  });
+  if (steps.length === 0) {
+    showToast('ต้องมีอย่างน้อย 1 ขั้นตอน', 'error');
+    return;
+  }
+
+  const payload = { doc_type: docType, min_amount: minAmount, max_amount: maxAmount, steps };
+  const activeEl = document.getElementById('ar-active');
+  if (activeEl) payload.is_active = activeEl.checked;
+
+  try {
+    if (templateId) {
+      await API.put('/approvals/templates/' + templateId, payload);
+      showToast('บันทึกเงื่อนไขแล้ว', 'success');
+    } else {
+      await API.post('/approvals/templates', payload);
+      showToast('เพิ่มเงื่อนไขแล้ว', 'success');
+    }
+    document.getElementById('approval-rule-modal').remove();
+    loadApprovalMatrix();
+  } catch(e) {
+    showToast('Error: ' + (e.message || 'บันทึกไม่สำเร็จ'), 'error');
+  }
+}
+
+async function deleteApprovalRule(templateId) {
+  if (!confirm('ลบเงื่อนไขนี้?')) return;
+  try {
+    await API.del('/approvals/templates/' + templateId);
+    showToast('ลบแล้ว', 'success');
+    loadApprovalMatrix();
+  } catch(e) { showToast('Error: '+e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════

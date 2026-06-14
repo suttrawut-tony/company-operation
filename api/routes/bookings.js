@@ -197,24 +197,26 @@ router.post('/:id/reject', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/bookings/:id/checkout (vehicle)
+// POST /api/bookings/:id/checkout (vehicle) — with company_id check
 router.post('/:id/checkout', async (req, res) => {
   try {
     const { km_start, fuel_start } = req.body;
     const { rows } = await db.query(
-      "UPDATE bookings SET status='checked_out', km_start=$1, fuel_start=$2, checked_out_at=NOW(), updated_at=NOW() WHERE id=$3 RETURNING *",
-      [km_start, fuel_start, req.params.id]);
+      "UPDATE bookings SET status='checked_out', km_start=$1, fuel_start=$2, checked_out_at=NOW(), updated_at=NOW() WHERE id=$3 AND company_id=$4 RETURNING *",
+      [km_start, fuel_start, req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Booking not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/bookings/:id/checkin (vehicle)
+// POST /api/bookings/:id/checkin (vehicle) — with company_id check
 router.post('/:id/checkin', async (req, res) => {
   try {
     const { km_end, fuel_end, condition_notes } = req.body;
     const { rows } = await db.query(
-      "UPDATE bookings SET status='checked_in', km_end=$1, fuel_end=$2, condition_notes=$3, checked_in_at=NOW(), updated_at=NOW() WHERE id=$4 RETURNING *",
-      [km_end, fuel_end, condition_notes, req.params.id]);
+      "UPDATE bookings SET status='checked_in', km_end=$1, fuel_end=$2, condition_notes=$3, checked_in_at=NOW(), updated_at=NOW() WHERE id=$4 AND company_id=$5 RETURNING *",
+      [km_end, fuel_end, condition_notes, req.params.id, req.user.company_id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Booking not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -292,48 +294,50 @@ router.delete('/:id/items/:itemId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/bookings/:id/convert-to-sq — creates Quotation + Project
+// POST /api/bookings/:id/convert-to-sq — creates Quotation + Project (transactional)
 router.post('/:id/convert-to-sq', async (req, res) => {
+  const client = await db.pool.connect();
   try {
-    const { rows: [booking] } = await db.query(
+    const { rows: [booking] } = await client.query(
       'SELECT * FROM bookings WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
-    if (!booking) return res.status(404).json({ error: 'Booking not found' });
-    // Validate: only confirmed bookings can be converted
+    if (!booking) { client.release(); return res.status(404).json({ error: 'Booking not found' }); }
     if (booking.status !== 'confirmed' && req.user.role !== 'executive') {
-      return res.status(400).json({ error: 'Booking must be in "confirmed" status to convert. Current: ' + booking.status });
+      client.release(); return res.status(400).json({ error: 'Booking must be in "confirmed" status to convert. Current: ' + booking.status });
     }
 
-    const { rows: bItems } = await db.query(
+    const { rows: bItems } = await client.query(
       'SELECT * FROM booking_items WHERE booking_id = $1 ORDER BY sort_order', [booking.id]);
     if (!bItems.length) {
-      return res.status(400).json({ error: 'Booking has no items. Add items before converting to SQ.' });
+      client.release(); return res.status(400).json({ error: 'Booking has no items. Add items before converting to SQ.' });
     }
 
-    // Calculate totals
+    // ── BEGIN TRANSACTION ──
+    await client.query('BEGIN');
+
     const subtotal = bItems.reduce((s, i) => s + parseFloat(i.total || 0), 0);
     const vatPct = 7;
     const vatAmt = Math.round(subtotal * vatPct / 100 * 100) / 100;
     const grandTotal = subtotal + vatAmt;
 
-    // Auto-generate SQ number
+    // Auto-generate SQ number (inside transaction to prevent race condition)
     const now = new Date();
     const sqPrefix = `SQ-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const { rows: [lastSQ] } = await db.query(
-      `SELECT sq_number FROM quotations WHERE sq_number LIKE $1 || '%' ORDER BY sq_number DESC LIMIT 1`, [sqPrefix]);
+    const { rows: [lastSQ] } = await client.query(
+      `SELECT sq_number FROM quotations WHERE sq_number LIKE $1 || '%' ORDER BY sq_number DESC LIMIT 1 FOR UPDATE`, [sqPrefix]);
     let sqSeq = 1;
     if (lastSQ) { sqSeq = parseInt(lastSQ.sq_number.split('-')[2] || '0') + 1; }
     const sqNumber = `${sqPrefix}-${String(sqSeq).padStart(3, '0')}`;
 
-    // Project code: manual if provided, else auto-gen
+    // Project code
     let prjCode;
     const manualCode = (req.body.manual_project_code || '').trim();
     if (manualCode) {
-      const { rows: dup } = await db.query('SELECT id FROM projects WHERE code=$1 AND company_id=$2', [manualCode, req.user.company_id]);
-      if (dup.length) return res.status(400).json({ error: `รหัสโปรเจกต์ "${manualCode}" มีอยู่แล้ว กรุณาใช้รหัสอื่น` });
+      const { rows: dup } = await client.query('SELECT id FROM projects WHERE code=$1 AND company_id=$2', [manualCode, req.user.company_id]);
+      if (dup.length) { await client.query('ROLLBACK'); client.release(); return res.status(400).json({ error: `รหัสโปรเจกต์ "${manualCode}" มีอยู่แล้ว กรุณาใช้รหัสอื่น` }); }
       prjCode = manualCode;
     } else {
       const prjPrefix = `PRJ-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-      const { rows: [lastPrj] } = await db.query(`SELECT code FROM projects WHERE code LIKE $1 || '%' ORDER BY code DESC LIMIT 1`, [prjPrefix]);
+      const { rows: [lastPrj] } = await client.query(`SELECT code FROM projects WHERE code LIKE $1 || '%' ORDER BY code DESC LIMIT 1 FOR UPDATE`, [prjPrefix]);
       let prjSeq = 1;
       if (lastPrj) { prjSeq = parseInt(lastPrj.code.split('-')[2] || '0') + 1; }
       prjCode = `${prjPrefix}-${String(prjSeq).padStart(3, '0')}`;
@@ -341,7 +345,7 @@ router.post('/:id/convert-to-sq', async (req, res) => {
 
     // Create Project
     const prjName = `Solar ${booking.recommended_kwp || ''}kWp — ${booking.customer_name || booking.site_name || 'Customer'}`;
-    const { rows: [project] } = await db.query(
+    const { rows: [project] } = await client.query(
       `INSERT INTO projects (company_id, code, name, status, start_date, end_date, created_by)
        VALUES ($1,$2,$3,'active',$4,$5,$6) RETURNING *`,
       [req.user.company_id, prjCode, prjName, booking.start_date, booking.end_date, req.user.id]);
@@ -357,14 +361,14 @@ router.post('/:id/convert-to-sq', async (req, res) => {
       { name: 'รับประกัน (Warranty)', status: 'pending', sort: 7 },
     ];
     for (const ph of phases) {
-      await db.query(
+      await client.query(
         `INSERT INTO project_phases (project_id, name, status, sort_order) VALUES ($1,$2,$3,$4)
          ON CONFLICT DO NOTHING`,
-        [project.id, ph.name, ph.status, ph.sort]).catch(() => {});
+        [project.id, ph.name, ph.status, ph.sort]);
     }
 
     // Create Quotation
-    const { rows: [sq] } = await db.query(
+    const { rows: [sq] } = await client.query(
       `INSERT INTO quotations (company_id, sq_number, booking_id, project_id,
         customer_name, customer_phone, customer_address, site_name, site_location,
         system_capacity, roof_type, roof_area, subtotal, vat_pct, vat_amt, grand_total,
@@ -376,23 +380,29 @@ router.post('/:id/convert-to-sq', async (req, res) => {
        booking.roof_type, booking.roof_area, subtotal, vatPct, vatAmt, grandTotal,
        req.user.id]);
 
-    // Copy booking items → quotation items (sanitize UUID)
+    // Copy booking items → quotation items
     for (let i = 0; i < bItems.length; i++) {
       const it = bItems[i];
       const itemId = (it.item_id && it.item_id !== 'null') ? it.item_id : null;
-      await db.query(
+      await client.query(
         `INSERT INTO quotation_items (quotation_id, item_id, item_code, item_name, qty, unit, unit_price, total, sort_order)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
         [sq.id, itemId, it.item_code, it.item_name, it.qty, it.unit, it.unit_price, it.total, i]);
     }
 
     // Update booking
-    await db.query(
+    await client.query(
       "UPDATE bookings SET status='quotation_sent', quotation_id=$1, project_id=$2, updated_at=NOW() WHERE id=$3",
       [sq.id, project.id, booking.id]);
 
+    await client.query('COMMIT');
+    client.release();
     res.status(201).json({ quotation: sq, project, sq_number: sqNumber, project_code: prjCode });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    client.release();
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

@@ -637,7 +637,7 @@
         calYear = now.getFullYear();
         calMonth = now.getMonth();
 
-        const [vehicles, bookings, projects, alerts] = await Promise.all([API.getVehicles(), API.getBookings(), API.getProjects(), API.getVehicleAlerts().catch(() => [])]);
+        const [vehicles, bookings, projects, alerts] = await Promise.all([API.getVehicles(), API.getVehicleBookings(), API.getProjects(), API.getVehicleAlerts().catch(() => [])]);
         vehicleAlerts = Array.isArray(alerts) ? alerts : [];
         allVehicles = vehicles;
         allBookings = bookings;

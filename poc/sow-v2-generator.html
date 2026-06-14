@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOW Generator</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .gen-container { max-width: 960px; margin: 24px auto; padding: 0 24px 64px; }
+
+    /* Top bar */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .top-bar h1 { font-size: 22px; font-weight: 700; }
+    .top-bar .actions { display: flex; gap: 8px; }
+
+    /* Steps indicator */
+    .steps { display: flex; gap: 4px; margin-bottom: 24px; }
+    .step-item { flex: 1; text-align: center; padding: 10px 8px; background: var(--bg-light); border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all .2s; border: 2px solid transparent; }
+    .step-item.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); font-weight: 600; }
+    .step-item.done { background: #ecfdf5; color: #059669; border-color: #10b981; }
+    .step-num { font-weight: 700; font-size: 14px; display: block; margin-bottom: 2px; }
+
+    /* Form panel */
+    .form-panel { background: var(--bg-white); border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04); padding: 32px 40px; }
+    .form-panel h2 { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+    .form-panel .desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 5px; }
+    .field label .req { color: #ef4444; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; background: var(--bg-white); transition: border .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(79,110,247,0.1); }
+    .field textarea { min-height: 70px; resize: vertical; }
+    .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* Module checklist */
+    .mod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mod-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all .15s; font-size: 13px; }
+    .mod-item:hover { background: var(--bg-hover); }
+    .mod-item.checked { background: var(--primary-light); border-color: var(--primary); }
+    .mod-item input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
+
+    /* Group header in module grid */
+    .mod-group-title { grid-column: 1 / -1; font-size: 14px; font-weight: 600; color: var(--primary); margin: 10px 0 2px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .mod-group-title:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+    /* Out of scope list */
+    .oos-list { display: flex; flex-direction: column; gap: 6px; }
+    .oos-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+    .oos-item input { flex: 1; border: none; outline: none; font-size: 13px; font-family: inherit; background: transparent; }
+    .oos-item .oos-del { cursor: pointer; color: var(--danger); font-size: 16px; font-weight: 700; border: none; background: none; padding: 0 4px; }
+    .oos-item .oos-del:hover { opacity: 0.7; }
+    .oos-add { font-size: 13px; color: var(--primary); cursor: pointer; font-weight: 600; margin-top: 4px; border: none; background: none; font-family: inherit; }
+    .oos-add:hover { text-decoration: underline; }
+
+    /* Checkable features */
+    .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .feat-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 10px; font-size: 13px; }
+    .feat-item input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; }
+
+    /* Nav buttons */
+    .nav-btns { display: flex; justify-content: space-between; margin-top: 28px; }
+    .btn { padding: 10px 24px; font-size: 14px; font-weight: 600; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-white); cursor: pointer; transition: all .15s; font-family: inherit; }
+    .btn:hover { background: var(--bg-hover); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: #059669; color: #fff; border-color: #059669; }
+    .btn-success:hover { background: #047857; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Hidden sections */
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+
+    /* Separator */
+    .sep { margin: 24px 0; border: 0; border-top: 1px solid var(--border); }
+
+    /* Phase rows */
+    .phase-row { display: grid; grid-template-columns: 36px 1fr 1.5fr 140px 32px; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .phase-row .phase-num { font-size: 13px; font-weight: 700; color: var(--primary); text-align: center; }
+    .phase-row input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; }
+    .phase-row input:focus { border-color: var(--primary); outline: none; }
+    .phase-row .phase-del { cursor: pointer; color: #ef4444; font-size: 18px; font-weight: 700; border: none; background: none; padding: 0; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .phase-row .phase-del:hover { background: #fef2f2; }
+    .phase-hdr { display: grid; grid-template-columns: 36px 1fr 1.5fr 140px 32px; gap: 6px; margin-bottom: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    @media (max-width: 640px) { .phase-row, .phase-hdr { grid-template-columns: 30px 1fr 1fr 100px 28px; } }
+
+    /* Section toggles */
+    .sec-toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .sec-toggle { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all .15s; user-select: none; }
+    .sec-toggle:hover { background: var(--bg-hover); }
+    .sec-toggle.on { background: var(--primary-light); border-color: var(--primary); }
+    .sec-toggle.locked { opacity: 0.6; cursor: not-allowed; }
+    .sec-toggle input { accent-color: var(--primary); width: 15px; height: 15px; }
+    .sec-toggle .sec-tag { font-size: 10px; background: var(--bg-light); color: var(--text-muted); padding: 1px 6px; border-radius: 4px; margin-left: auto; white-space: nowrap; }
+    .sec-toggle .sec-tag.core { background: #fef3c7; color: #92400e; }
+
+    /* Distribution rows */
+    .dist-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .dist-row input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; }
+    .dist-row input:focus { border-color: var(--primary); outline: none; }
+
+    /* Severity table input */
+    .sev-grid { display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 0; }
+    .sev-grid .sev-cell { padding: 8px 10px; border: 1px solid var(--border); font-size: 13px; display: flex; align-items: center; }
+    .sev-grid .sev-cell input { border: none; outline: none; width: 100%; font-size: 13px; font-family: inherit; background: transparent; }
+    .sev-grid .sev-hdr { background: var(--bg-light); font-weight: 600; font-size: 12px; }
+
+    /* Preview placeholder style */
+    .ph { background: #fef3c7; color: #92400e; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-weight: 500; border: 1px dashed #f59e0b; }
+
+    @media (max-width: 640px) {
+      .field-row, .field-row-3, .mod-grid, .feat-grid, .dist-row { grid-template-columns: 1fr; }
+      .form-panel { padding: 20px; }
+      .steps { flex-wrap: wrap; }
+    }
+
+    /* Preview doc styles */
+    .prev-doc { font-family: Inter, -apple-system, sans-serif; padding: 48px 56px; line-height: 1.8; color: #1a1a2e; font-size: 14px; }
+    .prev-doc .cover { text-align: center; padding: 48px 0 36px; border-bottom: 3px solid #4f6ef7; margin-bottom: 36px; }
+    .prev-doc .cover .sub { font-size: 13px; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .prev-doc .cover h1 { font-size: 26px; font-weight: 700; color: #4f6ef7; margin: 6px 0 2px; }
+    .prev-doc .cover .tag { display: inline-block; background: #eef2ff; color: #4f6ef7; font-size: 12px; font-weight: 600; padding: 3px 14px; border-radius: 20px; margin-top: 8px; }
+    .prev-doc h2.sec { font-size: 18px; font-weight: 700; margin: 40px 0 14px; padding-bottom: 7px; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
+    .prev-doc h2.sec .n { background: #4f6ef7; color: #fff; font-size: 12px; font-weight: 700; width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .prev-doc h3.sub { font-size: 15px; font-weight: 600; margin: 22px 0 10px; }
+    .prev-doc h4.grp { font-size: 14px; font-weight: 600; margin: 18px 0 8px; color: #4f6ef7; }
+    .prev-doc table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 13px; }
+    .prev-doc th { background: #f8f9fb; font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid #e5e7eb; }
+    .prev-doc td { padding: 8px 12px; border: 1px solid #e5e7eb; vertical-align: top; }
+    .prev-doc .info td:first-child { font-weight: 600; width: 150px; color: #6b7280; white-space: nowrap; }
+    .prev-doc p { margin: 10px 0; font-size: 14px; }
+    .prev-doc ol, .prev-doc ul { margin: 10px 0; padding-left: 22px; }
+    .prev-doc li { margin: 6px 0; font-size: 13px; }
+    .prev-doc blockquote { border-left: 4px solid #4f6ef7; background: #eef2ff; margin: 14px 0; padding: 10px 18px; border-radius: 0 8px 8px 0; font-size: 13px; }
+    .prev-doc pre { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 10px; font-size: 12px; overflow-x: auto; line-height: 1.6; margin: 12px 0; }
+    .prev-doc .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+    .prev-doc .sig-box { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: center; }
+    .prev-doc .sig-box .line { border-bottom: 1px solid #9ca3af; height: 44px; margin: 14px 0 6px; }
+    .prev-doc .plan-y { background: #ecfdf5; color: #059669; font-weight: 600; text-align: center; }
+    .prev-doc .plan-n { color: #9ca3af; text-align: center; }
+    .prev-doc .core-y { background: #fef3c7; color: #92400e; text-align: center; font-size: 11px; font-weight: 600; }
+    .prev-doc .core-n { text-align: center; font-size: 11px; color: #9ca3af; }
+    .prev-doc .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+
+    @media print {
+      /* A) A4 page setup */
+      @page { size: A4 portrait; margin: 20mm 15mm 20mm 15mm; }
+      /* F) เก็บสี badge/plan/core ใน PDF */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: #fff !important; margin: 0; }
+      /* G) ซ่อน UI ทั้งหมด แสดงเฉพาะ preview */
+      .gen-container { margin: 0; padding: 0; max-width: none; }
+      .top-bar, .steps, .nav-btns, #secToggleGrid, .oos-add, .phase-del,
+      .form-section:not(#step6) { display: none !important; }
+      .form-panel { box-shadow: none; padding: 0; border-radius: 0; }
+      .form-section#step6 { display: block !important; }
+      /* Document body */
+      .prev-doc { padding: 0; font-size: 12px; line-height: 1.7; max-width: none; }
+      /* Cover title = หน้าแรกหน้าเดียว */
+      .prev-doc .cover { page-break-after: always; padding: 100px 0 40px; }
+      /* Sections ไหลต่อกัน -- ไม่ขึ้นหน้าใหม่ทุก section (ประหยัดกระดาษ) */
+      .prev-doc h2.sec { page-break-before: auto; page-break-after: avoid; margin-top: 28px; padding-top: 8px; font-size: 16px; }
+      /* Section แรกหลัง cover */
+      .prev-doc .cover + h2.sec { page-break-before: avoid; margin-top: 0; }
+      /* Sign-off ขึ้นหน้าใหม่ -- ช่องลงนามอยู่หน้าสุดท้ายของ main body */
+      .prev-doc h2.sec[data-sec="s19"] { page-break-before: always; }
+      /* Appendix ขึ้นหน้าใหม่ -- แยก main body กับ appendices */
+      .prev-doc h2.sec[data-sec="sA"] { page-break-before: always; }
+      /* D) Heading ห้ามตกค้างท้ายหน้า */
+      .prev-doc h3.sub, .prev-doc h4.grp { page-break-after: avoid; }
+      /* ตารางยาว: ตัดระหว่างแถวได้ + thead repeat ทุกหน้า */
+      .prev-doc table { page-break-inside: auto; width: 100%; font-size: 11px; }
+      .prev-doc thead { display: table-header-group; }
+      .prev-doc tr { page-break-inside: avoid; }
+      .prev-doc td, .prev-doc th { word-wrap: break-word; overflow-wrap: break-word; }
+      /* Signature block ห้ามตัดข้ามหน้า */
+      .prev-doc .sig-grid { page-break-inside: avoid; }
+      /* Blockquote ห้ามตัด */
+      .prev-doc blockquote { page-break-inside: avoid; }
+      /* Workflow diagram -- print-friendly สีอ่อน + ห้ามตัด */
+      .prev-doc pre { background: #f1f5f9 !important; color: #1e293b !important; font-size: 10px; page-break-inside: avoid; border: 1px solid #cbd5e1; border-radius: 4px; }
+      /* Footer ห้ามขึ้นหน้าใหม่คนเดียว */
+      .prev-doc .footer { page-break-before: avoid; }
+    }
+  </style>
+</head>
+<body style="background:var(--bg-body);">
+
+  <div class="gen-container">
+    <div class="top-bar">
+      <h1 id="pageTitle" contenteditable="true" style="cursor:text;outline:none;border-bottom:2px dashed transparent;" onfocus="this.style.borderBottomColor='var(--primary)'" onblur="this.style.borderBottomColor='transparent'">SOW Generator</h1>
+      <div class="actions">
+        <button class="btn" onclick="loadSample()">Load ตัวอย่าง</button>
+        <button class="btn" onclick="exportJSON()">Export JSON</button>
+        <button class="btn" onclick="importJSON()">Import JSON</button>
+        <input type="file" id="jsonFile" accept=".json" style="display:none" onchange="handleImport(event)">
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step-item active" onclick="goStep(0)"><span class="step-num">1</span>ข้อมูลโครงการ</div>
+      <div class="step-item" onclick="goStep(1)"><span class="step-num">2</span>ขอบเขตงาน</div>
+      <div class="step-item" onclick="goStep(2)"><span class="step-num">3</span>Technical</div>
+      <div class="step-item" onclick="goStep(3)"><span class="step-num">4</span>Timeline &amp; Team</div>
+      <div class="step-item" onclick="goStep(4)"><span class="step-num">5</span>เงื่อนไข &amp; SLA</div>
+      <div class="step-item" onclick="goStep(5)"><span class="step-num">6</span>Legal &amp; PDPA</div>
+      <div class="step-item" onclick="goStep(6)"><span class="step-num">7</span>Preview</div>
+    </div>
+
+    <div class="form-panel">
+
+      <!-- ═══ Step 1: Project Info + Document Control + Exec Summary ═══ -->
+      <div class="form-section active" id="step0">
+        <h2>1. ข้อมูลโครงการ (Cover + Document Control + Executive Summary)</h2>
+        <p class="desc">ข้อมูลปกเอกสาร, revision history, distribution list และบทสรุปผู้บริหาร</p>
+
+        <div class="field">
+          <label>ชื่อโครงการ (แสดงบนปก SOW) <span class="req">*</span></label>
+          <input id="f_projectName" placeholder="เช่น Company Operation v2.0" value="Company Operation v2.0">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Subtitle (แสดงใต้ชื่อโครงการ)</label>
+            <input id="f_projectSubtitle" placeholder="เช่น SaaS Multi-tenant Operation Management Platform" value="SaaS Multi-tenant Operation Management Platform">
+          </div>
+          <div class="field">
+            <label>ประเภทโครงการ</label>
+            <input id="f_projectType" placeholder="เช่น SaaS Web Application" value="SaaS Web Application -- ไม่ใช่ ERP Implementation">
+          </div>
+        </div>
+
+        <hr class="sep">
+        <div class="field-row-3">
+          <div class="field">
+            <label>เลขที่เอกสาร <span class="req">*</span></label>
+            <input id="f_docNo" placeholder="เช่น CO-SOW-2026-001">
+          </div>
+          <div class="field">
+            <label>วันที่ออกเอกสาร <span class="req">*</span></label>
+            <input id="f_docDate" type="date">
+          </div>
+          <div class="field">
+            <label>สถานะ</label>
+            <select id="f_status">
+              <option value="Draft">Draft</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Approved">Approved</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>ชื่อบริษัทผู้พัฒนา <span class="req">*</span></label>
+            <input id="f_providerName" placeholder="เช่น บริษัท ศาลาแดง จำกัด">
+          </div>
+          <div class="field">
+            <label>ชื่อบริษัทลูกค้า <span class="req">*</span></label>
+            <input id="f_clientName" placeholder="เช่น บริษัท ตัวอย่าง จำกัด">
+          </div>
+        </div>
+        <div class="field">
+          <label>ชื่อผู้จัดทำ</label>
+          <input id="f_preparedBy" placeholder="เช่น คุณสมชาย ศาลาแดง">
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Executive Summary</h3>
+        <div class="field">
+          <label>บทสรุปผู้บริหาร</label>
+          <textarea id="f_execSummary" rows="4" placeholder="คำอธิบายสรุปโครงการ...">Company Operation v2.0 เป็น SaaS Multi-tenant Operation Management Platform ที่พัฒนาขึ้นเองบน Modern Web Stack (Express.js + PostgreSQL + Static Frontend) เพื่อรวมศูนย์การบริหารงานปฏิบัติการขององค์กรไว้ในแพลตฟอร์มเดียว ครอบคลุมตั้งแต่การบริหารโครงการ (Project &amp; Task Management), กระบวนการจัดซื้อ (Procurement), การเงินและบัญชี (Financial), ทรัพยากรบุคคล (HR &amp; Admin), ไปจนถึงการจองทรัพยากร (Resource Booking) และเชื่อมต่อระบบ SAP Business One ผ่าน Service Layer API</textarea>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Distribution List</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">ชื่อ / บทบาท / องค์กร</div>
+        <div class="dist-row">
+          <input id="f_dist1_name" placeholder="ชื่อ">
+          <input id="f_dist1_role" placeholder="บทบาท">
+          <input id="f_dist1_org" placeholder="องค์กร">
+        </div>
+        <div class="dist-row">
+          <input id="f_dist2_name" placeholder="ชื่อ">
+          <input id="f_dist2_role" placeholder="บทบาท">
+          <input id="f_dist2_org" placeholder="องค์กร">
+        </div>
+        <div class="dist-row">
+          <input id="f_dist3_name" placeholder="ชื่อ">
+          <input id="f_dist3_role" placeholder="บทบาท">
+          <input id="f_dist3_org" placeholder="องค์กร">
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:6px;">เปิด/ปิดหัวข้อ SOW</h3>
+        <p class="desc" style="margin-bottom:12px;">ติ๊กเลือกหัวข้อที่ต้องการ -- หัวข้อที่ปิดจะไม่แสดงใน Preview/PDF (หัวข้อ Core ปิดไม่ได้)</p>
+        <div style="margin-bottom:8px;display:flex;gap:8px;">
+          <button class="btn" style="padding:5px 12px;font-size:12px;" onclick="toggleAllSec(true)">เลือกทั้งหมด</button>
+          <button class="btn" style="padding:5px 12px;font-size:12px;" onclick="toggleAllSec(false)">เลือกเฉพาะ Core</button>
+        </div>
+        <div class="sec-toggle-grid" id="secToggleGrid"></div>
+
+        <div class="nav-btns">
+          <div></div>
+          <button class="btn btn-primary" onclick="goStep(1)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ═══ Step 2: Scope ═══ -->
+      <div class="form-section" id="step1">
+        <h2>2. ขอบเขตงาน (Scope -- 37 Modules)</h2>
+        <p class="desc">เลือก modules ที่อยู่ใน scope (default: ทั้งหมด) และกำหนด out of scope items</p>
+
+        <div class="mod-grid" id="modGrid"></div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Out of Scope</h3>
+        <div class="oos-list" id="oosList"></div>
+        <button class="oos-add" onclick="addOOS()">+ เพิ่มรายการ</button>
+
+        <hr class="sep">
+        <div class="field-row">
+          <div class="field">
+            <label>จำนวน Reports (มาตรฐาน)</label>
+            <input id="f_reports" type="number" value="20" placeholder="เช่น 20">
+          </div>
+          <div class="field">
+            <label>Concurrent Users / Tenant</label>
+            <input id="f_concurrentUsers" type="number" value="50" placeholder="เช่น 50">
+          </div>
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn" onclick="goStep(0)">&larr; ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(2)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ═══ Step 3: Technical & Architecture ═══ -->
+      <div class="form-section" id="step2">
+        <h2>3. Technical &amp; Architecture</h2>
+        <p class="desc">Tech Stack, Security Features, UX Features, Browser Support</p>
+
+        <h3 style="font-size:15px;margin-bottom:12px;">Tech Stack</h3>
+        <div class="field">
+          <textarea id="f_techStack" rows="7">Backend: Express.js (Node.js) -- REST API, JWT Auth, WebSocket
+Frontend: Static HTML / CSS / JS -- Vanilla JS, lightweight
+Database: PostgreSQL -- Multi-tenant isolation by company_id
+Deployment: Railway (Nixpacks) -- Auto-deploy, SSL, Environment Variables
+Authentication: JWT (jsonwebtoken) -- Access Token, Remember Me, bcrypt
+Real-time: WebSocket (ws) -- Broadcast notifications, live updates
+Scheduler: node-cron -- Advance overdue, Vehicle alerts, Subscription check</textarea>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Security Features</h3>
+        <div class="feat-grid" id="secGrid"></div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">UX Features</h3>
+        <div class="feat-grid" id="uxGrid"></div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Browser Support</h3>
+        <div class="field">
+          <textarea id="f_browserSupport" rows="4">Google Chrome 90+
+Mozilla Firefox 88+
+Microsoft Edge 90+
+Safari 14+</textarea>
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn" onclick="goStep(1)">&larr; ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(3)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ═══ Step 4: Timeline, Team & Deliverables ═══ -->
+      <div class="form-section" id="step3">
+        <h2>4. Timeline, Team &amp; Deliverables</h2>
+        <p class="desc">แผนงาน 6 Phases, ทีมงาน, สิ่งส่งมอบ</p>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="font-size:15px;margin:0;">Project Timeline</h3>
+          <button class="btn" style="padding:5px 14px;font-size:12px;" onclick="addPhase()">+ เพิ่ม Phase</button>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">แต่ละ Phase กรอก: ชื่อ, กิจกรรม, ระยะเวลา -- กด X เพื่อลบ</div>
+        <div id="phaseList"></div>
+        <div class="field" style="margin-top:12px;">
+          <label>ระยะเวลารวม</label>
+          <input id="f_totalTime" placeholder="เช่น 28 สัปดาห์ / 7 เดือน">
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">ทีมงานฝั่งผู้ให้บริการ (Provider)</h3>
+        <div class="field-row">
+          <div class="field"><label>Project Manager</label><input id="f_pm" placeholder="ชื่อ PM"></div>
+          <div class="field"><label>Lead Developer</label><input id="f_leadDev" placeholder="ชื่อ Lead Dev"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Frontend Developer</label><input id="f_workerFE" placeholder="ชื่อหรือ TBD"></div>
+          <div class="field"><label>Backend Developer</label><input id="f_workerBE" placeholder="ชื่อหรือ TBD"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>QA / Tester</label><input id="f_workerQA" placeholder="ชื่อหรือ TBD"></div>
+          <div class="field"><label>DevOps</label><input id="f_workerDevOps" placeholder="ชื่อหรือ TBD"></div>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">ทีมงานฝั่งลูกค้า (Client)</h3>
+        <div class="field-row">
+          <div class="field"><label>Project Sponsor</label><input id="f_sponsor" placeholder="ชื่อผู้บริหาร"></div>
+          <div class="field"><label>Product Owner</label><input id="f_productOwner" placeholder="ชื่อ PO"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>UAT Coordinator</label><input id="f_uatCoord" placeholder="ชื่อ UAT Coordinator"></div>
+          <div class="field"><label>Key Users</label><input id="f_keyUsers" placeholder="เช่น คุณหน่อย (บัญชี), คุณเก่ง (จัดซื้อ)"></div>
+        </div>
+        <div class="field">
+          <label>IT Coordinator</label>
+          <input id="f_itCoord" placeholder="ชื่อ IT Coordinator">
+        </div>
+
+        <hr class="sep">
+        <div class="field">
+          <label>Training Sessions</label>
+          <input id="f_trainSessions" type="number" value="8" placeholder="เช่น 8">
+        </div>
+
+        <p style="margin-top:20px;font-size:13px;color:var(--text-secondary);">Deliverables (10 รายการ) จะแสดงใน Preview อัตโนมัติ: Source Code, Deployed System, API Documentation, User Manual, Admin Guide, Database Schema, UAT Test Cases, UAT Sign-off, Security Audit, Training</p>
+
+        <div class="nav-btns">
+          <button class="btn" onclick="goStep(2)">&larr; ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(4)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ═══ Step 5: Conditions (Assumptions, SLA, Commercial, Change Mgmt) ═══ -->
+      <div class="form-section" id="step4">
+        <h2>5. เงื่อนไข (Assumptions, SLA, Commercial, Change Mgmt)</h2>
+        <p class="desc">สมมติฐานโครงการ, Service Level Agreement, ค่าบริการ, งวดชำระ</p>
+
+        <h3 style="font-size:15px;margin-bottom:12px;">Assumptions (10 ข้อ)</h3>
+        <div id="assumptionsList" class="oos-list"></div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">SLA (Service Level Agreement)</h3>
+        <div class="field-row">
+          <div class="field"><label>System Uptime (%)</label><input id="f_uptime" type="number" step="0.1" value="99.5" placeholder="เช่น 99.5"></div>
+          <div class="field"><label>Maintenance Window</label><input id="f_maintWindow" placeholder="เช่น อาทิตย์ 02:00-06:00 ICT"></div>
+        </div>
+        <div class="field-row-3">
+          <div class="field"><label>Backup Retention (วัน)</label><input id="f_backupDays" type="number" value="30" placeholder="เช่น 30"></div>
+          <div class="field"><label>RTO (ชม.)</label><input id="f_rto" type="number" value="4" placeholder="เช่น 4"></div>
+          <div class="field"><label>RPO (ชม.)</label><input id="f_rpo" type="number" value="1" placeholder="เช่น 1"></div>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Severity Levels (P1-P4)</h3>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+            <thead>
+              <tr>
+                <th style="padding:8px 10px;border:1px solid var(--border);background:var(--bg-light);width:120px">Severity</th>
+                <th style="padding:8px 10px;border:1px solid var(--border);background:var(--bg-light)">Response Time</th>
+                <th style="padding:8px 10px;border:1px solid var(--border);background:var(--bg-light)">Resolution Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:8px 10px;border:1px solid var(--border);font-weight:600;">Critical (P1)</td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p1Response" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="เช่น 1 ชม."></td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p1Resolution" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="เช่น 4 ชม."></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;border:1px solid var(--border);font-weight:600;">High (P2)</td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p2Response" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="เช่น 4 ชม."></td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p2Resolution" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="เช่น 2 วันทำงาน"></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;border:1px solid var(--border);font-weight:600;">Medium (P3)</td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p3Response" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="เช่น 2 วันทำงาน"></td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p3Resolution" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="เช่น 5 วันทำงาน"></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;border:1px solid var(--border);font-weight:600;">Low (P4)</td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p4Response" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="เช่น 5 วันทำงาน"></td>
+                <td style="padding:4px;border:1px solid var(--border)"><input id="f_p4Resolution" style="border:none;width:100%;padding:4px 6px;font-size:13px;font-family:inherit;" placeholder="Planned release"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Support Channels</h3>
+        <div class="field-row-3">
+          <div class="field"><label>Email</label><input id="f_supportEmail" placeholder="เช่น support@sda-group.com"></div>
+          <div class="field"><label>Discord Channel</label><input id="f_supportDiscord" placeholder="เช่น #company-operation"></div>
+          <div class="field"><label>Business Hours</label><input id="f_bizHours" placeholder="เช่น จันทร์-ศุกร์ 09:00-18:00 ICT"></div>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Subscription Plans</h3>
+        <div class="field-row-3">
+          <div class="field"><label>Starter (ราคา/เดือน)</label><input id="f_planStarter" placeholder="เช่น 2,900"></div>
+          <div class="field"><label>Professional (ราคา/เดือน)</label><input id="f_planPro" placeholder="เช่น 7,900"></div>
+          <div class="field"><label>Enterprise (ราคา/เดือน)</label><input id="f_planEnterprise" placeholder="เช่น ติดต่อ"></div>
+        </div>
+        <div class="field-row-3">
+          <div class="field"><label>Starter Users</label><input id="f_planStarterUsers" placeholder="เช่น 5"></div>
+          <div class="field"><label>Pro Users</label><input id="f_planProUsers" placeholder="เช่น 25"></div>
+          <div class="field"><label>Enterprise Users</label><input id="f_planEnterpriseUsers" value="Unlimited" placeholder="Unlimited"></div>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">Development Fee (One-time)</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>ค่าพัฒนาระบบ (ไม่รวม VAT)</label>
+            <input id="f_devFee" placeholder="เช่น 1,500,000" oninput="calcFee()">
+          </div>
+          <div class="field">
+            <label>VAT 7% (คำนวณอัตโนมัติ)</label>
+            <input id="f_vat" readonly style="background:var(--bg-light);">
+          </div>
+        </div>
+        <div class="field">
+          <label>รวมทั้งสิ้น (คำนวณอัตโนมัติ)</label>
+          <input id="f_totalFee" readonly style="background:var(--bg-light);font-weight:700;">
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">งวดการชำระเงิน (5 งวด — กรอก % แต่ละงวด)</h3>
+        <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:0;font-size:13px;">
+          <div style="padding:8px 12px;border:1px solid var(--border);background:var(--bg-light);font-weight:600;">งวด</div>
+          <div style="padding:8px 12px;border:1px solid var(--border);background:var(--bg-light);font-weight:600;">เงื่อนไข</div>
+          <div style="padding:8px 12px;border:1px solid var(--border);background:var(--bg-light);font-weight:600;">สัดส่วน (%)</div>
+
+          <div style="padding:8px 12px;border:1px solid var(--border);">1</div>
+          <div style="padding:8px 12px;border:1px solid var(--border);">ลงนาม SOW + เริ่ม P1</div>
+          <div style="padding:0;border:1px solid var(--border);"><input id="f_pay1" style="border:none;width:100%;padding:8px 12px;font-size:13px;font-family:inherit;" value="20" oninput="calcFee()"></div>
+
+          <div style="padding:8px 12px;border:1px solid var(--border);">2</div>
+          <div style="padding:8px 12px;border:1px solid var(--border);">ส่งมอบ P2 (Core Dev) บน Staging</div>
+          <div style="padding:0;border:1px solid var(--border);"><input id="f_pay2" style="border:none;width:100%;padding:8px 12px;font-size:13px;font-family:inherit;" value="20" oninput="calcFee()"></div>
+
+          <div style="padding:8px 12px;border:1px solid var(--border);">3</div>
+          <div style="padding:8px 12px;border:1px solid var(--border);">ส่งมอบ P3+P4 (Advanced+SAP) บน Staging</div>
+          <div style="padding:0;border:1px solid var(--border);"><input id="f_pay3" style="border:none;width:100%;padding:8px 12px;font-size:13px;font-family:inherit;" value="25" oninput="calcFee()"></div>
+
+          <div style="padding:8px 12px;border:1px solid var(--border);">4</div>
+          <div style="padding:8px 12px;border:1px solid var(--border);">UAT Sign-off (P6)</div>
+          <div style="padding:0;border:1px solid var(--border);"><input id="f_pay4" style="border:none;width:100%;padding:8px 12px;font-size:13px;font-family:inherit;" value="20" oninput="calcFee()"></div>
+
+          <div style="padding:8px 12px;border:1px solid var(--border);">5</div>
+          <div style="padding:8px 12px;border:1px solid var(--border);">Go-Live (P7) + Hypercare (P8)</div>
+          <div style="padding:0;border:1px solid var(--border);"><input id="f_pay5" style="border:none;width:100%;padding:8px 12px;font-size:13px;font-family:inherit;" value="15" oninput="calcFee()"></div>
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn" onclick="goStep(3)">&larr; ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(5)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ═══ Step 6: Legal & Protection ═══ -->
+      <div class="form-section" id="step5">
+        <h2>6. Legal & Protection (IP, NDA, PDPA, Termination, Penalty)</h2>
+        <p class="desc">ข้อกำหนดทางกฎหมายและการคุ้มครอง -- 5 sections สำคัญที่ต้องมีก่อนลงนาม</p>
+
+        <h3 style="font-size:15px;margin-bottom:12px;">14. ทรัพย์สินทางปัญญา (Intellectual Property)</h3>
+        <div class="field">
+          <label>Source Code เป็นของใครหลังชำระครบ? <span class="req">*</span></label>
+          <select id="f_ipOwner">
+            <option value="ลูกค้า">ลูกค้า (ได้รับ ownership หลังชำระครบ)</option>
+            <option value="ผู้พัฒนา">ผู้พัฒนา (ลูกค้าได้ license ใช้งาน)</option>
+            <option value="ร่วมกัน">ร่วมกัน (Joint ownership)</option>
+          </select>
+          <div class="hint">Pre-existing IP (framework/libraries เดิมของผู้พัฒนา) ยังคงเป็นของผู้พัฒนาเสมอ ลูกค้าได้ non-exclusive license</div>
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">15. การรักษาความลับ (Confidentiality / NDA)</h3>
+        <div class="field">
+          <label>ระยะเวลาผูกพัน NDA หลังสิ้นสุด SOW (ปี)</label>
+          <input id="f_ndaYears" type="number" value="2" placeholder="เช่น 2">
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">16. PDPA Compliance</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Data Controller</label>
+            <input id="f_pdpaController" value="ลูกค้า" placeholder="ลูกค้า">
+            <div class="hint">ผู้ควบคุมข้อมูลของพนักงาน/คู่ค้า/ผู้ใช้งาน</div>
+          </div>
+          <div class="field">
+            <label>Data Processor</label>
+            <input id="f_pdpaProcessor" value="ผู้ให้บริการ" placeholder="ผู้ให้บริการ">
+          </div>
+        </div>
+        <div class="field-row-3">
+          <div class="field">
+            <label>Data Retention หลังสิ้นสุดสัญญา (วัน)</label>
+            <input id="f_pdpaRetention" type="number" value="90" placeholder="เช่น 90">
+          </div>
+          <div class="field">
+            <label>Breach Notification (ชม.)</label>
+            <input id="f_pdpaBreach" type="number" value="72" placeholder="เช่น 72">
+          </div>
+          <div class="field">
+            <label>สิทธิเจ้าของข้อมูล (วันทำงาน)</label>
+            <input id="f_pdpaRights" type="number" value="15" placeholder="เช่น 15">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Sub-processor: Hosting</label>
+            <input id="f_pdpaSubHost" value="Railway" placeholder="เช่น Railway">
+          </div>
+          <div class="field">
+            <label>Sub-processor: Email</label>
+            <input id="f_pdpaSubEmail" placeholder="เช่น SendGrid / Mailgun">
+          </div>
+        </div>
+        <div class="field">
+          <label>PDPA Audit แจ้งล่วงหน้า (วันทำงาน)</label>
+          <input id="f_pdpaAuditDays" type="number" value="15" placeholder="เช่น 15">
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">17. การยกเลิกสัญญา (Termination)</h3>
+        <div class="field-row-3">
+          <div class="field">
+            <label>แจ้งล่วงหน้า (วัน)</label>
+            <input id="f_termNoticeDays" type="number" value="30" placeholder="เช่น 30">
+          </div>
+          <div class="field">
+            <label>แก้ไข breach ภายใน (วันทำงาน)</label>
+            <input id="f_termBreachDays" type="number" value="15" placeholder="เช่น 15">
+          </div>
+          <div class="field">
+            <label>คืนเงินภายใน (วันทำงาน)</label>
+            <input id="f_termRefundDays" type="number" value="30" placeholder="เช่น 30">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>ส่งมอบ Source Code ภายใน (วันทำงาน)</label>
+            <input id="f_termCodeDays" type="number" value="15" placeholder="เช่น 15">
+          </div>
+          <div class="field">
+            <label>Data Export รูปแบบ</label>
+            <input id="f_termDataFormat" value="SQL dump + CSV" placeholder="เช่น SQL dump + CSV">
+          </div>
+        </div>
+        <div class="field">
+          <label>ลบข้อมูลจากระบบภายใน (วัน)</label>
+          <input id="f_termDeleteDays" type="number" value="30" placeholder="เช่น 30">
+        </div>
+
+        <hr class="sep">
+        <h3 style="font-size:15px;margin-bottom:12px;">18. ค่าปรับและการส่งมอบล่าช้า (Delay & Penalty)</h3>
+        <div class="field-row-3">
+          <div class="field">
+            <label>Grace Period ก่อนเริ่มปรับ (วันทำงาน)</label>
+            <input id="f_penaltyGrace" type="number" value="5" placeholder="เช่น 5">
+          </div>
+          <div class="field">
+            <label>ค่าปรับ/สัปดาห์ (% ของมูลค่างวด)</label>
+            <input id="f_penaltyRate" type="number" step="0.5" value="2" placeholder="เช่น 2">
+          </div>
+          <div class="field">
+            <label>ค่าปรับสูงสุด (% ของมูลค่าโครงการ)</label>
+            <input id="f_penaltyMax" type="number" value="10" placeholder="เช่น 10">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>ล่าช้าเกินกี่สัปดาห์ ลูกค้ายกเลิกได้</label>
+            <input id="f_penaltyCancelWeeks" type="number" value="8" placeholder="เช่น 8">
+          </div>
+          <div class="field">
+            <label>Client Delay -- ขยาย timeline อัตโนมัติหลัง (วันทำงาน)</label>
+            <input id="f_clientDelayDays" type="number" value="5" placeholder="เช่น 5">
+          </div>
+        </div>
+        <h3 style="font-size:14px;margin:16px 0 8px;">SLA Breach Credit</h3>
+        <div class="field-row-3">
+          <div class="field">
+            <label>ต่ำกว่าเป้า 0.1-0.5% (% credit)</label>
+            <input id="f_slaCredit1" type="number" value="5" placeholder="เช่น 5">
+          </div>
+          <div class="field">
+            <label>ต่ำกว่าเป้า 0.5-1.0% (% credit)</label>
+            <input id="f_slaCredit2" type="number" value="10" placeholder="เช่น 10">
+          </div>
+          <div class="field">
+            <label>ต่ำกว่าเป้า > 1.0% (% credit)</label>
+            <input id="f_slaCredit3" type="number" value="25" placeholder="เช่น 25">
+          </div>
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn" onclick="goStep(4)">&larr; ย้อนกลับ</button>
+          <button class="btn btn-success" onclick="goStep(6)">Preview SOW &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ═══ Step 7: Preview ═══ -->
+      <div class="form-section" id="step6">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <h2 style="margin:0;">6. Preview SOW</h2>
+            <p class="desc" style="margin:4px 0 0;">ตรวจสอบเอกสาร SOW ทั้ง 18 sections -- ช่องที่ยังไม่กรอกจะแสดงเป็นสีเหลือง</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" onclick="openPreviewWindow()">เปิดหน้าต่างใหม่</button>
+            <button class="btn btn-primary" onclick="printPreview()">Print / PDF</button>
+          </div>
+        </div>
+
+        <div id="preview" style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;"></div>
+
+        <div class="nav-btns">
+          <button class="btn" onclick="goStep(4)">&larr; แก้ไขข้อมูล</button>
+          <button class="btn btn-success" onclick="printPreview()">Print / Save as PDF</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MODULE DEFINITIONS — 37 modules, 10 groups
+// ═══════════════════════════════════════════════════════
+const MODULES = [
+  // Group 1: Dashboard & Overview
+  {id:'dashboard', name:'Dashboard', group:'Dashboard & Overview', desc:'KPI cards, สถิติ, กราฟ, Pending Convert Alert (Booking to SQ)', starter:true, pro:true, enterprise:true, core:true},
+  {id:'overview', name:'Overview', group:'Dashboard & Overview', desc:'ภาพรวมโครงการรายตัว, progress tracking', starter:true, pro:true, enterprise:true, core:true},
+  // Group 2: Project & Task Management
+  {id:'project', name:'Project Management', group:'Project & Task Management', desc:'CRUD, manual project code, status (planning/active/on_hold/completed/cancelled), กำหนด PM', starter:true, pro:true, enterprise:true, core:true},
+  {id:'phases', name:'Phases', group:'Project & Task Management', desc:'Phase (upcoming/active/completed), Sub-steps', starter:true, pro:true, enterprise:true, core:true},
+  {id:'taskboard', name:'Task Board', group:'Project & Task Management', desc:'Kanban (todo/in_progress/review/done), priority (low/medium/high/urgent), assign, เวลา/สถานที่/ชั่วโมง', starter:true, pro:true, enterprise:true, core:true},
+  {id:'mytasks', name:'My Tasks', group:'Project & Task Management', desc:'งานของตัวเอง, Gantt-like view, filter sprint/สัปดาห์', starter:true, pro:true, enterprise:true, core:true},
+  {id:'joborders', name:'Job Orders', group:'Project & Task Management', desc:'Auto JO number (JO-YYYYMM-XXX), site, GPS, job_type, needs_vehicle/technician/flight, JO to Task, เชื่อม Booking', starter:false, pro:false, enterprise:true, core:false},
+  // Group 3: Procurement & Supply Chain
+  {id:'pr', name:'PR (Purchase Request)', group:'Procurement & Supply Chain', desc:'ใบขอซื้อ, Line Items, อนุมัติหลายระดับ', starter:false, pro:true, enterprise:true, core:false},
+  {id:'po', name:'PO (Purchase Order)', group:'Procurement & Supply Chain', desc:'ออก PO จาก PR, Line Items', starter:false, pro:true, enterprise:true, core:false},
+  {id:'grpo', name:'GRPO', group:'Procurement & Supply Chain', desc:'รับสินค้าตาม PO, Document Chain (PR > PO > GRPO > AP Invoice), line-level receiving', starter:false, pro:true, enterprise:true, core:false},
+  {id:'quotation', name:'Quotation', group:'Procurement & Supply Chain', desc:'ใบเสนอราคา, รายการสินค้า/บริการ', starter:false, pro:true, enterprise:true, core:false},
+  // Group 4: Financial & Accounting
+  {id:'budget', name:'Budget Management', group:'Financial & Accounting', desc:'Budget vs Actual, advanced tracking', starter:false, pro:true, enterprise:true, core:false},
+  {id:'expense', name:'Expense', group:'Financial & Accounting', desc:'Reimbursement, Advance, Advance Clearing', starter:false, pro:true, enterprise:true, core:false},
+  {id:'pettycash', name:'Petty Cash', group:'Financial & Accounting', desc:'เปิด-ปิดกองทุน, บันทึกรายจ่าย, เติมเงิน', starter:false, pro:true, enterprise:true, core:false},
+  {id:'advance', name:'Advance', group:'Financial & Accounting', desc:'เบิก / ใช้ / หักล้าง / คืน (full loop)', starter:false, pro:true, enterprise:true, core:false},
+  {id:'journal', name:'Journal Entries', group:'Financial & Accounting', desc:'บันทึกบัญชี, Bank Transaction, GL Posting', starter:false, pro:true, enterprise:true, core:false},
+  // Group 5: HR & Admin
+  {id:'ot', name:'OT Management', group:'HR & Admin', desc:'normal/holiday/special, คำนวณค่า OT', starter:false, pro:false, enterprise:true, core:false},
+  {id:'travel', name:'Travel', group:'HR & Admin', desc:'ขออนุมัติเดินทาง, ค่าใช้จ่าย', starter:false, pro:false, enterprise:true, core:false},
+  {id:'technicians', name:'Technicians', group:'HR & Admin', desc:'ทะเบียนช่าง, specialization, skill_level, certification, daily_rate', starter:false, pro:false, enterprise:true, core:false},
+  // Group 6: Resource & Booking
+  {id:'vehicle', name:'Vehicle Management', group:'Resource & Booking', desc:'ทะเบียนรถ, สถานะรถ', starter:false, pro:false, enterprise:true, core:false},
+  {id:'vehicleproject', name:'Vehicle-Project', group:'Resource & Booking', desc:'Kanban Booking Board 4 สถานะ, สถิติการจอง', starter:false, pro:false, enterprise:true, core:false},
+  {id:'booking', name:'Booking', group:'Resource & Booking', desc:'Google Calendar style, 3 ประเภท (Vehicle/Technician/Flight), day/week/month view, Sidebar filter, Availability check, Drag-to-Copy, Booking to SQ', starter:false, pro:false, enterprise:true, core:false},
+  // Group 7: Master Data
+  {id:'bpmaster', name:'BP Master', group:'Master Data', desc:'คู่ค้า Vendor/Customer, เงื่อนไขการค้า', starter:true, pro:true, enterprise:true, core:true},
+  {id:'itemmaster', name:'Item Master', group:'Master Data', desc:'สินค้า/บริการ, หมวดหมู่, หน่วยนับ', starter:true, pro:true, enterprise:true, core:true},
+  {id:'pricing', name:'Pricing', group:'Master Data', desc:'Price List', starter:false, pro:true, enterprise:true, core:false},
+  // Group 8: System & Administration
+  {id:'userperm', name:'User & Permission', group:'System & Administration', desc:'RBAC (executive/admin/manager/user), Login, Self-Register, Change/Reset Password', starter:true, pro:true, enterprise:true, core:true},
+  {id:'approval', name:'Approval Workflow', group:'System & Administration', desc:'Configurable ตาม module (manager/finance/executive)', starter:true, pro:true, enterprise:true, core:true},
+  {id:'numberseries', name:'Number Series', group:'System & Administration', desc:'Running number, prefix/format ตาม document type', starter:true, pro:true, enterprise:true, core:true},
+  {id:'modulemgmt', name:'Module Management', group:'System & Administration', desc:'เปิด/ปิด module ตาม plan, core module ปิดไม่ได้', starter:true, pro:true, enterprise:true, core:true},
+  {id:'notification', name:'Notification', group:'System & Administration', desc:'In-app, email, Discord webhook', starter:false, pro:true, enterprise:true, core:false},
+  {id:'settings', name:'Settings/Setup', group:'System & Administration', desc:'Company Profile, ค่า default', starter:true, pro:true, enterprise:true, core:true},
+  {id:'subscription', name:'Subscription & Plans', group:'System & Administration', desc:'Starter/Professional/Enterprise, Trial 14 วัน', starter:true, pro:true, enterprise:true, core:true},
+  // Group 9: Reports & Support
+  {id:'reports', name:'Reports', group:'Reports & Support', desc:'รายงานตาม module, Export Excel', starter:true, pro:true, enterprise:true, core:true},
+  {id:'sowgenerator', name:'SOW Template/Generator', group:'Reports & Support', desc:'สร้าง SOW อัตโนมัติ (step wizard)', starter:false, pro:true, enterprise:true, core:false},
+  {id:'changelog', name:'Changelog', group:'Reports & Support', desc:'Version history', starter:true, pro:true, enterprise:true, core:true},
+  {id:'help', name:'Help', group:'Reports & Support', desc:'คู่มือ, FAQ', starter:true, pro:true, enterprise:true, core:true},
+  // Group 10: Integration
+  {id:'sapintegration', name:'SAP B1 Integration', group:'Integration', desc:'Push PR/PO/Expense to SAP, sync Master Data ผ่าน Service Layer API', starter:false, pro:false, enterprise:true, core:false},
+];
+
+// Security features
+const SEC_FEATURES = [
+  {id:'sec_helmet', name:'Helmet.js', desc:'HTTP security headers (X-Frame-Options, HSTS, X-Content-Type-Options)', checked:true},
+  {id:'sec_ratelimit', name:'Rate Limiting', desc:'1,000 req/min per IP (express-rate-limit)', checked:true},
+  {id:'sec_csp', name:'CSP', desc:'Whitelist script/style/font/img sources', checked:true},
+  {id:'sec_cors', name:'CORS Whitelist', desc:'Configurable allowed origins, credentials support', checked:true},
+  {id:'sec_jwt', name:'JWT Authentication', desc:'Configurable expiry (1d/7d/30d), boot-time secret validation', checked:true},
+  {id:'sec_gzip', name:'Gzip Compression', desc:'ลดขนาด response ~75%', checked:true},
+];
+
+// UX features
+const UX_FEATURES = [
+  {id:'ux_gps', name:'GPS Picker', desc:'เลือกตำแหน่งบน OpenStreetMap สำหรับ Job Order / Task', checked:true},
+  {id:'ux_drag', name:'Drag-to-Copy', desc:'ลาก Booking ไปวันอื่นเพื่อ copy (Calendar style)', checked:true},
+  {id:'ux_search', name:'Searchable Select', desc:'Dropdown พิมพ์ค้นหาได้ สำหรับ list ยาว', checked:true},
+  {id:'ux_toast', name:'Toast Notifications', desc:'แจ้งเตือน pop-up มุมขวาบน, auto-dismiss', checked:true},
+  {id:'ux_guard', name:'Auth Guards', desc:'ตรวจ login + permission ทุกหน้า, redirect to login', checked:true},
+  {id:'ux_excel', name:'Excel Export', desc:'Export ทุก module เป็น .xlsx (SheetJS)', checked:true},
+  {id:'ux_demo', name:'Auto-login / Demo', desc:'สำหรับ demo และ development', checked:true},
+  {id:'ux_realtime', name:'Real-time Broadcast', desc:'อัปเดต real-time ผ่าน WebSocket', checked:true},
+];
+
+// Default out of scope items
+const DEFAULT_OOS = [
+  'Mobile Native Application (iOS / Android) -- ระบบเป็น Responsive Web เท่านั้น',
+  'การ Implement / Configure ระบบ ERP อื่น (NetSuite, Dynamics, Odoo)',
+  'On-premise Deployment -- Deploy บน Railway (Cloud) เท่านั้น',
+  'Custom Report นอกเหนือจากรายงานมาตรฐาน',
+  'Data Migration จากระบบเดิมของลูกค้า',
+  'Hardware, Server, SSL Certificate',
+  'การฝึกอบรมแบบ Onsite (Classroom Training)',
+  'Third-party Integration นอกจาก SAP B1 Service Layer',
+  'Load Testing เกิน concurrent users ที่กำหนด',
+  'การดูแลระบบหลังสิ้นสุด SLA period',
+];
+
+// Default assumptions
+const DEFAULT_ASSUMPTIONS = [
+  'ประเภทโครงการ: พัฒนา SaaS Web App ไม่ใช่ ERP Implementation -- ใช้ Software Requirement Spec ไม่ใช่ ERP Blueprint',
+  'Hosting: Deploy บน Railway (Cloud PaaS) -- ลูกค้าไม่ต้องจัดเตรียม server',
+  'Browser-based: ทำงานผ่าน Web Browser ไม่รองรับ Mobile Native',
+  'Multi-tenancy: แยกด้วย company_id (row-level) ไม่ใช่ database-level -- dedicated DB ต้องตกลงแยก',
+  'SAP B1 Connection: ลูกค้าจัดเตรียม SAP credentials + network access -- ผู้ให้บริการไม่รับผิดชอบ SAP License/uptime',
+  'Data Ownership: ข้อมูลเป็นทรัพย์สินของลูกค้า -- ผู้ให้บริการไม่เข้าถึงโดยไม่ได้รับอนุญาต',
+  'Feedback: ลูกค้าให้ feedback ภายใน 5 วันทำงาน ล่าช้าอาจกระทบ timeline',
+  'Scope Freeze: หลัง P1 อนุมัติ requirement ถือเป็น scope ตกลง -- เปลี่ยนผ่าน Change Request',
+  'Concurrent Users: รองรับตามจำนวนที่กำหนด/tenant -- เพิ่มต้องประเมิน infra cost',
+  'Payment: ชำระตามงวดใน Section 13 ก่อนเริ่มงานแต่ละ Phase',
+];
+
+// ═══ Step Navigation ═══
+let currentStep = 0;
+const totalSteps = 6;
+
+function goStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.form-section').forEach((s,i) => s.classList.toggle('active', i===n));
+  document.querySelectorAll('.step-item').forEach((s,i) => {
+    s.classList.remove('active','done');
+    if (i === n) s.classList.add('active');
+    else if (i < n) s.classList.add('done');
+  });
+  if (n === 6) renderPreview();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ═══ Initialize Module Grid ═══
+function initModGrid() {
+  const grid = document.getElementById('modGrid');
+  let currentGroup = '';
+  MODULES.forEach((m, i) => {
+    if (m.group !== currentGroup) {
+      currentGroup = m.group;
+      const groupNum = ['Dashboard & Overview','Project & Task Management','Procurement & Supply Chain','Financial & Accounting','HR & Admin','Resource & Booking','Master Data','System & Administration','Reports & Support','Integration'].indexOf(currentGroup) + 1;
+      grid.innerHTML += '<div class="mod-group-title">กลุ่ม ' + groupNum + ' -- ' + currentGroup + '</div>';
+    }
+    grid.innerHTML += '<label class="mod-item checked"><input type="checkbox" checked data-mod="' + m.id + '"> ' + (i+1) + '. ' + m.name + '</label>';
+  });
+  document.querySelectorAll('.mod-item input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => cb.closest('.mod-item').classList.toggle('checked', cb.checked));
+  });
+}
+
+// ═══ Initialize OOS list ═══
+// ═══ Dynamic Phase Management ═══
+const DEFAULT_PHASES = [
+  {name:'Requirement, Planning & UI Wireframe', desc:'รวบรวม requirements, DB schema, project plan, UI wireframe, navigation flow', duration:'สัปดาห์ที่ 1-2'},
+  {name:'Core Development (3 Sprints)', desc:'Auth, Project, Task, PR/PO/GRPO, Budget, Expense, Advance, Petty Cash, Journal, Master Data, Approval Workflow (24 modules) -- Sprint Demo ทุก 2-3 สัปดาห์', duration:'สัปดาห์ที่ 3-12'},
+  {name:'Advanced Development (2 Sprints)', desc:'Dashboard, Job Order, OT, Travel, Technician, Vehicle, Booking, Notification, Subscription, Reports (13 modules) -- Sprint Demo ทุก 2-3 สัปดาห์', duration:'สัปดาห์ที่ 11-16'},
+  {name:'SAP B1 Integration Testing', desc:'เชื่อมต่อ SAP B1 Service Layer, Push PR/PO/Expense, Sync Master Data, Error handling -- parallel กับ P3 ได้', duration:'สัปดาห์ที่ 13-16'},
+  {name:'Internal QA & Bug Fix', desc:'ทดสอบ 37 modules + 7 workflows, Security Audit, Performance Testing, Bug fixing', duration:'สัปดาห์ที่ 15-18'},
+  {name:'UAT & User Training', desc:'ลูกค้าทดสอบ (UAT), แก้ไข UAT bugs, ฝึกอบรม Key Users + recording', duration:'สัปดาห์ที่ 19-22'},
+  {name:'Data Setup, Go-Live & Cutover', desc:'เตรียม Production data, Deploy Production บน Railway, Cutover, Go-Live', duration:'สัปดาห์ที่ 23-24'},
+  {name:'Hypercare', desc:'ดูแลระบบหลัง Go-Live, แก้ไข critical bugs, support ลูกค้า', duration:'สัปดาห์ที่ 25-28'},
+];
+
+function initPhases() {
+  const list = document.getElementById('phaseList');
+  list.innerHTML = '<div class="phase-hdr"><div></div><div>ชื่อ Phase</div><div>กิจกรรม</div><div>ระยะเวลา</div><div></div></div>';
+  DEFAULT_PHASES.forEach((p,i) => addPhaseRow(p.name, p.desc, p.duration));
+}
+
+function addPhase() {
+  addPhaseRow('', '', '');
+  renumberPhases();
+}
+
+function addPhaseRow(name, desc, duration) {
+  const list = document.getElementById('phaseList');
+  const row = document.createElement('div');
+  row.className = 'phase-row';
+  const idx = list.querySelectorAll('.phase-row').length + 1;
+  row.innerHTML = `<div class="phase-num">P${idx}</div>
+    <input class="ph-name" value="${name}" placeholder="ชื่อ Phase">
+    <input class="ph-desc" value="${desc}" placeholder="กิจกรรมหลัก">
+    <input class="ph-dur" value="${duration}" placeholder="สัปดาห์ที่ X-X">
+    <button class="phase-del" onclick="delPhase(this)" title="ลบ Phase">X</button>`;
+  list.appendChild(row);
+}
+
+function delPhase(btn) {
+  const list = document.getElementById('phaseList');
+  if (list.querySelectorAll('.phase-row').length <= 1) { alert('ต้องมีอย่างน้อย 1 Phase'); return; }
+  btn.closest('.phase-row').remove();
+  renumberPhases();
+}
+
+function renumberPhases() {
+  document.querySelectorAll('#phaseList .phase-row').forEach((row, i) => {
+    row.querySelector('.phase-num').textContent = 'P' + (i + 1);
+  });
+}
+
+function getPhases() {
+  const phases = [];
+  document.querySelectorAll('#phaseList .phase-row').forEach((row, i) => {
+    const name = row.querySelector('.ph-name').value.trim();
+    const desc = row.querySelector('.ph-desc').value.trim();
+    const dur = row.querySelector('.ph-dur').value.trim();
+    if (name || desc) phases.push({num: i+1, name: name||'Phase '+(i+1), desc, dur});
+  });
+  return phases;
+}
+
+function setPhases(phases) {
+  const list = document.getElementById('phaseList');
+  list.innerHTML = '<div class="phase-hdr"><div></div><div>ชื่อ Phase</div><div>กิจกรรม</div><div>ระยะเวลา</div><div></div></div>';
+  phases.forEach(p => addPhaseRow(p.name||'', p.desc||'', p.dur||p.duration||''));
+  renumberPhases();
+}
+
+function initOOS() {
+  const list = document.getElementById('oosList');
+  list.innerHTML = '';
+  DEFAULT_OOS.forEach(txt => addOOSItem(list, txt));
+}
+function addOOSItem(container, txt) {
+  const div = document.createElement('div');
+  div.className = 'oos-item';
+  div.innerHTML = '<input value="' + txt.replace(/"/g,'&quot;') + '"><button class="oos-del" onclick="this.parentElement.remove()">x</button>';
+  container.appendChild(div);
+}
+function addOOS() {
+  addOOSItem(document.getElementById('oosList'), '');
+}
+
+// ═══ Initialize Assumptions ═══
+function initAssumptions() {
+  const list = document.getElementById('assumptionsList');
+  list.innerHTML = '';
+  DEFAULT_ASSUMPTIONS.forEach(txt => {
+    const div = document.createElement('div');
+    div.className = 'oos-item';
+    div.innerHTML = '<input value="' + txt.replace(/"/g,'&quot;') + '"><button class="oos-del" onclick="this.parentElement.remove()">x</button>';
+    list.appendChild(div);
+  });
+}
+
+// ═══ Initialize Feature Grids ═══
+function initFeatureGrid(containerId, features) {
+  const grid = document.getElementById(containerId);
+  features.forEach(f => {
+    grid.innerHTML += '<label class="feat-item"><input type="checkbox" id="' + f.id + '" ' + (f.checked?'checked':'') + '> <span><strong>' + f.name + '</strong> -- ' + f.desc + '</span></label>';
+  });
+}
+
+// ═══ Fee Calculator ═══
+function calcFee() {
+  const raw = (document.getElementById('f_devFee').value || '').replace(/,/g,'');
+  const fee = parseFloat(raw) || 0;
+  const vat = Math.round(fee * 0.07);
+  const total = fee + vat;
+  const fmt = n => n ? n.toLocaleString('th-TH') : '';
+  document.getElementById('f_vat').value = fmt(vat) + ' บาท';
+  document.getElementById('f_totalFee').value = fmt(total) + ' บาท';
+}
+
+// ═══ Placeholder helper ═══
+function ph(val, fallback) {
+  if (val && val.trim()) return val;
+  return '<span class="ph">{{' + fallback + '}}</span>';
+}
+
+// ═══ Get all form data ═══
+function getData() {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+
+  // Fee calculations
+  const feeRaw = parseFloat((v('f_devFee') || '0').replace(/,/g,'')) || 0;
+  const vat = Math.round(feeRaw * 0.07);
+  const total = feeRaw + vat;
+  const fmt = n => n ? n.toLocaleString('th-TH') : '';
+
+  // Payment terms
+  const pcts = [v('f_pay1'),v('f_pay2'),v('f_pay3'),v('f_pay4'),v('f_pay5')].map(Number);
+  const pays = pcts.map(p => Math.round(feeRaw * p / 100));
+
+  // Selected modules
+  const selectedMods = [];
+  document.querySelectorAll('#modGrid .mod-item input:checked').forEach(cb => selectedMods.push(cb.dataset.mod));
+
+  // OOS items
+  const oosItems = [];
+  document.querySelectorAll('#oosList .oos-item input').forEach(inp => { if(inp.value.trim()) oosItems.push(inp.value.trim()); });
+
+  // Assumptions
+  const assumptions = [];
+  document.querySelectorAll('#assumptionsList .oos-item input').forEach(inp => { if(inp.value.trim()) assumptions.push(inp.value.trim()); });
+
+  // Security features
+  const secFeatures = [];
+  SEC_FEATURES.forEach(f => { if(document.getElementById(f.id)?.checked) secFeatures.push(f); });
+
+  // UX features
+  const uxFeatures = [];
+  UX_FEATURES.forEach(f => { if(document.getElementById(f.id)?.checked) uxFeatures.push(f); });
+
+  // Date format
+  let dateStr = v('f_docDate');
+  if (dateStr) {
+    const d = new Date(dateStr);
+    dateStr = d.toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+  }
+
+  return {
+    projectName: v('f_projectName') || 'Company Operation v2.0',
+    projectSubtitle: v('f_projectSubtitle') || 'SaaS Multi-tenant Operation Management Platform',
+    projectType: v('f_projectType') || 'SaaS Web Application',
+    docNo: v('f_docNo'), docDate: dateStr, docDateRaw: v('f_docDate'), status: v('f_status'),
+    providerName: v('f_providerName'), clientName: v('f_clientName'), preparedBy: v('f_preparedBy'),
+    execSummary: v('f_execSummary'),
+    dist: [
+      {name:v('f_dist1_name'),role:v('f_dist1_role'),org:v('f_dist1_org')},
+      {name:v('f_dist2_name'),role:v('f_dist2_role'),org:v('f_dist2_org')},
+      {name:v('f_dist3_name'),role:v('f_dist3_role'),org:v('f_dist3_org')},
+    ],
+    selectedMods, oosItems, assumptions,
+    reports: v('f_reports'), concurrentUsers: v('f_concurrentUsers'),
+    techStack: v('f_techStack'), browserSupport: v('f_browserSupport'),
+    secFeatures, uxFeatures,
+    phases: getPhases(), totalTime:v('f_totalTime'),
+    pm:v('f_pm'),leadDev:v('f_leadDev'),workerFE:v('f_workerFE'),workerBE:v('f_workerBE'),workerQA:v('f_workerQA'),workerDevOps:v('f_workerDevOps'),
+    sponsor:v('f_sponsor'),productOwner:v('f_productOwner'),uatCoord:v('f_uatCoord'),keyUsers:v('f_keyUsers'),itCoord:v('f_itCoord'),
+    trainSessions:v('f_trainSessions'),
+    uptime:v('f_uptime'),maintWindow:v('f_maintWindow'),backupDays:v('f_backupDays'),rto:v('f_rto'),rpo:v('f_rpo'),
+    p1Response:v('f_p1Response'),p1Resolution:v('f_p1Resolution'),
+    p2Response:v('f_p2Response'),p2Resolution:v('f_p2Resolution'),
+    p3Response:v('f_p3Response'),p3Resolution:v('f_p3Resolution'),
+    p4Response:v('f_p4Response'),p4Resolution:v('f_p4Resolution'),
+    supportEmail:v('f_supportEmail'),supportDiscord:v('f_supportDiscord'),bizHours:v('f_bizHours'),
+    planStarter:v('f_planStarter'),planPro:v('f_planPro'),planEnterprise:v('f_planEnterprise'),
+    planStarterUsers:v('f_planStarterUsers'),planProUsers:v('f_planProUsers'),planEnterpriseUsers:v('f_planEnterpriseUsers'),
+    devFee:fmt(feeRaw), vat:fmt(vat), totalFee:fmt(total),
+    pcts, pays: pays.map((p,i) => fmt(p) + ' (' + pcts[i] + '%)'),
+    // Legal & Protection (Step 6)
+    ipOwner:v('f_ipOwner'), ndaYears:v('f_ndaYears'),
+    pdpaController:v('f_pdpaController'), pdpaProcessor:v('f_pdpaProcessor'),
+    pdpaRetention:v('f_pdpaRetention'), pdpaBreach:v('f_pdpaBreach'), pdpaRights:v('f_pdpaRights'),
+    pdpaSubHost:v('f_pdpaSubHost'), pdpaSubEmail:v('f_pdpaSubEmail'), pdpaAuditDays:v('f_pdpaAuditDays'),
+    termNoticeDays:v('f_termNoticeDays'), termBreachDays:v('f_termBreachDays'), termRefundDays:v('f_termRefundDays'),
+    termCodeDays:v('f_termCodeDays'), termDataFormat:v('f_termDataFormat'), termDeleteDays:v('f_termDeleteDays'),
+    penaltyGrace:v('f_penaltyGrace'), penaltyRate:v('f_penaltyRate'), penaltyMax:v('f_penaltyMax'),
+    penaltyCancelWeeks:v('f_penaltyCancelWeeks'), clientDelayDays:v('f_clientDelayDays'),
+    slaCredit1:v('f_slaCredit1'), slaCredit2:v('f_slaCredit2'), slaCredit3:v('f_slaCredit3'),
+  };
+}
+
+// ═══ Render Preview ═══
+function renderPreview() {
+  const d = getData();
+
+  // Build in-scope module rows grouped
+  let modSections = '';
+  let currentGroup = '';
+  let groupNum = 0;
+  let modNum = 0;
+  const selectedModDefs = MODULES.filter(m => d.selectedMods.includes(m.id));
+
+  selectedModDefs.forEach(m => {
+    if (m.group !== currentGroup) {
+      if (currentGroup) modSections += '</table>';
+      currentGroup = m.group;
+      groupNum++;
+      const count = selectedModDefs.filter(x => x.group === currentGroup).length;
+      modSections += '<h4 class="grp">กลุ่ม ' + groupNum + ' -- ' + currentGroup + ' (' + count + ')</h4>';
+      modSections += '<table><thead><tr><th style="width:28px">#</th><th style="width:180px">Module</th><th>รายละเอียด</th></tr></thead>';
+    }
+    modNum++;
+    modSections += '<tr><td>' + modNum + '</td><td><strong>' + m.name + '</strong></td><td>' + m.desc + '</td></tr>';
+  });
+  if (currentGroup) modSections += '</table>';
+
+  // OOS
+  const oosHTML = d.oosItems.map((item, i) => '<li>' + item + '</li>').join('');
+
+  // Assumptions
+  const assHTML = d.assumptions.map((item, i) => '<li>' + item + '</li>').join('');
+
+  // Tech stack rows
+  const techRows = d.techStack.split('\n').filter(l=>l.trim()).map(line => {
+    const parts = line.split('--').map(s=>s.trim());
+    const layerParts = (parts[0]||'').split(':').map(s=>s.trim());
+    return '<tr><td>' + (layerParts[0]||'') + '</td><td>' + (layerParts[1]||'') + '</td><td>' + (parts[1]||'') + '</td></tr>';
+  }).join('');
+
+  // Security rows
+  const secRows = d.secFeatures.map((f,i) => '<tr><td>' + (i+1) + '</td><td>' + f.name + '</td><td>' + f.desc + '</td></tr>').join('');
+
+  // UX rows
+  const uxRows = d.uxFeatures.map((f,i) => '<tr><td>' + (i+1) + '</td><td>' + f.name + '</td><td>' + f.desc + '</td></tr>').join('');
+
+  // Browser support rows
+  const browserRows = d.browserSupport.split('\n').filter(l=>l.trim()).map(line => {
+    const parts = line.split(/\s+(?=\d)/);
+    return '<tr><td>' + (parts[0]||line) + '</td><td>' + (parts[1]||'') + '</td></tr>';
+  }).join('');
+
+  // Distribution list rows
+  const distRows = d.dist.filter(r=>r.name||r.role||r.org).map(r =>
+    '<tr><td>' + ph(r.name,'ชื่อ') + '</td><td>' + ph(r.role,'บทบาท') + '</td><td>' + ph(r.org,'องค์กร') + '</td></tr>'
+  ).join('');
+
+  // Payment rows
+  const payLabels = ['ลงนาม SOW + เริ่ม P1','ส่งมอบ P2 (Core Dev) บน Staging','ส่งมอบ P3+P4 (Advanced+SAP) บน Staging','UAT Sign-off (P6)','Go-Live (P7) + Hypercare (P8)'];
+  const payRows = payLabels.map((label,i) =>
+    '<tr><td>' + (i+1) + '</td><td>' + label + '</td><td style="text-align:right">' + (d.pays[i]||ph('','จำนวนเงิน')) + '</td></tr>'
+  ).join('');
+
+  // Appendix D module table
+  let appDRows = '';
+  MODULES.forEach((m,i) => {
+    const starterCell = m.starter ? '<td class="plan-y">รวม</td>' :
+      (m.id==='approval' ? '<td>1 level</td>' : (m.id==='reports' ? '<td>Basic</td>' : '<td class="plan-n">--</td>'));
+    const proCell = m.pro ? '<td class="plan-y">รวม</td>' :
+      (m.id==='approval' ? '<td>Multi</td>' : (m.id==='reports' ? '<td>Full</td>' : '<td class="plan-n">--</td>'));
+    const entCell = m.enterprise ? '<td class="plan-y">รวม</td>' :
+      (m.id==='approval' ? '<td>Multi+Custom</td>' : (m.id==='reports' ? '<td>Full+Custom</td>' : '<td class="plan-n">--</td>'));
+    const coreCell = m.core ? '<td class="core-y">Yes</td>' : '<td class="core-n">No</td>';
+    const groupShort = m.group.split(' ')[0];
+    const inScope = d.selectedMods.includes(m.id);
+    const rowStyle = inScope ? '' : ' style="opacity:0.4;text-decoration:line-through;"';
+    appDRows += '<tr' + rowStyle + '><td>' + (i+1) + '</td><td>' + m.name + '</td><td>' + groupShort + '</td>' + starterCell + proCell + entCell + coreCell + '</tr>';
+  });
+
+  document.getElementById('preview').innerHTML = `
+<div class="prev-doc">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="sub">Statement of Work</div>
+  <h1>${d.projectName}</h1>
+  <p style="color:#6b7280;font-size:14px;margin:4px 0 0">${d.projectSubtitle}</p>
+  <div class="tag">${d.projectType}</div>
+</div>
+
+<!-- 1. Cover Page -->
+<h2 class="sec" data-sec="s1"><span class="n">1</span> หน้าปก (Cover Page)</h2>
+<table class="info">
+<tr><td>เลขที่</td><td>${ph(d.docNo,'เลขที่ SOW')}</td></tr>
+<tr><td>โครงการ</td><td>${d.projectName} -- ${d.projectSubtitle}</td></tr>
+<tr><td>ประเภทโครงการ</td><td>${d.projectType}</td></tr>
+<tr><td>ผู้ให้บริการ</td><td>${ph(d.providerName,'ชื่อบริษัทผู้พัฒนา')}</td></tr>
+<tr><td>ลูกค้า</td><td>${ph(d.clientName,'ชื่อบริษัทลูกค้า')}</td></tr>
+<tr><td>จัดทำโดย</td><td>${ph(d.preparedBy,'ชื่อผู้จัดทำ')}</td></tr>
+<tr><td>วันที่</td><td>${ph(d.docDate,'วันที่ออกเอกสาร')}</td></tr>
+<tr><td>เวอร์ชัน</td><td>v2.0</td></tr>
+<tr><td>สถานะ</td><td>${ph(d.status,'Draft / Under Review / Approved')}</td></tr>
+</table>
+
+<!-- 2. Document Control -->
+<h2 class="sec" data-sec="s2"><span class="n">2</span> Document Control</h2>
+<h3 class="sub">2.1 Revision History</h3>
+<table>
+<thead><tr><th>เวอร์ชัน</th><th>วันที่</th><th>ผู้แก้ไข</th><th>รายละเอียด</th></tr></thead>
+<tr><td>v1.0</td><td>${ph(d.docDate,'วันที่')}</td><td>${ph(d.preparedBy,'ชื่อ')}</td><td>ฉบับแรก</td></tr>
+<tr><td>v2.0</td><td>${ph(d.docDate,'วันที่')}</td><td>${ph(d.preparedBy,'ชื่อ')}</td><td>อัปเดต 37 modules ครบ, เพิ่ม Booking/Job Order/Technician/Subscription, SLA, Appendix D</td></tr>
+</table>
+<h3 class="sub">2.2 Distribution List</h3>
+<table>
+<thead><tr><th>ชื่อ</th><th>บทบาท</th><th>องค์กร</th></tr></thead>
+${distRows || '<tr><td><span class="ph">{{ชื่อ}}</span></td><td><span class="ph">{{บทบาท}}</span></td><td><span class="ph">{{องค์กร}}</span></td></tr>'}
+</table>
+
+<!-- 3. Executive Summary -->
+<h2 class="sec" data-sec="s3"><span class="n">3</span> บทสรุปผู้บริหาร (Executive Summary)</h2>
+<p>${ph(d.execSummary,'บทสรุปผู้บริหาร')}</p>
+<p>ระบบรองรับ Multi-company ด้วยการแยกข้อมูลระดับ company_id พร้อมระบบ Subscription 3 ระดับ (Starter / Professional / Enterprise) และ Trial 14 วัน ระบบมี RBAC 4 ระดับ, Approval Workflow แบบ Configurable, Real-time Notification ผ่าน WebSocket รวมถึงมาตรการ Security ตามมาตรฐาน (Helmet.js, Rate Limiting, CSP, JWT)</p>
+<p>SOW ฉบับนี้กำหนดขอบเขตสำหรับการพัฒนา ทดสอบ และ Deploy ระบบทั้ง <strong>${d.selectedMods.length} modules จัดเป็น 10 กลุ่ม</strong> โดยเป็นโครงการพัฒนาซอฟต์แวร์ (Custom SaaS Development) <strong>ไม่ใช่</strong>การ Implement ระบบ ERP สำเร็จรูป</p>
+
+<!-- 4. Objectives -->
+<h2 class="sec" data-sec="s4"><span class="n">4</span> วัตถุประสงค์โครงการ (Objectives)</h2>
+<table>
+<thead><tr><th style="width:28px">#</th><th>วัตถุประสงค์</th><th style="width:260px">KPI</th></tr></thead>
+<tr><td>1</td><td>พัฒนา SaaS Multi-tenant Platform รองรับหลายบริษัท แยกข้อมูลด้วย company_id</td><td>รองรับหลาย tenant, ไม่มี data leak</td></tr>
+<tr><td>2</td><td>ส่งมอบ ${d.selectedMods.length} Functional Modules ครบ 10 กลุ่ม</td><td>ผ่าน UAT ครบทุก module</td></tr>
+<tr><td>3</td><td>สร้าง Configurable Approval Workflow 7 กระบวนการ (PR, Expense, Budget, OT, Travel, Booking, Job Order)</td><td>Workflow ถูกต้องทุกเส้นทาง</td></tr>
+<tr><td>4</td><td>สร้าง Subscription Management + Trial 14 วัน + Module Management ตาม Plan</td><td>Self-registration ถึง active ใน 5 นาที</td></tr>
+<tr><td>5</td><td>สร้าง Booking แบบ Google Calendar style (Vehicle/Technician/Flight) + Availability Check + Drag-to-Copy</td><td>จองสำเร็จ, ไม่มี double booking</td></tr>
+<tr><td>6</td><td>เชื่อมต่อ SAP B1 Service Layer (push PR/PO/Expense, sync Master Data)</td><td>sync สำเร็จ, latency ต่ำ</td></tr>
+<tr><td>7</td><td>ผ่านมาตรฐาน Security (Helmet, Rate Limit, CSP, JWT, CORS) + Performance ตาม SLA</td><td>Zero critical vuln, uptime > ${d.uptime||'99.5'}%</td></tr>
+</table>
+
+<!-- 5. Scope of Work -->
+<h2 class="sec" data-sec="s5"><span class="n">5</span> ขอบเขตงาน (Scope of Work)</h2>
+<h3 class="sub">5.1 In-Scope -- ${d.selectedMods.length} Modules, 10 กลุ่ม</h3>
+${modSections}
+
+<h3 class="sub">5.2 Out of Scope</h3>
+<ol>${oosHTML}</ol>
+
+<!-- 6. Technical Architecture -->
+<h2 class="sec" data-sec="s6"><span class="n">6</span> สถาปัตยกรรมระบบ (Technical Architecture)</h2>
+<h3 class="sub">6.1 Tech Stack</h3>
+<table>
+<thead><tr><th>Layer</th><th>เทคโนโลยี</th><th>รายละเอียด</th></tr></thead>
+${techRows}
+</table>
+
+<h3 class="sub">6.2 Security Features (${d.secFeatures.length} รายการ)</h3>
+<table>
+<thead><tr><th style="width:28px">#</th><th style="width:180px">Feature</th><th>รายละเอียด</th></tr></thead>
+${secRows}
+</table>
+
+<h3 class="sub">6.3 UX Features (${d.uxFeatures.length} รายการ)</h3>
+<table>
+<thead><tr><th style="width:28px">#</th><th style="width:180px">Feature</th><th>รายละเอียด</th></tr></thead>
+${uxRows}
+</table>
+
+<h3 class="sub">6.4 Browser Support</h3>
+<table>
+<thead><tr><th>Browser</th><th>เวอร์ชันขั้นต่ำ</th></tr></thead>
+${browserRows}
+</table>
+
+<!-- 7. Deliverables -->
+<h2 class="sec" data-sec="s7"><span class="n">7</span> สิ่งส่งมอบ (Deliverables)</h2>
+<table>
+<thead><tr><th style="width:28px">#</th><th style="width:170px">สิ่งส่งมอบ</th><th>รายละเอียด</th><th style="width:150px">เกณฑ์รับงาน</th></tr></thead>
+<tr><td>1</td><td><strong>Source Code</strong></td><td>Git Repo + README + .env.example + migrations</td><td>Code review ผ่าน, zero critical vuln</td></tr>
+<tr><td>2</td><td><strong>Deployed System</strong></td><td>Production + Staging บน Railway</td><td>Health check ผ่าน</td></tr>
+<tr><td>3</td><td><strong>API Documentation</strong></td><td>REST API endpoints ทุก route + examples</td><td>ครบทุก endpoint</td></tr>
+<tr><td>4</td><td><strong>User Manual</strong></td><td>คู่มือ End User ทุก module (ภาษาไทย)</td><td>ครอบคลุมทุก module</td></tr>
+<tr><td>5</td><td><strong>Admin Guide</strong></td><td>คู่มือ System Admin (Setup, User, Subscription)</td><td>ครอบคลุม admin functions</td></tr>
+<tr><td>6</td><td><strong>Database Schema</strong></td><td>ER Diagram + Table/Column descriptions</td><td>ตรงกับ production</td></tr>
+<tr><td>7</td><td><strong>UAT Test Cases</strong></td><td>Test cases ทุก module + expected results</td><td>Happy path + edge cases</td></tr>
+<tr><td>8</td><td><strong>UAT Sign-off</strong></td><td>บันทึกผลทดสอบโดยลูกค้า</td><td>ลูกค้าลงนามรับรอง</td></tr>
+<tr><td>9</td><td><strong>Security Audit</strong></td><td>Security scan + Pentest summary</td><td>Zero critical/high</td></tr>
+<tr><td>10</td><td><strong>Training</strong></td><td>Online ${ph(d.trainSessions,'N')} sessions + Recording</td><td>ผู้ใช้งานได้</td></tr>
+</table>
+
+<!-- 8. Timeline -->
+<h2 class="sec" data-sec="s8"><span class="n">8</span> แผนการดำเนินงาน (Timeline)</h2>
+<table>
+<thead><tr><th>Phase</th><th>กิจกรรม</th><th style="width:130px">ระยะเวลา</th></tr></thead>
+${d.phases.map(p => `<tr><td><strong>P${p.num}</strong> ${p.name}</td><td>${p.desc||'-'}</td><td>${ph(p.dur,'สัปดาห์ X-X')}</td></tr>`).join('\n')}
+</table>
+<blockquote>ระยะเวลารวม: <strong>${ph(d.totalTime,'N สัปดาห์/เดือน')}</strong><br>
+<strong>Critical Path:</strong> P1 &rarr; P2 &rarr; P4 (SAP) &rarr; P5 &rarr; P6 &rarr; P7 &rarr; P8 | <strong>Parallel:</strong> P3+P4, P5 overlap P3</blockquote>
+
+<!-- 9. Project Team -->
+<h2 class="sec" data-sec="s9"><span class="n">9</span> ทีมงานโครงการ (Project Team)</h2>
+<h3 class="sub">ฝั่งผู้ให้บริการ (Provider)</h3>
+<table>
+<thead><tr><th>บทบาท</th><th>ชื่อ</th><th>ความรับผิดชอบ</th></tr></thead>
+<tr><td>Project Manager</td><td>${ph(d.pm,'ชื่อ')}</td><td>บริหารโครงการ วางแผน ประสานงาน</td></tr>
+<tr><td>Lead Developer</td><td>${ph(d.leadDev,'ชื่อ')}</td><td>Architecture, Backend + Frontend, DB design</td></tr>
+<tr><td>Frontend Developer</td><td>${ph(d.workerFE,'ชื่อ')}</td><td>UI/UX, Responsive, JS interactions</td></tr>
+<tr><td>Backend Developer</td><td>${ph(d.workerBE,'ชื่อ')}</td><td>API, Middleware, Integration, Migration</td></tr>
+<tr><td>QA / Tester</td><td>${ph(d.workerQA,'ชื่อ')}</td><td>Test cases, Security testing</td></tr>
+<tr><td>DevOps</td><td>${ph(d.workerDevOps,'ชื่อ')}</td><td>Railway, CI/CD, Monitoring</td></tr>
+</table>
+<h3 class="sub">ฝั่งลูกค้า (Client)</h3>
+<table>
+<thead><tr><th>บทบาท</th><th>ชื่อ</th><th>ความรับผิดชอบ</th></tr></thead>
+<tr><td>Project Sponsor</td><td>${ph(d.sponsor,'ชื่อ')}</td><td>อนุมัติงบ ตัดสินใจนโยบาย</td></tr>
+<tr><td>Product Owner</td><td>${ph(d.productOwner,'ชื่อ')}</td><td>กำหนด requirements, priority</td></tr>
+<tr><td>UAT Coordinator</td><td>${ph(d.uatCoord,'ชื่อ')}</td><td>ประสานงาน UAT, sign-off</td></tr>
+<tr><td>Key Users</td><td>${ph(d.keyUsers,'ชื่อ')}</td><td>ทดสอบ, feedback, Training</td></tr>
+<tr><td>IT Coordinator</td><td>${ph(d.itCoord,'ชื่อ')}</td><td>SAP connection, network, credentials</td></tr>
+</table>
+
+<!-- 10. Assumptions -->
+<h2 class="sec" data-sec="s10"><span class="n">10</span> สมมติฐานโครงการ (Assumptions)</h2>
+<ol>${assHTML}</ol>
+
+<!-- 11. Change Management -->
+<h2 class="sec" data-sec="s11"><span class="n">11</span> การบริหารการเปลี่ยนแปลง (Change Management)</h2>
+<table>
+<thead><tr><th style="width:30px">ขั้นตอน</th><th style="width:130px">กิจกรรม</th><th>รายละเอียด</th><th style="width:90px">ผู้รับผิดชอบ</th></tr></thead>
+<tr><td>1</td><td>Submit CR</td><td>ลูกค้ากรอก Change Request Form (Appendix C) ระบุ module, รายละเอียด, priority</td><td>ลูกค้า</td></tr>
+<tr><td>2</td><td>Impact Assessment</td><td>ประเมิน effort, timeline, cost, technical risk ภายใน 5 วันทำงาน</td><td>ผู้ให้บริการ</td></tr>
+<tr><td>3</td><td>Approval</td><td>ทั้งสองฝ่ายตกลง scope/effort/cost และลงนามอนุมัติ</td><td>ทั้งสองฝ่าย</td></tr>
+<tr><td>4</td><td>Execute</td><td>ดำเนินงานตาม CR ที่อนุมัติ บันทึกใน revision history</td><td>ผู้ให้บริการ</td></tr>
+</table>
+<blockquote>CR ที่กระทบ core architecture, database schema หรือ security ต้อง review โดย Lead Developer ก่อนอนุมัติ</blockquote>
+
+<!-- 12. SLA & Support -->
+<h2 class="sec" data-sec="s12"><span class="n">12</span> SLA &amp; Support Level</h2>
+<h3 class="sub">12.1 Service Level Agreement</h3>
+<table>
+<thead><tr><th>รายการ</th><th>เป้าหมาย</th></tr></thead>
+<tr><td>System Uptime</td><td>${ph(d.uptime,'N')}% (ไม่รวม planned maintenance)</td></tr>
+<tr><td>Maintenance Window</td><td>${ph(d.maintWindow,'วัน/เวลา')}</td></tr>
+<tr><td>Data Backup</td><td>Daily automated, retention ${ph(d.backupDays,'N')} วัน</td></tr>
+<tr><td>Disaster Recovery</td><td>RTO ${ph(d.rto,'N')} ชม., RPO ${ph(d.rpo,'N')} ชม.</td></tr>
+</table>
+<h3 class="sub">12.2 Severity Levels</h3>
+<table>
+<thead><tr><th>Severity</th><th>คำอธิบาย</th><th>Response</th><th>Resolution</th></tr></thead>
+<tr><td><strong>Critical (P1)</strong></td><td>ระบบใช้ไม่ได้ทั้งหมด / data loss</td><td>${ph(d.p1Response,'N ชม.')}</td><td>${ph(d.p1Resolution,'N ชม.')}</td></tr>
+<tr><td><strong>High (P2)</strong></td><td>Feature หลักใช้ไม่ได้ มี workaround</td><td>${ph(d.p2Response,'N ชม.')}</td><td>${ph(d.p2Resolution,'N วันทำงาน')}</td></tr>
+<tr><td><strong>Medium (P3)</strong></td><td>Feature รองมีปัญหา ไม่กระทบ workflow หลัก</td><td>${ph(d.p3Response,'N วันทำงาน')}</td><td>${ph(d.p3Resolution,'N วันทำงาน')}</td></tr>
+<tr><td><strong>Low (P4)</strong></td><td>Cosmetic / enhancement</td><td>${ph(d.p4Response,'N วันทำงาน')}</td><td>${ph(d.p4Resolution,'Planned release')}</td></tr>
+</table>
+<h3 class="sub">12.3 Support Channels</h3>
+<table>
+<thead><tr><th>ช่องทาง</th><th>รายละเอียด</th></tr></thead>
+<tr><td>Email</td><td>${ph(d.supportEmail,'email')}</td></tr>
+<tr><td>Discord</td><td>${ph(d.supportDiscord,'channel')}</td></tr>
+<tr><td>Business Hours</td><td>${ph(d.bizHours,'วัน/เวลา')}</td></tr>
+</table>
+
+<!-- 13. Commercial Terms -->
+<h2 class="sec" data-sec="s13"><span class="n">13</span> เงื่อนไขค่าบริการ (Commercial Terms)</h2>
+<h3 class="sub">13.1 Subscription Plans</h3>
+<table>
+<thead><tr><th>Feature</th><th>Starter</th><th>Professional</th><th>Enterprise</th></tr></thead>
+<tr><td>Users</td><td>${ph(d.planStarterUsers,'N')}</td><td>${ph(d.planProUsers,'N')}</td><td>${d.planEnterpriseUsers||'Unlimited'}</td></tr>
+<tr><td>Core Modules (Dashboard, Project, Task, Auth, Setup)</td><td class="plan-y">รวม</td><td class="plan-y">รวม</td><td class="plan-y">รวม</td></tr>
+<tr><td>Procurement (PR/PO/GRPO/Quotation)</td><td class="plan-n">--</td><td class="plan-y">รวม</td><td class="plan-y">รวม</td></tr>
+<tr><td>Financial (Budget/Expense/Advance/Petty Cash/Journal)</td><td class="plan-n">--</td><td class="plan-y">รวม</td><td class="plan-y">รวม</td></tr>
+<tr><td>HR &amp; Admin (OT/Travel/Technicians)</td><td class="plan-n">--</td><td class="plan-n">--</td><td class="plan-y">รวม</td></tr>
+<tr><td>Booking &amp; Vehicle</td><td class="plan-n">--</td><td class="plan-n">--</td><td class="plan-y">รวม</td></tr>
+<tr><td>Job Orders</td><td class="plan-n">--</td><td class="plan-n">--</td><td class="plan-y">รวม</td></tr>
+<tr><td>SAP B1 Integration</td><td class="plan-n">--</td><td class="plan-n">--</td><td class="plan-y">รวม</td></tr>
+<tr><td>Reports</td><td>Basic</td><td>Full</td><td>Full + Custom</td></tr>
+<tr><td>Approval Workflow</td><td>1 level</td><td>Multi-level</td><td>Multi-level + Custom</td></tr>
+<tr><td>Notification (Discord/Email)</td><td class="plan-n">--</td><td class="plan-y">รวม</td><td class="plan-y">รวม</td></tr>
+<tr><td>Trial</td><td>14 วัน</td><td>14 วัน</td><td>ติดต่อ</td></tr>
+<tr><td><strong>ราคา/เดือน</strong></td><td>${ph(d.planStarter,'จำนวนเงิน')}</td><td>${ph(d.planPro,'จำนวนเงิน')}</td><td>${ph(d.planEnterprise,'ติดต่อ')}</td></tr>
+</table>
+
+<h3 class="sub">13.2 Development Fee (One-time)</h3>
+<table>
+<thead><tr><th>รายการ</th><th style="text-align:right">จำนวน</th></tr></thead>
+<tr><td>ค่าพัฒนาระบบ</td><td style="text-align:right">${d.devFee ? d.devFee + ' บาท' : ph('','จำนวนเงิน')}</td></tr>
+<tr><td>VAT 7%</td><td style="text-align:right">${d.vat ? d.vat + ' บาท' : ph('','จำนวนเงิน')}</td></tr>
+<tr style="font-weight:700;background:#f8f9fb"><td>รวมทั้งสิ้น</td><td style="text-align:right">${d.totalFee ? d.totalFee + ' บาท' : ph('','จำนวนเงิน')}</td></tr>
+</table>
+
+<h3 class="sub">13.3 งวดการชำระเงิน</h3>
+<table>
+<thead><tr><th style="width:50px">งวด</th><th>เงื่อนไข</th><th style="width:140px;text-align:right">จำนวน</th></tr></thead>
+${payRows}
+</table>
+
+<!-- 14. IP -->
+<h2 class="sec" data-sec="s14"><span class="n">14</span> ทรัพย์สินทางปัญญา (Intellectual Property)</h2>
+<ol>
+<li><strong>Custom Code:</strong> Source code ที่พัฒนาเฉพาะโครงการนี้เป็นทรัพย์สินของ <strong>${d.ipOwner||'ลูกค้า'}</strong> หลังจากชำระค่าบริการครบถ้วน</li>
+<li><strong>Pre-existing IP:</strong> Framework, libraries, utilities ที่ผู้ให้บริการมีอยู่ก่อน ยังคงเป็นของผู้ให้บริการ ลูกค้าได้รับ non-exclusive, perpetual license</li>
+<li><strong>Third-party Libraries:</strong> อยู่ภายใต้ license ของ library นั้นๆ (MIT, Apache 2.0) ผู้ให้บริการจัดทำรายการ Dependencies</li>
+<li><strong>ข้อห้าม:</strong> ทั้งสองฝ่ายจะไม่ใช้ IP ของอีกฝ่ายนอกเหนือ SOW โดยไม่ได้รับอนุญาต</li>
+</ol>
+
+<!-- 15. NDA -->
+<h2 class="sec" data-sec="s15"><span class="n">15</span> การรักษาความลับ (Confidentiality)</h2>
+<ol>
+<li>ทั้งสองฝ่ายรักษาความลับของข้อมูลที่ได้รับ รวมถึง source code, business data, credentials, architecture documents</li>
+<li>ห้ามเปิดเผยต่อบุคคลที่สามโดยไม่ได้รับอนุญาต ยกเว้นพนักงาน/ผู้รับจ้างที่จำเป็น</li>
+<li>ข้อผูกพันมีผลตลอดโครงการและอีก <strong>${d.ndaYears||'2'} ปี</strong>หลังสิ้นสุด</li>
+<li><strong>ข้อยกเว้น:</strong> ข้อมูลสาธารณะ, ข้อมูลที่มีอยู่ก่อน, คำสั่งศาล/หน่วยงานรัฐ</li>
+</ol>
+
+<!-- 16. PDPA -->
+<h2 class="sec" data-sec="s16"><span class="n">16</span> การคุ้มครองข้อมูลส่วนบุคคล (PDPA Compliance)</h2>
+<p>เพื่อให้เป็นไปตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA):</p>
+<table>
+<thead><tr><th style="width:180px">รายการ</th><th>รายละเอียด</th></tr></thead>
+<tr><td><strong>Data Controller</strong></td><td>${d.pdpaController||'ลูกค้า'} -- ผู้ควบคุมข้อมูลของพนักงาน คู่ค้า ผู้ใช้งาน</td></tr>
+<tr><td><strong>Data Processor</strong></td><td>${d.pdpaProcessor||'ผู้ให้บริการ'} -- ประมวลผลตามคำสั่ง Controller ภายใน SOW</td></tr>
+<tr><td><strong>ประเภทข้อมูล</strong></td><td>ชื่อ, อีเมล, เบอร์โทร, GPS (Job Order), ข้อมูล HR (OT, Travel, Daily Rate), ข้อมูลการเงิน (Expense, Advance), ทะเบียนรถ</td></tr>
+<tr><td><strong>Data Retention</strong></td><td>เก็บตลอดสัญญา ลบภายใน <strong>${d.pdpaRetention||'90'} วัน</strong>หลังสิ้นสุด ยกเว้นข้อกำหนดกฎหมาย</td></tr>
+<tr><td><strong>Breach Notification</strong></td><td>Processor แจ้ง Controller ภายใน <strong>${d.pdpaBreach||'72'} ชั่วโมง</strong></td></tr>
+<tr><td><strong>สิทธิเจ้าของข้อมูล</strong></td><td>อำนวยความสะดวกคำขอ (เข้าถึง/แก้ไข/ลบ/โอนย้าย) ภายใน <strong>${d.pdpaRights||'15'} วันทำงาน</strong></td></tr>
+<tr><td><strong>Sub-processor</strong></td><td>${d.pdpaSubHost||'Railway'} (hosting), ${ph(d.pdpaSubEmail,'SMTP Provider')} (email)</td></tr>
+<tr><td><strong>การตรวจสอบ</strong></td><td>Controller ตรวจสอบ Processor ได้โดยแจ้งล่วงหน้า <strong>${d.pdpaAuditDays||'15'} วัน</strong></td></tr>
+</table>
+
+<!-- 17. Termination -->
+<h2 class="sec" data-sec="s17"><span class="n">17</span> การยกเลิกสัญญา (Termination)</h2>
+<h3 class="sub">17.1 ยกเลิกโดยแจ้งล่วงหน้า</h3>
+<p>ฝ่ายใดฝ่ายหนึ่งแจ้งเป็นลายลักษณ์อักษรล่วงหน้าไม่น้อยกว่า <strong>${d.termNoticeDays||'30'} วัน</strong></p>
+<h3 class="sub">17.2 ยกเลิกเนื่องจากผิดสัญญา</h3>
+<p>หากฝ่ายใด material breach และไม่แก้ไขภายใน <strong>${d.termBreachDays||'15'} วันทำงาน</strong> อีกฝ่ายยกเลิกได้ทันที</p>
+<h3 class="sub">17.3 ผลของการยกเลิก</h3>
+<table>
+<thead><tr><th style="width:150px">รายการ</th><th>รายละเอียด</th></tr></thead>
+<tr><td>การชำระเงิน</td><td>ชำระตาม deliverables ที่ส่งมอบ + work-in-progress ตามสัดส่วน man-days จริง</td></tr>
+<tr><td>การคืนเงิน</td><td>คืนส่วนต่างภายใน <strong>${d.termRefundDays||'30'} วันทำงาน</strong></td></tr>
+<tr><td>Source Code</td><td>ส่งมอบทั้งหมดผ่าน Git Repository ภายใน <strong>${d.termCodeDays||'15'} วันทำงาน</strong></td></tr>
+<tr><td>Data Return</td><td>Export เป็น <strong>${d.termDataFormat||'SQL dump + CSV'}</strong> ลบจากระบบภายใน <strong>${d.termDeleteDays||'30'} วัน</strong></td></tr>
+<tr><td>ความลับ</td><td>Section 15 (Confidentiality) ยังมีผลหลังยกเลิก</td></tr>
+</table>
+
+<!-- 18. Penalty -->
+<h2 class="sec" data-sec="s18"><span class="n">18</span> การส่งมอบล่าช้าและค่าปรับ (Delay &amp; Penalty)</h2>
+<h3 class="sub">18.1 ความล่าช้าฝั่งผู้ให้บริการ</h3>
+<p>หากส่งมอบล่าช้าเกิน <strong>${d.penaltyGrace||'5'} วันทำงาน</strong> (ไม่ใช่ Force Majeure, ไม่ใช่ client delay):</p>
+<ul>
+<li>ค่าปรับ <strong>${d.penaltyRate||'2'}%</strong> ของมูลค่างวดที่เกี่ยวข้อง ต่อสัปดาห์ที่ล่าช้า</li>
+<li>สูงสุดรวมไม่เกิน <strong>${d.penaltyMax||'10'}%</strong> ของมูลค่าโครงการ</li>
+<li>ล่าช้าเกิน <strong>${d.penaltyCancelWeeks||'8'} สัปดาห์</strong> ลูกค้ายกเลิกได้ตาม Section 17</li>
+</ul>
+<h3 class="sub">18.2 ความล่าช้าฝั่งลูกค้า</h3>
+<ul>
+<li>ผู้ให้บริการขยาย timeline เท่ากับจำนวนวันที่ลูกค้าล่าช้า (เกิน ${d.clientDelayDays||'5'} วันทำงาน)</li>
+<li>ล่าช้าต่อเนื่องเกินกว่านั้น ผู้ให้บริการ reallocate ทรัพยากร + แจ้ง revised timeline</li>
+</ul>
+<h3 class="sub">18.3 SLA Breach Credit</h3>
+<p>หาก Uptime ต่ำกว่าเป้า 2 เดือนติดต่อกัน:</p>
+<table>
+<thead><tr><th>Uptime ต่ำกว่าเป้า</th><th>Service Credit</th></tr></thead>
+<tr><td>0.1-0.5%</td><td><strong>${d.slaCredit1||'5'}%</strong> ของค่าบริการเดือนนั้น</td></tr>
+<tr><td>0.5-1.0%</td><td><strong>${d.slaCredit2||'10'}%</strong> ของค่าบริการเดือนนั้น</td></tr>
+<tr><td>> 1.0%</td><td><strong>${d.slaCredit3||'25'}%</strong> ของค่าบริการเดือนนั้น</td></tr>
+</table>
+
+<!-- 19. Sign-off -->
+<h2 class="sec" data-sec="s19"><span class="n">19</span> การลงนามอนุมัติ (Sign-off)</h2>
+<p>ทั้งสองฝ่ายตกลงและยอมรับขอบเขตการทำงานตามที่ระบุไว้ในเอกสาร SOW ฉบับนี้</p>
+<div class="sig-grid">
+  <div class="sig-box">
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">ลูกค้า: ${ph(d.clientName,'ชื่อบริษัท')}</div>
+    <div style="font-size:11px;color:#9ca3af">Signed and agreed by</div>
+    <div class="line"></div>
+    <div style="font-size:13px;font-weight:600;">${ph(d.sponsor,'ชื่อ')}</div>
+    <div style="font-size:12px;color:#6b7280;">Project Sponsor</div>
+    <div style="margin-top:8px;font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div>
+  </div>
+  <div class="sig-box">
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">ผู้ให้บริการ: ${ph(d.providerName,'ชื่อบริษัท')}</div>
+    <div style="font-size:11px;color:#9ca3af">Signed and agreed by</div>
+    <div class="line"></div>
+    <div style="font-size:13px;font-weight:600;">${ph(d.pm,'ชื่อ')}</div>
+    <div style="font-size:12px;color:#6b7280;">Project Manager</div>
+    <div style="margin-top:8px;font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div>
+  </div>
+</div>
+
+<!-- APPENDIX A: Approval Workflow Diagrams -->
+<h2 class="sec" data-sec="sA"><span class="n">A</span> Appendix A: Approval Workflow Diagrams</h2>
+
+<h3 class="sub">A.1 PR (Purchase Request)</h3>
+<pre>draft --> pending_manager --> pending_finance --> pending_executive --> approved --> sent_to_sap --> received
+               |                    |                     |
+               +--> rejected        +--> rejected         +--> rejected
+               +--> cancelled       +--> cancelled        +--> cancelled</pre>
+
+<h3 class="sub">A.2 Expense</h3>
+<pre>draft --> pending_manager --> pending_finance --> pending_executive --> approved --> paid --> sent_to_sap
+               |                    |                     |
+               +--> rejected        +--> rejected         +--> rejected
+               +--> cancelled       +--> cancelled        +--> cancelled</pre>
+
+<h3 class="sub">A.3 Budget</h3>
+<pre>draft --> pending_manager --> pending_executive --> approved
+               |                     |
+               +--> rejected         +--> rejected</pre>
+
+<h3 class="sub">A.4 OT Management</h3>
+<pre>draft --> pending_manager --> pending_executive --> approved --> paid
+               |                     |
+               +--> rejected         +--> rejected</pre>
+
+<h3 class="sub">A.5 Travel</h3>
+<pre>draft --> pending_manager --> pending_executive --> approved
+               |                     |
+               +--> rejected         +--> rejected</pre>
+
+<h3 class="sub">A.6 Booking / Vehicle</h3>
+<pre>pending --> approved --> checked_out --> checked_in
+   |
+   +--> rejected
+   +--> cancelled</pre>
+
+<h3 class="sub">A.7 Job Order</h3>
+<pre>draft --> approved --> in_progress --> completed
+   |
+   +--> cancelled</pre>
+
+<!-- APPENDIX B: Glossary -->
+<h2 class="sec" data-sec="sB"><span class="n">B</span> Appendix B: Glossary</h2>
+<table>
+<thead><tr><th style="width:160px">คำศัพท์</th><th>ความหมาย</th></tr></thead>
+<tr><td>SaaS</td><td>Software as a Service -- ซอฟต์แวร์ให้บริการผ่าน Cloud ไม่ต้องติดตั้ง</td></tr>
+<tr><td>Multi-tenant</td><td>ระบบเดียวรองรับหลายองค์กร แยกข้อมูลด้วย company_id</td></tr>
+<tr><td>RBAC</td><td>Role-Based Access Control -- ควบคุมสิทธิ์ตามบทบาท</td></tr>
+<tr><td>JWT</td><td>JSON Web Token -- มาตรฐาน token สำหรับ authentication</td></tr>
+<tr><td>REST API</td><td>รูปแบบ API ที่ใช้ HTTP methods (GET/POST/PUT/DELETE)</td></tr>
+<tr><td>WebSocket</td><td>โปรโตคอลสื่อสาร real-time สองทาง</td></tr>
+<tr><td>CORS</td><td>Cross-Origin Resource Sharing -- ควบคุม request ข้าม domain</td></tr>
+<tr><td>CSP</td><td>Content Security Policy -- HTTP header ควบคุม resources ที่ browser โหลดได้</td></tr>
+<tr><td>Helmet.js</td><td>Express middleware ตั้งค่า HTTP security headers อัตโนมัติ</td></tr>
+<tr><td>Rate Limiting</td><td>จำกัด request ต่อ IP ต่อช่วงเวลา ป้องกัน abuse</td></tr>
+<tr><td>Kanban</td><td>จัดการงานแบบ visual board แบ่ง columns ตามสถานะ</td></tr>
+<tr><td>PR</td><td>Purchase Request -- ใบขอซื้อ</td></tr>
+<tr><td>PO</td><td>Purchase Order -- ใบสั่งซื้อ</td></tr>
+<tr><td>GRPO</td><td>Goods Receipt PO -- ใบรับสินค้าตามใบสั่งซื้อ</td></tr>
+<tr><td>UAT</td><td>User Acceptance Testing -- ทดสอบระบบโดยผู้ใช้จริง</td></tr>
+<tr><td>Hypercare</td><td>ช่วงดูแลระบบหลัง Go-Live</td></tr>
+<tr><td>Railway</td><td>Cloud PaaS สำหรับ deploy web applications</td></tr>
+<tr><td>Service Layer</td><td>SAP B1 REST API สำหรับเชื่อมต่อระบบภายนอก</td></tr>
+</table>
+
+<!-- APPENDIX C: Change Request Form -->
+<h2 class="sec" data-sec="sC"><span class="n">C</span> Appendix C: Change Request Form</h2>
+<table class="info">
+<tr><td>CR Number</td><td>CR-____-____</td></tr>
+<tr><td>วันที่ยื่น</td><td>___/___/___</td></tr>
+<tr><td>ผู้ยื่น</td><td>ชื่อ: _______________ ตำแหน่ง: _______________</td></tr>
+<tr><td>Module</td><td style="font-size:12px">[ ] Dashboard [ ] Project [ ] Task [ ] PR [ ] PO [ ] GRPO [ ] Budget [ ] Expense [ ] Advance [ ] Petty Cash [ ] Booking [ ] Job Order [ ] Vehicle [ ] OT [ ] Travel [ ] Technician [ ] Report [ ] SAP Integration [ ] อื่นๆ: ___</td></tr>
+<tr><td>Priority</td><td>[ ] Critical  [ ] High  [ ] Medium  [ ] Low</td></tr>
+<tr><td>ประเภท</td><td>[ ] New Feature  [ ] Change Existing  [ ] Bug Fix  [ ] Enhancement</td></tr>
+<tr><td>รายละเอียด</td><td style="height:40px"></td></tr>
+<tr><td>เหตุผล</td><td style="height:40px"></td></tr>
+<tr><td>ผลกระทบหากไม่ทำ</td><td style="height:40px"></td></tr>
+</table>
+
+<h3 class="sub" style="margin-top:20px">Impact Assessment (ผู้ให้บริการกรอก)</h3>
+<table class="info">
+<tr><td>Effort</td><td>_______________ Man-days</td></tr>
+<tr><td>Timeline Impact</td><td>[ ] ไม่กระทบ  [ ] เลื่อน ___ วัน  [ ] เลื่อน ___ สัปดาห์</td></tr>
+<tr><td>Cost Impact</td><td>_______________ บาท</td></tr>
+<tr><td>Technical Risk</td><td>[ ] Low  [ ] Medium  [ ] High</td></tr>
+<tr><td>Modules Affected</td><td>_______________</td></tr>
+</table>
+<div class="sig-grid" style="margin-top:16px">
+  <div class="sig-box"><div style="font-size:12px;color:#9ca3af;">ลูกค้า</div><div class="line"></div><div style="font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div></div>
+  <div class="sig-box"><div style="font-size:12px;color:#9ca3af;">ผู้ให้บริการ</div><div class="line"></div><div style="font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div></div>
+</div>
+
+<!-- APPENDIX D: Module List by Subscription Plan -->
+<h2 class="sec" data-sec="sD"><span class="n">D</span> Appendix D: Module List by Subscription Plan</h2>
+<table>
+<thead><tr><th style="width:24px">#</th><th>Module</th><th style="width:80px">กลุ่ม</th><th style="width:70px">Starter</th><th style="width:70px">Pro</th><th style="width:70px">Enterprise</th><th style="width:50px">Core</th></tr></thead>
+${appDRows}
+</table>
+<blockquote><strong>Core modules</strong> (ปิดไม่ได้) = modules ที่จำเป็นต่อการทำงานพื้นฐานของระบบ<br>Modules ที่ขีดทับ = ไม่อยู่ใน scope ที่เลือก</blockquote>
+
+<!-- FOOTER -->
+<div class="footer">
+  ${d.projectName} -- Statement of Work | ${d.docDate || '...'}
+</div>
+
+</div>`;
+
+  // ═══ Post-process: hide disabled sections & renumber ═══
+  const previewEl = document.getElementById('preview');
+  const allH2s = previewEl.querySelectorAll('h2.sec[data-sec]');
+  let numCounter = 1;
+
+  allH2s.forEach((h2, idx) => {
+    const secId = h2.dataset.sec;
+    const enabled = isSecEnabled(secId);
+
+    // Collect all sibling elements until next h2.sec or end
+    const siblings = [];
+    let next = h2.nextElementSibling;
+    while (next && !(next.tagName === 'H2' && next.classList.contains('sec'))) {
+      siblings.push(next);
+      next = next.nextElementSibling;
+    }
+
+    if (!enabled) {
+      h2.style.display = 'none';
+      siblings.forEach(el => el.style.display = 'none');
+    } else {
+      h2.style.display = '';
+      siblings.forEach(el => el.style.display = '');
+      // Renumber (skip appendices A/B/C/D)
+      const numSpan = h2.querySelector('.n');
+      if (numSpan && !secId.startsWith('s') || false) {
+        // Appendix -- keep letter
+      } else if (numSpan && /^s\d+$/.test(secId)) {
+        numSpan.textContent = numCounter;
+        numCounter++;
+      }
+    }
+  });
+}
+
+// ═══ Open Preview in New Window ═══
+// ═══ Full CSS for print/preview window ═══
+function getPreviewCSS() {
+  return `
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { margin: 0; font-family: Inter, -apple-system, system-ui, sans-serif; background: #fff; color: #1a1a2e; }
+
+    /* Document wrapper */
+    .prev-doc { padding: 48px 56px; line-height: 1.8; font-size: 14px; max-width: 900px; margin: 0 auto; }
+
+    /* Cover */
+    .prev-doc .cover { text-align: center; padding: 48px 0 36px; border-bottom: 3px solid #4f6ef7; margin-bottom: 36px; }
+    .prev-doc .cover .sub { font-size: 13px; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .prev-doc .cover h1 { font-size: 26px; font-weight: 700; color: #4f6ef7; margin: 6px 0 2px; }
+    .prev-doc .cover .tag { display: inline-block; background: #eef2ff; color: #4f6ef7; font-size: 12px; font-weight: 600; padding: 3px 14px; border-radius: 20px; margin-top: 8px; }
+
+    /* Section headings */
+    .prev-doc h2.sec { font-size: 18px; font-weight: 700; margin: 40px 0 14px; padding-bottom: 7px; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
+    .prev-doc h2.sec .n { background: #4f6ef7; color: #fff; font-size: 12px; font-weight: 700; width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .prev-doc h3.sub { font-size: 15px; font-weight: 600; margin: 22px 0 10px; }
+    .prev-doc h4.grp { font-size: 14px; font-weight: 600; margin: 18px 0 8px; color: #4f6ef7; }
+
+    /* Tables */
+    .prev-doc table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 13px; }
+    .prev-doc th { background: #f8f9fb; font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid #e5e7eb; }
+    .prev-doc td { padding: 8px 12px; border: 1px solid #e5e7eb; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+    .prev-doc .info td:first-child { font-weight: 600; width: 150px; color: #6b7280; white-space: nowrap; }
+
+    /* Text */
+    .prev-doc p { margin: 10px 0; font-size: 14px; }
+    .prev-doc ol, .prev-doc ul { margin: 10px 0; padding-left: 22px; }
+    .prev-doc li { margin: 6px 0; font-size: 13px; }
+    .prev-doc blockquote { border-left: 4px solid #4f6ef7; background: #eef2ff; margin: 14px 0; padding: 10px 18px; border-radius: 0 8px 8px 0; font-size: 13px; }
+
+    /* Code / Workflow diagrams */
+    .prev-doc pre { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 10px; font-size: 12px; overflow-x: auto; line-height: 1.6; margin: 12px 0; font-family: 'SF Mono', Menlo, monospace; }
+
+    /* Signature grid */
+    .prev-doc .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+    .prev-doc .sig-box { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: center; }
+    .prev-doc .sig-box .line { border-bottom: 1px solid #9ca3af; height: 44px; margin: 14px 0 6px; }
+
+    /* Plan/Core badges */
+    .prev-doc .plan-y { background: #ecfdf5; color: #059669; font-weight: 600; text-align: center; }
+    .prev-doc .plan-n { color: #9ca3af; text-align: center; }
+    .prev-doc .core-y { background: #fef3c7; color: #92400e; text-align: center; font-size: 11px; font-weight: 600; }
+    .prev-doc .core-n { text-align: center; font-size: 11px; color: #9ca3af; }
+
+    /* Placeholder */
+    .ph { background: #fef3c7; color: #92400e; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-weight: 500; border: 1px dashed #f59e0b; }
+
+    /* Footer */
+    .prev-doc .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+
+    /* ═══ Print-specific (ใช้ใน popup window) ═══ */
+    @media print {
+      @page { size: A4 portrait; margin: 20mm 15mm 20mm 15mm; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { margin: 0; }
+      /* Document body -- ลด padding สำหรับกระดาษ */
+      .prev-doc { padding: 0 10px; font-size: 12px; line-height: 1.7; max-width: none; }
+      /* Cover = หน้าแรกหน้าเดียว */
+      .prev-doc .cover { page-break-after: always; padding: 100px 0 40px; }
+      /* Sections ไหลต่อกัน -- ประหยัดกระดาษ */
+      .prev-doc h2.sec { page-break-before: auto; page-break-after: avoid; margin-top: 28px; padding-top: 8px; font-size: 16px; }
+      .prev-doc .cover + h2.sec { page-break-before: avoid; margin-top: 0; }
+      /* Sign-off ขึ้นหน้าใหม่ */
+      .prev-doc h2.sec[data-sec="s19"] { page-break-before: always; }
+      /* Appendix ขึ้นหน้าใหม่ */
+      .prev-doc h2.sec[data-sec="sA"] { page-break-before: always; }
+      /* Heading ห้ามตกค้างท้ายหน้า */
+      .prev-doc h3.sub, .prev-doc h4.grp { page-break-after: avoid; }
+      /* ตารางยาว: thead repeat ทุกหน้า */
+      .prev-doc table { page-break-inside: auto; width: 100%; font-size: 11px; }
+      .prev-doc thead { display: table-header-group; }
+      .prev-doc tr { page-break-inside: avoid; }
+      .prev-doc td, .prev-doc th { word-wrap: break-word; overflow-wrap: break-word; }
+      /* Signature ห้ามตัด */
+      .prev-doc .sig-grid { page-break-inside: avoid; }
+      /* Blockquote ห้ามตัด */
+      .prev-doc blockquote { page-break-inside: avoid; }
+      /* Workflow diagram -- print-friendly */
+      .prev-doc pre { background: #f1f5f9 !important; color: #1e293b !important; font-size: 10px; page-break-inside: avoid; border: 1px solid #cbd5e1; border-radius: 4px; }
+      /* Footer */
+      .prev-doc .footer { page-break-before: avoid; }
+    }
+  `;
+}
+
+function _writePreviewDoc(w, autoPrint) {
+  const title = (document.getElementById('f_projectName')?.value || 'SOW') + ' -- ' + (document.getElementById('f_clientName')?.value || 'Document');
+  // innerHTML ของ #preview มี <div class="prev-doc"> อยู่แล้ว
+  // แต่ต้องตรวจว่ามี wrapper -- ถ้าไม่มีก็ครอบให้
+  let content = document.getElementById('preview').innerHTML;
+  if (!content.includes('class="prev-doc"')) {
+    content = '<div class="prev-doc">' + content + '</div>';
+  }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
+  w.document.write('<title>' + title + '</title>');
+  w.document.write('<style>' + getPreviewCSS() + '</style>');
+  w.document.write('</head><body style="margin:0;">');
+  w.document.write(content);
+  w.document.write('</body></html>');
+  w.document.close();
+  if (autoPrint) setTimeout(() => w.print(), 500);
+}
+
+function openPreviewWindow() {
+  _writePreviewDoc(window.open('','_blank'), false);
+}
+
+// ═══ Print Preview ═══
+function printPreview() {
+  _writePreviewDoc(window.open('','_blank'), true);
+}
+
+// ═══ Export JSON ═══
+function exportJSON() {
+  const fields = {};
+  document.querySelectorAll('input[id^="f_"], select[id^="f_"], textarea[id^="f_"]').forEach(el => {
+    fields[el.id] = el.value;
+  });
+  // Modules
+  fields._mods = [];
+  document.querySelectorAll('#modGrid .mod-item input:checked').forEach(cb => fields._mods.push(cb.dataset.mod));
+  // OOS
+  fields._oos = [];
+  document.querySelectorAll('#oosList .oos-item input').forEach(inp => { if(inp.value.trim()) fields._oos.push(inp.value.trim()); });
+  // Assumptions
+  fields._assumptions = [];
+  document.querySelectorAll('#assumptionsList .oos-item input').forEach(inp => { if(inp.value.trim()) fields._assumptions.push(inp.value.trim()); });
+  // Security
+  fields._sec = [];
+  SEC_FEATURES.forEach(f => { if(document.getElementById(f.id)?.checked) fields._sec.push(f.id); });
+  // UX
+  fields._ux = [];
+  UX_FEATURES.forEach(f => { if(document.getElementById(f.id)?.checked) fields._ux.push(f.id); });
+  // Phases
+  fields._phases = getPhases();
+  // Section toggles
+  fields._secToggles = {};
+  document.querySelectorAll('#secToggleGrid input[data-sec]').forEach(cb => { fields._secToggles[cb.dataset.sec] = cb.checked; });
+
+  const blob = new Blob([JSON.stringify(fields, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sow_v2_' + (fields.f_docNo || 'draft') + '.json';
+  a.click();
+}
+
+// ═══ Import JSON ═══
+function importJSON() { document.getElementById('jsonFile').click(); }
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      Object.keys(data).forEach(k => {
+        if (k === '_mods') {
+          document.querySelectorAll('#modGrid .mod-item input').forEach(cb => {
+            cb.checked = data._mods.includes(cb.dataset.mod);
+            cb.closest('.mod-item').classList.toggle('checked', cb.checked);
+          });
+        } else if (k === '_oos') {
+          const list = document.getElementById('oosList');
+          list.innerHTML = '';
+          data._oos.forEach(txt => addOOSItem(list, txt));
+        } else if (k === '_assumptions') {
+          const list = document.getElementById('assumptionsList');
+          list.innerHTML = '';
+          data._assumptions.forEach(txt => {
+            const div = document.createElement('div');
+            div.className = 'oos-item';
+            div.innerHTML = '<input value="' + txt.replace(/"/g,'&quot;') + '"><button class="oos-del" onclick="this.parentElement.remove()">x</button>';
+            list.appendChild(div);
+          });
+        } else if (k === '_sec') {
+          SEC_FEATURES.forEach(f => {
+            const el = document.getElementById(f.id);
+            if (el) el.checked = data._sec.includes(f.id);
+          });
+        } else if (k === '_ux') {
+          UX_FEATURES.forEach(f => {
+            const el = document.getElementById(f.id);
+            if (el) el.checked = data._ux.includes(f.id);
+          });
+        } else if (k === '_phases') {
+          setPhases(data._phases);
+        } else if (k === '_secToggles') {
+          Object.keys(data._secToggles).forEach(secId => {
+            const cb = document.querySelector(`#secToggleGrid input[data-sec="${secId}"]`);
+            if (cb && !cb.disabled) { cb.checked = data._secToggles[secId]; cb.closest('.sec-toggle').classList.toggle('on', cb.checked); }
+          });
+        } else {
+          const el = document.getElementById(k);
+          if (el) el.value = data[k];
+        }
+      });
+      calcFee();
+      alert('Import สำเร็จ!');
+    } catch(err) { alert('ไฟล์ JSON ไม่ถูกต้อง: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ═══ Load Sample Data ═══
+function loadSample() {
+  const sample = {
+    f_projectName: 'Company Operation v2.0',
+    f_projectSubtitle: 'SaaS Multi-tenant Operation Management Platform',
+    f_projectType: 'SaaS Web Application -- ไม่ใช่ ERP Implementation',
+    f_docNo: 'CO-SOW-2026-001',
+    f_docDate: '2026-06-11',
+    f_status: 'Draft',
+    f_providerName: 'บริษัท ศาลาแดง จำกัด',
+    f_clientName: 'บริษัท ตัวอย่าง จำกัด',
+    f_preparedBy: 'คุณสมชาย ศาลาแดง',
+    f_execSummary: 'Company Operation v2.0 เป็น SaaS Multi-tenant Operation Management Platform ที่พัฒนาขึ้นเองบน Modern Web Stack (Express.js + PostgreSQL + Static Frontend) เพื่อรวมศูนย์การบริหารงานปฏิบัติการขององค์กรไว้ในแพลตฟอร์มเดียว ครอบคลุมตั้งแต่การบริหารโครงการ, จัดซื้อ, การเงิน, HR ไปจนถึง Resource Booking และเชื่อมต่อ SAP Business One ผ่าน Service Layer API\n\nระบบรองรับ Multi-company ด้วย company_id isolation พร้อม Subscription 3 ระดับ (Starter/Professional/Enterprise) และ Trial 14 วัน มี RBAC 4 ระดับ, Approval Workflow แบบ Configurable, Real-time Notification ผ่าน WebSocket และ Security ตามมาตรฐาน (Helmet.js, Rate Limiting, CSP, JWT)\n\nSOW ฉบับนี้ครอบคลุม 37 modules จัดเป็น 10 กลุ่ม เป็นโครงการ Custom SaaS Development ไม่ใช่ ERP Implementation',
+    f_dist1_name: 'คุณสมชาย ศาลาแดง', f_dist1_role: 'Project Manager', f_dist1_org: 'ศาลาแดง',
+    f_dist2_name: 'คุณประเสริฐ ตัวอย่าง', f_dist2_role: 'Project Sponsor', f_dist2_org: 'ตัวอย่าง',
+    f_dist3_name: 'คุณวิภา ตัวอย่าง', f_dist3_role: 'Product Owner', f_dist3_org: 'ตัวอย่าง',
+    f_reports: '20', f_concurrentUsers: '50',
+    f_totalTime: '28 สัปดาห์ / 7 เดือน (Realistic)',
+    f_pm: 'คุณสมชาย ศาลาแดง', f_leadDev: 'คุณวิทย์ ศาลาแดง',
+    f_workerFE: 'TBD', f_workerBE: 'TBD', f_workerQA: 'TBD', f_workerDevOps: 'TBD',
+    f_sponsor: 'คุณประเสริฐ ตัวอย่าง', f_productOwner: 'คุณวิภา ตัวอย่าง',
+    f_uatCoord: 'คุณนิด ตัวอย่าง', f_keyUsers: 'คุณหน่อย (บัญชี), คุณเก่ง (จัดซื้อ)',
+    f_itCoord: 'คุณต้น ตัวอย่าง',
+    f_trainSessions: '8',
+    f_uptime: '99.5', f_maintWindow: 'อาทิตย์ 02:00-06:00 ICT',
+    f_backupDays: '30', f_rto: '4', f_rpo: '1',
+    f_p1Response: '1 ชม.', f_p1Resolution: '4 ชม.',
+    f_p2Response: '4 ชม.', f_p2Resolution: '2 วันทำงาน',
+    f_p3Response: '2 วันทำงาน', f_p3Resolution: '5 วันทำงาน',
+    f_p4Response: '5 วันทำงาน', f_p4Resolution: 'Planned release',
+    f_supportEmail: 'support@sda-group.com', f_supportDiscord: '#company-operation',
+    f_bizHours: 'จันทร์-ศุกร์ 09:00-18:00 ICT',
+    f_planStarter: '2,900', f_planPro: '7,900', f_planEnterprise: 'ติดต่อ',
+    f_planStarterUsers: '5', f_planProUsers: '25', f_planEnterpriseUsers: 'Unlimited',
+    f_devFee: '1,500,000',
+    f_pay1: '20', f_pay2: '20', f_pay3: '25', f_pay4: '20', f_pay5: '15',
+    // Legal & Protection
+    f_ipOwner: 'ลูกค้า', f_ndaYears: '2',
+    f_pdpaController: 'ลูกค้า', f_pdpaProcessor: 'ผู้ให้บริการ',
+    f_pdpaRetention: '90', f_pdpaBreach: '72', f_pdpaRights: '15',
+    f_pdpaSubHost: 'Railway', f_pdpaSubEmail: 'SendGrid',
+    f_pdpaAuditDays: '15',
+    f_termNoticeDays: '30', f_termBreachDays: '15', f_termRefundDays: '30',
+    f_termCodeDays: '15', f_termDataFormat: 'SQL dump + CSV', f_termDeleteDays: '30',
+    f_penaltyGrace: '5', f_penaltyRate: '2', f_penaltyMax: '10',
+    f_penaltyCancelWeeks: '8', f_clientDelayDays: '5',
+    f_slaCredit1: '5', f_slaCredit2: '10', f_slaCredit3: '25',
+  };
+  Object.keys(sample).forEach(k => {
+    const el = document.getElementById(k);
+    if (el) el.value = sample[k];
+  });
+  // Load phases
+  setPhases(DEFAULT_PHASES);
+  // Select all modules
+  document.querySelectorAll('#modGrid .mod-item input').forEach(cb => {
+    cb.checked = true;
+    cb.closest('.mod-item').classList.add('checked');
+  });
+  // Check all security & UX
+  SEC_FEATURES.forEach(f => { const el = document.getElementById(f.id); if(el) el.checked = true; });
+  UX_FEATURES.forEach(f => { const el = document.getElementById(f.id); if(el) el.checked = true; });
+
+  calcFee();
+  // Toggle all sections on
+  toggleAllSec(true);
+  alert('โหลดข้อมูลตัวอย่างแล้ว!');
+}
+
+// ═══ Section Toggle System ═══
+const SOW_SECTIONS = [
+  {id:'s1', num:'1', name:'หน้าปก (Cover Page)', core:true},
+  {id:'s2', num:'2', name:'Document Control', core:false},
+  {id:'s3', num:'3', name:'บทสรุปผู้บริหาร (Executive Summary)', core:true},
+  {id:'s4', num:'4', name:'วัตถุประสงค์ (Objectives)', core:true},
+  {id:'s5', num:'5', name:'ขอบเขตงาน (Scope of Work)', core:true},
+  {id:'s6', num:'6', name:'สถาปัตยกรรมระบบ (Technical)', core:false},
+  {id:'s7', num:'7', name:'สิ่งส่งมอบ (Deliverables)', core:true},
+  {id:'s8', num:'8', name:'แผนดำเนินงาน (Timeline)', core:true},
+  {id:'s9', num:'9', name:'ทีมงานโครงการ (Team)', core:false},
+  {id:'s10', num:'10', name:'สมมติฐาน (Assumptions)', core:true},
+  {id:'s11', num:'11', name:'Change Management', core:true},
+  {id:'s12', num:'12', name:'SLA & Support Level', core:false},
+  {id:'s13', num:'13', name:'เงื่อนไขค่าบริการ (Commercial)', core:false},
+  {id:'s14', num:'14', name:'ทรัพย์สินทางปัญญา (IP)', core:false},
+  {id:'s15', num:'15', name:'การรักษาความลับ (NDA)', core:false},
+  {id:'s16', num:'16', name:'PDPA Compliance', core:false},
+  {id:'s17', num:'17', name:'การยกเลิกสัญญา (Termination)', core:false},
+  {id:'s18', num:'18', name:'Delay & Penalty', core:false},
+  {id:'s19', num:'19', name:'การลงนามอนุมัติ (Sign-off)', core:true},
+  {id:'sA', num:'A', name:'Appendix A: Approval Workflows', core:false},
+  {id:'sB', num:'B', name:'Appendix B: Glossary', core:false},
+  {id:'sC', num:'C', name:'Appendix C: Change Request Form', core:false},
+  {id:'sD', num:'D', name:'Appendix D: Module by Plan', core:false},
+];
+
+function initSecToggles() {
+  const grid = document.getElementById('secToggleGrid');
+  grid.innerHTML = SOW_SECTIONS.map(s => {
+    const locked = s.core ? 'locked' : '';
+    const tag = s.core ? '<span class="sec-tag core">Core</span>' : '<span class="sec-tag">Optional</span>';
+    return `<label class="sec-toggle on ${locked}" data-sec="${s.id}">
+      <input type="checkbox" checked ${s.core?'disabled':''} data-sec="${s.id}">
+      <strong>${s.num}.</strong> ${s.name} ${tag}
+    </label>`;
+  }).join('');
+  grid.querySelectorAll('input').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.sec-toggle').classList.toggle('on', cb.checked);
+    });
+  });
+}
+
+function toggleAllSec(all) {
+  document.querySelectorAll('#secToggleGrid .sec-toggle input').forEach(cb => {
+    if (!cb.disabled) {
+      cb.checked = all;
+      cb.closest('.sec-toggle').classList.toggle('on', all);
+    }
+  });
+}
+
+function isSecEnabled(secId) {
+  const cb = document.querySelector(`#secToggleGrid input[data-sec="${secId}"]`);
+  return cb ? cb.checked : true;
+}
+
+// ═══ Initialize ═══
+document.addEventListener('DOMContentLoaded', () => {
+  initPhases();
+  initModGrid();
+  initOOS();
+  initAssumptions();
+  initFeatureGrid('secGrid', SEC_FEATURES);
+  initFeatureGrid('uxGrid', UX_FEATURES);
+  initSecToggles();
+  // Set default date
+  const today = new Date();
+  document.getElementById('f_docDate').value = today.toISOString().split('T')[0];
+  calcFee();
+});
+</script>
+</body>
+</html>

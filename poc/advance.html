@@ -431,7 +431,7 @@
         if (st === 'draft') actions += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();submitAdv(\''+a.id+'\')">Submit</button>';
         else if (st.includes('pending') && ['pm','finance','executive'].includes(userRole)) actions = '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveAdv(\''+a.id+'\')">Approve</button>';
         else if (st === 'approved' && ['finance','executive'].includes(userRole)) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPayModal(\''+a.id+'\','+parseFloat(a.amount)+')">Pay</button>';
-        else if ((st === 'paid' || st === 'overdue') && !a.clear_status) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
+        else if ((st === 'paid' || st === 'overdue') && !a.clear_status && a.sap_status === 'posted') actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
         // After Clear is approved by Finance: show Return/Reimburse
         const clearApproved = a.clear_status === 'approved';
         // balance > 0 = employee owes money: employee confirms return first, then finance receives
@@ -469,7 +469,7 @@
             </div>
             <div style="display:flex;gap:4px;align-items:center;">
               ${statusBadge(st)}
-              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">ERP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:var(--danger-bg);color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">ERP Retry</button>':(['paid','settled','settling'].includes(st) && a.sap_status!=='posted' && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-color:#93c5fd;" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">Push ERP</button>' : ''}
+              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">ERP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:var(--danger-bg);color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">ERP Retry</button>':(['paid','overdue','settled'].includes(st) && a.sap_status!=='posted' && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-color:#93c5fd;" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">Push ERP</button>' : ''}
               <div onclick="event.stopPropagation();">${actions}</div>
             </div>
           </div>

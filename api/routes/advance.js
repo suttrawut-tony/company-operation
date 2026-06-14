@@ -141,7 +141,7 @@ router.post('/settlement/:id/approve', async (req, res) => {
         ['approved', req.user.id, journal.id, req.params.id]);
 
       if (difference === 0) {
-        await client.query("UPDATE advance_requests SET status='settled', updated_at=NOW() WHERE id=$1", [s.advance_id]);
+        await client.query("UPDATE advance_requests SET status='settled', sap_status=NULL, sap_doc_num=NULL, updated_at=NOW() WHERE id=$1", [s.advance_id]);
       }
       return { settlement: rows[0], journal, lines: sLines.map(l => ({ gl_account: l.sap_account || catAccounts[l.category] || '522709', debit: parseFloat(l.amount), credit: 0, account_name: l.description || l.category })).concat([{ gl_account: '113103', debit: 0, credit: totalExpense, account_name: 'Employee Receivable' }]) };
     });
@@ -646,7 +646,7 @@ router.post('/:id/receive-return', upload.single('attachment'), async (req, res)
 
       await client.query('UPDATE advance_payments SET journal_id=$1 WHERE id=$2', [journal.id, payment.id]);
       await client.query(
-        "UPDATE advance_requests SET balance=0, status='settled', updated_at=NOW() WHERE id=$1", [req.params.id]);
+        "UPDATE advance_requests SET balance=0, status='settled', sap_status=NULL, sap_doc_num=NULL, updated_at=NOW() WHERE id=$1", [req.params.id]);
 
       return { payment, journal };
     });
@@ -696,7 +696,7 @@ router.post('/:id/pay-reimburse', upload.single('attachment'), async (req, res) 
 
       await client.query('UPDATE advance_payments SET journal_id=$1 WHERE id=$2', [journal.id, payment.id]);
       await client.query(
-        "UPDATE advance_requests SET balance=0, status='settled', updated_at=NOW() WHERE id=$1", [req.params.id]);
+        "UPDATE advance_requests SET balance=0, status='settled', sap_status=NULL, sap_doc_num=NULL, updated_at=NOW() WHERE id=$1", [req.params.id]);
 
       return { payment, journal };
     });

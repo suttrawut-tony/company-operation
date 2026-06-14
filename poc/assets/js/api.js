@@ -167,11 +167,11 @@ const API = {
 
   // ─── Vehicle ───
   async getVehicles() { return this.get('/vehicle'); },
-  async getBookings(params = {}) {
+  async getVehicleBookings(params = {}) {
     const q = new URLSearchParams(params).toString();
     return this.get(`/vehicle/bookings${q ? '?' + q : ''}`);
   },
-  async createBooking(data) { return this.post('/vehicle/bookings', data); },
+  async createVehicleBooking(data) { return this.post('/vehicle/bookings', data); },
   async checkoutVehicle(id, data) { return this.post(`/vehicle/bookings/${id}/checkout`, data); },
   async checkinVehicle(id, data) { return this.post(`/vehicle/bookings/${id}/checkin`, data); },
   async getVehicleInsurance(vid) { return this.get(`/vehicle/${vid}/insurance`); },

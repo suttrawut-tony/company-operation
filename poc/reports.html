@@ -931,7 +931,7 @@
       'vehicle-usage': async (titleEl, el) => {
         titleEl.textContent = 'Vehicle Usage Report';
         _csvTitle = 'Vehicle_Usage';
-        const [vehicles, bookings] = await Promise.all([API.getVehicles(), API.getBookings()]);
+        const [vehicles, bookings] = await Promise.all([API.getVehicles(), API.getVehicleBookings()]);
         if (!vehicles.length) { el.innerHTML = emptyMsg('No vehicles found.'); return; }
 
         // Map bookings to vehicles
