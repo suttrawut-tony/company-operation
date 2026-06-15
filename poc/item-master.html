@@ -13,8 +13,8 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1>Item Master</h1></div>
-      <div style="display:flex;gap:8px;">
+      <div><h1>Item Master</h1><div id="item-mode-note" style="font-size:12px;color:var(--text-secondary);margin-top:2px;"></div></div>
+      <div style="display:flex;gap:8px;" id="item-header-actions">
         <button class="btn btn-secondary" onclick="exportItems()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
       </div>
     </div>
@@ -68,6 +68,49 @@
   <script src="assets/js/nav.js"></script>
   <script>
     let allItems = [];
+    let erpMode = false;        // true → items managed by ERP (read-only here)
+    let erpSystem = 'ERP';
+
+    async function loadCompanyMode() {
+      try {
+        const data = await API.get('/company/settings');
+        const erp = (data.settings && data.settings.erp_integration) || {};
+        erpMode = erp.enabled === true;
+        erpSystem = erp.system || 'ERP';
+      } catch (e) { erpMode = false; }  // fail-safe: behave as local (can still add)
+      renderItemActions();
+    }
+
+    function renderItemActions() {
+      const actions = document.getElementById('item-header-actions');
+      const note = document.getElementById('item-mode-note');
+      if (!actions) return;
+      const exportBtn = `<button class="btn btn-secondary" onclick="exportItems()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>`;
+      if (erpMode) {
+        actions.innerHTML = exportBtn +
+          `<button class="btn btn-primary" onclick="syncItems()" id="item-sync-btn" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg> ดึงจาก ERP</button>`;
+        if (note) note.innerHTML = '🔗 เชื่อมกับ <b>' + erpSystem + '</b> — ข้อมูลอ่านอย่างเดียว เพิ่ม/แก้จาก ' + erpSystem + ' แล้วกด "ดึงจาก ERP"';
+      } else {
+        actions.innerHTML =
+          `<button class="btn btn-primary" onclick="openItemModal()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> เพิ่ม Item</button>` + exportBtn;
+        if (note) note.textContent = '';
+      }
+    }
+
+    async function syncItems() {
+      const btn = document.getElementById('item-sync-btn');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+      try {
+        const r = await API.post('/company/sync-items', {});
+        if (r.ok) { showToast(r.message || ('ซิงค์สำเร็จ ' + r.synced + ' รายการ'), 'success'); await loadItems(); }
+        else { showToast(r.message || 'ดึงจาก ERP ไม่สำเร็จ', 'warning'); }
+      } catch (e) {
+        showToast('ดึงจาก ERP ไม่สำเร็จ: ' + (e.message || e), 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      }
+    }
+
     async function loadItems() {
       try {
         allItems = await API.get('/master/items');
@@ -86,7 +129,7 @@
       if (s) list = list.filter(i => (i.item_code+i.item_name+i.item_name_th).toLowerCase().includes(s));
       if (c) list = list.filter(i => i.category === c);
       document.getElementById('item-table').innerHTML = list.map(i => `
-        <tr style="border-bottom:1px solid var(--border-light);cursor:pointer;" onclick="openEditItem('${i.id}')">
+        <tr style="border-bottom:1px solid var(--border-light);cursor:${erpMode?'default':'pointer'};" ${erpMode?'':`onclick="openEditItem('${i.id}')"`}>
           <td style="padding:10px;font-weight:600;color:var(--primary);">${i.item_code}</td>
           <td style="padding:10px;">${i.item_name}</td>
           <td style="padding:10px;color:var(--text-secondary);">${i.item_name_th||''}</td>
@@ -98,7 +141,7 @@
           <td style="padding:10px;text-align:center;">${i.is_active?'<span style="color:var(--success);">Active</span>':'<span style="color:var(--text-muted);">Inactive</span>'}</td>
         </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">No items</td></tr>';
     }
-    function openItemModal() { document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }
+    function openItemModal() { if(erpMode){showToast('โหมด ERP: เพิ่ม Item จาก '+erpSystem+' แล้วกด "ดึงจาก ERP"','warning');return;} document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }
     function openEditItem(id) { const i=allItems.find(x=>x.id===id); if(!i)return; document.getElementById('im-id').value=id; document.getElementById('im-code').value=i.item_code; document.getElementById('im-code').readOnly=true; document.getElementById('im-name').value=i.item_name; document.getElementById('im-name-th').value=i.item_name_th||''; document.getElementById('im-cat').value=i.category||'equipment'; document.getElementById('im-uom').value=i.uom||'EA'; document.getElementById('im-price').value=i.unit_price||''; document.getElementById('im-gl').value=i.gl_account||''; document.getElementById('item-modal-title').textContent='Edit Item'; document.getElementById('item-modal').style.display='flex'; }
     function closeItemModal() { document.getElementById('item-modal').style.display='none'; }
     async function saveItem() {
@@ -122,6 +165,6 @@
       exportToExcel(headers, rows, 'Item_Master', 'Item Master');
     }
     if (!API.requireAuth()) throw new Error('Not authenticated');
-    loadItems();
+    (async () => { await loadCompanyMode(); await loadItems(); })();
   </script>
 </body></html>

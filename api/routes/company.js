@@ -86,4 +86,45 @@ router.post('/sync-bp', requireRole('executive', 'admin', 'procurement'), async 
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// POST /api/company/sync-items — pull Items (OITM) from the connected ERP
+router.post('/sync-items', requireRole('executive', 'admin', 'procurement'), async (req, res) => {
+  try {
+    const { rows: [c] } = await db.query('SELECT settings FROM companies WHERE id=$1', [req.user.company_id]);
+    const erp = (c && c.settings && c.settings.erp_integration) || {};
+    if (!erp.enabled) {
+      return res.status(400).json({ ok: false, reason: 'ERP_DISABLED', synced: 0,
+        message: 'บริษัทนี้ไม่ได้เปิดการเชื่อมต่อ ERP — จัดการ Item ในระบบได้โดยตรง' });
+    }
+    if (!sapClient.isConfigured()) {
+      return res.json({ ok: false, reason: 'ERP_NOT_CONNECTED', synced: 0,
+        message: 'เปิดโหมด ERP ไว้ แต่ยังไม่ได้ตั้งค่าการเชื่อมต่อ (SAP_* env) บนเซิร์ฟเวอร์ — ติดต่อผู้ดูแลระบบ' });
+    }
+
+    // SAP B1 Service Layer — OITM (Items)
+    let items = [];
+    try {
+      const data = await sapClient.request('GET',
+        "/Items?$select=ItemCode,ItemName,InventoryUOM&$top=500");
+      items = (data && data.value) || [];
+    } catch (err) {
+      return res.status(502).json({ ok: false, reason: 'ERP_FETCH_FAILED', synced: 0,
+        message: 'ดึงข้อมูลจาก ERP ไม่สำเร็จ: ' + err.message });
+    }
+
+    let synced = 0;
+    for (const it of items) {
+      if (!it.ItemCode) continue;
+      await db.query(
+        `INSERT INTO items (company_id, item_code, item_name, uom)
+           VALUES ($1,$2,$3,$4)
+         ON CONFLICT (item_code) DO UPDATE
+           SET item_name = EXCLUDED.item_name, uom = EXCLUDED.uom
+         WHERE items.company_id = EXCLUDED.company_id`,
+        [req.user.company_id, it.ItemCode, it.ItemName || it.ItemCode, it.InventoryUOM || 'EA']);
+      synced++;
+    }
+    res.json({ ok: true, synced, message: `ซิงค์ ${synced} รายการจาก ERP สำเร็จ` });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 module.exports = router;
