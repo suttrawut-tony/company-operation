@@ -95,10 +95,11 @@
         tag: 'v2.1',
         date: '2026-06-15',
         summary: 'ERP Integration toggle, ความปลอดภัย, ฟิกซ์สีปฏิทิน & หน้าค้าง',
-        stats: { added: 2, changed: 3, fixed: 6 },
+        stats: { added: 3, changed: 3, fixed: 6 },
         changes: [
-          { type: 'new', module: 'ตั้งค่า (Settings)', desc: 'เลือกการเชื่อมต่อ ERP / โปรแกรมบัญชี — ถ้าเชื่อม Business Partner ดึงจาก ERP, ถ้าไม่เชื่อมเพิ่มเองในระบบได้ (<a href="setup.html">ดูตั้งค่า</a>)' },
+          { type: 'new', module: 'ตั้งค่า (Settings)', desc: 'เลือกการเชื่อมต่อ ERP / โปรแกรมบัญชี — ถ้าเชื่อม Business Partner/Item ดึงจาก ERP, ถ้าไม่เชื่อมเพิ่มเองในระบบได้ (<a href="setup.html">ดูตั้งค่า</a>)' },
           { type: 'new', module: 'Business Partner', desc: 'ปุ่ม "เพิ่ม BP" (โหมดจัดการเอง) และปุ่ม "ดึงจาก ERP" (โหมดเชื่อมต่อ) สลับตามการตั้งค่า' },
+          { type: 'new', module: 'Item Master', desc: 'ปุ่ม "เพิ่ม Item" (โหมดจัดการเอง) และปุ่ม "ดึงจาก ERP" (โหมดเชื่อมต่อ) — ใช้สวิตช์ ERP ตัวเดียวกับ BP' },
           { type: 'fix', module: 'Booking', desc: 'สีงานบนปฏิทินตรงกับสีช่าง/รถในไซด์บาร์ (legend) ทุกงาน — งานของคนเดียวกันสีเดียวกัน' },
           { type: 'fix', module: 'Booking', desc: 'จองงาน Solar — ใช้สีที่เลือกจริง ไม่ถูกบังคับเป็นสีตามขั้นงาน' },
           { type: 'fix', module: 'Projects', desc: 'เปิดหน้ามาแสดงเฉพาะโปรเจกต์ Active ก่อน' },
@@ -111,7 +112,8 @@
         ],
         files: [
           { path: 'api/services/sapClient.js', added: 107, removed: 27 },
-          { path: 'api/routes/company.js', added: 89, removed: 0 },
+          { path: 'api/routes/company.js', added: 130, removed: 0 },
+          { path: 'poc/item-master.html', added: 52, removed: 5 },
           { path: 'api/migrate.js', added: 87, removed: 0 },
           { path: 'poc/setup.html', added: 85, removed: 30 },
           { path: 'api/routes/advance.js', added: 65, removed: 20 },
