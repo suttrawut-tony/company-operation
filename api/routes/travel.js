@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
        FROM travel_requests tr
        LEFT JOIN users u ON tr.lead_user_id = u.id
        LEFT JOIN projects p ON tr.project_id = p.id
-       LEFT JOIN vehicle_bookings vb ON tr.vehicle_booking_id = vb.id
+       LEFT JOIN bookings vb ON tr.vehicle_booking_id = vb.id
        LEFT JOIN vehicles v ON vb.vehicle_id = v.id
        LEFT JOIN expenses ae ON tr.advance_expense_id = ae.id
        WHERE tr.company_id = $1`;
@@ -75,7 +75,7 @@ router.post('/', async (req, res) => {
 router.post('/:id/submit', async (req, res) => {
   try {
     const { rows } = await db.query(
-      `UPDATE travel_requests SET status = 'pending_manager' WHERE id = $1 AND status = 'draft' RETURNING *`, [req.params.id]);
+      `UPDATE travel_requests SET status = 'pending_manager' WHERE id = $1 AND status = 'draft' AND company_id = $2 RETURNING *`, [req.params.id, req.user.company_id]);
     if (!rows[0]) return res.status(400).json({ error: 'Cannot submit' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -84,8 +84,15 @@ router.post('/:id/submit', async (req, res) => {
 // POST /api/travel/:id/approve — approve travel request
 router.post('/:id/approve', async (req, res) => {
   try {
-    const { rows: [travel] } = await db.query('SELECT * FROM travel_requests WHERE id = $1', [req.params.id]);
+    const { rows: [travel] } = await db.query('SELECT * FROM travel_requests WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
     if (!travel) return res.status(404).json({ error: 'Not found' });
+    const role = req.user.role || '';
+    if (travel.status === 'pending_manager' && !['pm','finance','executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized to approve at this stage' });
+    }
+    if (travel.status === 'pending_executive' && !['executive','admin'].includes(role)) {
+      return res.status(403).json({ error: 'Not authorized to approve at this stage' });
+    }
     const cost = parseFloat(travel.estimated_cost) || 0;
     let nextStatus;
     if (travel.status === 'pending_manager') nextStatus = cost > 50000 ? 'pending_executive' : 'approved';
@@ -102,7 +109,9 @@ router.post('/:id/confirm', async (req, res) => {
   try {
     const { rows } = await db.query(
       `UPDATE travel_members SET confirmed = true, confirmed_at = NOW()
-       WHERE travel_id = $1 AND user_id = $2 RETURNING *`, [req.params.id, req.user.id]);
+       WHERE travel_id = $1 AND user_id = $2
+       AND EXISTS (SELECT 1 FROM travel_requests WHERE id = $1 AND company_id = $3)
+       RETURNING *`, [req.params.id, req.user.id, req.user.company_id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not a member of this travel' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }

@@ -413,7 +413,8 @@ router.get('/users', authenticate, async (req, res) => {
       'SELECT * FROM users WHERE company_id = $1 ORDER BY role, first_name',
       [req.user.company_id]
     );
-    res.json(rows);
+    // Strip password_hash before returning to client
+    res.json(rows.map(({ password_hash, ...safe }) => safe));
   } catch (err) {
     console.error('[auth/users:list]', err);
     res.status(500).json({ error: 'Could not list users' });

@@ -76,8 +76,8 @@ router.put('/:id', async (req, res) => {
     if (!pr) return res.status(404).json({ error: 'Not found' });
     const isDraft = pr.status === 'draft';
     const fields = isDraft
-      ? ['vendor_code','vendor_name','remarks','project_id','total_amount','tax_code','tax_amount','status']
-      : ['remarks','status'];
+      ? ['vendor_code','vendor_name','remarks','project_id','total_amount','tax_code','tax_amount']
+      : ['remarks'];
     const sets = []; const params = []; let idx = 1;
     for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });

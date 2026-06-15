@@ -368,7 +368,7 @@ router.post('/:id/approve', async (req, res) => {
     if (!['pm','finance','executive'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Not authorized' });
     }
-    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1', [req.params.id]);
+    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!adv) return res.status(404).json({ error: 'Not found' });
     const amount = parseFloat(adv.amount);
     let next;
@@ -411,7 +411,7 @@ router.post('/:id/pay', upload.single('attachment'), async (req, res) => {
     if (!payment_method) return res.status(400).json({ error: 'payment_method is required' });
     if (!reference) return res.status(400).json({ error: 'reference is required' });
 
-    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1', [req.params.id]);
+    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!adv) return res.status(404).json({ error: 'Not found' });
     if (adv.status !== 'approved' && adv.status !== 'paid') return res.status(400).json({ error: 'Must be approved first' });
 
@@ -550,7 +550,7 @@ router.post('/:id/settle', async (req, res) => {
     const { lines, remarks } = req.body;
     if (!lines || !lines.length) return res.status(400).json({ error: 'Settlement must have line items' });
 
-    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1', [req.params.id]);
+    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!adv) return res.status(404).json({ error: 'Not found' });
     if (!['paid','settling','overdue'].includes(adv.status)) return res.status(400).json({ error: 'Advance must be paid first' });
 
@@ -614,7 +614,7 @@ router.post('/:id/receive-return', upload.single('attachment'), async (req, res)
       return res.status(403).json({ error: 'Only finance can receive return' });
     }
     const { bank_account_id, reference, remarks } = req.body;
-    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1', [req.params.id]);
+    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!adv) return res.status(404).json({ error: 'Not found' });
 
     const balance = parseFloat(adv.balance || 0);
@@ -663,7 +663,7 @@ router.post('/:id/pay-reimburse', upload.single('attachment'), async (req, res) 
       return res.status(403).json({ error: 'Only finance can pay reimburse' });
     }
     const { bank_account_id, reference, remarks } = req.body;
-    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1', [req.params.id]);
+    const { rows: [adv] } = await db.query('SELECT * FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!adv) return res.status(404).json({ error: 'Not found' });
 
     const balance = parseFloat(adv.balance || 0);

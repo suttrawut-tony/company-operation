@@ -78,7 +78,7 @@ router.put('/:id', async (req, res) => {
     if (po.status !== 'draft' && req.user.role !== 'executive') {
       return res.status(400).json({ error: 'แก้ไขได้เฉพาะสถานะ draft' });
     }
-    const fields = ['vendor_code','vendor_name','remarks','total_amount','tax_amount','status'];
+    const fields = ['vendor_code','vendor_name','remarks','total_amount','tax_amount'];
     const sets = []; const params = []; let idx = 1;
     for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
@@ -161,8 +161,13 @@ router.post('/:id/submit', async (req, res) => {
 // POST /api/po/:id/approve — Approve PO (tier logic based on amount)
 router.post('/:id/approve', async (req, res) => {
   try {
-    const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id = $1', [req.params.id]);
+    // Role check: only authorized roles can approve
+    const allowedRoles = { pending_manager: ['pm','finance','executive','admin'], pending_finance: ['finance','executive','admin'], pending_executive: ['executive','admin'] };
+    const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
     if (!po) return res.status(404).json({ error: 'Not found' });
+    const rolesForTier = allowedRoles[po.status];
+    if (!rolesForTier) return res.status(400).json({ error: 'Cannot approve at this step' });
+    if (!rolesForTier.includes(req.user.role)) return res.status(403).json({ error: 'Not authorized to approve at this tier' });
     const amount = parseFloat(po.total_amount);
     let nextStatus;
     if (po.status === 'pending_manager') {

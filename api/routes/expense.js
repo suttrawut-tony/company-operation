@@ -40,15 +40,24 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/expense/:id — Update expense
+// PUT /api/expense/:id — Update expense (BUG-123: removed status from updatable fields; BUG-122: ownership/role check)
 router.put('/:id', async (req, res) => {
   try {
-    const { status, description, amount } = req.body;
+    // BUG-122: Check ownership or privileged role, and only allow editing drafts
+    const { rows: [existing] } = await db.query(
+      'SELECT * FROM expenses WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+    if (existing.status !== 'draft') return res.status(403).json({ error: 'Only draft expenses can be edited' });
+    const privilegedRoles = ['finance', 'executive', 'admin'];
+    if (existing.created_by !== req.user.id && !privilegedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Not authorized to edit this expense' });
+    }
+    // BUG-123: status removed — status changes only via /submit, /approve endpoints
+    const { description, amount } = req.body;
     const { rows } = await db.query(
-      'UPDATE expenses SET status=COALESCE($1,status), description=COALESCE($2,description), amount=COALESCE($3,amount), updated_at=NOW() WHERE id=$4 AND company_id=$5 RETURNING *',
-      [status, description, amount, req.params.id, req.user.company_id]
+      'UPDATE expenses SET description=COALESCE($1,description), amount=COALESCE($2,amount), updated_at=NOW() WHERE id=$3 AND company_id=$4 RETURNING *',
+      [description, amount, req.params.id, req.user.company_id]
     );
-    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -65,10 +74,10 @@ router.post('/:id/submit', async (req, res) => {
 
 router.post('/:id/approve', async (req, res) => {
   try {
-    if (!['pm','finance','executive'].includes(req.user.role)) {
+    if (!['pm','finance','executive','admin'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Not authorized to approve' });
     }
-    const { rows: [exp] } = await db.query('SELECT * FROM expenses WHERE id = $1', [req.params.id]);
+    const { rows: [exp] } = await db.query('SELECT * FROM expenses WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
     if (!exp) return res.status(404).json({ error: 'Not found' });
     const amount = parseFloat(exp.amount);
     let nextStatus;
@@ -95,7 +104,7 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { rows } = await db.query(
-      "UPDATE expenses SET status='cancelled', updated_at=NOW() WHERE id=$1 AND company_id=$2 RETURNING *",
+      "UPDATE expenses SET status='cancelled', updated_at=NOW() WHERE id=$1 AND company_id=$2 AND status='draft' RETURNING *",
       [req.params.id, req.user.company_id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json({ cancelled: true, ...rows[0] });

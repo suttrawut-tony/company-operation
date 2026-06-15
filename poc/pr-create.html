@@ -402,7 +402,8 @@
       const qty = parseFloat(row.querySelector('input[type="number"]').value) || 0;
       const price = parseFloat(row.querySelectorAll('input[type="number"]')[1]?.value) || 0;
       const total = qty * price;
-      const taxCode = row.querySelector('select').value;
+      const selects = row.querySelectorAll('select');
+      const taxCode = selects[2]?.value || ''; // 3rd select = tax code (after item-code, uom)
       const taxRate = taxCode.includes('07') ? 0.07 : 0;
       const totalWithTax = total * (1 + taxRate);
       row.querySelector('.line-total').textContent = '฿' + totalWithTax.toLocaleString('th-TH', {minimumFractionDigits:2});
@@ -416,7 +417,8 @@
         const qty = parseFloat(row.querySelector('input[type="number"]')?.value) || 0;
         const price = parseFloat(row.querySelectorAll('input[type="number"]')[1]?.value) || 0;
         const lineTotal = qty * price;
-        const taxCode = row.querySelector('select')?.value || '';
+        const selects = row.querySelectorAll('select');
+        const taxCode = selects[2]?.value || ''; // 3rd select = tax code
         const taxRate = taxCode.includes('07') ? 0.07 : 0;
         subtotal += lineTotal;
         vatTotal += lineTotal * taxRate;
@@ -481,7 +483,7 @@
         await API.post('/pr', data);
         typeof showToast === 'function' && showToast('บันทึก Draft สำเร็จ', 'success');
         window.location = 'pr-po.html';
-      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : showToast(e.message, 'error'); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     // FIXED: Real submitPR — POST then submit
@@ -493,28 +495,37 @@
         await API.post('/pr/' + pr.id + '/submit');
         typeof showToast === 'function' && showToast('ส่ง PR เพื่ออนุมัติสำเร็จ', 'success');
         window.location = 'pr-po.html';
-      } catch(e) { typeof showToast === 'function' ? showToast(e.message, 'error') : showToast(e.message, 'error'); }
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     function collectPRData() {
       const project_id = document.getElementById('pr-project').value;
       if (!project_id) { showToast('กรุณาเลือก Project', 'error'); return null; }
-      // Collect line items from table
+      // Collect line items from table — read input/select values, not textContent
       const lines = [];
-      document.querySelectorAll('#line-items-body tr').forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 5) {
-          lines.push({
-            item_code: cells[1]?.textContent?.trim() || '',
-            description: cells[2]?.textContent?.trim() || '',
-            quantity: parseFloat(cells[3]?.textContent) || 1,
-            unit_price: parseFloat(cells[4]?.textContent?.replace(/,/g,'')) || 0,
-          });
-        }
+      document.querySelectorAll('#line-items tr').forEach(row => {
+        const selects = row.querySelectorAll('select');
+        const inputs = row.querySelectorAll('input');
+        if (selects.length < 1 || inputs.length < 2) return;
+        const item_code = selects[0]?.value || ''; // item-code-select
+        const item_name = inputs[0]?.value || ''; // item description
+        const quantity = parseFloat(inputs[1]?.value) || 1; // qty
+        const uom = selects[1]?.value || 'EA';
+        const unit_price = parseFloat(inputs[2]?.value) || 0; // price
+        const tax_code = selects[2]?.value || 'IG07';
+        const sap_account = selects[3]?.value || '';
+        const total_price = quantity * unit_price;
+        if (!item_code && !item_name) return; // skip empty rows
+        lines.push({ item_code, description: item_name, quantity, uom, unit_price, tax_code, sap_account, total_price });
       });
+      // Collect vendor_name from selected option text
+      const vendorSel = document.getElementById('pr-vendor');
+      const vendor_code = vendorSel?.value || null;
+      const vendor_name = vendorSel?.selectedOptions[0]?.textContent?.trim() || '';
       return {
         project_id,
-        vendor_code: document.getElementById('pr-vendor').value || null,
+        vendor_code,
+        vendor_name,
         priority: document.getElementById('pr-priority').value || 'medium',
         pr_date: document.getElementById('pr-date').value,
         remarks: document.getElementById('pr-remarks')?.value || '',

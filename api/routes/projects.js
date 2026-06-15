@@ -87,14 +87,15 @@ router.post('/', async (req, res) => {
 // PUT /api/projects/:id
 router.put('/:id', async (req, res) => {
   try {
-    const allowedFields = ['name','description','status','start_date','end_date','progress','pm_user_id','tor_amount','budget_amount','retention_rate','retention_due_date','retention_status'];
+    const allowedFields = ['code','name','description','status','start_date','end_date','progress','pm_user_id','tor_amount','budget_amount','retention_rate','retention_due_date','retention_status'];
     const sets = []; const params = []; let idx = 1;
+    let retRateParamIdx = null;
     for (const f of allowedFields) {
-      if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); }
+      if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); if (f === 'retention_rate') retRateParamIdx = idx - 1; }
     }
     // Auto-calc retention_amount if retention_rate changed
     if (req.body.retention_rate !== undefined) {
-      sets.push(`retention_amount = ROUND(tor_amount * $${idx-sets.length > 0 ? idx-1 : idx} / 100, 2)`);
+      sets.push(`retention_amount = ROUND(tor_amount * $${retRateParamIdx} / 100, 2)`);
     }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     sets.push('updated_at = NOW()');
