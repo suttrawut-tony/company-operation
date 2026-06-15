@@ -141,11 +141,16 @@ async function loadModulesFromAPI() {
 
 // Check if current page module is disabled → redirect to dashboard
 function checkModuleAccess() {
-  if (!_enabledHrefs) return;
+  // No module data yet, or an empty set (e.g. modules not seeded for this
+  // company) → don't lock anyone out. An empty set must never gate access,
+  // otherwise every page redirects to dashboard.html in an infinite loop.
+  if (!_enabledHrefs || _enabledHrefs.size === 0) return;
   const page = location.pathname.split('/').pop();
-  // Whitelist: auth pages + sub-pages that open from main menu pages
+  // Whitelist: auth pages + sub-pages that open from main menu pages.
+  // dashboard.html is the redirect TARGET below, so it must be whitelisted —
+  // redirecting it to itself would loop forever.
   const whitelist = [
-    '', 'login.html', 'register.html',
+    '', 'login.html', 'register.html', 'dashboard.html',
     'reset-password.html', 'change-password.html',
     'doc-detail.html', 'pr-create.html', 'pr-detail.html',
     'journal-entries.html', 'vehicle-project.html',

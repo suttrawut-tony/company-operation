@@ -264,6 +264,75 @@ async function ensureAdminLogin(client) {
 }
 
 /**
+ * P0-2 — Self-heal company_modules on EVERY boot.
+ *
+ * ROOT CAUSE: maybeSeedPocDemo() runs `TRUNCATE companies CASCADE`, which
+ * cascade-deletes every row in company_modules. seeds/poc-demo.sql does NOT
+ * re-insert company_modules, so a fresh DB ends up with 0 modules → the
+ * frontend sidebar gets nothing and redirect-loops. Seeding inside migration
+ * 022/024/026 doesn't help because those run BEFORE the TRUNCATE.
+ *
+ * Fix: re-seed the full canonical module set for any company that currently
+ * has 0 modules. Idempotent — `WHERE NOT EXISTS (... company has any module)`
+ * means companies that have customised their modules (enabled/disabled some)
+ * are left untouched; only companies with zero modules get the full set.
+ *
+ * Canonical set = the 21 modules from migration 022 + `booking` (024)
+ * + `quotation` (026) = 23 modules (matches production).
+ */
+async function ensureCompanyModules(client) {
+  try {
+    if (!(await tableExists(client, 'company_modules')) || !(await tableExists(client, 'companies'))) {
+      console.log('[migrate] ensure-modules skipped: company_modules/companies table missing');
+      return;
+    }
+    await client.query('SET search_path TO public');
+    const { rowCount } = await client.query(`
+      INSERT INTO company_modules
+        (company_id, module_id, module_name, module_group, icon, href, is_core, sort_order, is_enabled)
+      SELECT c.id, m.module_id, m.module_name, m.module_group, m.icon, m.href, m.is_core, m.sort_order, true
+      FROM companies c
+      CROSS JOIN (VALUES
+        ('dashboard',     'Dashboard',          'main',     'dashboard',    'dashboard.html',        true,   1),
+        ('projects',      'All Projects',       'project',  'allProjects',  'projects.html',         false,  1),
+        ('overview',      'Project Detail',     'project',  'projectDetail','overview.html',         false,  2),
+        ('phases',        'Plan Project',       'project',  'phases',       'phases.html',           false,  3),
+        ('taskboard',     'Taskboard',          'project',  'taskboard',    'taskboard.html',        false,  4),
+        ('budget',        'Budget',             'document', 'budget',       'budget.html',           false,  1),
+        ('pr-po',         'PR / PO',            'document', 'prpo',         'pr-po.html',            false,  2),
+        ('advance',       'Advance',            'document', 'advance',      'advance.html',          false,  3),
+        ('petty-cash',    'Petty Cash',         'document', 'pettyCash',    'petty-cash.html',       false,  4),
+        ('expense',       'Expense',            'document', 'expense',      'expense.html',          false,  5),
+        ('travel',        'Travel',             'document', 'travel',       'travel.html',           false,  6),
+        ('vehicle',       'Vehicle',            'resource', 'vehicle',      'vehicle.html',          false,  1),
+        ('ot',            'Holiday / OT',       'resource', 'ot',           'ot.html',               false,  2),
+        ('items',         'Item Master',        'system',   'prpo',         'item-master.html',      false,  1),
+        ('bp',            'Business Partner',   'system',   'user',         'bp-master.html',        false,  2),
+        ('number-running','Number Running',     'system',   'numberRun',    'number-running.html',   false,  3),
+        ('reports',       'Reports',            'system',   'reports',      'reports.html',          false,  4),
+        ('permissions',   'User & Permission',  'system',   'permissions',  'user-permissions.html', true,   5),
+        ('setup',         'Setup',              'system',   'setup',        'setup.html',            true,   6),
+        ('changelog',     'Change Log',         'system',   'reports',      'changelog.html',        true,   7),
+        ('help',          'User Guide',         'system',   'help',         'help.html',             true,   8),
+        ('booking',       'Booking',            'resource', 'vehicle',      'booking.html',          false,  0),
+        ('quotation',     'Quotation',          'document', 'expense',      'quotation.html',        false, 35)
+      ) AS m(module_id, module_name, module_group, icon, href, is_core, sort_order)
+      WHERE NOT EXISTS (
+        SELECT 1 FROM company_modules cm WHERE cm.company_id = c.id
+      )
+      ON CONFLICT (company_id, module_id) DO NOTHING
+    `);
+    if (rowCount > 0) {
+      console.log(`[migrate] ✓ seeded ${rowCount} company_module row(s) for companies with 0 modules`);
+    } else {
+      console.log('[migrate] company_modules already present — nothing to seed');
+    }
+  } catch (err) {
+    console.error('[migrate] ensure-modules failed:', err.message);
+  }
+}
+
+/**
  * Fix orphaned user references — runs every boot.
  * Reassigns created_by, assigned_to, pm_user_id etc. that point to
  * deleted/missing users to actual existing users. Best-effort.
@@ -295,6 +364,20 @@ async function fixOrphanUsers(client) {
       { t: 'travel_requests', col: 'created_by', val: pm.id },
       { t: 'ot_requests', col: 'user_id' },
       { t: 'vehicle_bookings', col: 'booked_by' },
+      // P1-7 — additional tables Sunday found still carrying orphan refs.
+      // Same REMAP pattern (point col at a valid existing user, never NULL) —
+      // safe for nullable AND NOT NULL columns. Non-existent tables/columns are
+      // swallowed by the per-row try/catch below.
+      { t: 'budgets', col: 'created_by' },
+      { t: 'budgets', col: 'approved_by' },
+      { t: 'activity_log', col: 'user_id' },
+      { t: 'advance_settlements', col: 'submitted_by' },
+      { t: 'advance_settlements', col: 'approved_by' },
+      { t: 'discussions', col: 'user_id' },          // NOT NULL — remap keeps it valid
+      { t: 'discussion_threads', col: 'user_id' },
+      { t: 'gl_journals', col: 'created_by' },
+      { t: 'manpower_bookings', col: 'booked_by' },
+      { t: 'notes', col: 'created_by' },
     ];
     for (const { t, col, val } of tables) {
       try {
@@ -393,6 +476,10 @@ async function runAll() {
 
     // Always re-affirm the primary admin login (self-healing, every boot).
     if (failed === 0) await ensureAdminLogin(client);
+
+    // P0-2 — re-seed company_modules for any company left with 0 modules
+    // (TRUNCATE companies CASCADE in the POC seed wipes them). Self-healing.
+    if (failed === 0) await ensureCompanyModules(client);
 
     // Fix orphaned user references (self-healing, every boot).
     if (failed === 0) await fixOrphanUsers(client);
