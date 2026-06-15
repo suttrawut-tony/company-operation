@@ -13,8 +13,8 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1>Business Partner</h1></div>
-      <div style="display:flex;gap:8px;">
+      <div><h1>Business Partner</h1><div id="bp-mode-note" style="font-size:12px;color:var(--text-secondary);margin-top:2px;"></div></div>
+      <div style="display:flex;gap:8px;" id="bp-header-actions">
         <button class="btn btn-secondary" onclick="exportBPs()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
       </div>
     </div>
@@ -71,7 +71,60 @@
   <script src="assets/js/nav.js"></script>
   <script>
     let allBPs = [];
-    async function loadBPs() { allBPs = await API.get('/master/bp'); renderBPs(); }
+    let erpMode = false;        // true → BP managed by ERP (read-only here)
+    let erpSystem = 'ERP';
+
+    async function loadCompanyMode() {
+      try {
+        const data = await API.get('/company/settings');
+        const erp = (data.settings && data.settings.erp_integration) || {};
+        erpMode = erp.enabled === true;
+        erpSystem = erp.system || 'ERP';
+      } catch (e) { erpMode = false; }  // fail-safe: behave as local (can still add)
+      renderBPActions();
+    }
+
+    function renderBPActions() {
+      const actions = document.getElementById('bp-header-actions');
+      const note = document.getElementById('bp-mode-note');
+      if (!actions) return;
+      const exportBtn = `<button class="btn btn-secondary" onclick="exportBPs()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>`;
+      if (erpMode) {
+        actions.innerHTML = exportBtn +
+          `<button class="btn btn-primary" onclick="syncBP()" id="bp-sync-btn" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg> ดึงจาก ERP</button>`;
+        if (note) note.innerHTML = '🔗 เชื่อมกับ <b>' + erpSystem + '</b> — ข้อมูลอ่านอย่างเดียว เพิ่ม/แก้จาก ' + erpSystem + ' แล้วกด "ดึงจาก ERP"';
+      } else {
+        actions.innerHTML =
+          `<button class="btn btn-primary" onclick="openBPModal()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> เพิ่ม BP</button>` + exportBtn;
+        if (note) note.textContent = '';
+      }
+    }
+
+    async function syncBP() {
+      const btn = document.getElementById('bp-sync-btn');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+      try {
+        const r = await API.post('/company/sync-bp', {});
+        if (r.ok) { showToast(r.message || ('ซิงค์สำเร็จ ' + r.synced + ' รายการ'), 'success'); await loadBPs(); }
+        else { showToast(r.message || 'ดึงจาก ERP ไม่สำเร็จ', 'warning'); }
+      } catch (e) {
+        showToast('ดึงจาก ERP ไม่สำเร็จ: ' + (e.message || e), 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      }
+    }
+
+    async function loadBPs() {
+      try {
+        allBPs = await API.get('/master/bp');
+        renderBPs();
+      } catch (err) {
+        if (err && (err.message === 'Session expired' || err.message === 'Password change required')) return;
+        showToast('โหลดข้อมูลไม่สำเร็จ: ' + (err.message || err), 'error');
+        var grid = document.getElementById('bp-grid');
+        if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">ไม่สามารถโหลดข้อมูลได้ ลองใหม่อีกครั้ง</div>';
+      }
+    }
     function renderBPs() {
       let list = allBPs;
       const s = (document.getElementById('bp-search')?.value||'').toLowerCase();
@@ -81,7 +134,7 @@
       document.getElementById('bp-grid').innerHTML = list.map(b => {
         const isVendor = b.bp_type === 'vendor';
         return `
-        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;cursor:pointer;transition:all 0.15s;border-left:3px solid ${isVendor?'var(--primary)':'var(--success)'};" onclick="openEditBP('${b.id}')">
+        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;cursor:${erpMode?'default':'pointer'};transition:all 0.15s;border-left:3px solid ${isVendor?'var(--primary)':'var(--success)'};" ${erpMode?'':`onclick="openEditBP('${b.id}')"`}>
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
             <div>
               <div style="font-size:12px;font-weight:600;color:var(--primary);">${b.bp_code}</div>
@@ -101,7 +154,7 @@
         </div>`;
       }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">No partners found</div>';
     }
-    function openBPModal() { document.getElementById('bm-id').value=''; ['bm-code','bm-name','bm-name-th','bm-contact','bm-phone','bm-email','bm-taxid','bm-address','bm-bank','bm-bankacc'].forEach(id=>document.getElementById(id).value=''); document.getElementById('bm-code').readOnly=false; document.getElementById('bm-type').value='vendor'; document.getElementById('bm-terms').value='30'; document.getElementById('bp-modal-title').textContent='New Partner'; document.getElementById('bp-modal').style.display='flex'; }
+    function openBPModal() { if(erpMode){showToast('โหมด ERP: เพิ่ม Business Partner จาก '+erpSystem+' แล้วกด "ดึงจาก ERP"','warning');return;} document.getElementById('bm-id').value=''; ['bm-code','bm-name','bm-name-th','bm-contact','bm-phone','bm-email','bm-taxid','bm-address','bm-bank','bm-bankacc'].forEach(id=>document.getElementById(id).value=''); document.getElementById('bm-code').readOnly=false; document.getElementById('bm-type').value='vendor'; document.getElementById('bm-terms').value='30'; document.getElementById('bp-modal-title').textContent='New Partner'; document.getElementById('bp-modal').style.display='flex'; }
     function openEditBP(id) { const b=allBPs.find(x=>x.id===id); if(!b)return; document.getElementById('bm-id').value=id; document.getElementById('bm-code').value=b.bp_code; document.getElementById('bm-code').readOnly=true; document.getElementById('bm-name').value=b.bp_name; document.getElementById('bm-name-th').value=b.bp_name_th||''; document.getElementById('bm-type').value=b.bp_type; document.getElementById('bm-contact').value=b.contact_person||''; document.getElementById('bm-phone').value=b.phone||''; document.getElementById('bm-email').value=b.email||''; document.getElementById('bm-taxid').value=b.tax_id||''; document.getElementById('bm-address').value=b.address||''; document.getElementById('bm-terms').value=b.payment_terms||30; document.getElementById('bm-bank').value=b.bank_name||''; document.getElementById('bm-bankacc').value=b.bank_account||''; document.getElementById('bp-modal-title').textContent='Edit Partner'; document.getElementById('bp-modal').style.display='flex'; }
     function closeBPModal() { document.getElementById('bp-modal').style.display='none'; }
     async function saveBP() {
@@ -119,6 +172,6 @@
       exportToExcel(headers, rows, 'BP_Master', 'Business Partners');
     }
     if (!API.requireAuth()) throw new Error('Not authenticated');
-    loadBPs();
+    (async () => { await loadCompanyMode(); await loadBPs(); })();
   </script>
 </body></html>

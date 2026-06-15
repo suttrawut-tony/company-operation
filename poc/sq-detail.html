@@ -85,40 +85,55 @@
 
     function money(n) { return (parseFloat(n)||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
+    // === Shared error UI: toast + render error state (skip auth side-effects) ===
+    function showLoadError(err) {
+      if (err && (err.message === 'Session expired' || err.message === 'Password change required')) return false;
+      showToast('โหลดข้อมูลไม่สำเร็จ: ' + ((err && err.message) || err), 'error');
+      var ff = document.getElementById('formFields');
+      if (ff) ff.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">ไม่สามารถโหลดข้อมูลได้ ลองใหม่อีกครั้ง</div>';
+      var lb = document.getElementById('lines-body');
+      if (lb) lb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+      return true;
+    }
+
     // === Init: await ALL master data before render ===
     async function init() {
-      await Promise.all([loadMasterItems(), loadMasterCustomers(), loadProjects()]);
-      allDocs = await API.get('/quotations').catch(function() { return []; });
-      if (!Array.isArray(allDocs)) allDocs = [];
+      try {
+        await Promise.all([loadMasterItems(), loadMasterCustomers(), loadProjects()]);
+        allDocs = await API.get('/quotations').catch(function() { return []; });
+        if (!Array.isArray(allDocs)) allDocs = [];
 
-      if (mode === 'new') {
-        isNew = true; isEditing = true;
-        doc = { status:'draft', vat_pct:7, discount_pct:0, validity_days:30 };
-        lines = [];
-        currentIdx = allDocs.length;
-      } else if (docId) {
-        doc = await API.get('/quotations/' + docId);
-        lines = (doc.items || []).map(function(it) { return Object.assign({}, it); });
-        currentIdx = allDocs.findIndex(function(d) { return d.id === docId; });
-        if (currentIdx < 0) currentIdx = 0;
-      } else if (allDocs.length) {
-        await loadDocByIdx(0);
-      }
-      render();
-      // Handle copy
-      var copyId = params.get('copy');
-      if (copyId && isNew) {
-        try {
-          var src = await API.get('/quotations/' + copyId);
-          doc.customer_name = src.customer_name; doc.customer_phone = src.customer_phone;
-          doc.customer_address = src.customer_address; doc.site_name = src.site_name;
-          doc.system_capacity = src.system_capacity; doc.roof_type = src.roof_type;
-          doc.roof_area = src.roof_area; doc.project_id = src.project_id;
-          doc.terms = src.terms; doc.notes = src.notes;
-          doc.discount_pct = src.discount_pct; doc.validity_days = src.validity_days;
-          lines = (src.items || []).map(function(it) { return Object.assign({}, it, {id:undefined}); });
-          render();
-        } catch(e) {}
+        if (mode === 'new') {
+          isNew = true; isEditing = true;
+          doc = { status:'draft', vat_pct:7, discount_pct:0, validity_days:30 };
+          lines = [];
+          currentIdx = allDocs.length;
+        } else if (docId) {
+          doc = await API.get('/quotations/' + docId);
+          lines = (doc.items || []).map(function(it) { return Object.assign({}, it); });
+          currentIdx = allDocs.findIndex(function(d) { return d.id === docId; });
+          if (currentIdx < 0) currentIdx = 0;
+        } else if (allDocs.length) {
+          await loadDocByIdx(0);
+        }
+        render();
+        // Handle copy
+        var copyId = params.get('copy');
+        if (copyId && isNew) {
+          try {
+            var src = await API.get('/quotations/' + copyId);
+            doc.customer_name = src.customer_name; doc.customer_phone = src.customer_phone;
+            doc.customer_address = src.customer_address; doc.site_name = src.site_name;
+            doc.system_capacity = src.system_capacity; doc.roof_type = src.roof_type;
+            doc.roof_area = src.roof_area; doc.project_id = src.project_id;
+            doc.terms = src.terms; doc.notes = src.notes;
+            doc.discount_pct = src.discount_pct; doc.validity_days = src.validity_days;
+            lines = (src.items || []).map(function(it) { return Object.assign({}, it, {id:undefined}); });
+            render();
+          } catch(e) {}
+        }
+      } catch (err) {
+        showLoadError(err);
       }
     }
 
@@ -129,10 +144,14 @@
 
     async function loadDocByIdx(idx) {
       if (idx < 0 || idx >= allDocs.length) return;
-      currentIdx = idx;
-      doc = await API.get('/quotations/' + allDocs[idx].id);
-      lines = (doc.items || []).map(function(it) { return Object.assign({}, it); });
-      isNew = false; isEditing = false;
+      try {
+        currentIdx = idx;
+        doc = await API.get('/quotations/' + allDocs[idx].id);
+        lines = (doc.items || []).map(function(it) { return Object.assign({}, it); });
+        isNew = false; isEditing = false;
+      } catch (err) {
+        showLoadError(err);
+      }
     }
 
     function navDoc(dir) {
@@ -473,7 +492,7 @@
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && isEditing && !isNew) cancelEdit(); });
 
     if (!API.requireAuth()) throw new Error('Not authenticated');
-    init();
+    init().catch(function(err) { showLoadError(err); });
   </script>
 </body>
 </html>

@@ -100,3 +100,17 @@ function showToast(message, type, duration) {
     setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 200);
   }
 }
+
+/* ─── Global safety net: catch unhandled promise rejections ─── */
+window.addEventListener('unhandledrejection', function(e) {
+  var err = e && e.reason;
+  var msg = (err && err.message) ? err.message : String(err);
+  // These are already handled by api.js (redirect side-effects) — don't double-toast
+  var alreadyHandled = ['Session expired', 'Password change required', 'Not authenticated'];
+  if (alreadyHandled.indexOf(msg) !== -1) { e.preventDefault(); return; }
+  console.error('Unhandled promise rejection:', err);
+  if (typeof showToast === 'function') {
+    showToast('เกิดข้อผิดพลาด: ' + msg, 'error');
+  }
+  e.preventDefault();
+});

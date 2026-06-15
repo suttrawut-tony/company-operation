@@ -69,8 +69,15 @@
   <script>
     let allItems = [];
     async function loadItems() {
-      allItems = await API.get('/master/items');
-      renderItems();
+      try {
+        allItems = await API.get('/master/items');
+        renderItems();
+      } catch (err) {
+        if (err && (err.message === 'Session expired' || err.message === 'Password change required')) return;
+        showToast('โหลดข้อมูลไม่สำเร็จ: ' + (err.message || err), 'error');
+        var tbody = document.getElementById('item-table');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">ไม่สามารถโหลดข้อมูลได้ ลองใหม่อีกครั้ง</td></tr>';
+      }
     }
     function renderItems() {
       let list = allItems;

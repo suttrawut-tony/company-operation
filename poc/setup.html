@@ -364,6 +364,7 @@ function switchSection(id) {
   if (id === 'approval') loadApprovalMatrix();
   if (id === 'vehicles') loadVehicleTable();
   if (id === 'manpower') loadManpowerTable();
+  if (id === 'sap') loadERPSettings();
 }
 
 // ─── Build All Sections ───
@@ -1077,44 +1078,98 @@ function renderSAPConnection() {
   return `
   <div class="setup-section" id="section-sap">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[6].icon, 20)} ERP Connection</h2>
-      <p>Service Layer integration settings</p>
+      <h2>${sIcon(SECTIONS[6].icon, 20)} การเชื่อมต่อ ERP / โปรแกรมบัญชี</h2>
+      <p>กำหนดว่าบริษัทนี้เชื่อม API กับ ERP/โปรแกรมบัญชีหรือไม่ — มีผลกับการจัดการ Business Partner</p>
     </div>
-    <div class="card">
-      <div class="card-body">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-          <span class="status-indicator connected">Connected</span>
-          <button class="btn btn-secondary btn-sm" onclick="testERPConnection()">
-            ${sIcon('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', 14)} Test Connection
-          </button>
-        </div>
-        <div class="form-grid">
-          <div class="form-group full-width">
-            <label class="form-label">Service Layer URL</label>
-            <input class="form-input" value="https://your-sap-server:50000/b1s/v1" style="font-family:var(--font-mono);font-size:var(--text-sm);">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Company DB</label>
-            <input class="form-input" value="SDA_PROD" style="font-family:var(--font-mono);">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Username</label>
-            <input class="form-input" value="manager" autocomplete="off">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input class="form-input" type="password" value="••••••••" autocomplete="off">
-          </div>
-        </div>
-        <div class="card-actions">
-          <button class="btn btn-secondary">Cancel</button>
-          <button class="btn btn-primary" onclick="showToast('ERP connection saved')">
-            ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
-          </button>
+    <div id="erp-settings-content"><div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div></div>
+  </div>`;
+}
+
+let _erpSettings = { erp_integration: { enabled: false, system: 'SAP B1' } };
+let _erpSapConfigured = false;
+
+async function loadERPSettings() {
+  const el = document.getElementById('erp-settings-content');
+  if (!el) return;
+  try {
+    const data = await API.get('/company/settings');
+    _erpSettings = data.settings || {};
+    _erpSapConfigured = !!data.sap_configured;
+    if (!_erpSettings.erp_integration) _erpSettings.erp_integration = { enabled: false, system: 'SAP B1' };
+    renderERPSettings();
+  } catch (e) {
+    el.innerHTML = '<div style="padding:20px;color:var(--danger);">โหลดการตั้งค่าไม่สำเร็จ: ' + (e.message||e) + '</div>';
+  }
+}
+
+function renderERPSettings() {
+  const el = document.getElementById('erp-settings-content');
+  if (!el) return;
+  const erp = _erpSettings.erp_integration || { enabled: false, system: 'SAP B1' };
+  const on = erp.enabled === true;
+  const connDot = _erpSapConfigured
+    ? '<span class="badge badge-success" style="font-size:11px;">เซิร์ฟเวอร์เชื่อมต่อพร้อม</span>'
+    : '<span class="badge badge-warning" style="font-size:11px;">เซิร์ฟเวอร์ยังไม่ตั้งค่า SAP_* env</span>';
+
+  const optCard = (val, title, desc, checked) => `
+    <label style="flex:1;display:block;border:2px solid ${checked?'var(--primary)':'var(--border)'};background:${checked?'var(--primary-light)':'var(--bg-white)'};border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .15s;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <input type="radio" name="erp-mode" value="${val}" ${checked?'checked':''} onchange="onERPModeChange('${val}')" style="margin-top:3px;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${title}</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">${desc}</div>
         </div>
       </div>
-    </div>
-  </div>`;
+    </label>`;
+
+  el.innerHTML = `
+    <div class="card"><div class="card-body">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
+        ${optCard('local', '🏠 จัดการในระบบนี้เอง', 'ไม่เชื่อม ERP — เพิ่ม/แก้ Business Partner (ผู้ขาย/ลูกค้า) ได้โดยตรงใน Company Operation', !on)}
+        ${optCard('erp', '🔗 เชื่อม API กับ ERP / โปรแกรมบัญชี', 'Business Partner มาจาก ERP เท่านั้น — ในระบบนี้อ่านอย่างเดียว แล้วกด "ดึงจาก ERP" เพื่อ sync', on)}
+      </div>
+
+      <div id="erp-system-block" style="display:${on?'block':'none'};border-top:1px solid var(--border-light);padding-top:16px;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">ระบบ ERP / โปรแกรมบัญชี</label>
+            <select class="form-input" id="erp-system">
+              ${['SAP Business One','SAP S/4HANA','Oracle NetSuite','Express','FlowAccount','PEAK','โปรแกรมบัญชีอื่น ๆ']
+                .map(s => `<option ${(_erpSettings.erp_integration && _erpSettings.erp_integration.system)===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end;">
+            <div style="font-size:12px;color:var(--text-secondary);">สถานะการเชื่อมต่อฝั่งเซิร์ฟเวอร์: ${connDot}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">หมายเหตุ: credential การเชื่อมต่อ (URL/DB/user/password) ตั้งค่าเป็น environment variable บนเซิร์ฟเวอร์เพื่อความปลอดภัย ไม่เก็บในหน้านี้</div>
+      </div>
+
+      <div class="card-actions" style="justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="saveERPSettings()">
+          ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} บันทึก
+        </button>
+      </div>
+    </div></div>`;
+}
+
+function onERPModeChange(val) {
+  if (!_erpSettings.erp_integration) _erpSettings.erp_integration = {};
+  _erpSettings.erp_integration.enabled = (val === 'erp');
+  const block = document.getElementById('erp-system-block');
+  if (block) block.style.display = (val === 'erp') ? 'block' : 'none';
+}
+
+async function saveERPSettings() {
+  const enabled = (document.querySelector('input[name="erp-mode"]:checked')?.value === 'erp');
+  const system = document.getElementById('erp-system')?.value || 'SAP Business One';
+  try {
+    await API.put('/company/settings', { erp_integration: { enabled, system } });
+    _erpSettings.erp_integration = { enabled, system };
+    showToast('บันทึกการตั้งค่า ERP สำเร็จ' + (enabled ? ' — Business Partner จะดึงจาก ' + system : ' — เพิ่ม Business Partner ในระบบได้เอง'), 'success');
+  } catch (e) {
+    showToast('บันทึกไม่สำเร็จ: ' + (e.message||e), 'error');
+  }
 }
 
 // ═══════════════════════════════════════
