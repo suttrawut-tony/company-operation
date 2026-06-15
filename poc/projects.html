@@ -124,8 +124,8 @@
         <input class="form-input" id="search-input" placeholder="Search project name, code, PM name..." oninput="renderProjects()" style="padding-left:36px;">
       </div>
       <div class="project-filters" style="margin-bottom:0;">
-        <button class="filter-btn active" onclick="filterProjects('all',this)">All</button>
-        <button class="filter-btn" onclick="filterProjects('active',this)">Active</button>
+        <button class="filter-btn" onclick="filterProjects('all',this)">All</button>
+        <button class="filter-btn active" onclick="filterProjects('active',this)">Active</button>
         <button class="filter-btn" onclick="filterProjects('planning',this)">Planning</button>
         <button class="filter-btn" onclick="filterProjects('completed',this)">Completed</button>
         <button class="filter-btn" onclick="filterProjects('on_hold',this)">On Hold</button>
@@ -239,7 +239,7 @@
   <script src="assets/js/nav.js"></script>
   <script>
     let allProjects = [];
-    let currentFilter = 'all';
+    let currentFilter = 'active';  // default: show Active projects first
     const userRole = (API.getUser()||{}).role||'';
     const userId = (API.getUser()||{}).id||'';
     let editingProjectId = null;
