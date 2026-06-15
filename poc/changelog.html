@@ -92,6 +92,37 @@
     // Version changelog data — updated when saving versions
     const VERSIONS = [
       {
+        tag: 'v2.1',
+        date: '2026-06-15',
+        summary: 'ERP Integration toggle, ความปลอดภัย, ฟิกซ์สีปฏิทิน & หน้าค้าง',
+        stats: { added: 2, changed: 3, fixed: 6 },
+        changes: [
+          { type: 'new', module: 'ตั้งค่า (Settings)', desc: 'เลือกการเชื่อมต่อ ERP / โปรแกรมบัญชี — ถ้าเชื่อม Business Partner ดึงจาก ERP, ถ้าไม่เชื่อมเพิ่มเองในระบบได้ (<a href="setup.html">ดูตั้งค่า</a>)' },
+          { type: 'new', module: 'Business Partner', desc: 'ปุ่ม "เพิ่ม BP" (โหมดจัดการเอง) และปุ่ม "ดึงจาก ERP" (โหมดเชื่อมต่อ) สลับตามการตั้งค่า' },
+          { type: 'fix', module: 'Booking', desc: 'สีงานบนปฏิทินตรงกับสีช่าง/รถในไซด์บาร์ (legend) ทุกงาน — งานของคนเดียวกันสีเดียวกัน' },
+          { type: 'fix', module: 'Booking', desc: 'จองงาน Solar — ใช้สีที่เลือกจริง ไม่ถูกบังคับเป็นสีตามขั้นงาน' },
+          { type: 'fix', module: 'Projects', desc: 'เปิดหน้ามาแสดงเฉพาะโปรเจกต์ Active ก่อน' },
+          { type: 'fix', module: 'ระบบ', desc: 'แก้หน้าค้าง refresh วน เมื่อเมนูไม่ขึ้น + กู้เมนู (modules) อัตโนมัติทุกครั้งที่เปิดระบบ' },
+          { type: 'fix', module: 'ความปลอดภัย', desc: 'ปิดช่องอนุมัติ PO ข้ามขั้นตอนอนุมัติ + ป้องกันการเข้าถึง/แก้เอกสารข้ามบริษัท (IDOR) ทุก module' },
+          { type: 'fix', module: 'ความปลอดภัย', desc: 'WebSocket ต้องยืนยันตัวตนก่อนรับข้อมูล real-time + ปิด static login บน production' },
+          { type: 'update', module: 'SAP Integration', desc: 'ปรับ client เชื่อม SAP (ชื่อ env, TLS, timeout/retry) + แจ้งสถานะชัดเมื่อยังไม่ตั้งค่า' },
+          { type: 'update', module: 'ทุกหน้า', desc: 'จัดการ error ฝั่งผู้ใช้ — ไม่จอขาวเงียบเมื่อโหลดข้อมูลไม่สำเร็จ' },
+          { type: 'update', module: 'ฐานข้อมูล', desc: 'ซ่อมข้อมูลอ้างอิงผู้ใช้ที่ค้าง (orphan) อัตโนมัติทุกครั้งที่เปิดระบบ' },
+        ],
+        files: [
+          { path: 'api/services/sapClient.js', added: 107, removed: 27 },
+          { path: 'api/routes/company.js', added: 89, removed: 0 },
+          { path: 'api/migrate.js', added: 87, removed: 0 },
+          { path: 'poc/setup.html', added: 85, removed: 30 },
+          { path: 'api/routes/advance.js', added: 65, removed: 20 },
+          { path: 'poc/bp-master.html', added: 59, removed: 6 },
+          { path: 'poc/sq-detail.html', added: 56, removed: 37 },
+          { path: 'poc/booking.html', added: 17, removed: 4 },
+          { path: 'api/routes/po.js, budget.js, pr.js, grpo.js, quotes.js', added: 50, removed: 30 },
+          { path: 'api/server.js, lib/static-user.js, poc/assets/js/*', added: 65, removed: 21 },
+        ]
+      },
+      {
         tag: 'v2.0',
         date: '2026-05-29',
         summary: 'Advance/Reimburse, Vehicle Management, Phase Finance, Full CRUD',
