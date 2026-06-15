@@ -333,6 +333,34 @@ async function ensureCompanyModules(client) {
 }
 
 /**
+/**
+ * Owner role wiring — runs every boot (idempotent). Promotes the product
+ * owners to the 'owner' role and restricts the 'changelog' module so only
+ * owners can see the development Change Log. Safe no-op if the enum value
+ * isn't present yet (migration 035 adds it first).
+ */
+const OWNER_EMAILS = ['pakorn@sala-daeng.com', 'sattrawut@sala-daeng.com'];
+async function ensureOwnerSetup(client) {
+  try {
+    // Restrict the dev Change Log to owners only (every company).
+    const mod = await client.query(
+      `UPDATE company_modules SET allowed_roles = ARRAY['owner']::text[], updated_at = NOW()
+       WHERE module_id = 'changelog'
+         AND (allowed_roles IS DISTINCT FROM ARRAY['owner']::text[])`);
+    // Promote product owners (only if the email exists and isn't already owner).
+    const usr = await client.query(
+      `UPDATE users SET role = 'owner'
+       WHERE lower(email) = ANY($1::text[]) AND role <> 'owner'`,
+      [OWNER_EMAILS]);
+    if (mod.rowCount || usr.rowCount) {
+      console.log(`[migrate] ✓ owner setup — ${usr.rowCount} owner(s) promoted, changelog restricted (${mod.rowCount} row)`);
+    }
+  } catch (err) {
+    console.warn(`[migrate] owner setup skipped: ${err.message}`);
+  }
+}
+
+/**
  * Fix orphaned user references — runs every boot.
  * Reassigns created_by, assigned_to, pm_user_id etc. that point to
  * deleted/missing users to actual existing users. Best-effort.
@@ -480,6 +508,10 @@ async function runAll() {
     // P0-2 — re-seed company_modules for any company left with 0 modules
     // (TRUNCATE companies CASCADE in the POC seed wipes them). Self-healing.
     if (failed === 0) await ensureCompanyModules(client);
+
+    // Owner role wiring (self-healing): promote the product owners + restrict
+    // the dev Change Log to owners only. Runs after enum 035 has committed.
+    if (failed === 0) await ensureOwnerSetup(client);
 
     // Fix orphaned user references (self-healing, every boot).
     if (failed === 0) await fixOrphanUsers(client);

@@ -73,7 +73,7 @@ function requirePermission(moduleId, action) {
 /**
  * Roles that can see ALL projects in the company (full visibility)
  */
-const FULL_ACCESS_ROLES = ['executive', 'finance', 'accounting'];
+const FULL_ACCESS_ROLES = ['owner', 'executive', 'finance', 'accounting'];
 
 /**
  * Returns SQL WHERE clause + params to filter projects by user access.

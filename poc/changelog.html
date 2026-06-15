@@ -95,8 +95,9 @@
         tag: 'v2.1',
         date: '2026-06-15',
         summary: 'ERP Integration toggle, ความปลอดภัย, ฟิกซ์สีปฏิทิน & หน้าค้าง',
-        stats: { added: 3, changed: 3, fixed: 6 },
+        stats: { added: 4, changed: 3, fixed: 6 },
         changes: [
+          { type: 'new', module: 'Role / สิทธิ์', desc: 'เพิ่ม role "Owner" (เจ้าของระบบ) — เห็น Change Log การพัฒนาได้, role อื่นรวมถึง Admin บริษัทไม่เห็น' },
           { type: 'new', module: 'ตั้งค่า (Settings)', desc: 'เลือกการเชื่อมต่อ ERP / โปรแกรมบัญชี — ถ้าเชื่อม Business Partner/Item ดึงจาก ERP, ถ้าไม่เชื่อมเพิ่มเองในระบบได้ (<a href="setup.html">ดูตั้งค่า</a>)' },
           { type: 'new', module: 'Business Partner', desc: 'ปุ่ม "เพิ่ม BP" (โหมดจัดการเอง) และปุ่ม "ดึงจาก ERP" (โหมดเชื่อมต่อ) สลับตามการตั้งค่า' },
           { type: 'new', module: 'Item Master', desc: 'ปุ่ม "เพิ่ม Item" (โหมดจัดการเอง) และปุ่ม "ดึงจาก ERP" (โหมดเชื่อมต่อ) — ใช้สวิตช์ ERP ตัวเดียวกับ BP' },
@@ -296,9 +297,20 @@
       }
     }
 
-    render();
-    // Mark changelog as seen
-    if (typeof markChangelogSeen === 'function') markChangelogSeen();
+    // Owner-only page: the development Change Log is visible to product owners
+    // only. Anyone else is sent back to the dashboard (defence in depth — the
+    // menu item is already hidden for non-owners via /api/modules).
+    (function ownerGuard() {
+      var u = (typeof API !== 'undefined' && API.getUser) ? API.getUser() : null;
+      if (!u || u.role !== 'owner') {
+        if (typeof showToast === 'function') showToast('หน้านี้เฉพาะเจ้าของระบบ (Owner) เท่านั้น', 'warning');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+      render();
+      // Mark changelog as seen
+      if (typeof markChangelogSeen === 'function') markChangelogSeen();
+    })();
   </script>
 </body>
 </html>

@@ -6,7 +6,8 @@ router.use(authenticate);
 // GET /api/modules — list modules for current user
 router.get('/', async (req, res) => {
   try {
-    const isAdmin = ['admin','executive'].includes(req.user.role);
+    // owner/admin/executive see all modules; others only their allowed ones.
+    const isAdmin = ['owner','admin','executive'].includes(req.user.role);
     let q, params;
     if (isAdmin) {
       q = 'SELECT * FROM company_modules WHERE company_id = $1 ORDER BY module_group, sort_order';
@@ -17,7 +18,10 @@ router.get('/', async (req, res) => {
            ORDER BY module_group, sort_order`;
       params = [req.user.company_id, req.user.role];
     }
-    const { rows } = await db.query(q, params);
+    let { rows } = await db.query(q, params);
+    // The development Change Log is owner-only — exclude it for everyone else,
+    // even admins/executives who otherwise bypass the allowed_roles filter.
+    if (req.user.role !== 'owner') rows = rows.filter(m => m.module_id !== 'changelog');
     res.json({ modules: rows });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

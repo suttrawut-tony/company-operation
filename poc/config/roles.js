@@ -6,6 +6,19 @@
  */
 
 const ROLES = {
+  OWNER: {
+    id: 'owner',
+    name: { en: 'Owner', th: 'เจ้าของระบบ' },
+    icon: '👑',
+    description: {
+      en: 'Product/website owner — full access plus the development Change Log',
+      th: 'เจ้าของเว็บ/ระบบ — เข้าถึงได้ทุกอย่าง และเห็น Change Log การพัฒนา'
+    },
+    level: 110,  // above Executive — highest authority
+    sapLicenseType: 'Professional',
+    maxApprovalAmount: Infinity,
+  },
+
   EXECUTIVE: {
     id: 'executive',
     name: { en: 'Executive', th: 'ผู้บริหาร' },
