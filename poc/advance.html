@@ -469,7 +469,7 @@
             </div>
             <div style="display:flex;gap:4px;align-items:center;">
               ${statusBadge(st)}
-              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">ERP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:var(--danger-bg);color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">ERP Retry</button>':(['paid','overdue','settled'].includes(st) && a.sap_status!=='posted' && ['finance','executive','admin'].includes(userRole)) ? '<button class="btn btn-sm sap-only" style="font-size:9px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-color:#93c5fd;" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">Push ERP</button>' : ''}
+              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">ERP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<button class="btn btn-sm" style="font-size:9px;padding:2px 8px;background:var(--danger-bg);color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">ERP Retry</button>':(['paid','overdue','settled'].includes(st) && a.sap_status!=='posted' && ['finance','executive','admin'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:9px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-color:#93c5fd;" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">Push ERP</button>' : ''}
               <div onclick="event.stopPropagation();">${actions}</div>
             </div>
           </div>
