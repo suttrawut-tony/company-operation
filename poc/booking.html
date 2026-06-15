@@ -2107,9 +2107,16 @@
     // ══════════════════════════════════
     //  MONTH VIEW
     // ══════════════════════════════════
-    // FIX: Use consistent color per booking type as default
+    // Colour each event by the resource it belongs to, so the calendar always
+    // matches the sidebar legend (each technician/vehicle = one colour, like
+    // Google Calendar). A vehicle booking takes the vehicle colour; anything
+    // with a technician takes the technician colour. ev.color / type colour are
+    // only fallbacks for events that have no resource (e.g. flights).
     function getResourceColor(ev) {
-      if (ev.color) return ev.color;
+      if (ev.booking_type === 'vehicle' && ev.vehicle_id) {
+        const v = vehicles.find(x => x.id === ev.vehicle_id);
+        if (v && v._color) return v._color;
+      }
       if (ev.technician_id) {
         const t = technicians.find(x => x.id === ev.technician_id);
         if (t && t._color) return t._color;
@@ -2118,6 +2125,7 @@
         const v = vehicles.find(x => x.id === ev.vehicle_id);
         if (v && v._color) return v._color;
       }
+      if (ev.color) return ev.color;
       return TYPE_COLORS[ev.booking_type] || '#4285f4';
     }
 
@@ -2557,7 +2565,7 @@
         document.getElementById('solarPhase').value = 'survey';
         selectedTeam = []; renderTeamChips();
         document.getElementById('solarDesc').value = '';
-        document.getElementById('solarColor').value = '#0f9d58';
+        document.getElementById('solarColor').value = phaseDefaultColor('survey');  // match default phase (survey → orange)
         document.getElementById('solarJobOrder').value = '';
         document.getElementById('solarJOForm').classList.remove('show');
         document.getElementById('solarCustName').value = '';
@@ -2673,9 +2681,14 @@
       closeGPSPicker();typeof showToast==='function'&&showToast('ปักหมุดสำเร็จ','success');
     }
 
+    // Default calendar colour per phase — survey=orange, others=green.
+    function phaseDefaultColor(phase) { return phase === 'survey' ? '#ff9800' : '#0f9d58'; }
+
     function onPhaseChange() {
       const phase = document.getElementById('solarPhase').value;
       document.getElementById('solarJobType').value = phase === 'survey' ? 'survey' : 'installation';
+      // Keep the colour picker in sync with the phase default so what is shown is what gets saved.
+      document.getElementById('solarColor').value = phaseDefaultColor(phase);
     }
 
     // ═══ Team Member Management (chip-based) ═══
@@ -2762,7 +2775,7 @@
             start_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarStartTime').value,
             end_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarEndTime').value,
             project_id: document.getElementById('solarProject').value || null,
-            color: phase === 'survey' ? '#ff9800' : '#0f9d58',
+            color: document.getElementById('solarColor').value,  // use the picked colour so calendar matches the form
             title: (function(){ const j = document.getElementById('solarJobType').value; const c = (document.getElementById('solarCustName').value || '').trim(); return c ? (j + ' - ' + c) : j; })(),
             customer_name: document.getElementById('solarCustName').value || null,
             customer_phone: document.getElementById('solarCustPhone').value || null,
