@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
     const { po_id, lines, warehouse, remarks } = req.body;
 
     // Fetch PO
-    const { rows: [po] } = await client.query('SELECT * FROM purchase_orders WHERE id = $1', [po_id]);
+    const { rows: [po] } = await client.query('SELECT * FROM purchase_orders WHERE id = $1 AND company_id = $2', [po_id, req.user.company_id]);
     if (!po) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'PO not found' }); }
 
     // Generate doc number

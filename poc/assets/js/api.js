@@ -231,8 +231,10 @@ const API = {
 
   connectWS() {
     if (this._ws && this._ws.readyState <= 1) return;
+    const token = this.getToken();
+    if (!token) return;  // not authenticated — server now requires a token on WS connect
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = protocol + '//' + location.host;
+    const url = protocol + '//' + location.host + '?token=' + encodeURIComponent(token);
     try {
       this._ws = new WebSocket(url);
       this._ws.onopen = () => { console.log('[WS] Connected'); };

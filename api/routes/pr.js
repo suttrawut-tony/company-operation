@@ -137,7 +137,7 @@ router.post('/', async (req, res) => {
 router.post('/:id/submit', async (req, res) => {
   try {
     // Fetch the PR to get project_id and total_amount
-    const { rows: [pr] } = await db.query('SELECT * FROM purchase_requests WHERE id = $1 AND status = $2', [req.params.id, 'draft']);
+    const { rows: [pr] } = await db.query('SELECT * FROM purchase_requests WHERE id = $1 AND status = $2 AND company_id = $3', [req.params.id, 'draft', req.user.company_id]);
     if (!pr) return res.status(400).json({ error: 'Cannot submit' });
 
     // PR ไม่เช็คงบ — เช็คเฉพาะตอน PO submit
@@ -153,7 +153,7 @@ router.post('/:id/approve', async (req, res) => {
     if (!['pm','finance','executive'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Not authorized to approve' });
     }
-    const { rows: [pr] } = await db.query('SELECT * FROM purchase_requests WHERE id = $1', [req.params.id]);
+    const { rows: [pr] } = await db.query('SELECT * FROM purchase_requests WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
     if (!pr) return res.status(404).json({ error: 'Not found' });
     // Determine next status based on amount tiers
     const amount = parseFloat(pr.total_amount);

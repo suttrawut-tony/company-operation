@@ -69,11 +69,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!po) return res.status(404).json({ error: 'Not found' });
-    // If only status update, allow any status
-    if (req.body.status && Object.keys(req.body).length === 1) {
-      const { rows } = await db.query('UPDATE purchase_orders SET status=$1, updated_at=NOW() WHERE id=$2 RETURNING *', [req.body.status, req.params.id]);
-      return res.json(rows[0]);
-    }
+    // SECURITY (P1-1): no status-only shortcut — status changes must go through /submit, /approve, /reject
     // Full edit: draft only
     if (po.status !== 'draft' && req.user.role !== 'executive') {
       return res.status(400).json({ error: 'แก้ไขได้เฉพาะสถานะ draft' });
@@ -92,7 +88,7 @@ router.put('/:id', async (req, res) => {
 // POST /api/po/:id/submit — Submit PO for approval (with budget check)
 router.post('/:id/submit', async (req, res) => {
   try {
-    const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id = $1 AND status = $2', [req.params.id, 'draft']);
+    const { rows: [po] } = await db.query('SELECT * FROM purchase_orders WHERE id = $1 AND status = $2 AND company_id = $3', [req.params.id, 'draft', req.user.company_id]);
     if (!po) return res.status(400).json({ error: 'Cannot submit' });
 
     // Budget validation
@@ -205,9 +201,12 @@ router.post('/:id/approve', async (req, res) => {
 // POST /api/po/:id/reject — Reject PO back to draft
 router.post('/:id/reject', async (req, res) => {
   try {
+    if (!['pm','finance','executive','admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Not authorized to reject' });
+    }
     const { rows } = await db.query(
-      "UPDATE purchase_orders SET status='draft' WHERE id=$1 AND status IN ('pending_manager','pending_finance','pending_executive') RETURNING *",
-      [req.params.id]
+      "UPDATE purchase_orders SET status='draft' WHERE id=$1 AND company_id=$2 AND status IN ('pending_manager','pending_finance','pending_executive') RETURNING *",
+      [req.params.id, req.user.company_id]
     );
     if (!rows[0]) return res.status(400).json({ error: 'Cannot reject' });
     res.json(rows[0]);

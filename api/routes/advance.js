@@ -108,7 +108,10 @@ router.post('/settlement/:id/approve', async (req, res) => {
     if (!['finance','executive','admin'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only Finance can approve clearing' });
     }
-    const { rows: [s] } = await db.query('SELECT * FROM advance_settlements WHERE id=$1', [req.params.id]);
+    // IDOR: scope settlement to caller's company via parent advance
+    const { rows: [s] } = await db.query(
+      'SELECT s.* FROM advance_settlements s JOIN advance_requests a ON s.advance_id = a.id WHERE s.id=$1 AND a.company_id=$2',
+      [req.params.id, req.user.company_id]);
     if (!s) return res.status(404).json({ error: 'Not found' });
     if (s.status !== 'pending_finance') return res.status(400).json({ error: 'Cannot approve at this step' });
 
@@ -157,7 +160,10 @@ router.post('/settlement/:id/reject', async (req, res) => {
       return res.status(403).json({ error: 'Only Finance can reject clearing' });
     }
     const { reason } = req.body;
-    const { rows: [s] } = await db.query('SELECT * FROM advance_settlements WHERE id=$1', [req.params.id]);
+    // IDOR: scope settlement to caller's company via parent advance
+    const { rows: [s] } = await db.query(
+      'SELECT s.* FROM advance_settlements s JOIN advance_requests a ON s.advance_id = a.id WHERE s.id=$1 AND a.company_id=$2',
+      [req.params.id, req.user.company_id]);
     if (!s) return res.status(404).json({ error: 'Not found' });
     if (s.status !== 'pending_finance') return res.status(400).json({ error: 'Can only reject pending settlements' });
 
@@ -328,7 +334,8 @@ router.put('/:id', async (req, res) => {
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     sets.push('updated_at = NOW()');
     params.push(req.params.id);
-    const { rows } = await db.query(`UPDATE advance_requests SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    params.push(req.user.company_id);
+    const { rows } = await db.query(`UPDATE advance_requests SET ${sets.join(', ')} WHERE id = $${idx} AND company_id = $${idx + 1} RETURNING *`, params);
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -345,7 +352,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(400).json({ error: 'INVALID_STATUS', message: 'ลบได้เฉพาะสถานะ draft' });
     }
     const { rows } = await db.query(
-      "UPDATE advance_requests SET status='cancelled', updated_at=NOW() WHERE id=$1 RETURNING *", [req.params.id]);
+      "UPDATE advance_requests SET status='cancelled', updated_at=NOW() WHERE id=$1 AND company_id=$2 RETURNING *", [req.params.id, req.user.company_id]);
     res.json({ cancelled: true, ...rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -378,8 +385,8 @@ router.post('/:id/approve', async (req, res) => {
     else return res.status(400).json({ error: 'Cannot approve at this step' });
 
     const { rows } = await db.query(
-      'UPDATE advance_requests SET status=$1, approved_by=$2, approved_at=NOW(), updated_at=NOW() WHERE id=$3 RETURNING *',
-      [next, req.user.id, req.params.id]);
+      'UPDATE advance_requests SET status=$1, approved_by=$2, approved_at=NOW(), updated_at=NOW() WHERE id=$3 AND company_id=$4 RETURNING *',
+      [next, req.user.id, req.params.id, req.user.company_id]);
     res.json(rows[0]);
     req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -388,12 +395,18 @@ router.post('/:id/approve', async (req, res) => {
 // POST /api/advance/:id/reject
 router.post('/:id/reject', async (req, res) => {
   try {
+    // Role guard — mirror /approve (role list per expense.js approve)
+    if (!['pm','finance','executive','admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
     const { reason } = req.body;
+    // IDOR: scope write to caller's company so other-company advances can't be rejected
     const { rows } = await db.query(
-      "UPDATE advance_requests SET status='draft', remarks=$1, updated_at=NOW() WHERE id=$2 AND status LIKE 'pending_%' RETURNING *",
-      [reason || '', req.params.id]);
+      "UPDATE advance_requests SET status='draft', remarks=$1, updated_at=NOW() WHERE id=$2 AND company_id=$3 AND status LIKE 'pending_%' RETURNING *",
+      [reason || '', req.params.id, req.user.company_id]);
     if (!rows[0]) return res.status(400).json({ error: 'Cannot reject' });
     res.json(rows[0]);
+    req.broadcast('advance_updated', { id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -725,10 +738,15 @@ router.post('/:id/push-erp', async (req, res) => {
   try {
     if (!['finance','executive','admin'].includes(req.user.role)) return res.status(403).json({ error: 'Not authorized' });
 
-    // Find all journals for this advance that haven't been posted
+    // IDOR: advance must belong to caller's company
+    const { rows: [advOwner] } = await db.query(
+      'SELECT id FROM advance_requests WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!advOwner) return res.status(404).json({ error: 'Not found' });
+
+    // Find all journals for this advance that haven't been posted (company-scoped)
     var { rows: journals } = await db.query(
-      "SELECT j.* FROM gl_journals j WHERE j.doc_id=$1 OR j.doc_id IN (SELECT id FROM advance_settlements WHERE advance_id=$1) OR j.doc_id IN (SELECT id FROM advance_payments WHERE advance_id=$1) ORDER BY j.created_at",
-      [req.params.id]);
+      "SELECT j.* FROM gl_journals j WHERE j.company_id=$2 AND (j.doc_id=$1 OR j.doc_id IN (SELECT id FROM advance_settlements WHERE advance_id=$1) OR j.doc_id IN (SELECT id FROM advance_payments WHERE advance_id=$1)) ORDER BY j.created_at",
+      [req.params.id, req.user.company_id]);
 
     // Filter to only un-posted
     journals = journals.filter(function(j) { return j.sap_status !== 'posted'; });
@@ -736,28 +754,55 @@ router.post('/:id/push-erp', async (req, res) => {
 
     var results = [];
     for (var j of journals) {
+      // ── Idempotency claim ────────────────────────────────────────────────
+      // Atomically flip pending/error/skipped -> 'posting'. Only one request
+      // can win this claim, so concurrent / retried push-erp calls cannot
+      // double-post the same JE into SAP. Rows already 'posted' or 'posting'
+      // are left untouched and reported as skipped.
+      var { rows: claimed } = await db.query(
+        "UPDATE gl_journals SET sap_status='posting', sap_error=NULL WHERE id=$1 AND company_id=$2 AND sap_status NOT IN ('posted','posting') RETURNING id",
+        [j.id, req.user.company_id]);
+      if (!claimed.length) {
+        results.push({ journal_id: j.id, status: 'skipped', reason: 'already posted or in progress' });
+        continue;
+      }
+
       var { rows: jLines } = await db.query('SELECT * FROM gl_journal_lines WHERE journal_id=$1 ORDER BY line_num', [j.id]);
       try {
         var sapResult = await pushJournalToSAP(j, jLines);
         if (!sapResult.skipped) {
-          await db.query('UPDATE gl_journals SET sap_doc_num=$1, sap_status=$2, sap_error=NULL WHERE id=$3', [sapResult.sapDocNum, 'posted', j.id]);
+          // Persist the SAP reference BEFORE responding to the client, so any retry
+          // sees sap_status='posted' and skips (idempotent — no duplicate JE in SAP).
+          await db.query('UPDATE gl_journals SET sap_doc_num=$1, sap_status=$2, sap_error=NULL WHERE id=$3 AND company_id=$4', [sapResult.sapDocNum, 'posted', j.id, req.user.company_id]);
           results.push({ journal_id: j.id, status: 'posted', sap_doc_num: sapResult.sapDocNum });
         } else {
-          await db.query("UPDATE gl_journals SET sap_status='skipped' WHERE id=$1", [j.id]);
+          // SAP not configured — release the claim back to 'skipped' so it can be retried later.
+          await db.query("UPDATE gl_journals SET sap_status='skipped' WHERE id=$1 AND company_id=$2", [j.id, req.user.company_id]);
           results.push({ journal_id: j.id, status: 'skipped' });
         }
       } catch (e) {
-        await db.query('UPDATE gl_journals SET sap_status=$1, sap_error=$2 WHERE id=$3', ['error', e.message, j.id]);
+        // Push failed — release the claim to 'error' for retry.
+        // TODO: residual crash window — if SAP actually accepted the JE but this
+        //       process died before persisting 'posted', a later retry could
+        //       duplicate it. Full crash-safety needs a SAP-side idempotency key
+        //       (passed into pushJournalToSAP) and a sap_doc_entry column on
+        //       gl_journals to reconcile 'posting'/'error' rows against SAP before
+        //       re-pushing. gl_journals has no sap_doc_entry column today, so we
+        //       cannot reconcile here — left as a follow-up.
+        await db.query('UPDATE gl_journals SET sap_status=$1, sap_error=$2 WHERE id=$3 AND company_id=$4', ['error', e.message, j.id, req.user.company_id]);
         results.push({ journal_id: j.id, status: 'error', error: e.message });
       }
     }
 
-    // Update advance sap_status
-    var anyPosted = results.some(function(r) { return r.status === 'posted'; });
-    var anyError = results.some(function(r) { return r.status === 'error'; });
-    var sapStatus = anyPosted ? 'posted' : anyError ? 'error' : 'skipped';
-    var sapDocNum = results.find(function(r) { return r.sap_doc_num; })?.sap_doc_num || null;
-    await db.query('UPDATE advance_requests SET sap_status=$1, sap_doc_num=$2 WHERE id=$3', [sapStatus, sapDocNum, req.params.id]);
+    // Reconcile the parent advance summary from the committed journal results,
+    // wrapped in a DB transaction for a consistent atomic write.
+    await withTransaction(async (client) => {
+      var anyPosted = results.some(function(r) { return r.status === 'posted'; });
+      var anyError = results.some(function(r) { return r.status === 'error'; });
+      var sapStatus = anyPosted ? 'posted' : anyError ? 'error' : 'skipped';
+      var sapDocNum = results.find(function(r) { return r.sap_doc_num; })?.sap_doc_num || null;
+      await client.query('UPDATE advance_requests SET sap_status=$1, sap_doc_num=$2 WHERE id=$3 AND company_id=$4', [sapStatus, sapDocNum, req.params.id, req.user.company_id]);
+    });
 
     res.json({ results });
   } catch (err) { res.status(500).json({ error: err.message }); }

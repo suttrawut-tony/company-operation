@@ -15,7 +15,26 @@ const SEED_COMPANY_ID = '11111111-1111-1111-1111-111111111111'; // matches api/d
 const STATIC_USER_ID  = '00000000-0000-0000-0000-000000000001';
 
 function staticConfigured() {
-  return !!(process.env.STATIC_LOGIN_EMAIL && process.env.STATIC_LOGIN_PASSWORD);
+  if (!(process.env.STATIC_LOGIN_EMAIL && process.env.STATIC_LOGIN_PASSWORD)) {
+    return false;
+  }
+  // P1-5: the static login is a no-DB executive back door (role=executive,
+  // approval_limit 999M). NEVER enable it in production unless an operator has
+  // explicitly opted in with STATIC_LOGIN_ALLOW_PROD=true.
+  if (process.env.NODE_ENV === 'production' && process.env.STATIC_LOGIN_ALLOW_PROD !== 'true') {
+    if (!staticConfigured._prodBlockWarned) {
+      console.warn('[security] STATIC_LOGIN env is set but DISABLED in production '
+        + '(set STATIC_LOGIN_ALLOW_PROD=true to force-enable — not recommended).');
+      staticConfigured._prodBlockWarned = true;
+    }
+    return false;
+  }
+  if (!staticConfigured._enabledWarned) {
+    console.warn('[security] STATIC_LOGIN is ENABLED — no-DB executive back door '
+      + `active for "${(process.env.STATIC_LOGIN_EMAIL || '').toLowerCase().trim()}".`);
+    staticConfigured._enabledWarned = true;
+  }
+  return true;
 }
 
 function staticEmail() {

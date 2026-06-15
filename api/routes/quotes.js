@@ -129,7 +129,8 @@ router.put('/:id', async (req, res) => {
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     sets.push('updated_at=NOW()');
     params.push(req.params.id);
-    const { rows } = await db.query(`UPDATE vendor_quotes SET ${sets.join(',')} WHERE id=$${idx} RETURNING *`, params);
+    params.push(req.user.company_id);
+    const { rows } = await db.query(`UPDATE vendor_quotes SET ${sets.join(',')} WHERE id=$${idx} AND pr_id IN (SELECT id FROM purchase_requests WHERE company_id = $${idx + 1}) RETURNING *`, params);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -138,7 +139,7 @@ router.put('/:id', async (req, res) => {
 // FIXED: Added DELETE /:id
 router.delete('/:id', async (req, res) => {
   try {
-    const { rows } = await db.query("UPDATE vendor_quotes SET status='cancelled' WHERE id=$1 RETURNING *", [req.params.id]);
+    const { rows } = await db.query("UPDATE vendor_quotes SET status='cancelled' WHERE id=$1 AND pr_id IN (SELECT id FROM purchase_requests WHERE company_id=$2) RETURNING *", [req.params.id, req.user.company_id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json({ deleted: true, ...rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }

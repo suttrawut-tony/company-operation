@@ -133,6 +133,7 @@ app.use('/api/job-orders',    require('./routes/job-orders'));
 app.use('/api/quotations',    require('./routes/quotations'));
 app.use('/api/technicians',   require('./routes/technicians'));
 app.use('/api/admin',         require('./routes/admin'));
+app.use('/api/company',       require('./routes/company'));
 
 // Health check — includes a DB ping so monitoring sees real status
 app.get('/api/health', async (req, res) => {
@@ -221,16 +222,23 @@ const { runAll: runMigrations } = require('./migrate');
   const wss = new WebSocket.Server({ server });
   const wsClients = new Set();
 
-  // SECURITY FIX: WebSocket connection with optional token auth
+  // SECURITY FIX (P1-4): WebSocket requires a valid JWT on EVERY connection
+  // (both production and dev, for consistency). Token is passed as ?token=<jwt>
+  // on the WS URL and is verified with the same JWT_SECRET as the REST API, so
+  // static-login (admin@local) JWTs are accepted too. Unauthorized sockets are
+  // closed with code 1008 and NEVER added to the broadcast set.
   wss.on('connection', (ws, req) => {
-    // In production, verify token on WS connection
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        const url = new URL(req.url, 'http://x');
-        const token = url.searchParams.get('token');
-        if (token) require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
-      } catch(e) { /* Allow connection but don't add to broadcast in strict mode */ }
+    let user;
+    try {
+      const url = new URL(req.url, 'http://x');
+      const token = url.searchParams.get('token');
+      if (!token) throw new Error('missing token');
+      user = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      ws.close(1008, 'Unauthorized');
+      return;
     }
+    ws.user = user;
     wsClients.add(ws);
     ws.on('close', () => wsClients.delete(ws));
     ws.on('error', () => wsClients.delete(ws));

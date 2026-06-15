@@ -4,12 +4,30 @@ api/node_modules/
 
 # Env / secrets
 .env
+.env.*
+!.env.example
 api/.env
+api/.env.*
+!api/.env.example
 *.local
 
 # Logs
 *.log
 npm-debug.log*
+
+# Uploads (runtime user files)
+api/uploads/
+
+# Database dumps / backups
+*.bak
+api/migrations/backup_*.sql
+api/migrations/*.backup
+*.sql.bak
+
+# Temp / build artifacts
+/tmp/
+tmp/
+*.tmp
 
 # OS
 .DS_Store

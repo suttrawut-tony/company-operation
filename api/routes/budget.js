@@ -70,6 +70,8 @@ router.get('/check/:projectId', async (req, res) => {
 // GET /api/budget/:id/periods — Monthly distribution
 router.get('/:id/periods', async (req, res) => {
   try {
+    const { rows: [own] } = await db.query('SELECT id FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!own) return res.status(404).json({ error: 'Budget not found' });
     const { rows } = await db.query(
       'SELECT * FROM budget_periods WHERE budget_id=$1 ORDER BY period_month', [req.params.id]);
     res.json(rows);
@@ -81,6 +83,8 @@ router.post('/:id/periods', async (req, res) => {
   try {
     const { periods } = req.body;
     if (!Array.isArray(periods)) return res.status(400).json({ error: 'periods array required' });
+    const { rows: [own] } = await db.query('SELECT id FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!own) return res.status(404).json({ error: 'Budget not found' });
     for (const p of periods) {
       await db.query(
         `INSERT INTO budget_periods (budget_id, line_id, period_month, budget_amount)
@@ -133,8 +137,8 @@ router.post('/', async (req, res) => {
 router.post('/:id/submit', async (req, res) => {
   try {
     const { rows } = await db.query(
-      `UPDATE budgets SET status = 'pending_manager' WHERE id = $1 AND status = 'draft' RETURNING *`,
-      [req.params.id]
+      `UPDATE budgets SET status = 'pending_manager' WHERE id = $1 AND status = 'draft' AND company_id = $2 RETURNING *`,
+      [req.params.id, req.user.company_id]
     );
     if (!rows[0]) return res.status(400).json({ error: 'Cannot submit — not in draft status' });
     res.json(rows[0]);
@@ -145,7 +149,7 @@ router.post('/:id/submit', async (req, res) => {
 // POST /api/budget/:id/approve
 router.post('/:id/approve', async (req, res) => {
   try {
-    const { rows: [budget] } = await db.query('SELECT * FROM budgets WHERE id = $1', [req.params.id]);
+    const { rows: [budget] } = await db.query('SELECT * FROM budgets WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
     if (!budget) return res.status(404).json({ error: 'Not found' });
 
     let nextStatus;
@@ -170,7 +174,7 @@ router.post('/:id/approve', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   try {
     const { reason } = req.body;
-    const { rows: [budget] } = await db.query('SELECT * FROM budgets WHERE id = $1', [req.params.id]);
+    const { rows: [budget] } = await db.query('SELECT * FROM budgets WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
     if (!budget) return res.status(404).json({ error: 'Not found' });
     if (!budget.status.includes('pending')) return res.status(400).json({ error: 'Can only reject pending budgets' });
 
@@ -187,7 +191,7 @@ router.post('/:id/reject', async (req, res) => {
 router.post('/:id/revise', async (req, res) => {
   try {
     const { lines, reason } = req.body;
-    const { rows: [budget] } = await db.query('SELECT * FROM budgets WHERE id = $1', [req.params.id]);
+    const { rows: [budget] } = await db.query('SELECT * FROM budgets WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
     if (!budget) return res.status(404).json({ error: 'Not found' });
 
     // Save revision history
@@ -245,6 +249,9 @@ router.post('/:id/transfer', async (req, res) => {
 
   const client = await db.pool.connect();
   try {
+    // Ensure the parent budget belongs to this company (prevent IDOR)
+    const { rows: budgetOwn } = await client.query('SELECT id FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!budgetOwn[0]) return res.status(404).json({ error: 'Budget not found' });
     // Validate lines belong to this budget
     const { rows: fromLine } = await client.query('SELECT * FROM budget_lines WHERE id=$1 AND budget_id=$2', [from_line_id, req.params.id]);
     const { rows: toLine } = await client.query('SELECT * FROM budget_lines WHERE id=$1 AND budget_id=$2', [to_line_id, req.params.id]);
@@ -331,7 +338,7 @@ router.put('/:id', async (req, res) => {
 // POST /api/budget/:id/resubmit — Resubmit revised budget for approval
 router.post('/:id/resubmit', async (req, res) => {
   try {
-    const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1', [req.params.id]);
+    const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!b) return res.status(404).json({ error: 'Not found' });
     if (b.status !== 'revised') return res.status(400).json({ error: 'Can only resubmit revised budgets' });
     const { rows } = await db.query(
@@ -363,7 +370,8 @@ router.put('/lines/:lineId', async (req, res) => {
     for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     params.push(req.params.lineId);
-    const { rows } = await db.query(`UPDATE budget_lines SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+    params.push(req.user.company_id);
+    const { rows } = await db.query(`UPDATE budget_lines SET ${sets.join(', ')} WHERE id = $${idx} AND budget_id IN (SELECT id FROM budgets WHERE company_id = $${idx + 1}) RETURNING *`, params);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -372,7 +380,7 @@ router.put('/lines/:lineId', async (req, res) => {
 // DELETE /api/budget/lines/:lineId — Delete budget line
 router.delete('/lines/:lineId', async (req, res) => {
   try {
-    const { rows } = await db.query('DELETE FROM budget_lines WHERE id=$1 RETURNING id', [req.params.lineId]);
+    const { rows } = await db.query('DELETE FROM budget_lines WHERE id=$1 AND budget_id IN (SELECT id FROM budgets WHERE company_id=$2) RETURNING id', [req.params.lineId, req.user.company_id]);
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     res.json({ deleted: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
