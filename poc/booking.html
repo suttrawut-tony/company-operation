@@ -2848,7 +2848,11 @@
       if (!ev) { console.warn('editBooking: booking not found for id', id); return; }
       editingId = id;
 
-      if (ev.booking_type === 'vehicle') {
+      // Treat 'technician' type same as 'solar' (same modal)
+      const btype = ev.booking_type === 'technician' ? 'solar' : ev.booking_type;
+
+      try {
+      if (btype === 'vehicle') {
         // FIX: use vehicle_id not resource_id (resource_id doesn't exist in API response)
         document.getElementById('vehSelect').value = ev.vehicle_id || '';
         document.getElementById('vehTitle').value = ev.title || '';
@@ -2865,7 +2869,7 @@
         document.getElementById('vehColor').value = ev.color || '#4285f4';
         document.getElementById('vehJobOrder').value = ev.job_order_id || '';
         document.getElementById('modalVehicle').classList.add('show');
-      } else if (ev.booking_type === 'solar') {
+      } else if (btype === 'solar') {
         // FIX: use technician_id not resource_id
         // Restore team — add lead technician as first member
         selectedTeam = [];
@@ -2902,7 +2906,7 @@
         showSolarSections(ev.status || '');
         loadBookingItems(ev.id);
         document.getElementById('modalSolar').classList.add('show');
-      } else if (ev.booking_type === 'flight') {
+      } else if (btype === 'flight') {
         document.getElementById('flightAirline').value = ev.airline || '';
         document.getElementById('flightNumber').value = ev.flight_number || '';
         document.getElementById('flightDepAirport').value = ev.departure_airport || 'DMK';
@@ -2925,6 +2929,7 @@
         document.getElementById('flightJobOrder').value = ev.job_order_id || '';
         document.getElementById('modalFlight').classList.add('show');
       }
+      } catch(err) { console.error('editBooking error:', err); if(typeof showToast==='function') showToast('ไม่สามารถเปิดฟอร์มแก้ไขได้: ' + err.message, 'error'); }
     }
 
     // FIX: Close both popup types
