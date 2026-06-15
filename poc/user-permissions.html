@@ -464,7 +464,9 @@
           ACTIONS.forEach(act => {
             html += `<tr><td style="padding-left:${act==='view'?'12':'28'}px;${act==='view'?'font-weight:600;':'color:var(--text-secondary);font-size:11px;'}">${act==='view'?mod.replace('_',' '):act}</td>`;
             ROLES_ORDER.forEach(role => {
-              const val = PM[role]?.[mod]?.[act];
+              // Owner = product owner with full access to everything (FULL_ACCESS_ROLES),
+              // so every cell is ticked regardless of the per-role matrix.
+              const val = (role === 'owner') ? 1 : PM[role]?.[mod]?.[act];
               if (val === 1 || val === true) html += `<td class="p-yes">&#10003;</td>`;
               else if (val === 'own') html += `<td class="p-own">own</td>`;
               else html += `<td class="p-no">&mdash;</td>`;
