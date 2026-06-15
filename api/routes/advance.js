@@ -105,7 +105,7 @@ router.get('/report/aging', async (req, res) => {
 // POST /api/advance/settlement/:id/approve
 router.post('/settlement/:id/approve', async (req, res) => {
   try {
-    if (!['finance','executive'].includes(req.user.role)) {
+    if (!['finance','executive','admin'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only Finance can approve clearing' });
     }
     const { rows: [s] } = await db.query('SELECT * FROM advance_settlements WHERE id=$1', [req.params.id]);
@@ -153,7 +153,7 @@ router.post('/settlement/:id/approve', async (req, res) => {
 // POST /api/advance/settlement/:id/reject — Finance rejects settlement
 router.post('/settlement/:id/reject', async (req, res) => {
   try {
-    if (!['finance','executive'].includes(req.user.role)) {
+    if (!['finance','executive','admin'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only Finance can reject clearing' });
     }
     const { reason } = req.body;
@@ -402,7 +402,7 @@ router.post('/:id/reject', async (req, res) => {
 // POST /api/advance/:id/pay
 router.post('/:id/pay', upload.single('attachment'), async (req, res) => {
   try {
-    if (!['finance','executive'].includes(req.user.role)) {
+    if (!['finance','executive','admin'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only finance can record payment' });
     }
     const { amount, payment_method, bank_account_id, reference, remarks, payment_date } = req.body;
@@ -610,7 +610,7 @@ router.post('/:id/settle', async (req, res) => {
 // POST /api/advance/:id/receive-return — Record employee returning money
 router.post('/:id/receive-return', upload.single('attachment'), async (req, res) => {
   try {
-    if (!['finance','executive'].includes(req.user.role)) {
+    if (!['finance','executive','admin'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only finance can receive return' });
     }
     const { bank_account_id, reference, remarks } = req.body;
@@ -659,7 +659,7 @@ router.post('/:id/receive-return', upload.single('attachment'), async (req, res)
 // POST /api/advance/:id/pay-reimburse — Company pays extra to employee
 router.post('/:id/pay-reimburse', upload.single('attachment'), async (req, res) => {
   try {
-    if (!['finance','executive'].includes(req.user.role)) {
+    if (!['finance','executive','admin'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Only finance can pay reimburse' });
     }
     const { bank_account_id, reference, remarks } = req.body;
@@ -723,7 +723,7 @@ router.post('/:id/confirm-return', async (req, res) => {
 // POST /api/advance/:id/push-erp — Manual push GL Journals to SAP
 router.post('/:id/push-erp', async (req, res) => {
   try {
-    if (!['finance','executive'].includes(req.user.role)) return res.status(403).json({ error: 'Not authorized' });
+    if (!['finance','executive','admin'].includes(req.user.role)) return res.status(403).json({ error: 'Not authorized' });
 
     // Find all journals for this advance that haven't been posted
     var { rows: journals } = await db.query(
