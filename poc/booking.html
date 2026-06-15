@@ -1943,9 +1943,14 @@
       filteredBookings = allBookings.filter(ev => {
         // Flight type filter
         if (ev.booking_type === 'flight' && !enabledTypes.has('flight')) return false;
-        // Resource filter (technician or vehicle)
-        const rid = ev.vehicle_id || ev.technician_id;
-        if (rid && resChecks.length > 0 && !enabledRes.has(String(rid))) return false;
+        // Resource filter — check each resource independently
+        // Show booking if ANY of its resources is enabled
+        if (resChecks.length > 0) {
+          const hasVehicle = ev.vehicle_id && enabledRes.has(String(ev.vehicle_id));
+          const hasTech = ev.technician_id && enabledRes.has(String(ev.technician_id));
+          const hasAnyRes = ev.vehicle_id || ev.technician_id;
+          if (hasAnyRes && !hasVehicle && !hasTech) return false;
+        }
         return true;
       });
       renderView();
