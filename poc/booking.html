@@ -2009,6 +2009,14 @@
 
     // ── Data Loading ──
     async function loadResources() {
+      // Kick off technicians fetch in parallel with vehicles/projects (independent data).
+      // Rejection handler is attached immediately (.then/.catch) so error fallback
+      // behavior is identical to the original try/catch and no unhandled rejection
+      // can surface while we await vehicles/projects below.
+      const techPromise = API.get('/technicians')
+        .then(tRes => { technicians = tRes.technicians || tRes || []; })
+        .catch(() => { technicians = []; });
+
       try {
         const [vRes, pRes] = await Promise.all([
           API.getVehicles(),
@@ -2018,15 +2026,13 @@
         projects = pRes.projects || pRes || [];
       } catch(e) { console.warn('Failed to load vehicles/projects', e); }
 
-      try {
-        const tRes = await API.get('/technicians');
-        technicians = tRes.technicians || tRes || [];
-      } catch(e) { technicians = []; }
+      await techPromise;
 
       populateSelects();
       renderResourceFilters();
-      await loadJobOrders();
-      await loadMasterItems();
+      // loadJobOrders() and loadMasterItems() touch disjoint globals/DOM and each
+      // handles its own errors internally → safe to fetch in parallel.
+      await Promise.all([loadJobOrders(), loadMasterItems()]);
     }
 
     function populateSelects() {
