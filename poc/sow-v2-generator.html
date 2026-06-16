@@ -123,7 +123,7 @@
     /* Preview doc styles */
     .prev-doc { font-family: Inter, -apple-system, sans-serif; padding: 48px 56px; line-height: 1.8; color: #1a1a2e; font-size: 14px; }
     .prev-doc .cover { text-align: center; padding: 48px 0 36px; border-bottom: 3px solid #4f6ef7; margin-bottom: 36px; }
-    .prev-doc .cover .sub { font-size: 13px; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .prev-doc .cover .sub { font-size: 13px; color: #374151; letter-spacing: 2px; text-transform: uppercase; }
     .prev-doc .cover h1 { font-size: 26px; font-weight: 700; color: #4f6ef7; margin: 6px 0 2px; }
     .prev-doc .cover .tag { display: inline-block; background: #eef2ff; color: #4f6ef7; font-size: 12px; font-weight: 600; padding: 3px 14px; border-radius: 20px; margin-top: 8px; }
     .prev-doc h2.sec { font-size: 18px; font-weight: 700; margin: 40px 0 14px; padding-bottom: 7px; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
@@ -133,7 +133,7 @@
     .prev-doc table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 13px; }
     .prev-doc th { background: #f8f9fb; font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid #e5e7eb; }
     .prev-doc td { padding: 8px 12px; border: 1px solid #e5e7eb; vertical-align: top; }
-    .prev-doc .info td:first-child { font-weight: 600; width: 150px; color: #6b7280; white-space: nowrap; }
+    .prev-doc .info td:first-child { font-weight: 600; width: 150px; color: #374151; white-space: nowrap; }
     .prev-doc p { margin: 10px 0; font-size: 14px; }
     .prev-doc ol, .prev-doc ul { margin: 10px 0; padding-left: 22px; }
     .prev-doc li { margin: 6px 0; font-size: 13px; }
@@ -141,12 +141,12 @@
     .prev-doc pre { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 10px; font-size: 12px; overflow-x: auto; line-height: 1.6; margin: 12px 0; }
     .prev-doc .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
     .prev-doc .sig-box { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: center; }
-    .prev-doc .sig-box .line { border-bottom: 1px solid #9ca3af; height: 44px; margin: 14px 0 6px; }
+    .prev-doc .sig-box .line { border-bottom: 1px solid #4b5563; height: 44px; margin: 14px 0 6px; }
     .prev-doc .plan-y { background: #ecfdf5; color: #059669; font-weight: 600; text-align: center; }
-    .prev-doc .plan-n { color: #9ca3af; text-align: center; }
+    .prev-doc .plan-n { color: #4b5563; text-align: center; }
     .prev-doc .core-y { background: #fef3c7; color: #92400e; text-align: center; font-size: 11px; font-weight: 600; }
-    .prev-doc .core-n { text-align: center; font-size: 11px; color: #9ca3af; }
-    .prev-doc .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+    .prev-doc .core-n { text-align: center; font-size: 11px; color: #4b5563; }
+    .prev-doc .footer { text-align: center; font-size: 12px; color: #4b5563; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
 
     @media print {
       /* A) A4 page setup */
@@ -1161,7 +1161,7 @@ function renderPreview() {
 <div class="cover">
   <div class="sub">Statement of Work</div>
   <h1>${d.projectName}</h1>
-  <p style="color:#6b7280;font-size:14px;margin:4px 0 0">${d.projectSubtitle}</p>
+  <p style="color:#374151;font-size:14px;margin:4px 0 0">${d.projectSubtitle}</p>
   <div class="tag">${d.projectType}</div>
 </div>
 
@@ -1445,20 +1445,20 @@ ${payRows}
 <p>ทั้งสองฝ่ายตกลงและยอมรับขอบเขตการทำงานตามที่ระบุไว้ในเอกสาร SOW ฉบับนี้</p>
 <div class="sig-grid">
   <div class="sig-box">
-    <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">ลูกค้า: ${ph(d.clientName,'ชื่อบริษัท')}</div>
-    <div style="font-size:11px;color:#9ca3af">Signed and agreed by</div>
+    <div style="font-size:12px;color:#4b5563;margin-bottom:4px;">ลูกค้า: ${ph(d.clientName,'ชื่อบริษัท')}</div>
+    <div style="font-size:11px;color:#4b5563">Signed and agreed by</div>
     <div class="line"></div>
     <div style="font-size:13px;font-weight:600;">${ph(d.sponsor,'ชื่อ')}</div>
-    <div style="font-size:12px;color:#6b7280;">Project Sponsor</div>
-    <div style="margin-top:8px;font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div>
+    <div style="font-size:12px;color:#374151;">Project Sponsor</div>
+    <div style="margin-top:8px;font-size:12px;color:#4b5563;">วันที่: ___/___/___</div>
   </div>
   <div class="sig-box">
-    <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">ผู้ให้บริการ: ${ph(d.providerName,'ชื่อบริษัท')}</div>
-    <div style="font-size:11px;color:#9ca3af">Signed and agreed by</div>
+    <div style="font-size:12px;color:#4b5563;margin-bottom:4px;">ผู้ให้บริการ: ${ph(d.providerName,'ชื่อบริษัท')}</div>
+    <div style="font-size:11px;color:#4b5563">Signed and agreed by</div>
     <div class="line"></div>
     <div style="font-size:13px;font-weight:600;">${ph(d.pm,'ชื่อ')}</div>
-    <div style="font-size:12px;color:#6b7280;">Project Manager</div>
-    <div style="margin-top:8px;font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div>
+    <div style="font-size:12px;color:#374151;">Project Manager</div>
+    <div style="margin-top:8px;font-size:12px;color:#4b5563;">วันที่: ___/___/___</div>
   </div>
 </div>
 
@@ -1550,8 +1550,8 @@ ${payRows}
 <tr><td>Modules Affected</td><td>_______________</td></tr>
 </table>
 <div class="sig-grid" style="margin-top:16px">
-  <div class="sig-box"><div style="font-size:12px;color:#9ca3af;">ลูกค้า</div><div class="line"></div><div style="font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div></div>
-  <div class="sig-box"><div style="font-size:12px;color:#9ca3af;">ผู้ให้บริการ</div><div class="line"></div><div style="font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div></div>
+  <div class="sig-box"><div style="font-size:12px;color:#4b5563;">ลูกค้า</div><div class="line"></div><div style="font-size:12px;color:#4b5563;">วันที่: ___/___/___</div></div>
+  <div class="sig-box"><div style="font-size:12px;color:#4b5563;">ผู้ให้บริการ</div><div class="line"></div><div style="font-size:12px;color:#4b5563;">วันที่: ___/___/___</div></div>
 </div>
 
 <!-- APPENDIX D: Module List by Subscription Plan -->
@@ -1617,7 +1617,7 @@ function getPreviewCSS() {
 
     /* Cover */
     .prev-doc .cover { text-align: center; padding: 48px 0 36px; border-bottom: 3px solid #4f6ef7; margin-bottom: 36px; }
-    .prev-doc .cover .sub { font-size: 13px; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .prev-doc .cover .sub { font-size: 13px; color: #374151; letter-spacing: 2px; text-transform: uppercase; }
     .prev-doc .cover h1 { font-size: 26px; font-weight: 700; color: #4f6ef7; margin: 6px 0 2px; }
     .prev-doc .cover .tag { display: inline-block; background: #eef2ff; color: #4f6ef7; font-size: 12px; font-weight: 600; padding: 3px 14px; border-radius: 20px; margin-top: 8px; }
 
@@ -1631,7 +1631,7 @@ function getPreviewCSS() {
     .prev-doc table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 13px; }
     .prev-doc th { background: #f8f9fb; font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid #e5e7eb; }
     .prev-doc td { padding: 8px 12px; border: 1px solid #e5e7eb; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
-    .prev-doc .info td:first-child { font-weight: 600; width: 150px; color: #6b7280; white-space: nowrap; }
+    .prev-doc .info td:first-child { font-weight: 600; width: 150px; color: #374151; white-space: nowrap; }
 
     /* Text */
     .prev-doc p { margin: 10px 0; font-size: 14px; }
@@ -1645,19 +1645,19 @@ function getPreviewCSS() {
     /* Signature grid */
     .prev-doc .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
     .prev-doc .sig-box { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: center; }
-    .prev-doc .sig-box .line { border-bottom: 1px solid #9ca3af; height: 44px; margin: 14px 0 6px; }
+    .prev-doc .sig-box .line { border-bottom: 1px solid #4b5563; height: 44px; margin: 14px 0 6px; }
 
     /* Plan/Core badges */
     .prev-doc .plan-y { background: #ecfdf5; color: #059669; font-weight: 600; text-align: center; }
-    .prev-doc .plan-n { color: #9ca3af; text-align: center; }
+    .prev-doc .plan-n { color: #4b5563; text-align: center; }
     .prev-doc .core-y { background: #fef3c7; color: #92400e; text-align: center; font-size: 11px; font-weight: 600; }
-    .prev-doc .core-n { text-align: center; font-size: 11px; color: #9ca3af; }
+    .prev-doc .core-n { text-align: center; font-size: 11px; color: #4b5563; }
 
     /* Placeholder */
     .ph { background: #fef3c7; color: #92400e; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-weight: 500; border: 1px dashed #f59e0b; }
 
     /* Footer */
-    .prev-doc .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+    .prev-doc .footer { text-align: center; font-size: 12px; color: #4b5563; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
 
     /* ═══ Print-specific (ใช้ใน popup window) ═══ */
     @media print {

@@ -35,8 +35,8 @@
 
   /* Text */
   --text-primary: #1a1a2e;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
+  --text-secondary: #374151; /* darker for readability (was #6b7280) */
+  --text-muted: #4b5563;     /* darker for readability (was #9ca3af) */
   --text-white: #ffffff;
 
   /* Brand / Accent */

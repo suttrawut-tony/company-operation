@@ -472,20 +472,20 @@ function renderPreview() {
   document.getElementById('preview').innerHTML = `
 <div style="font-family:Inter,-apple-system,sans-serif;padding:48px 56px;line-height:1.8;color:#1a1a2e;font-size:14px;">
   <div style="text-align:center;padding:40px 0 32px;border-bottom:2px solid #4f6ef7;margin-bottom:32px;">
-    <div style="font-size:14px;color:#6b7280;letter-spacing:2px;text-transform:uppercase;">Sala Daeng Company Limited</div>
+    <div style="font-size:14px;color:#374151;letter-spacing:2px;text-transform:uppercase;">Sala Daeng Company Limited</div>
     <h1 style="font-size:28px;color:#4f6ef7;margin:4px 0;">Statement of Work (SOW)</h1>
   </div>
 
   <h2 style="font-size:18px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-top:32px;">1. ปกเอกสาร</h2>
   <table style="width:100%;border-collapse:collapse;margin:12px 0 24px;font-size:14px;">
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;width:160px;color:#6b7280">เลขที่เอกสาร</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.docNo,'เลขที่ SOW')}</td></tr>
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#6b7280">โครงการ</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.projectName,'ชื่อโครงการ')}</td></tr>
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#6b7280">ระบบ ERP</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.erp,'ระบบ ERP')}</td></tr>
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#6b7280">ลูกค้า</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.custNameTH,'ชื่อลูกค้า TH')}<br>${d.custNameEN||''}</td></tr>
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#6b7280">ที่อยู่</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.custAddr,'ที่อยู่ลูกค้า')}</td></tr>
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#6b7280">ผู้ให้บริการ</td><td style="padding:8px 14px;border:1px solid #e5e7eb">บริษัท ศาลาแดง จำกัด (Sala Daeng Company Limited)</td></tr>
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#6b7280">วันที่</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.docDate,'วันที่')}</td></tr>
-    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#6b7280">เวอร์ชัน</td><td style="padding:8px 14px;border:1px solid #e5e7eb">v1.0</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;width:160px;color:#374151">เลขที่เอกสาร</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.docNo,'เลขที่ SOW')}</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#374151">โครงการ</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.projectName,'ชื่อโครงการ')}</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#374151">ระบบ ERP</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.erp,'ระบบ ERP')}</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#374151">ลูกค้า</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.custNameTH,'ชื่อลูกค้า TH')}<br>${d.custNameEN||''}</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#374151">ที่อยู่</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.custAddr,'ที่อยู่ลูกค้า')}</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#374151">ผู้ให้บริการ</td><td style="padding:8px 14px;border:1px solid #e5e7eb">บริษัท ศาลาแดง จำกัด (Sala Daeng Company Limited)</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#374151">วันที่</td><td style="padding:8px 14px;border:1px solid #e5e7eb">${ph(d.docDate,'วันที่')}</td></tr>
+    <tr><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:600;color:#374151">เวอร์ชัน</td><td style="padding:8px 14px;border:1px solid #e5e7eb">v1.0</td></tr>
   </table>
 
   <h2 style="font-size:18px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-top:32px;">2. บทสรุปผู้บริหาร</h2>
@@ -541,7 +541,7 @@ function renderPreview() {
     <tr><td style="padding:8px 12px;border:1px solid #e5e7eb"><strong>P4</strong> Training &amp; Go-Live</td><td style="padding:8px 12px;border:1px solid #e5e7eb">ฝึกอบรม, Cutover, เปิดใช้ระบบจริง</td><td style="padding:8px 12px;border:1px solid #e5e7eb">${d.p4||'-'}</td></tr>
     <tr><td style="padding:8px 12px;border:1px solid #e5e7eb"><strong>P5</strong> Hypercare</td><td style="padding:8px 12px;border:1px solid #e5e7eb">ดูแลหลัง Go-Live, แก้ปัญหาเร่งด่วน</td><td style="padding:8px 12px;border:1px solid #e5e7eb">${d.p5||'-'}</td></tr>
   </table>
-  <p style="font-size:13px;color:#6b7280;">ระยะเวลารวม: <strong>${d.totalTime||'-'}</strong></p>
+  <p style="font-size:13px;color:#374151;">ระยะเวลารวม: <strong>${d.totalTime||'-'}</strong></p>
 
   <h2 style="font-size:18px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-top:32px;">7. ทีมงานโครงการ</h2>
   <h3 style="font-size:14px;">ฝั่ง SLD</h3>
@@ -602,32 +602,32 @@ function renderPreview() {
   <p>ทั้งสองฝ่ายตกลงและยอมรับขอบเขตการทำงานตามที่ระบุไว้ในเอกสารฉบับนี้</p>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:20px;">
     <div style="border:1px solid #e5e7eb;border-radius:12px;padding:20px;text-align:center;">
-      <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">ลูกค้า: ${d.custNameTH||'...'}</div>
-      <div style="font-size:11px;color:#9ca3af">Signed and agreed by</div>
-      <div style="border-bottom:1px solid #9ca3af;height:48px;margin:16px 0 8px;"></div>
+      <div style="font-size:12px;color:#4b5563;margin-bottom:4px;">ลูกค้า: ${d.custNameTH||'...'}</div>
+      <div style="font-size:11px;color:#4b5563">Signed and agreed by</div>
+      <div style="border-bottom:1px solid #4b5563;height:48px;margin:16px 0 8px;"></div>
       <div style="font-size:13px;font-weight:600;">${ph(d.sponsor,'ชื่อผู้มีอำนาจ')}</div>
-      <div style="font-size:12px;color:#6b7280;">${d.sponsorTitle||'...'}</div>
-      <div style="margin-top:8px;font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div>
+      <div style="font-size:12px;color:#374151;">${d.sponsorTitle||'...'}</div>
+      <div style="margin-top:8px;font-size:12px;color:#4b5563;">วันที่: ___/___/___</div>
     </div>
     <div style="border:1px solid #e5e7eb;border-radius:12px;padding:20px;text-align:center;">
-      <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">Sala Daeng Company Limited</div>
-      <div style="font-size:11px;color:#9ca3af">&nbsp;</div>
-      <div style="border-bottom:1px solid #9ca3af;height:48px;margin:16px 0 8px;"></div>
+      <div style="font-size:12px;color:#4b5563;margin-bottom:4px;">Sala Daeng Company Limited</div>
+      <div style="font-size:11px;color:#4b5563">&nbsp;</div>
+      <div style="border-bottom:1px solid #4b5563;height:48px;margin:16px 0 8px;"></div>
       <div style="font-size:13px;font-weight:600;">${ph(d.sc,'ชื่อ SC/PM')}</div>
-      <div style="font-size:12px;color:#6b7280;">Solution Consultant</div>
-      <div style="margin-top:8px;font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div>
+      <div style="font-size:12px;color:#374151;">Solution Consultant</div>
+      <div style="margin-top:8px;font-size:12px;color:#4b5563;">วันที่: ___/___/___</div>
     </div>
     <div style="border:1px solid #e5e7eb;border-radius:12px;padding:20px;text-align:center;">
-      <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">Sala Daeng Company Limited</div>
-      <div style="font-size:11px;color:#9ca3af">(Services Authorization)</div>
-      <div style="border-bottom:1px solid #9ca3af;height:48px;margin:16px 0 8px;"></div>
+      <div style="font-size:12px;color:#4b5563;margin-bottom:4px;">Sala Daeng Company Limited</div>
+      <div style="font-size:11px;color:#4b5563">(Services Authorization)</div>
+      <div style="border-bottom:1px solid #4b5563;height:48px;margin:16px 0 8px;"></div>
       <div style="font-size:13px;font-weight:600;">${ph(d.dm,'ชื่อ DM')}</div>
-      <div style="font-size:12px;color:#6b7280;">Delivery Manager</div>
-      <div style="margin-top:8px;font-size:12px;color:#9ca3af;">วันที่: ___/___/___</div>
+      <div style="font-size:12px;color:#374151;">Delivery Manager</div>
+      <div style="margin-top:8px;font-size:12px;color:#4b5563;">วันที่: ___/___/___</div>
     </div>
   </div>
 
-  <div style="text-align:center;font-size:13px;color:#9ca3af;margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;">
+  <div style="text-align:center;font-size:13px;color:#4b5563;margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;">
     จัดทำโดย บริษัท ศาลาแดง จำกัด | เวอร์ชัน v1.0 | ${d.docDate||'...'}
   </div>
 </div>`;
