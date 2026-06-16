@@ -375,7 +375,7 @@
 
       // Header
       document.getElementById('h-doc-type').textContent = docType === 'pr' ? 'Purchase Request' : docType === 'po' ? 'Purchase Order' : 'Expense / Reimbursement';
-      document.getElementById('h-doc-number').textContent = doc.doc_number;
+      document.getElementById('h-doc-number').innerHTML = doc.doc_number + (doc.project_code ? ' <span style="color:var(--text-secondary);font-size:14px;font-weight:500;">[' + doc.project_code + ']</span>' : '');
       document.getElementById('h-status').innerHTML = statusBadge(doc.status || 'draft');
       document.getElementById('nav-info').textContent = `${currentIdx + 1} / ${allDocs.length}`;
 
@@ -437,7 +437,7 @@
           <div class="erp-field"><label>Payment Terms</label><select ${dis}><option value="cash">Cash</option><option value="7">Credit 7 วัน</option><option value="15">Credit 15 วัน</option><option value="30" selected>Credit 30 วัน</option><option value="60">Credit 60 วัน</option><option value="90">Credit 90 วัน</option></select></div>
           <div class="erp-field"><label>Required Date</label><input type="date" ${ro} value="${calcDueDate(doc.doc_date, 14)}"></div>
           <div class="erp-field"><label>Ship To (Warehouse)</label><select ${dis}><option value="HQ01">HQ01 — คลังสินค้า</option><option value="PJ00">PJ00 — คลังโครงการ</option><option value="PJ01">PJ01 — คลังสินค้าคงเหลือ</option><option value="BR01">BR01 — คลังยืม</option><option value="AS01">AS01 — คลังประกอบ</option></select></div>
-          <div class="erp-field"><label>Project</label><select ${dis}><option value="">-- Select Project --</option>${projOpts}</select></div>
+          <div class="erp-field"><label>Project</label><select ${dis} onchange="toggleProjectFields()"><option value="">-- Select Project --</option>${projOpts}</select></div>
           <div class="erp-field"><label>WHT Code</label><select ${dis}><option value="">ไม่มี</option><option value="5360">5360 — ค่าบริการ 3%</option><option value="5362">5362 — ค่าจ้างเหมา 3%</option><option value="5350">5350 — ค่าขนส่ง 1%</option><option value="5361">5361 — ค่าเช่า 5%</option></select></div>
           <div class="erp-field"><label>Requester</label><input value="${doc.requester_name||doc.creator_name||''}" readonly></div>
           <div class="erp-field"><label>Created</label><input value="${fmtDate(doc.created_at)}" readonly></div>
@@ -470,7 +470,7 @@
         document.getElementById('btn-add-line').style.display = 'none';
       } else {
         const ew = isEditing ? 'min-' : '';
-        document.getElementById('lines-thead').innerHTML = `<tr><th style="width:40px;">#</th><th style="${ew}width:100px;">Item Code</th><th style="min-width:180px;">Description</th><th class="num" style="${ew}width:60px;">Qty</th><th style="${ew}width:70px;">UoM</th><th class="num" style="${ew}width:110px;">Unit Price</th><th class="num" style="width:50px;">Disc%</th><th style="${ew}width:85px;">Tax</th><th style="${ew}width:85px;">Account</th><th style="${ew}width:70px;">Whse</th><th class="num" style="${ew}width:120px;">Total</th>${isEditing?'<th style="width:36px;"></th>':''}</tr>`;
+        document.getElementById('lines-thead').innerHTML = `<tr><th style="width:40px;">#</th><th style="${ew}width:100px;">Item Code</th><th style="min-width:180px;">Description</th><th class="num" style="${ew}width:60px;">Qty</th><th style="${ew}width:70px;">UoM</th><th class="num" style="${ew}width:110px;">Unit Price</th><th class="num" style="width:50px;">Disc%</th><th style="${ew}width:85px;">Tax</th><th style="${ew}width:85px;">Account</th><th style="${ew}width:70px;">Whse</th>${isEditing?'<th style="min-width:280px;">Vendor Quotes</th>':''}<th class="num" style="${ew}width:120px;">Total</th>${isEditing?'<th style="width:36px;"></th>':''}</tr>`;
 
         if (lines.length) {
           let subtotal = 0;
@@ -507,6 +507,12 @@
                 <td><select data-field="tax" style="min-width:75px;"><option value="IG07" ${(l.tax_code||'IG07')==='IG07'?'selected':''}>IG07</option><option value="IG00" ${l.tax_code==='IG00'?'selected':''}>IG00</option><option value="IS07" ${l.tax_code==='IS07'?'selected':''}>IS07</option><option value="IS00" ${l.tax_code==='IS00'?'selected':''}>IS00</option></select></td>
                 <td><select data-field="account" style="min-width:75px;"><option value="114101" ${(l.sap_account||'114101')==='114101'?'selected':''}>114101</option><option value="511102" ${l.sap_account==='511102'?'selected':''}>511102</option><option value="511120" ${l.sap_account==='511120'?'selected':''}>511120</option><option value="522709" ${l.sap_account==='522709'?'selected':''}>522709</option></select></td>
                 <td><select style="min-width:65px;"><option value="HQ01" ${(l.warehouse||'HQ01')==='HQ01'?'selected':''}>HQ01</option><option value="PJ00" ${l.warehouse==='PJ00'?'selected':''}>PJ00</option><option value="PJ01" ${l.warehouse==='PJ01'?'selected':''}>PJ01</option><option value="AS01" ${l.warehouse==='AS01'?'selected':''}>AS01</option></select></td>
+                <td class="vq-cell" style="font-size:11px;">
+                  ${[0,1,2].map(vi => {
+                    const vq = (l.vendor_quotes||[])[vi] || {};
+                    return '<div style="display:flex;gap:4px;margin-bottom:3px;align-items:center;"><select class="vq-vendor" style="min-width:100px;font-size:10px;padding:2px 4px;">${buildVendorOptions(vq.bp_code||"")}</select><input type="number" class="vq-price" value="'+(vq.price||'')+'" placeholder="฿" step="0.01" style="width:80px;font-size:10px;padding:2px 4px;" oninput="highlightLowestVQ(this)"></div>';
+                  }).join('')}
+                </td>
                 <td class="num" style="font-weight:700;">${money(total)}</td>
                 <td class="row-action"><button onclick="removeLine(${i})">&times;</button></td>
               </tr>`;
@@ -771,6 +777,48 @@
       if (lines.length <= 1) return;
       lines.splice(i, 1);
       renderLines();
+    }
+
+    // 7.5: Highlight lowest vendor quote price
+    function highlightLowestVQ(input) {
+      const cell = input.closest('.vq-cell');
+      if (!cell) return;
+      const prices = cell.querySelectorAll('.vq-price');
+      let minVal = Infinity, minEl = null;
+      let validCount = 0;
+      prices.forEach(p => {
+        p.parentElement.style.background = '';
+        const v = parseFloat(p.value);
+        if (v > 0) { validCount++; if (v < minVal) { minVal = v; minEl = p; } }
+      });
+      if (validCount >= 2 && minEl) {
+        minEl.parentElement.style.background = '#d1fae5';
+      }
+    }
+
+    // Build vendor options from master BP data
+    function buildVendorOptions(selected) {
+      if (typeof window._masterVendors === 'undefined') return '<option value="">--</option>';
+      return '<option value="">--</option>' + (window._masterVendors||[]).map(v =>
+        '<option value="' + (v.bp_code||v.id) + '"' + ((v.bp_code||v.id)===selected?' selected':'') + '>' + (v.bp_code||'') + ' ' + (v.bp_name||'') + '</option>'
+      ).join('');
+    }
+
+    // 7.2: Disable form fields until project is selected
+    function toggleProjectFields() {
+      const projSelect = document.querySelector('.erp-fields select[onchange*="toggleProjectFields"]');
+      const hasProject = projSelect && !!projSelect.value;
+      // Disable/enable all editable fields except project itself
+      document.querySelectorAll('.erp-fields input:not([readonly]), .erp-fields select, #lines-body input, #lines-body select, .erp-btn').forEach(el => {
+        if (el === projSelect) return; // skip project select itself
+        if (!hasProject && !el.closest('[readonly]')) {
+          el.disabled = true;
+          el.style.opacity = '0.5';
+        } else {
+          el.disabled = false;
+          el.style.opacity = '';
+        }
+      });
     }
 
     function calcLines() {
