@@ -30,7 +30,7 @@
     <div class="card">
       <div class="table-container">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:10px;">Code</th><th style="text-align:left;padding:10px;">Name</th><th style="text-align:left;padding:10px;">Name (TH)</th><th style="padding:10px;">Category</th><th style="padding:10px;">UOM</th><th style="text-align:right;padding:10px;">Unit Price</th><th style="padding:10px;">GL</th><th style="padding:10px;">Tax</th><th style="padding:10px;">Actions</th></tr></thead>
+          <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:10px;">Code</th><th style="text-align:left;padding:10px;">Name</th><th style="text-align:left;padding:10px;">Name (TH)</th><th style="text-align:left;padding:10px;">Description</th><th style="padding:10px;">Category</th><th style="padding:10px;">UOM</th><th style="text-align:right;padding:10px;">Qty</th><th style="text-align:right;padding:10px;">Unit Price</th><th style="padding:10px;">GL</th><th style="padding:10px;">Tax</th><th style="padding:10px;">Actions</th></tr></thead>
           <tbody id="item-table"></tbody>
         </table>
       </div>
@@ -46,11 +46,16 @@
             <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="im-name"></div>
           </div>
           <div class="form-group"><label class="form-label">Name (TH)</label><input type="text" class="form-input" id="im-name-th"></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="im-description" rows="2" placeholder="Long description (optional)" style="resize:vertical;"></textarea></div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
             <div class="form-group"><label class="form-label">Category</label><select class="form-input" id="im-cat"><option value="equipment">Equipment</option><option value="material">Material</option><option value="service">Service</option></select></div>
             <div class="form-group"><label class="form-label">UOM</label><input type="text" class="form-input" id="im-uom" value="EA"></div>
             <div class="form-group"><label class="form-label">Unit Price</label><input type="number" class="form-input" id="im-price" min="0"></div>
             <div class="form-group"><label class="form-label">GL Account</label><input type="text" class="form-input" id="im-gl" value="114101"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Expiry Date</label><input type="date" class="form-input" id="im-expiry-date"></div>
+            <div class="form-group"><label class="form-label">Quantity on Hand</label><input type="number" class="form-input" id="im-qty-on-hand" min="0" step="0.01" value="0"></div>
           </div>
           <div style="margin-top:6px;border-top:1px dashed var(--border-light);padding-top:12px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;">
@@ -128,7 +133,7 @@
         if (err && (err.message === 'Session expired' || err.message === 'Password change required')) return;
         showToast('โหลดข้อมูลไม่สำเร็จ: ' + (err.message || err), 'error');
         var tbody = document.getElementById('item-table');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">ไม่สามารถโหลดข้อมูลได้ ลองใหม่อีกครั้ง</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">ไม่สามารถโหลดข้อมูลได้ ลองใหม่อีกครั้ง</td></tr>';
       }
     }
     function renderItems() {
@@ -142,32 +147,37 @@
           <td style="padding:10px;font-weight:600;color:var(--primary);">${i.item_code}</td>
           <td style="padding:10px;">${i.item_name}${i.has_warranty?` <span title="รับประกัน ${i.warranty_months||0} เดือน" style="font-size:10px;padding:1px 7px;border-radius:8px;background:#eff6ff;color:#2563eb;font-weight:600;white-space:nowrap;">🛡️ ${i.warranty_months||0} ด.</span>`:''}</td>
           <td style="padding:10px;color:var(--text-secondary);">${i.item_name_th||''}</td>
+          <td style="padding:10px;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(i.description||'').replace(/"/g,'&quot;')}">${i.description||''}</td>
           <td style="padding:10px;text-align:center;"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg-hover);">${i.category}</span></td>
           <td style="padding:10px;text-align:center;">${i.uom}</td>
+          <td style="padding:10px;text-align:right;">${parseFloat(i.quantity_on_hand||0).toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
           <td style="padding:10px;text-align:right;font-weight:600;">${fmtMoney(parseFloat(i.unit_price||0))}</td>
           <td style="padding:10px;text-align:center;font-size:11px;">${i.gl_account||''}</td>
           <td style="padding:10px;text-align:center;font-size:11px;">${i.tax_code||''}</td>
           <td style="padding:10px;text-align:center;">${i.is_active?'<span style="color:var(--success);">Active</span>':'<span style="color:var(--text-muted);">Inactive</span>'}</td>
-        </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">No items</td></tr>';
+        </tr>`).join('') || '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">No items</td></tr>';
     }
-    function openItemModal() { if(erpMode){showToast('โหมด ERP: เพิ่ม Item จาก '+erpSystem+' แล้วกด "ดึงจาก ERP"','warning');return;} document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; setWarranty(false,12,''); document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }
+    function openItemModal() { if(erpMode){showToast('โหมด ERP: เพิ่ม Item จาก '+erpSystem+' แล้วกด "ดึงจาก ERP"','warning');return;} document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; document.getElementById('im-description').value=''; document.getElementById('im-expiry-date').value=''; document.getElementById('im-qty-on-hand').value='0'; setWarranty(false,12,''); document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }
     function setWarranty(on, months, terms) { document.getElementById('im-warranty').checked=!!on; document.getElementById('im-warranty-box').style.display=on?'grid':'none'; document.getElementById('im-warranty-months').value=(months==null?12:months); document.getElementById('im-warranty-terms').value=terms||''; }
-    function openEditItem(id) { const i=allItems.find(x=>x.id===id); if(!i)return; document.getElementById('im-id').value=id; document.getElementById('im-code').value=i.item_code; document.getElementById('im-code').readOnly=true; document.getElementById('im-name').value=i.item_name; document.getElementById('im-name-th').value=i.item_name_th||''; document.getElementById('im-cat').value=i.category||'equipment'; document.getElementById('im-uom').value=i.uom||'EA'; document.getElementById('im-price').value=i.unit_price||''; document.getElementById('im-gl').value=i.gl_account||''; setWarranty(i.has_warranty, i.warranty_months, i.warranty_terms); document.getElementById('item-modal-title').textContent='Edit Item'; document.getElementById('item-modal').style.display='flex'; }
+    function openEditItem(id) { const i=allItems.find(x=>x.id===id); if(!i)return; document.getElementById('im-id').value=id; document.getElementById('im-code').value=i.item_code; document.getElementById('im-code').readOnly=true; document.getElementById('im-name').value=i.item_name; document.getElementById('im-name-th').value=i.item_name_th||''; document.getElementById('im-cat').value=i.category||'equipment'; document.getElementById('im-uom').value=i.uom||'EA'; document.getElementById('im-price').value=i.unit_price||''; document.getElementById('im-gl').value=i.gl_account||''; document.getElementById('im-description').value=i.description||''; document.getElementById('im-expiry-date').value=i.expiry_date?i.expiry_date.substring(0,10):''; document.getElementById('im-qty-on-hand').value=i.quantity_on_hand||0; setWarranty(i.has_warranty, i.warranty_months, i.warranty_terms); document.getElementById('item-modal-title').textContent='Edit Item'; document.getElementById('item-modal').style.display='flex'; }
     function closeItemModal() { document.getElementById('item-modal').style.display='none'; }
     async function saveItem() {
       const id=document.getElementById('im-id').value;
-      const body={item_code:document.getElementById('im-code').value,item_name:document.getElementById('im-name').value,item_name_th:document.getElementById('im-name-th').value,category:document.getElementById('im-cat').value,uom:document.getElementById('im-uom').value,unit_price:parseFloat(document.getElementById('im-price').value)||0,gl_account:document.getElementById('im-gl').value,has_warranty:document.getElementById('im-warranty').checked,warranty_months:parseInt(document.getElementById('im-warranty-months').value)||0,warranty_terms:document.getElementById('im-warranty-terms').value};
+      const body={item_code:document.getElementById('im-code').value,item_name:document.getElementById('im-name').value,item_name_th:document.getElementById('im-name-th').value,description:document.getElementById('im-description').value,category:document.getElementById('im-cat').value,uom:document.getElementById('im-uom').value,unit_price:parseFloat(document.getElementById('im-price').value)||0,gl_account:document.getElementById('im-gl').value,expiry_date:document.getElementById('im-expiry-date').value||null,quantity_on_hand:parseFloat(document.getElementById('im-qty-on-hand').value)||0,has_warranty:document.getElementById('im-warranty').checked,warranty_months:parseInt(document.getElementById('im-warranty-months').value)||0,warranty_terms:document.getElementById('im-warranty-terms').value};
       try { if(id) await API.put('/master/items/'+id,body); else await API.post('/master/items',body); closeItemModal(); await loadItems(); } catch(e){showToast('Error: '+e.message, 'error');}
     }
     function exportItems() {
-      const headers = ['Code','Name','Name (TH)','Category','UOM','Unit Price','GL Account','Tax Code','Status'];
+      const headers = ['Code','Name','Name (TH)','Description','Category','UOM','Qty on Hand','Unit Price','Expiry Date','GL Account','Tax Code','Status'];
       const rows = allItems.map(i => [
         i.item_code,
         i.item_name,
         i.item_name_th || '',
+        i.description || '',
         i.category || '',
         i.uom || '',
+        parseFloat(i.quantity_on_hand || 0),
         parseFloat(i.unit_price || 0),
+        i.expiry_date ? i.expiry_date.substring(0,10) : '',
         i.gl_account || '',
         i.tax_code || '',
         i.is_active ? 'Active' : 'Inactive'

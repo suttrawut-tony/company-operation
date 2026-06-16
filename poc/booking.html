@@ -1110,6 +1110,10 @@
           <select id="vehProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
         </div>
         <div class="form-group">
+          <label>ผู้อนุมัติ</label>
+          <select id="vehApprover"><option value="">-- เลือกผู้อนุมัติ --</option></select>
+        </div>
+        <div class="form-group">
           <label>วัตถุประสงค์</label>
           <input type="text" id="vehPurpose" placeholder="ระบุวัตถุประสงค์">
         </div>
@@ -1271,6 +1275,10 @@
         <div class="form-group">
           <label>โปรเจกต์</label>
           <select id="solarProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
+        </div>
+        <div class="form-group">
+          <label>ผู้อนุมัติ</label>
+          <select id="solarApprover"><option value="">-- เลือกผู้อนุมัติ --</option></select>
         </div>
         <div class="form-group">
           <label>สี</label>
@@ -1593,6 +1601,7 @@
     let vehicles = [];
     let technicians = [];
     let projects = [];
+    let allUsers = [];
     let editingId = null;
     let listSortCol = 'start_date';
     let listSortAsc = true;
@@ -2019,13 +2028,15 @@
         .catch(() => { technicians = []; });
 
       try {
-        const [vRes, pRes] = await Promise.all([
+        const [vRes, pRes, uRes] = await Promise.all([
           API.getVehicles(),
-          API.getProjects()
+          API.getProjects(),
+          API.getUsers()
         ]);
         vehicles = vRes.vehicles || vRes || [];
         projects = pRes.projects || pRes || [];
-      } catch(e) { console.warn('Failed to load vehicles/projects', e); }
+        allUsers = uRes.users || uRes || [];
+      } catch(e) { console.warn('Failed to load vehicles/projects/users', e); }
 
       await techPromise;
 
@@ -2062,6 +2073,18 @@
         sel.innerHTML = '<option value="">-- เลือกโปรเจกต์ --</option>';
         projects.forEach(p => {
           sel.innerHTML += `<option value="${p.id}">${p.project_code || ''} ${p.name || p.project_name || ''}</option>`;
+        });
+      });
+
+      // Approver dropdowns in vehicle & solar modals
+      ['vehApprover', 'solarApprover'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '<option value="">-- เลือกผู้อนุมัติ --</option>';
+        allUsers.forEach(u => {
+          const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || u.email;
+          const role = u.role ? ` (${u.role})` : '';
+          sel.innerHTML += `<option value="${u.id}">${name}${role}</option>`;
         });
       });
     }
@@ -2826,6 +2849,7 @@
             start_time: document.getElementById('vehAllDay').checked ? null : document.getElementById('vehStartTime').value,
             end_time: document.getElementById('vehAllDay').checked ? null : document.getElementById('vehEndTime').value,
             project_id: document.getElementById('vehProject').value || null,
+            approver_id: document.getElementById('vehApprover').value || null,
             purpose: document.getElementById('vehPurpose').value,
             location: document.getElementById('vehLocation').value,
             passengers: document.getElementById('vehPassengers').value,
@@ -2846,6 +2870,7 @@
             start_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarStartTime').value,
             end_time: document.getElementById('solarAllDay').checked ? null : document.getElementById('solarEndTime').value,
             project_id: document.getElementById('solarProject').value || null,
+            approver_id: document.getElementById('solarApprover').value || null,
             color: document.getElementById('solarColor').value,  // use the picked colour so calendar matches the form
             title: (function(){ const j = document.getElementById('solarJobType').value; const c = (document.getElementById('solarCustName').value || '').trim(); return c ? (j + ' - ' + c) : j; })(),
             customer_name: document.getElementById('solarCustName').value || null,
@@ -2948,6 +2973,7 @@
         if (ev.start_time) document.getElementById('vehStartTime').value = ev.start_time.slice(0, 5);
         if (ev.end_time) document.getElementById('vehEndTime').value = ev.end_time.slice(0, 5);
         document.getElementById('vehProject').value = ev.project_id || '';
+        document.getElementById('vehApprover').value = ev.approver_id || '';
         document.getElementById('vehPurpose').value = ev.purpose || '';
         document.getElementById('vehLocation').value = ev.location || '';
         document.getElementById('vehPassengers').value = ev.passengers || '1';
@@ -2975,6 +3001,7 @@
         if (ev.start_time) document.getElementById('solarStartTime').value = ev.start_time.slice(0, 5);
         if (ev.end_time) document.getElementById('solarEndTime').value = ev.end_time.slice(0, 5);
         document.getElementById('solarProject').value = ev.project_id || '';
+        document.getElementById('solarApprover').value = ev.approver_id || '';
         document.getElementById('solarColor').value = ev.color || '#0f9d58';
         document.getElementById('solarJobOrder').value = ev.job_order_id || '';
         // Customer info

@@ -891,26 +891,66 @@
         const c = s==='paid'?'success':s==='invoiced'?'primary':s==='partially_paid'?'warning':s==='overdue'?'danger':'gray';
         return `<span class="badge badge-${c}" style="font-size:9px;">${s}</span>`;
       };
+      // Determine which payment is the final one (explicitly marked or highest sort_order)
+      let finalPaymentId = null;
+      const explicitFinal = payments.find(p => p.is_final);
+      if (explicitFinal) {
+        finalPaymentId = explicitFinal.id;
+      } else if (payments.length) {
+        const maxSort = Math.max(...payments.map(p => p.sort_order || 0));
+        const lastPayment = payments.find(p => (p.sort_order || 0) === maxSort);
+        if (lastPayment) finalPaymentId = lastPayment.id;
+      }
+
+      const inspectionBadge = (status) => {
+        if (status === 'completed') return '<span class="badge badge-success" style="font-size:9px;">Inspected</span>';
+        if (status === 'in_progress') return '<span class="badge badge-warning" style="font-size:9px;">Inspecting</span>';
+        return '<span class="badge badge-gray" style="font-size:9px;">Not Inspected</span>';
+      };
+
       let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Term</th><th>Phase</th><th style="text-align:right;">%</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Retention</th><th style="text-align:right;">Net</th><th>Status</th><th>Expected</th><th>Invoice No.</th><th>Actions</th></tr></thead><tbody>`;
+        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Term</th><th>Phase</th><th style="text-align:right;">%</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Retention</th><th style="text-align:right;">Net</th><th>Status</th><th>Inspection</th><th>Expected</th><th>Invoice No.</th><th>Actions</th></tr></thead><tbody>`;
       for (const p of payments) {
+        const isFinal = p.id === finalPaymentId;
         const invoiceCell = p.invoice_number
           ? '<span style="font-family:var(--font-mono);font-weight:600;">' + p.invoice_number + '</span>'
           : '<input type="text" placeholder="Invoice #" style="font-size:10px;padding:3px 6px;width:90px;border:1px solid var(--border);border-radius:4px;" onblur="saveInvoiceNumber(\'' + p.id + '\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur();">';
         const canDelete = p.status === 'pending' || p.status === 'invoiced';
-        html += `<tr style="border-bottom:1px solid var(--border-light);">
-          <td style="padding:6px 8px;font-weight:600;">${p.payment_term||''}</td>
+
+        // Inspection column: show badge + update button for final payment
+        let inspectionCell = '-';
+        if (isFinal) {
+          const inspStatus = p.inspection_status || 'pending';
+          inspectionCell = inspectionBadge(inspStatus);
+          inspectionCell += ' <button class="btn btn-sm" style="font-size:9px;padding:2px 6px;" onclick="openInspectionModal(\'' + p.id + '\',\'' + inspStatus + '\',\'' + (p.inspection_date||'') + '\',\'' + encodeURIComponent(p.inspection_notes||'') + '\')">Update</button>';
+        }
+
+        // For final payment: show warning if trying to receive without inspection
+        let receiveBtn = '';
+        if (p.status === 'invoiced') {
+          if (isFinal && (p.inspection_status || 'pending') !== 'completed') {
+            receiveBtn = '<button class="btn btn-sm" style="font-size:10px;padding:3px 8px;opacity:0.5;cursor:not-allowed;" onclick="showToast(\'ต้องตรวจรับเรียบร้อยก่อนจึงจะ Receive งวดสุดท้ายได้\',\'warning\')" title="ต้องตรวจรับก่อน">Receive</button>';
+          } else {
+            receiveBtn = '<button class="btn btn-sm btn-success" style="font-size:10px;padding:3px 8px;" onclick="openReceiveModal(\'' + p.id + '\',' + p.net_amount + ')">Receive</button>';
+          }
+        }
+
+        const finalTag = isFinal ? '<span style="font-size:8px;background:var(--warning-bg);color:var(--warning);padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px;">FINAL</span>' : '';
+
+        html += `<tr style="border-bottom:1px solid var(--border-light);${isFinal ? 'background:var(--warning-bg-subtle, #fffbeb);' : ''}">
+          <td style="padding:6px 8px;font-weight:600;">${p.payment_term||''}${finalTag}</td>
           <td style="padding:6px;">${p.phase_name||'-'}</td>
           <td style="text-align:right;padding:6px;">${p.percentage}%</td>
           <td style="text-align:right;padding:6px;">฿${fmtNum(p.amount)}</td>
           <td style="text-align:right;padding:6px;color:var(--text-muted);">฿${fmtNum(p.retention_amount)}</td>
           <td style="text-align:right;padding:6px;font-weight:600;">฿${fmtNum(p.net_amount)}</td>
           <td style="padding:6px;">${statusBadgePS(p.status)}</td>
+          <td style="padding:6px;">${inspectionCell}</td>
           <td style="padding:6px;">${p.expected_date||'-'}</td>
           <td style="padding:6px;">${invoiceCell}</td>
           <td style="padding:6px;">
             <div style="display:flex;gap:4px;flex-wrap:wrap;">
-              ${p.status === 'invoiced' ? '<button class="btn btn-sm btn-success" style="font-size:10px;padding:3px 8px;" onclick="openReceiveModal(\'' + p.id + '\',' + p.net_amount + ')">Receive</button>' : ''}
+              ${receiveBtn}
               <button class="btn btn-sm" style="font-size:10px;padding:3px 8px;" onclick="openEditPayment('${p.id}')">Edit</button>
               ${canDelete ? '<button class="btn btn-sm" style="font-size:10px;padding:3px 8px;color:var(--danger);border-color:var(--danger);" onclick="deletePayment(\'' + p.id + '\')">Del</button>' : ''}
             </div>
@@ -955,6 +995,7 @@
           '<div class="form-group"><label class="form-label">Expected Date</label><input class="form-input" type="date" id="pmt-date"></div>' +
           '<div class="form-group"><label class="form-label">Invoice Number</label><input class="form-input" id="pmt-invoice" placeholder="Invoice #"></div>' +
           '<div class="form-group"><label class="form-label">Remarks</label><input class="form-input" id="pmt-remarks"></div>' +
+          '<div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:8px;"><input type="checkbox" id="pmt-is-final"><label for="pmt-is-final" class="form-label" style="margin:0;cursor:pointer;">Final Payment (งวดสุดท้าย — ต้องตรวจรับก่อน release)</label></div>' +
         '</div>' +
         '<div class="modal-footer"><button class="btn btn-secondary" onclick="document.getElementById(\'pmt-modal\').classList.remove(\'show\')">Cancel</button><button class="btn btn-primary" onclick="savePaymentTerm()">' + (editPaymentId ? 'Update' : 'Save') + '</button></div>' +
       '</div>';
@@ -976,6 +1017,7 @@
         document.getElementById('pmt-date').value = p.expected_date ? p.expected_date.substring(0,10) : '';
         document.getElementById('pmt-invoice').value = p.invoice_number || '';
         document.getElementById('pmt-remarks').value = p.remarks || '';
+        document.getElementById('pmt-is-final').checked = !!p.is_final;
       } catch(e) { console.error('Prefill error:', e); }
     }
 
@@ -988,6 +1030,7 @@
         expected_date: document.getElementById('pmt-date').value || null,
         invoice_number: document.getElementById('pmt-invoice').value || null,
         remarks: document.getElementById('pmt-remarks').value || null,
+        is_final: document.getElementById('pmt-is-final').checked,
       };
       if (body.invoice_number) body.invoice_date = new Date().toISOString().slice(0,10);
       try {
@@ -1051,6 +1094,48 @@
         });
         document.getElementById('recv-modal').classList.remove('show');
         showToast('Payment received', 'success');
+        loadFinanceDashboard();
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    // ═══ Inspection Modal (Final Payment) ═══
+    function openInspectionModal(paymentId, currentStatus, currentDate, encodedNotes) {
+      var notes = decodeURIComponent(encodedNotes || '');
+      let m = document.getElementById('insp-modal');
+      if (!m) { m = document.createElement('div'); m.id = 'insp-modal'; m.className = 'modal-overlay'; m.onclick = function(e) { if (e.target===m) m.classList.remove('show'); }; document.body.appendChild(m); }
+      m.innerHTML = '<div class="modal-box" style="width:460px;">' +
+        '<div class="modal-header"><h3>Inspection Status (สถานะตรวจรับ)</h3><button class="modal-close" onclick="document.getElementById(\'insp-modal\').classList.remove(\'show\')">&times;</button></div>' +
+        '<div class="modal-body">' +
+          '<div style="padding:12px;background:var(--warning-bg);border-radius:var(--radius);margin-bottom:16px;font-size:12px;color:var(--warning);"><strong>Final Payment:</strong> ต้องตรวจรับเรียบร้อย (Completed) ก่อนจึงจะ release/receive ได้</div>' +
+          '<div class="form-group"><label class="form-label">Inspection Status</label><select class="form-input" id="insp-status">' +
+            '<option value="pending"' + (currentStatus==='pending'?' selected':'') + '>Pending (ยังไม่ตรวจ)</option>' +
+            '<option value="in_progress"' + (currentStatus==='in_progress'?' selected':'') + '>In Progress (กำลังตรวจ/แก้ไข)</option>' +
+            '<option value="completed"' + (currentStatus==='completed'?' selected':'') + '>Completed (ตรวจรับเรียบร้อย)</option>' +
+          '</select></div>' +
+          '<div class="form-group"><label class="form-label">Inspection Date</label><input class="form-input" type="date" id="insp-date" value="' + (currentDate || '') + '"></div>' +
+          '<div class="form-group"><label class="form-label">Notes (บันทึกการตรวจรับ)</label><textarea class="form-input" id="insp-notes" rows="3" placeholder="รายละเอียดการตรวจรับ, ข้อแก้ไข, etc.">' + notes + '</textarea></div>' +
+        '</div>' +
+        '<div class="modal-footer"><button class="btn btn-secondary" onclick="document.getElementById(\'insp-modal\').classList.remove(\'show\')">Cancel</button><button class="btn btn-primary" onclick="saveInspection(\'' + paymentId + '\')">Save</button></div>' +
+      '</div>';
+      m.classList.add('show');
+    }
+
+    async function saveInspection(paymentId) {
+      var inspStatus = document.getElementById('insp-status').value;
+      var inspDate = document.getElementById('insp-date').value;
+      var inspNotes = document.getElementById('insp-notes').value;
+      // Auto-fill date if marking completed and no date set
+      if (inspStatus === 'completed' && !inspDate) {
+        inspDate = new Date().toISOString().slice(0,10);
+      }
+      try {
+        await API.put('/projects/payment-schedule/' + paymentId, {
+          inspection_status: inspStatus,
+          inspection_date: inspDate || null,
+          inspection_notes: inspNotes || null,
+        });
+        document.getElementById('insp-modal').classList.remove('show');
+        showToast('Inspection status updated', 'success');
         loadFinanceDashboard();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }

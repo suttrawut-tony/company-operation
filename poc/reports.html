@@ -278,6 +278,14 @@
           <button class="btn btn-ghost btn-sm" onclick="closeReport()">Close</button>
         </div>
       </div>
+      <div id="report-date-filter" style="display:flex;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border-light);background:var(--bg-secondary);font-size:13px;">
+        <label style="font-weight:600;color:var(--text-secondary);">Date Range:</label>
+        <input type="date" id="report-date-from" class="form-input" style="width:auto;padding:4px 8px;font-size:12px;">
+        <span style="color:var(--text-muted);">→</span>
+        <input type="date" id="report-date-to" class="form-input" style="width:auto;padding:4px 8px;font-size:12px;">
+        <button class="btn btn-primary btn-sm" onclick="rerunWithDateFilter()" style="font-size:11px;padding:4px 12px;">Apply</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearDateFilter()" style="font-size:11px;padding:4px 8px;">Clear</button>
+      </div>
       <div id="report-content" style="padding:20px;overflow-x:auto;"></div>
     </div>
   </main>
@@ -368,6 +376,7 @@
     let _activeCard = null;
 
     async function runReport(type, cardEl) {
+      _lastReportType = type;
       // Highlight active card
       if (_activeCard) _activeCard.classList.remove('active');
       if (cardEl) { cardEl.classList.add('active'); _activeCard = cardEl; }
@@ -397,6 +406,35 @@
     function closeReport() {
       document.getElementById('report-result').classList.add('hidden');
       if (_activeCard) { _activeCard.classList.remove('active'); _activeCard = null; }
+    }
+
+    // ── Date range filter ──
+    let _lastReportType = null;
+    function getDateFilter() {
+      return {
+        from: document.getElementById('report-date-from').value || null,
+        to: document.getElementById('report-date-to').value || null,
+      };
+    }
+    function rerunWithDateFilter() {
+      if (_lastReportType && _activeCard) runReport(_lastReportType, _activeCard);
+    }
+    function clearDateFilter() {
+      document.getElementById('report-date-from').value = '';
+      document.getElementById('report-date-to').value = '';
+      if (_lastReportType && _activeCard) runReport(_lastReportType, _activeCard);
+    }
+    // Helper: filter array by date field within range
+    function filterByDateRange(arr, dateField) {
+      const { from, to } = getDateFilter();
+      if (!from && !to) return arr;
+      return arr.filter(item => {
+        const d = (item[dateField] || '').slice(0, 10);
+        if (!d) return false;
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      });
     }
 
     /* ═══════════════════════════════════════════

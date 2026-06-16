@@ -123,9 +123,9 @@ router.post('/', async (req, res) => {
     if (lines) {
       for (const [i, line] of lines.entries()) {
         await db.query(
-          `INSERT INTO pr_lines (pr_id, line_num, item_code, item_name, quantity, uom, unit_price, total_price, sap_account, tax_code)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-          [pr.id, i + 1, line.item_code, line.item_name, line.quantity, line.uom || 'EA', line.unit_price, line.total_price, line.sap_account, line.tax_code]
+          `INSERT INTO pr_lines (pr_id, line_num, item_code, item_name, quantity, uom, unit_price, total_price, sap_account, tax_code, vendor_quotes)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          [pr.id, i + 1, line.item_code, line.item_name || line.description, line.quantity, line.uom || 'EA', line.unit_price, line.total_price, line.sap_account, line.tax_code, JSON.stringify(line.vendor_quotes || [])]
         );
       }
     }

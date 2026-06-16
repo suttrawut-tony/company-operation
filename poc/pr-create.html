@@ -21,7 +21,7 @@
 
     /* Line Items */
     .lines-editor { overflow-x: auto; }
-    .lines-editor table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .lines-editor table { width: 100%; border-collapse: collapse; min-width: 1400px; }
     .lines-editor th {
       padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600;
       color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
@@ -47,6 +47,16 @@
       font-size: 16px; padding: 6px;
     }
     .lines-editor .remove-btn:hover { color: var(--danger); }
+
+    /* Vendor Quotes */
+    .vendor-quotes-cell { padding: 4px 6px !important; }
+    .vendor-quote-row { display: flex; gap: 4px; align-items: center; margin-bottom: 3px; }
+    .vendor-quote-row:last-child { margin-bottom: 0; }
+    .vendor-quote-row select { flex: 1; min-width: 100px; font-size: 11px; padding: 5px 6px; }
+    .vendor-quote-row input { width: 90px; font-size: 11px; padding: 5px 6px; text-align: right; }
+    .vendor-quote-label { font-size: 10px; color: var(--text-muted); font-weight: 600; width: 16px; text-align: center; flex-shrink: 0; }
+    .vendor-quote-row.lowest-price input { background: #ecfdf5; border-color: #10b981; }
+    .vendor-quote-row.lowest-price select { background: #ecfdf5; border-color: #10b981; }
 
     .add-line-btn {
       padding: 10px 16px; border: 1px dashed var(--border); border-radius: var(--radius);
@@ -213,6 +223,7 @@
                   <th style="width:90px;">GL Account</th>
                   <th style="width:100px;">Budget Line</th>
                   <th style="width:110px;text-align:right;">Total</th>
+                  <th style="min-width:280px;">Vendor Quotes (เปรียบเทียบราคา)</th>
                   <th style="width:30px;"></th>
                 </tr>
               </thead>
@@ -248,6 +259,23 @@
                     <option value="misc">Misc</option>
                   </select></td>
                   <td class="line-total">&#3647;0.00</td>
+                  <td class="vendor-quotes-cell">
+                    <div class="vendor-quote-row" data-vq="1">
+                      <span class="vendor-quote-label">1</span>
+                      <select class="vq-vendor" onchange="highlightLowest(this)"><option value="">-- Vendor --</option></select>
+                      <input type="number" class="vq-price num-input" placeholder="Price" step="0.01" onchange="highlightLowest(this)">
+                    </div>
+                    <div class="vendor-quote-row" data-vq="2">
+                      <span class="vendor-quote-label">2</span>
+                      <select class="vq-vendor" onchange="highlightLowest(this)"><option value="">-- Vendor --</option></select>
+                      <input type="number" class="vq-price num-input" placeholder="Price" step="0.01" onchange="highlightLowest(this)">
+                    </div>
+                    <div class="vendor-quote-row" data-vq="3">
+                      <span class="vendor-quote-label">3</span>
+                      <select class="vq-vendor" onchange="highlightLowest(this)"><option value="">-- Vendor --</option></select>
+                      <input type="number" class="vq-price num-input" placeholder="Price" step="0.01" onchange="highlightLowest(this)">
+                    </div>
+                  </td>
                   <td><button type="button" class="remove-btn" onclick="removeLine(this)">&times;</button></td>
                 </tr>
               </tbody>
@@ -357,6 +385,43 @@
   <script>
     let lineCount = 1;
 
+    // Populate all .vq-vendor selects with vendor options from master
+    function populateVendorQuoteSelects() {
+      const optionsHtml = buildVendorOptions('');
+      document.querySelectorAll('.vq-vendor').forEach(sel => {
+        sel.innerHTML = optionsHtml;
+      });
+    }
+
+    // Highlight the lowest price vendor quote row per line item
+    function highlightLowest(el) {
+      const row = el.closest('tr');
+      if (!row) return;
+      const quoteRows = row.querySelectorAll('.vendor-quote-row');
+      let lowestPrice = Infinity;
+      let lowestIdx = -1;
+      quoteRows.forEach((qr, idx) => {
+        qr.classList.remove('lowest-price');
+        const vendor = qr.querySelector('.vq-vendor')?.value;
+        const price = parseFloat(qr.querySelector('.vq-price')?.value) || 0;
+        if (vendor && price > 0 && price < lowestPrice) {
+          lowestPrice = price;
+          lowestIdx = idx;
+        }
+      });
+      // Count how many valid quotes exist
+      let validCount = 0;
+      quoteRows.forEach(qr => {
+        const v = qr.querySelector('.vq-vendor')?.value;
+        const p = parseFloat(qr.querySelector('.vq-price')?.value) || 0;
+        if (v && p > 0) validCount++;
+      });
+      // Only highlight if at least 2 valid quotes for comparison
+      if (lowestIdx >= 0 && validCount >= 2) {
+        quoteRows[lowestIdx].classList.add('lowest-price');
+      }
+    }
+
     function addLine() {
       lineCount++;
       const tbody = document.getElementById('line-items');
@@ -366,6 +431,10 @@
       row.querySelectorAll('input').forEach(inp => { inp.value = ''; });
       row.querySelector('.num-input').value = '1';
       row.querySelector('.line-total').textContent = '฿0.00';
+      // Reset vendor quote fields
+      row.querySelectorAll('.vq-vendor').forEach(sel => sel.value = '');
+      row.querySelectorAll('.vq-price').forEach(inp => inp.value = '');
+      row.querySelectorAll('.vendor-quote-row').forEach(qr => qr.classList.remove('lowest-price'));
       // Reset item picker and remove old searchable wrapper
       const oldWrapper = row.querySelector('.ss-wrapper');
       if (oldWrapper) {
@@ -448,7 +517,7 @@
     // Load dropdowns from API + master items
     async function loadDropdowns() {
       try {
-        const [projects, bps] = await Promise.all([API.getProjects(), API.get('/master/bp'), loadMasterItems()]);
+        const [projects, bps] = await Promise.all([API.getProjects(), API.get('/master/bp'), loadMasterItems(), loadMasterVendors()]);
         const pSel = document.getElementById('pr-project');
         (Array.isArray(projects)?projects:(projects.data||[])).forEach(p => {
           pSel.innerHTML += `<option value="${p.id}">${p.code||''} — ${p.name||''}</option>`;
@@ -462,6 +531,8 @@
           sel.innerHTML = buildItemOptions('');
           if (typeof makeSearchable === 'function') makeSearchable(sel);
         });
+        // Populate vendor quote dropdowns from master vendors
+        populateVendorQuoteSelects();
       } catch(e) { console.warn('Failed to load dropdowns', e); }
     }
 
@@ -510,7 +581,18 @@
         const sap_account = selects[3]?.value || '';
         const total_price = quantity * unit_price;
         if (!item_code && !item_name) return; // skip empty rows
-        lines.push({ item_code, description: item_name, quantity, uom, unit_price, tax_code, sap_account, total_price });
+        // Collect vendor quotes (up to 3)
+        const vendor_quotes = [];
+        row.querySelectorAll('.vendor-quote-row').forEach(qr => {
+          const vSel = qr.querySelector('.vq-vendor');
+          const bp_code = vSel?.value || '';
+          const bp_name = vSel?.selectedOptions[0]?.textContent?.trim() || '';
+          const price = parseFloat(qr.querySelector('.vq-price')?.value) || 0;
+          if (bp_code && price > 0) {
+            vendor_quotes.push({ bp_code, bp_name, price });
+          }
+        });
+        lines.push({ item_code, description: item_name, quantity, uom, unit_price, tax_code, sap_account, total_price, vendor_quotes });
       });
       // Collect vendor_name from selected option text
       const vendorSel = document.getElementById('pr-vendor');
@@ -540,8 +622,8 @@
         const el = document.getElementById(id);
         if (el) el.disabled = !hasProject;
       });
-      // Line item inputs and selects
-      document.querySelectorAll('#line-items input, #line-items select').forEach(el => {
+      // Line item inputs and selects (including vendor quote fields)
+      document.querySelectorAll('#line-items input, #line-items select, .vq-vendor, .vq-price').forEach(el => {
         el.disabled = !hasProject;
       });
       // Add line / remove line buttons

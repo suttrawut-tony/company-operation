@@ -527,7 +527,8 @@ router.get('/:id/discussions', requireProjectAccess, async (req, res) => {
 router.get('/:id/payment-schedule', async (req, res) => {
   try {
     const { rows: payments } = await db.query(
-      `SELECT pp.*, ph.name AS phase_name
+      `SELECT pp.*, ph.name AS phase_name,
+              pp.is_final, pp.inspection_status, pp.inspection_date, pp.inspection_notes
        FROM phase_payments pp LEFT JOIN phases ph ON pp.phase_id = ph.id
        WHERE pp.project_id = $1 ORDER BY pp.sort_order, pp.created_at`, [req.params.id]);
     const { rows: [proj] } = await db.query('SELECT tor_amount, retention_rate FROM projects WHERE id=$1', [req.params.id]);
@@ -542,7 +543,7 @@ router.get('/:id/payment-schedule', async (req, res) => {
 // POST /api/projects/:id/payment-schedule
 router.post('/:id/payment-schedule', async (req, res) => {
   try {
-    const { phase_id, payment_term, description, percentage, due_conditions, expected_date, remarks, sort_order } = req.body;
+    const { phase_id, payment_term, description, percentage, due_conditions, expected_date, remarks, sort_order, is_final } = req.body;
     const { rows: [proj] } = await db.query('SELECT tor_amount, retention_rate FROM projects WHERE id=$1', [req.params.id]);
     const tor = parseFloat(proj?.tor_amount || 0);
     const retRate = parseFloat(proj?.retention_rate || 0);
@@ -551,9 +552,9 @@ router.post('/:id/payment-schedule', async (req, res) => {
     const retAmt = amount * retRate / 100;
     const net = amount - retAmt;
     const { rows: [p] } = await db.query(
-      `INSERT INTO phase_payments (project_id, phase_id, payment_term, description, percentage, amount, retention_amount, net_amount, due_conditions, expected_date, remarks, sort_order, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-      [req.params.id, phase_id||null, payment_term, description, pct, amount, retAmt, net, due_conditions, expected_date||null, remarks, sort_order||0, req.user.id]);
+      `INSERT INTO phase_payments (project_id, phase_id, payment_term, description, percentage, amount, retention_amount, net_amount, due_conditions, expected_date, remarks, sort_order, is_final, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      [req.params.id, phase_id||null, payment_term, description, pct, amount, retAmt, net, due_conditions, expected_date||null, remarks, sort_order||0, is_final||false, req.user.id]);
     res.status(201).json(p);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -561,7 +562,7 @@ router.post('/:id/payment-schedule', async (req, res) => {
 // PUT /api/projects/payment-schedule/:paymentId
 router.put('/payment-schedule/:paymentId', async (req, res) => {
   try {
-    const fields = ['payment_term','description','percentage','due_conditions','expected_date','invoice_number','invoice_date','received_date','received_amount','wht_amount','actual_net','payment_method','bank_reference','status','remarks','sort_order','phase_id'];
+    const fields = ['payment_term','description','percentage','due_conditions','expected_date','invoice_number','invoice_date','received_date','received_amount','wht_amount','actual_net','payment_method','bank_reference','status','remarks','sort_order','phase_id','is_final','inspection_status','inspection_date','inspection_notes'];
     const sets = []; const params = []; let idx = 1;
     for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     // Recalculate amount if percentage changed
@@ -587,6 +588,37 @@ router.put('/payment-schedule/:paymentId', async (req, res) => {
       if (pp && parseFloat(req.body.received_amount) >= parseFloat(pp.amount)) { sets.push(`status = $${idx++}`); params.push('paid'); }
       else if (parseFloat(req.body.received_amount) > 0) { sets.push(`status = $${idx++}`); params.push('partially_paid'); }
     }
+
+    // ═══ Final Payment Inspection Guard ═══
+    // If updating status to 'released' or 'paid', check if this is the final payment
+    // and whether inspection is completed
+    const targetStatus = req.body.status;
+    if (targetStatus === 'released' || targetStatus === 'paid') {
+      const { rows: [current] } = await db.query(
+        'SELECT is_final, inspection_status, project_id, sort_order FROM phase_payments WHERE id=$1',
+        [req.params.paymentId]);
+      if (current) {
+        // Determine if this is the final milestone: explicitly marked OR highest sort_order
+        let isFinal = current.is_final;
+        if (!isFinal) {
+          const { rows: [maxSort] } = await db.query(
+            'SELECT MAX(sort_order) AS max_sort FROM phase_payments WHERE project_id=$1',
+            [current.project_id]);
+          if (maxSort && current.sort_order === maxSort.max_sort) isFinal = true;
+        }
+        if (isFinal) {
+          // Use the incoming inspection_status if provided, otherwise use the stored one
+          const effectiveInspection = req.body.inspection_status || current.inspection_status;
+          if (effectiveInspection !== 'completed') {
+            return res.status(400).json({
+              error: 'INSPECTION_REQUIRED',
+              message: 'งวดสุดท้ายต้องตรวจรับเรียบร้อยก่อนจึงจะ release/paid ได้ (inspection_status must be "completed")'
+            });
+          }
+        }
+      }
+    }
+
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     sets.push('updated_at = NOW()');
     params.push(req.params.paymentId);
@@ -619,10 +651,11 @@ router.post('/:id/payment-schedule/generate', async (req, res) => {
       const pct = i === phases.length - 1 ? (100 - pctEach * (phases.length - 1)) : pctEach; // Last phase gets remainder
       const amount = tor * pct / 100;
       const retAmt = amount * retRate / 100;
+      const isFinal = (i === phases.length - 1);
       const { rows: [p] } = await db.query(
-        `INSERT INTO phase_payments (project_id, phase_id, payment_term, description, percentage, amount, retention_amount, net_amount, expected_date, sort_order, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-        [req.params.id, phases[i].id, `งวดที่ ${i+1}`, `ส่งมอบ ${phases[i].name}`, pct, amount, retAmt, amount-retAmt, phases[i].end_date, i+1, req.user.id]);
+        `INSERT INTO phase_payments (project_id, phase_id, payment_term, description, percentage, amount, retention_amount, net_amount, expected_date, sort_order, is_final, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+        [req.params.id, phases[i].id, `งวดที่ ${i+1}`, `ส่งมอบ ${phases[i].name}`, pct, amount, retAmt, amount-retAmt, phases[i].end_date, i+1, isFinal, req.user.id]);
       created.push(p);
     }
     res.status(201).json(created);

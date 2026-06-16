@@ -11,12 +11,14 @@ router.get('/', async (req, res) => {
       v.name AS vehicle_name, v.plate_number,
       t.first_name AS tech_first, t.last_name AS tech_last, t.nickname AS tech_nickname,
       u.first_name || ' ' || u.last_name AS booked_by_name,
+      ap.first_name || ' ' || ap.last_name AS approver_name,
       p.code AS project_code, p.name AS project_name,
       jo.job_order_number, jo.title AS job_order_title
       FROM bookings b
       LEFT JOIN vehicles v ON b.vehicle_id = v.id
       LEFT JOIN technicians t ON b.technician_id = t.id
       LEFT JOIN users u ON b.booked_by = u.id
+      LEFT JOIN users ap ON b.approver_id = ap.id
       LEFT JOIN projects p ON b.project_id = p.id
       LEFT JOIN job_orders jo ON b.job_order_id = jo.id
       WHERE b.company_id = $1`;
@@ -103,12 +105,12 @@ router.post('/', async (req, res) => {
     }
 
     // Sanitize UUID fields — empty string or "null" → null
-    const uuidFields = ['project_id','travel_id','job_order_id','vehicle_id','technician_id'];
+    const uuidFields = ['project_id','travel_id','job_order_id','vehicle_id','technician_id','approver_id'];
     uuidFields.forEach(f => { if (!b[f] || b[f] === 'null' || b[f] === '') b[f] = null; });
 
     const defaultColor = { vehicle: '#4285f4', technician: '#0f9d58', flight: '#db4437' }[b.booking_type] || '#4285f4';
-    const fields = ['company_id','booking_type','project_id','travel_id','job_order_id','vehicle_id','technician_id','start_date','start_time','end_date','end_time','all_day','title','purpose','location','remarks','color','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','e_ticket_url','booked_by','phase','customer_name','customer_phone','customer_address','gps_lat','gps_lng','roof_area','roof_type','orientation','recommended_kwp','survey_photos','survey_notes','electrical_info'];
-    const vals = [req.user.company_id, b.booking_type, b.project_id||null, b.travel_id||null, b.job_order_id||null, b.vehicle_id||null, b.technician_id||null, b.start_date, b.start_time||null, b.end_date, b.end_time||null, b.all_day !== false, b.title||null, b.purpose||null, b.location||null, b.remarks||null, b.color||defaultColor, b.passengers||null, b.job_type||null, b.site_name||null, b.system_capacity||null, b.job_description||null, b.tools_required||null, b.safety_notes||null, b.airline||null, b.flight_number||null, b.departure_airport||null, b.arrival_airport||null, b.departure_time||null, b.arrival_time||null, b.return_flight_number||null, b.return_departure_time||null, b.return_arrival_time||null, b.passenger_names||null, b.booking_reference||null, b.ticket_cost||null, b.booking_channel||null, b.e_ticket_url||null, req.user.id, b.phase||'survey', b.customer_name||null, b.customer_phone||null, b.customer_address||null, b.gps_lat||null, b.gps_lng||null, b.roof_area||null, b.roof_type||null, b.orientation||null, b.recommended_kwp||null, b.survey_photos||null, b.survey_notes||null, b.electrical_info||null];
+    const fields = ['company_id','booking_type','project_id','travel_id','job_order_id','vehicle_id','technician_id','start_date','start_time','end_date','end_time','all_day','title','purpose','location','remarks','color','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','e_ticket_url','booked_by','phase','customer_name','customer_phone','customer_address','gps_lat','gps_lng','roof_area','roof_type','orientation','recommended_kwp','survey_photos','survey_notes','electrical_info','approver_id'];
+    const vals = [req.user.company_id, b.booking_type, b.project_id||null, b.travel_id||null, b.job_order_id||null, b.vehicle_id||null, b.technician_id||null, b.start_date, b.start_time||null, b.end_date, b.end_time||null, b.all_day !== false, b.title||null, b.purpose||null, b.location||null, b.remarks||null, b.color||defaultColor, b.passengers||null, b.job_type||null, b.site_name||null, b.system_capacity||null, b.job_description||null, b.tools_required||null, b.safety_notes||null, b.airline||null, b.flight_number||null, b.departure_airport||null, b.arrival_airport||null, b.departure_time||null, b.arrival_time||null, b.return_flight_number||null, b.return_departure_time||null, b.return_arrival_time||null, b.passenger_names||null, b.booking_reference||null, b.ticket_cost||null, b.booking_channel||null, b.e_ticket_url||null, req.user.id, b.phase||'survey', b.customer_name||null, b.customer_phone||null, b.customer_address||null, b.gps_lat||null, b.gps_lng||null, b.roof_area||null, b.roof_type||null, b.orientation||null, b.recommended_kwp||null, b.survey_photos||null, b.survey_notes||null, b.electrical_info||null, b.approver_id||null];
     const placeholders = vals.map((_, i) => `$${i+1}`).join(',');
     const { rows: [booking] } = await db.query(
       `INSERT INTO bookings (${fields.join(',')}) VALUES (${placeholders}) RETURNING *`, vals);
@@ -150,10 +152,10 @@ router.put('/:id', async (req, res) => {
       }
     }
     // Sanitize UUID fields
-    ['project_id','job_order_id','vehicle_id','technician_id','quotation_id'].forEach(f => {
+    ['project_id','job_order_id','vehicle_id','technician_id','quotation_id','approver_id'].forEach(f => {
       if (req.body[f] === '' || req.body[f] === 'null') req.body[f] = null;
     });
-    const allowed = ['title','purpose','location','remarks','color','start_date','end_date','start_time','end_time','all_day','project_id','job_order_id','vehicle_id','technician_id','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','status','job_status','job_report','phase','customer_name','customer_phone','customer_address','gps_lat','gps_lng','roof_area','roof_type','orientation','recommended_kwp','survey_photos','survey_notes','electrical_info'];
+    const allowed = ['title','purpose','location','remarks','color','start_date','end_date','start_time','end_time','all_day','project_id','job_order_id','vehicle_id','technician_id','passengers','job_type','site_name','system_capacity','job_description','tools_required','safety_notes','airline','flight_number','departure_airport','arrival_airport','departure_time','arrival_time','return_flight_number','return_departure_time','return_arrival_time','passenger_names','booking_reference','ticket_cost','booking_channel','status','job_status','job_report','phase','customer_name','customer_phone','customer_address','gps_lat','gps_lng','roof_area','roof_type','orientation','recommended_kwp','survey_photos','survey_notes','electrical_info','approver_id'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
@@ -178,8 +180,16 @@ router.delete('/:id', async (req, res) => {
 // POST /api/bookings/:id/approve
 router.post('/:id/approve', async (req, res) => {
   try {
+    // Fetch booking to check approver authorization
+    const { rows: [booking] } = await db.query('SELECT * FROM bookings WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    if (!booking) return res.status(404).json({ error: 'Not found' });
+    if (booking.status !== 'pending') return res.status(400).json({ error: 'Cannot approve — status is ' + booking.status });
+    // Only designated approver or admin/executive can approve
+    if (booking.approver_id && booking.approver_id !== req.user.id && !['admin','executive'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'คุณไม่ใช่ผู้อนุมัติที่กำหนดไว้สำหรับรายการนี้' });
+    }
     const { rows } = await db.query(
-      "UPDATE bookings SET status='approved', approved_by=$1, approved_at=NOW(), updated_at=NOW() WHERE id=$2 AND status='pending' RETURNING *",
+      "UPDATE bookings SET status='approved', approved_by=$1, approved_at=NOW(), updated_at=NOW() WHERE id=$2 RETURNING *",
       [req.user.id, req.params.id]);
     if (!rows[0]) return res.status(400).json({ error: 'Cannot approve' });
     res.json(rows[0]);
