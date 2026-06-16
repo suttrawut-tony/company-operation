@@ -1147,7 +1147,7 @@ function renderERPSettings() {
       </div>
 
       <div class="card-actions" style="justify-content:flex-end;">
-        <button class="btn btn-primary" onclick="saveERPSettings()">
+        <button class="btn btn-primary" onclick="saveERPSettings()" data-i18n="btn_save">
           ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} บันทึก
         </button>
       </div>
@@ -1425,7 +1425,7 @@ function renderOTRatePolicy() {
         </div>
       </div>
       <div class="card-footer" style="display:flex;justify-content:flex-end;">
-        <button class="btn btn-primary" onclick="saveOTRatePolicy()">
+        <button class="btn btn-primary" onclick="saveOTRatePolicy()" data-i18n="btn_save_changes">
           ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
         </button>
       </div>
@@ -1513,7 +1513,7 @@ function renderNotifications() {
     </div>
 
     <div class="card-actions" style="border:none;margin-top:0;padding-top:0;">
-      <button class="btn btn-primary" onclick="saveNotificationSettings()">
+      <button class="btn btn-primary" onclick="saveNotificationSettings()" data-i18n="btn_save_all">
         ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save All Changes
       </button>
     </div>
