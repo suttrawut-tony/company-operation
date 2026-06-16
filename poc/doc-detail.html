@@ -525,7 +525,7 @@
             }
           }).join('');
           const grandTotal = subtotal + totalTax;
-          const cols = isEditing ? 10 : 10; // # + code + desc + qty + uom + price + disc + tax + acct + whse
+          const cols = isEditing ? 11 : 10; // editing adds Vendor Quotes column
           const ec = isEditing ? '<td></td>' : '';
           document.getElementById('lines-foot').innerHTML = `
             <tr class="subtotal-row"><td colspan="${cols}" style="text-align:right;padding-right:20px;">Subtotal</td><td class="num" style="text-align:right;">${money(subtotal)}</td>${ec}</tr>

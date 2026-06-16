@@ -72,7 +72,7 @@ router.put('/:id', async (req, res) => {
     if (ot.created_by !== req.user.id && !['pm','manager','executive','admin'].includes(role)) {
       return res.status(403).json({ error: 'Not authorized' });
     }
-    const { project_id, ot_date, ot_type, hours, base_rate, reason, status } = req.body;
+    const { project_id, ot_date, ot_type, hours, base_rate, reason } = req.body;
     const newType = ot_type || ot.ot_type;
     const newHours = hours != null ? hours : ot.hours;
     // Flat rate: holiday/special = 500, normal = 400 (ignore multiplier)
@@ -83,9 +83,9 @@ router.put('/:id', async (req, res) => {
     const { rows } = await db.query(
       `UPDATE ot_requests SET project_id=COALESCE($1,project_id), ot_date=COALESCE($2,ot_date),
        ot_type=COALESCE($3,ot_type), hours=COALESCE($4,hours), base_rate=COALESCE($5,base_rate),
-       multiplier=$6, compensation=$7, reason=COALESCE($8,reason), status=COALESCE($9,status),
-       updated_at=NOW() WHERE id=$10 RETURNING *`,
-      [project_id, ot_date, ot_type, hours, base_rate, multiplier, compensation, reason, status, req.params.id]
+       multiplier=$6, compensation=$7, reason=COALESCE($8,reason),
+       updated_at=NOW() WHERE id=$9 RETURNING *`,
+      [project_id, ot_date, ot_type, hours, base_rate, multiplier, compensation, reason, req.params.id]
     );
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }

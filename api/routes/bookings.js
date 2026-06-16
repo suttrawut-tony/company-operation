@@ -200,8 +200,8 @@ router.post('/:id/approve', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   try {
     const { rows } = await db.query(
-      "UPDATE bookings SET status='rejected', remarks=$1, updated_at=NOW() WHERE id=$2 AND status='pending' RETURNING *",
-      [req.body.reason || '', req.params.id]);
+      "UPDATE bookings SET status='rejected', remarks=$1, updated_at=NOW() WHERE id=$2 AND company_id=$3 AND status='pending' RETURNING *",
+      [req.body.reason || '', req.params.id, req.user.company_id]);
     if (!rows[0]) return res.status(400).json({ error: 'Cannot reject' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }

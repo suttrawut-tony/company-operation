@@ -89,7 +89,7 @@ router.post('/:id/periods', async (req, res) => {
       await db.query(
         `INSERT INTO budget_periods (budget_id, line_id, period_month, budget_amount)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (id) DO UPDATE SET budget_amount = $4`,
+         ON CONFLICT (budget_id, line_id, period_month) DO UPDATE SET budget_amount = $4`,
         [req.params.id, p.line_id || null, p.period_month, p.budget_amount || 0]);
     }
     res.json({ success: true, count: periods.length });
