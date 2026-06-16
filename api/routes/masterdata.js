@@ -13,21 +13,25 @@ router.get('/items', async (req, res) => {
 
 router.post('/items', requireRole('executive','admin','procurement'), async (req, res) => {
   try {
-    const { item_code, item_name, item_name_th, category, uom, unit_price, gl_account, tax_code } = req.body;
+    const { item_code, item_name, item_name_th, category, uom, unit_price, gl_account, tax_code, has_warranty, warranty_months, warranty_terms } = req.body;
     if (!item_code || !item_name) return res.status(400).json({ error: 'Code and name required' });
     const { rows } = await db.query(
-      'INSERT INTO items (company_id, item_code, item_name, item_name_th, category, uom, unit_price, gl_account, tax_code) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
-      [req.user.company_id, item_code, item_name, item_name_th||'', category||'material', uom||'EA', unit_price||0, gl_account||'114101', tax_code||'IG07']);
+      'INSERT INTO items (company_id, item_code, item_name, item_name_th, category, uom, unit_price, gl_account, tax_code, has_warranty, warranty_months, warranty_terms) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *',
+      [req.user.company_id, item_code, item_name, item_name_th||'', category||'material', uom||'EA', unit_price||0, gl_account||'114101', tax_code||'IG07', !!has_warranty, parseInt(warranty_months)||0, warranty_terms||null]);
     res.status(201).json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.put('/items/:id', requireRole('executive','admin','procurement'), async (req, res) => {
   try {
-    const { item_name, item_name_th, category, uom, unit_price, gl_account, tax_code, is_active } = req.body;
+    const { item_name, item_name_th, category, uom, unit_price, gl_account, tax_code, is_active, has_warranty, warranty_months, warranty_terms } = req.body;
     const { rows } = await db.query(
-      'UPDATE items SET item_name=COALESCE($1,item_name), item_name_th=COALESCE($2,item_name_th), category=COALESCE($3,category), uom=COALESCE($4,uom), unit_price=COALESCE($5,unit_price), gl_account=COALESCE($6,gl_account), tax_code=COALESCE($7,tax_code), is_active=COALESCE($8,is_active) WHERE id=$9 AND company_id=$10 RETURNING *',
-      [item_name, item_name_th, category, uom, unit_price, gl_account, tax_code, is_active, req.params.id, req.user.company_id]);
+      `UPDATE items SET item_name=COALESCE($1,item_name), item_name_th=COALESCE($2,item_name_th), category=COALESCE($3,category), uom=COALESCE($4,uom), unit_price=COALESCE($5,unit_price), gl_account=COALESCE($6,gl_account), tax_code=COALESCE($7,tax_code), is_active=COALESCE($8,is_active),
+         has_warranty=COALESCE($9,has_warranty), warranty_months=COALESCE($10,warranty_months), warranty_terms=COALESCE($11,warranty_terms)
+       WHERE id=$12 AND company_id=$13 RETURNING *`,
+      [item_name, item_name_th, category, uom, unit_price, gl_account, tax_code, is_active,
+       has_warranty===undefined?null:!!has_warranty, warranty_months===undefined?null:(parseInt(warranty_months)||0), warranty_terms===undefined?null:warranty_terms,
+       req.params.id, req.user.company_id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }

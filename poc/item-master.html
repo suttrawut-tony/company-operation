@@ -52,6 +52,15 @@
             <div class="form-group"><label class="form-label">Unit Price</label><input type="number" class="form-input" id="im-price" min="0"></div>
             <div class="form-group"><label class="form-label">GL Account</label><input type="text" class="form-input" id="im-gl" value="114101"></div>
           </div>
+          <div style="margin-top:6px;border-top:1px dashed var(--border-light);padding-top:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;">
+              <input type="checkbox" id="im-warranty" onchange="document.getElementById('im-warranty-box').style.display=this.checked?'grid':'none';"> 🛡️ สินค้านี้มีการรับประกัน (Warranty)
+            </label>
+            <div id="im-warranty-box" style="display:none;grid-template-columns:1fr 2fr;gap:12px;margin-top:10px;">
+              <div class="form-group"><label class="form-label">ระยะเวลา (เดือน)</label><input type="number" class="form-input" id="im-warranty-months" min="0" value="12"></div>
+              <div class="form-group"><label class="form-label">เงื่อนไขการรับประกัน</label><input type="text" class="form-input" id="im-warranty-terms" placeholder="เช่น รับประกันความเสียหายจากการผลิต ไม่รวมการใช้งานผิดวิธี"></div>
+            </div>
+          </div>
         </div>
         <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
           <button class="btn btn-secondary btn-sm" onclick="closeItemModal()">Cancel</button>
@@ -131,7 +140,7 @@
       document.getElementById('item-table').innerHTML = list.map(i => `
         <tr style="border-bottom:1px solid var(--border-light);cursor:${erpMode?'default':'pointer'};" ${erpMode?'':`onclick="openEditItem('${i.id}')"`}>
           <td style="padding:10px;font-weight:600;color:var(--primary);">${i.item_code}</td>
-          <td style="padding:10px;">${i.item_name}</td>
+          <td style="padding:10px;">${i.item_name}${i.has_warranty?` <span title="รับประกัน ${i.warranty_months||0} เดือน" style="font-size:10px;padding:1px 7px;border-radius:8px;background:#eff6ff;color:#2563eb;font-weight:600;white-space:nowrap;">🛡️ ${i.warranty_months||0} ด.</span>`:''}</td>
           <td style="padding:10px;color:var(--text-secondary);">${i.item_name_th||''}</td>
           <td style="padding:10px;text-align:center;"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg-hover);">${i.category}</span></td>
           <td style="padding:10px;text-align:center;">${i.uom}</td>
@@ -141,12 +150,13 @@
           <td style="padding:10px;text-align:center;">${i.is_active?'<span style="color:var(--success);">Active</span>':'<span style="color:var(--text-muted);">Inactive</span>'}</td>
         </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">No items</td></tr>';
     }
-    function openItemModal() { if(erpMode){showToast('โหมด ERP: เพิ่ม Item จาก '+erpSystem+' แล้วกด "ดึงจาก ERP"','warning');return;} document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }
-    function openEditItem(id) { const i=allItems.find(x=>x.id===id); if(!i)return; document.getElementById('im-id').value=id; document.getElementById('im-code').value=i.item_code; document.getElementById('im-code').readOnly=true; document.getElementById('im-name').value=i.item_name; document.getElementById('im-name-th').value=i.item_name_th||''; document.getElementById('im-cat').value=i.category||'equipment'; document.getElementById('im-uom').value=i.uom||'EA'; document.getElementById('im-price').value=i.unit_price||''; document.getElementById('im-gl').value=i.gl_account||''; document.getElementById('item-modal-title').textContent='Edit Item'; document.getElementById('item-modal').style.display='flex'; }
+    function openItemModal() { if(erpMode){showToast('โหมด ERP: เพิ่ม Item จาก '+erpSystem+' แล้วกด "ดึงจาก ERP"','warning');return;} document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; setWarranty(false,12,''); document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }
+    function setWarranty(on, months, terms) { document.getElementById('im-warranty').checked=!!on; document.getElementById('im-warranty-box').style.display=on?'grid':'none'; document.getElementById('im-warranty-months').value=(months==null?12:months); document.getElementById('im-warranty-terms').value=terms||''; }
+    function openEditItem(id) { const i=allItems.find(x=>x.id===id); if(!i)return; document.getElementById('im-id').value=id; document.getElementById('im-code').value=i.item_code; document.getElementById('im-code').readOnly=true; document.getElementById('im-name').value=i.item_name; document.getElementById('im-name-th').value=i.item_name_th||''; document.getElementById('im-cat').value=i.category||'equipment'; document.getElementById('im-uom').value=i.uom||'EA'; document.getElementById('im-price').value=i.unit_price||''; document.getElementById('im-gl').value=i.gl_account||''; setWarranty(i.has_warranty, i.warranty_months, i.warranty_terms); document.getElementById('item-modal-title').textContent='Edit Item'; document.getElementById('item-modal').style.display='flex'; }
     function closeItemModal() { document.getElementById('item-modal').style.display='none'; }
     async function saveItem() {
       const id=document.getElementById('im-id').value;
-      const body={item_code:document.getElementById('im-code').value,item_name:document.getElementById('im-name').value,item_name_th:document.getElementById('im-name-th').value,category:document.getElementById('im-cat').value,uom:document.getElementById('im-uom').value,unit_price:parseFloat(document.getElementById('im-price').value)||0,gl_account:document.getElementById('im-gl').value};
+      const body={item_code:document.getElementById('im-code').value,item_name:document.getElementById('im-name').value,item_name_th:document.getElementById('im-name-th').value,category:document.getElementById('im-cat').value,uom:document.getElementById('im-uom').value,unit_price:parseFloat(document.getElementById('im-price').value)||0,gl_account:document.getElementById('im-gl').value,has_warranty:document.getElementById('im-warranty').checked,warranty_months:parseInt(document.getElementById('im-warranty-months').value)||0,warranty_terms:document.getElementById('im-warranty-terms').value};
       try { if(id) await API.put('/master/items/'+id,body); else await API.post('/master/items',body); closeItemModal(); await loadItems(); } catch(e){showToast('Error: '+e.message, 'error');}
     }
     function exportItems() {

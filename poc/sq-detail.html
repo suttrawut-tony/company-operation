@@ -311,6 +311,7 @@
           h += '<button class="btn btn-danger btn-sm" onclick="changeStatus(\'rejected\')">Rejected</button>';
         }
         h += '<button class="btn btn-secondary btn-sm" onclick="printSQ()">Print</button>';
+        if (hasWarrantyLines()) h += '<button class="btn btn-sm" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;" onclick="printWarranty()">🛡️ บัตร Warranty</button>';
         if (st === 'accepted' || st === 'rejected') h += '<button class="btn btn-secondary btn-sm" onclick="copyToNew()">Copy to New</button>';
       }
       document.getElementById('topActions').innerHTML = h;
@@ -383,7 +384,74 @@
         var tc = row.querySelector('[data-cell="total"]');
         if (tc) tc.textContent = money(lines[i].total);
       }
+      // Warranty alert — tell the seller this product carries a warranty and a
+      // warranty document can be attached to this sale.
+      if (opt.dataset.warranty === '1') {
+        var wm = parseInt(opt.dataset.wmonths) || 0;
+        if (typeof showToast === 'function')
+          showToast('🛡️ "' + lines[i].item_name + '" มีการรับประกัน ' + wm + ' เดือน — กดปุ่ม "บัตร Warranty" เพื่อออกเอกสารพ่วงกับใบขายนี้', 'info');
+      }
       renderTotals();
+    }
+
+    // === Warranty ===
+    // Which line items carry a warranty (looked up from the item master cache).
+    function warrantyLines() {
+      var byCode = {};
+      (window._masterItems || []).forEach(function(m) { if (m.item_code) byCode[m.item_code] = m; });
+      return lines.map(function(l) { return { line: l, m: byCode[l.item_code] }; })
+                  .filter(function(x) { return x.m && x.m.has_warranty; });
+    }
+    function hasWarrantyLines() { return warrantyLines().length > 0; }
+
+    function printWarranty() {
+      var wl = warrantyLines();
+      if (!wl.length) { if (typeof showToast === 'function') showToast('ไม่มีสินค้าที่มีการรับประกันในเอกสารนี้', 'warning'); return; }
+      var startStr = doc.created_at ? doc.created_at.substring(0,10) : new Date().toISOString().substring(0,10);
+      var start = new Date(startStr + 'T00:00:00');
+      var thDate = function(d) { return d.toLocaleDateString('th-TH', { day:'numeric', month:'long', year:'numeric' }); };
+      var addMonths = function(d, m) { var x = new Date(d); x.setMonth(x.getMonth() + (m||0)); return x; };
+      var esc2 = function(s){ return String(s==null?'':s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); };
+      var rows = wl.map(function(x, idx) {
+        var endD = addMonths(start, x.m.warranty_months);
+        return '<tr>'
+          + '<td style="text-align:center">' + (idx+1) + '</td>'
+          + '<td>' + esc2(x.line.item_code) + '</td>'
+          + '<td>' + esc2(x.line.item_name) + '</td>'
+          + '<td style="text-align:center">' + (parseFloat(x.line.qty)||1) + ' ' + esc2(x.line.unit||'') + '</td>'
+          + '<td style="text-align:center">' + (x.m.warranty_months||0) + ' เดือน</td>'
+          + '<td style="text-align:center">' + thDate(start) + '</td>'
+          + '<td style="text-align:center">' + thDate(endD) + '</td>'
+          + '</tr>'
+          + (x.m.warranty_terms ? '<tr><td></td><td colspan="6" style="font-size:11px;color:#555;border-top:none;padding-top:0">เงื่อนไข: ' + esc2(x.m.warranty_terms) + '</td></tr>' : '');
+      }).join('');
+      var html = '<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>บัตรรับประกัน — ' + esc2(doc.sq_number||'') + '</title>'
+        + '<style>@page{size:A4;margin:18mm}*{font-family:"Sarabun","TH Sarabun New",sans-serif}'
+        + 'body{color:#1f2937}h1{font-size:22px;margin:0 0 2px}.sub{color:#6b7280;font-size:12px}'
+        + '.box{border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;margin:14px 0}'
+        + '.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:13px}'
+        + '.lbl{color:#6b7280;font-size:11px}table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}'
+        + 'th,td{border:1px solid #e5e7eb;padding:7px 8px}th{background:#f3f4f6;text-align:left;font-size:11px}'
+        + '.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2563eb;padding-bottom:10px}'
+        + '.badge{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:4px 12px;font-weight:700;font-size:13px}'
+        + '.terms{font-size:11px;color:#6b7280;margin-top:10px;line-height:1.5}.sign{margin-top:40px;display:flex;justify-content:space-between}'
+        + '.sign div{text-align:center;width:40%}.sign .line{border-top:1px solid #9ca3af;margin-top:40px;padding-top:6px;font-size:12px}</style></head><body>'
+        + '<div class="head"><div><h1>🛡️ บัตรรับประกันสินค้า</h1><div class="sub">Warranty Certificate</div></div>'
+        + '<div class="badge">อ้างอิงใบขาย: ' + esc2(doc.sq_number||'-') + '</div></div>'
+        + '<div class="box"><div class="grid">'
+        + '<div><div class="lbl">ลูกค้า</div>' + esc2(doc.customer_name||'-') + '</div>'
+        + '<div><div class="lbl">โทรศัพท์</div>' + esc2(doc.customer_phone||'-') + '</div>'
+        + '<div><div class="lbl">วันที่ขาย / เริ่มรับประกัน</div>' + thDate(start) + '</div>'
+        + '<div><div class="lbl">สถานที่ / โครงการ</div>' + esc2(doc.site_name||doc.customer_address||'-') + '</div>'
+        + '</div></div>'
+        + '<table><thead><tr><th style="text-align:center">#</th><th>รหัสสินค้า</th><th>รายการ</th><th style="text-align:center">จำนวน</th><th style="text-align:center">ระยะประกัน</th><th style="text-align:center">เริ่ม</th><th style="text-align:center">สิ้นสุด</th></tr></thead><tbody>'
+        + rows + '</tbody></table>'
+        + '<div class="terms">* บัตรรับประกันนี้ออกพ่วงกับใบขายเลขที่ ' + esc2(doc.sq_number||'-') + ' โปรดเก็บไว้เป็นหลักฐานในการขอรับบริการรับประกัน · การรับประกันครอบคลุมเฉพาะความเสียหายจากการผลิตตามเงื่อนไขของสินค้าแต่ละรายการ ไม่รวมความเสียหายจากการใช้งานผิดวิธี</div>'
+        + '<div class="sign"><div><div class="line">ผู้ขาย / บริษัท</div></div><div><div class="line">ลูกค้า</div></div></div>'
+        + '<script>window.onload=function(){window.print();}<\/script></body></html>';
+      var w = window.open('', '_blank');
+      if (!w) { if (typeof showToast === 'function') showToast('เบราว์เซอร์บล็อก popup — อนุญาต popup เพื่อพิมพ์บัตร Warranty', 'warning'); return; }
+      w.document.write(html); w.document.close();
     }
 
     // === Edit / Save ===

@@ -40,6 +40,9 @@ function buildItemOptions(selectedCode) {
       + ' data-price="' + (i.unit_price||0) + '"'
       + ' data-tax="' + (i.tax_code||'') + '"'
       + ' data-account="' + (i.gl_account||'') + '"'
+      + ' data-warranty="' + (i.has_warranty ? '1' : '') + '"'
+      + ' data-wmonths="' + (i.warranty_months||0) + '"'
+      + ' data-wterms="' + (i.warranty_terms||'').replace(/"/g,'&quot;') + '"'
       + (i.item_code === selectedCode ? ' selected' : '') + '>'
       + (i.item_code||'') + ' — ' + (i.item_name||'')
       + '</option>'
