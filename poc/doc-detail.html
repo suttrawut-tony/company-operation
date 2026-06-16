@@ -359,7 +359,13 @@
           }
         }
 
+        // Populate project_code from cache if not already set
+        if (doc && doc.project_id && !doc.project_code && window._projectCache) {
+          const proj = window._projectCache.find(p => String(p.id) === String(doc.project_id));
+          if (proj) doc.project_code = proj.code;
+        }
         render();
+        toggleProjectFields(); // 7.2: disable fields if no project selected
         renderDocFlowChain(doc, docType);
       } catch(e) {
         document.getElementById('h-doc-number').textContent = 'Error: ' + e.message;
@@ -510,7 +516,7 @@
                 <td class="vq-cell" style="font-size:11px;">
                   ${[0,1,2].map(vi => {
                     const vq = (l.vendor_quotes||[])[vi] || {};
-                    return '<div style="display:flex;gap:4px;margin-bottom:3px;align-items:center;"><select class="vq-vendor" style="min-width:100px;font-size:10px;padding:2px 4px;">${buildVendorOptions(vq.bp_code||"")}</select><input type="number" class="vq-price" value="'+(vq.price||'')+'" placeholder="฿" step="0.01" style="width:80px;font-size:10px;padding:2px 4px;" oninput="highlightLowestVQ(this)"></div>';
+                    return `<div style="display:flex;gap:4px;margin-bottom:3px;align-items:center;"><select class="vq-vendor" style="min-width:100px;font-size:10px;padding:2px 4px;">${buildVendorOptions(vq.bp_code||'')}</select><input type="number" class="vq-price" value="${vq.price||''}" placeholder="฿" step="0.01" style="width:80px;font-size:10px;padding:2px 4px;" oninput="highlightLowestVQ(this)"></div>`;
                   }).join('')}
                 </td>
                 <td class="num" style="font-weight:700;">${money(total)}</td>
@@ -806,18 +812,18 @@
 
     // 7.2: Disable form fields until project is selected
     function toggleProjectFields() {
-      const projSelect = document.querySelector('.erp-fields select[onchange*="toggleProjectFields"]');
-      const hasProject = projSelect && !!projSelect.value;
-      // Disable/enable all editable fields except project itself
-      document.querySelectorAll('.erp-fields input:not([readonly]), .erp-fields select, #lines-body input, #lines-body select, .erp-btn').forEach(el => {
-        if (el === projSelect) return; // skip project select itself
-        if (!hasProject && !el.closest('[readonly]')) {
-          el.disabled = true;
-          el.style.opacity = '0.5';
-        } else {
-          el.disabled = false;
-          el.style.opacity = '';
-        }
+      if (!isEditing && !isNew) return; // only gate in edit/new mode
+      const allSelects = document.querySelectorAll('.erp-fields select');
+      // Find the Project select (the one with "Select Project" option)
+      let projSelect = null;
+      allSelects.forEach(s => { if (s.querySelector('option[value=""]') && s.innerHTML.includes('Select Project')) projSelect = s; });
+      if (!projSelect) return;
+      const hasProject = !!projSelect.value;
+      // Disable/enable form fields (not action buttons, not readonly fields)
+      document.querySelectorAll('.erp-fields input:not([readonly]):not([type="hidden"]), .erp-fields select, .erp-fields textarea, #lines-body input, #lines-body select').forEach(el => {
+        if (el === projSelect) return;
+        el.disabled = !hasProject;
+        el.style.opacity = hasProject ? '' : '0.5';
       });
     }
 
