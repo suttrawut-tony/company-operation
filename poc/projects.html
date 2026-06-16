@@ -110,25 +110,25 @@
       <div>
         <h1>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-          Projects
+          <span data-i18n="page_projects">Projects</span>
         </h1>
         <div class="subtitle" id="proj-subtitle">Loading...</div>
       </div>
-      <button class="btn btn-primary" onclick="openNewProject()">+ New Project</button>
+      <button class="btn btn-primary" onclick="openNewProject()" data-i18n="btn_new_project">+ New Project</button>
     </div>
 
     <!-- Search + Filters -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
       <div style="position:relative;flex:1;max-width:400px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input class="form-input" id="search-input" placeholder="Search project name, code, PM name..." oninput="renderProjects()" style="padding-left:36px;">
+        <input class="form-input" id="search-input" placeholder="Search project name, code, PM name..." data-i18n-placeholder="placeholder_search_project" oninput="renderProjects()" style="padding-left:36px;">
       </div>
       <div class="project-filters" style="margin-bottom:0;">
-        <button class="filter-btn" onclick="filterProjects('all',this)">All</button>
-        <button class="filter-btn active" onclick="filterProjects('active',this)">Active</button>
-        <button class="filter-btn" onclick="filterProjects('planning',this)">Planning</button>
-        <button class="filter-btn" onclick="filterProjects('completed',this)">Completed</button>
-        <button class="filter-btn" onclick="filterProjects('on_hold',this)">On Hold</button>
+        <button class="filter-btn" onclick="filterProjects('all',this)" data-i18n="filter_all">All</button>
+        <button class="filter-btn active" onclick="filterProjects('active',this)" data-i18n="filter_active">Active</button>
+        <button class="filter-btn" onclick="filterProjects('planning',this)" data-i18n="filter_planning">Planning</button>
+        <button class="filter-btn" onclick="filterProjects('completed',this)" data-i18n="filter_completed">Completed</button>
+        <button class="filter-btn" onclick="filterProjects('on_hold',this)" data-i18n="filter_on_hold">On Hold</button>
       </div>
     </div>
 
@@ -142,37 +142,37 @@
     <div class="modal-overlay" id="proj-modal" onclick="if(event.target===this)closeProjModal()">
       <div class="modal-box">
         <div class="modal-header">
-          <h3>New Project</h3>
+          <h3 data-i18n="modal_new_project">New Project</h3>
           <button class="modal-close" onclick="closeProjModal()">&times;</button>
         </div>
         <div class="modal-body">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
-              <label class="form-label">Project Code</label>
+              <label class="form-label" data-i18n="label_project_code">Project Code</label>
               <input type="text" class="form-input" id="np-code" placeholder="e.g. SDA-2026-013">
             </div>
             <div class="form-group">
-              <label class="form-label">Project Name</label>
+              <label class="form-label" data-i18n="label_project_name">Project Name</label>
               <input type="text" class="form-input" id="np-name" placeholder="e.g. Marine Nav System">
             </div>
             <div class="form-group" style="grid-column:1/-1;">
-              <label class="form-label">Description</label>
-              <input type="text" class="form-input" id="np-desc" placeholder="Project description">
+              <label class="form-label" data-i18n="label_description">Description</label>
+              <input type="text" class="form-input" id="np-desc" placeholder="Project description" data-i18n-placeholder="placeholder_project_desc">
             </div>
             <div class="form-group">
-              <label class="form-label">Start Date</label>
+              <label class="form-label" data-i18n="label_start_date">Start Date</label>
               <input type="date" class="form-input" id="np-start">
             </div>
             <div class="form-group">
-              <label class="form-label">End Date</label>
+              <label class="form-label" data-i18n="label_end_date">End Date</label>
               <input type="date" class="form-input" id="np-end">
             </div>
             <div class="form-group">
-              <label class="form-label">TOR Amount</label>
+              <label class="form-label" data-i18n="label_tor_amount">TOR Amount</label>
               <input type="number" class="form-input" id="np-tor" placeholder="0">
             </div>
             <div class="form-group">
-              <label class="form-label">PM (User ID)</label>
+              <label class="form-label" data-i18n="label_pm_user">PM (User ID)</label>
               <select class="form-input" id="np-pm">
                 <option value="">-- Select PM --</option>
               </select>
@@ -180,8 +180,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closeProjModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="saveNewProject()">Create</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeProjModal()" data-i18n="btn_cancel">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveNewProject()" data-i18n="btn_create">Create</button>
         </div>
       </div>
     </div>
@@ -190,22 +190,22 @@
     <div class="modal-overlay" id="ret-modal" onclick="if(event.target===this)closeRetModal()">
       <div class="modal-box">
         <div class="modal-header">
-          <h3 id="ret-modal-title">ประกันผลงาน</h3>
+          <h3 id="ret-modal-title" data-i18n="modal_retention">ประกันผลงาน</h3>
           <button class="modal-close" onclick="closeRetModal()">&times;</button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="ret-project-id">
           <div class="form-group">
-            <label class="form-label">Project</label>
+            <label class="form-label" data-i18n="label_project">Project</label>
             <input type="text" class="form-input" id="ret-project-name" readonly style="background:var(--bg-light);font-weight:600;">
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">อัตราหัก (%)</label>
+              <label class="form-label" data-i18n="label_retention_rate">อัตราหัก (%)</label>
               <input type="number" class="form-input" id="ret-rate" value="5" min="0" max="100" step="0.5" oninput="calcRetention()">
             </div>
             <div class="form-group">
-              <label class="form-label">สถานะ</label>
+              <label class="form-label" data-i18n="label_status">สถานะ</label>
               <select class="form-input" id="ret-status">
                 <option value="none">ยังไม่หัก</option>
                 <option value="holding">กำลังค้ำประกัน</option>
@@ -214,7 +214,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">วันครบกำหนดคืน</label>
+            <label class="form-label" data-i18n="label_retention_due_date">วันครบกำหนดคืน</label>
             <input type="date" class="form-input" id="ret-due-date">
           </div>
           <div class="ret-preview">
@@ -224,8 +224,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closeRetModal()">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" id="ret-save-btn" onclick="saveRetention()">บันทึก</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeRetModal()" data-i18n="btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" id="ret-save-btn" onclick="saveRetention()" data-i18n="btn_save">บันทึก</button>
         </div>
       </div>
     </div>
@@ -236,6 +236,7 @@
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/i18n.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allProjects = [];

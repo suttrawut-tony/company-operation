@@ -297,7 +297,7 @@
   <div class="page">
     <div class="page-header">
       <div>
-        <h1>${ICONS_PLACEHOLDER_SETTINGS} Settings</h1>
+        <h1>${ICONS_PLACEHOLDER_SETTINGS} <span data-i18n="page_settings">Settings</span></h1>
       </div>
     </div>
 
@@ -315,6 +315,7 @@
 <script src="assets/js/helpers.js"></script>
 <script src="assets/js/icons.js"></script>
 <script src="assets/js/highlight.js"></script>
+<script src="assets/js/i18n.js"></script>
 <script src="assets/js/nav.js"></script>
 <script>
 // ─── Settings Sections Definition ───
@@ -347,7 +348,7 @@ function renderSettingsNav() {
   nav.innerHTML = SECTIONS.map(s =>
     `<button class="settings-nav-item${s.id === activeSection ? ' active' : ''}" onclick="switchSection('${s.id}')">
       ${sIcon(s.icon)}
-      <span>${s.label}</span>
+      <span data-i18n="setup_${s.id}">${s.label}</span>
     </button>`
   ).join('');
 }
@@ -395,7 +396,7 @@ function renderSubscriptionSection() {
   return `
   <div class="setup-section${activeSection === 'subscription' ? ' active' : ''}" id="section-subscription">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[0].icon, 20)} Subscription & Billing</h2>
+      <h2>${sIcon(SECTIONS[0].icon, 20)} <span data-i18n="setup_subscription">Subscription & Billing</span></h2>
       <p>จัดการแพลน การชำระเงิน และดูการใช้งาน</p>
     </div>
     <div id="sub-content"><div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div></div>
@@ -492,7 +493,7 @@ function renderModuleManagement() {
   return `
   <div class="setup-section${activeSection === 'modules' ? ' active' : ''}" id="section-modules">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[1].icon, 20)} Module Management</h2>
+      <h2>${sIcon(SECTIONS[1].icon, 20)} <span data-i18n="setup_modules">Module Management</span></h2>
       <p>เปิด-ปิด Module ควบคุม Sidebar และสิทธิ์การเข้าถึง</p>
     </div>
     <div style="margin-bottom:12px;display:flex;gap:8px;">
@@ -637,8 +638,8 @@ function renderCompanyProfile() {
   return `
   <div class="setup-section active" id="section-company">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[2].icon, 20)} Company Profile</h2>
-      <p>General information about your organization</p>
+      <h2>${sIcon(SECTIONS[2].icon, 20)} <span data-i18n="setup_company">Company Profile</span></h2>
+      <p data-i18n="setup_company_desc">General information about your organization</p>
     </div>
     <div class="card">
       <div class="card-body">
@@ -676,7 +677,7 @@ function renderCompanyProfile() {
         </div>
         <div class="card-actions">
           <button class="btn btn-secondary">Cancel</button>
-          <button class="btn btn-primary" onclick="saveCompanyProfile()">
+          <button class="btn btn-primary" onclick="saveCompanyProfile()" data-i18n="btn_save_changes">
             ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
           </button>
         </div>
@@ -708,7 +709,7 @@ function renderApprovalMatrix() {
   return `
   <div class="setup-section" id="section-approval">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[3].icon, 20)} Approval Matrix</h2>
+      <h2>${sIcon(SECTIONS[3].icon, 20)} <span data-i18n="setup_approval">Approval Matrix</span></h2>
       <p>กำหนด Approval Workflow ตามประเภทเอกสารและวงเงิน</p>
     </div>
     <div id="approval-matrix-container">
@@ -958,7 +959,7 @@ function renderDocNumbering() {
   return `
   <div class="setup-section" id="section-numbering">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[4].icon, 20)} Document Numbering</h2>
+      <h2>${sIcon(SECTIONS[4].icon, 20)} <span data-i18n="setup_numbering">Document Numbering</span></h2>
       <p>Number series configuration for each document type</p>
     </div>
     <div class="card">
@@ -1039,7 +1040,7 @@ function renderCOA() {
   return `
   <div class="setup-section" id="section-coa">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[5].icon, 20)} Chart of Accounts</h2>
+      <h2>${sIcon(SECTIONS[5].icon, 20)} <span data-i18n="setup_coa">Chart of Accounts</span></h2>
       <p>GL mapping reference from ERP System blueprint</p>
     </div>
     ${categories.map(cat => `
@@ -1078,7 +1079,7 @@ function renderSAPConnection() {
   return `
   <div class="setup-section" id="section-sap">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[6].icon, 20)} การเชื่อมต่อ ERP / โปรแกรมบัญชี</h2>
+      <h2>${sIcon(SECTIONS[6].icon, 20)} <span data-i18n="setup_sap">การเชื่อมต่อ ERP / โปรแกรมบัญชี</span></h2>
       <p>กำหนดว่าบริษัทนี้เชื่อม API กับ ERP/โปรแกรมบัญชีหรือไม่ — มีผลกับการจัดการ Business Partner</p>
     </div>
     <div id="erp-settings-content"><div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div></div>
@@ -1288,7 +1289,7 @@ function renderTaxCodes() {
   return `
   <div class="setup-section" id="section-tax">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[7].icon, 20)} Tax Codes</h2>
+      <h2>${sIcon(SECTIONS[7].icon, 20)} <span data-i18n="setup_tax">Tax Codes</span></h2>
       <p>VAT and withholding tax codes from ERP Blueprint</p>
     </div>
     ${taxTable('Input Tax (VAT)', inputTax, 'info')}
@@ -1316,7 +1317,7 @@ function renderWarehouses() {
   return `
   <div class="setup-section" id="section-warehouse">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[8].icon, 20)} Warehouses</h2>
+      <h2>${sIcon(SECTIONS[8].icon, 20)} <span data-i18n="setup_warehouse">Warehouses</span></h2>
       <p>Warehouse locations configured in ERP System</p>
     </div>
     <div class="card">
@@ -1359,7 +1360,7 @@ function renderPaymentTerms() {
   return `
   <div class="setup-section" id="section-payment">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[9].icon, 20)} Payment Terms</h2>
+      <h2>${sIcon(SECTIONS[9].icon, 20)} <span data-i18n="setup_payment">Payment Terms</span></h2>
       <p>Standard payment terms for vendor and customer transactions</p>
     </div>
     <div class="card">
@@ -1397,7 +1398,7 @@ function renderOTRatePolicy() {
   return `
   <div class="setup-section" id="section-ot-rate">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[10].icon, 20)} OT Rate Policy</h2>
+      <h2>${sIcon(SECTIONS[10].icon, 20)} <span data-i18n="setup_ot-rate">OT Rate Policy</span></h2>
       <p>Overtime calculation multipliers and daily limits</p>
     </div>
     <div class="card">
@@ -1439,7 +1440,7 @@ function renderNotifications() {
   return `
   <div class="setup-section" id="section-notifications">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS[11].icon, 20)} Notifications</h2>
+      <h2>${sIcon(SECTIONS[11].icon, 20)} <span data-i18n="setup_notifications">Notifications</span></h2>
       <p>Configure notification channels and integrations</p>
     </div>
 
@@ -1570,7 +1571,7 @@ function renderVehicleMaster() {
   return `
   <div class="setup-section${activeSection==='vehicles'?' active':''}" id="section-vehicles">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS.find(s=>s.id==='vehicles').icon,20)} Vehicle Master</h2>
+      <h2>${sIcon(SECTIONS.find(s=>s.id==='vehicles').icon,20)} <span data-i18n="setup_vehicles">Vehicle Master</span></h2>
       <p>จัดการข้อมูลรถยนต์ทั้งหมดของบริษัท</p>
     </div>
     <div class="card">
@@ -1689,7 +1690,7 @@ function renderManpowerMaster() {
   return `
   <div class="setup-section${activeSection==='manpower'?' active':''}" id="section-manpower">
     <div class="section-header">
-      <h2>${sIcon(SECTIONS.find(s=>s.id==='manpower').icon,20)} Manpower / Technician</h2>
+      <h2>${sIcon(SECTIONS.find(s=>s.id==='manpower').icon,20)} <span data-i18n="setup_manpower">Manpower / Technician</span></h2>
       <p>จัดการข้อมูลช่างและพนักงานภาคสนาม</p>
     </div>
     <div class="card">

@@ -235,6 +235,13 @@ function renderSidebar() {
     </nav>
 
     <div class="sidebar-footer">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px;">
+        <button id="lang-toggle-btn" onclick="I18N.toggleLang()" title="Toggle language"
+          style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;border:1.5px solid var(--border);background:var(--bg-hover);color:var(--text-secondary);cursor:pointer;transition:all 0.15s;line-height:1.4;"
+          onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'"
+        >${typeof I18N !== 'undefined' ? (I18N.currentLang === 'en' ? 'TH' : 'EN') : 'EN'}</button>
+      </div>
       <div class="sidebar-user" onclick="handleLogout()" title="Click to logout">
         <div class="sidebar-user-avatar">${CURRENT_USER.initials}</div>
         <div class="sidebar-user-info">
@@ -498,6 +505,12 @@ window.markChangelogSeen = function() {
   document.querySelectorAll('.cl-badge').forEach(b => b.remove());
 };
 
+// Re-render sidebar on language change
+document.addEventListener('langchange', () => {
+  renderSidebar();
+  renderTopNav();
+});
+
 // Auto-render
 document.addEventListener('DOMContentLoaded', async () => {
   checkAuth();
@@ -510,4 +523,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setTimeout(checkModuleAccess, 300);
   setTimeout(checkSubscriptionBanner, 600);
   setTimeout(checkSapStatus, 400);
+  // Apply i18n after initial render
+  if (typeof I18N !== 'undefined') setTimeout(() => I18N.applyTranslations(), 100);
 });

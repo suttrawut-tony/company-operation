@@ -824,7 +824,7 @@
       <button class="gc-nav-btn" onclick="navNext()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
       <span class="gc-month" id="monthLabel"></span>
       <div class="gc-right">
-        <button class="btn btn-secondary" onclick="exportBookings()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-secondary" onclick="exportBookings()" style="display:flex;align-items:center;gap:6px;" data-i18n="btn_export_excel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
         <select class="gc-view-select" id="viewSelect" onchange="setView(this.value)">
           <option value="month">เดือน</option>
           <option value="week">สัปดาห์</option>
@@ -847,7 +847,7 @@
         <!-- Create Button -->
         <button class="gc-create-btn" onclick="toggleGCCreate()">
           <span class="plus-icon"><svg width="36" height="36" viewBox="0 0 36 36"><path d="M18 12v12M12 18h12" stroke="none" fill="none"/><circle cx="18" cy="18" r="16" fill="none" stroke="var(--primary)" stroke-width="1.5"/><path d="M18 12v12" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/><path d="M12 18h12" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/></svg></span>
-          สร้าง
+          <span data-i18n="btn_create_booking">สร้าง</span>
         </button>
         <!-- Create dropdown -->
         <div class="sb-create-popup" id="gcCreateMenu">
@@ -870,7 +870,7 @@
           <div class="sb-section-header">
             <div class="sb-section-left">
               <svg class="sb-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span>ช่าง / พนักงาน</span>
+              <span data-i18n="sidebar_technicians">ช่าง / พนักงาน</span>
             </div>
             <button class="sb-add" onclick="showAddTechPopup()" title="เพิ่มช่าง">+</button>
           </div>
@@ -907,7 +907,7 @@
           <div class="sb-section-header">
             <div class="sb-section-left">
               <svg class="sb-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
-              <span>รถยนต์</span>
+              <span data-i18n="sidebar_vehicles">รถยนต์</span>
             </div>
             <button class="sb-add" onclick="showAddVehiclePopup()" title="เพิ่มรถ">+</button>
           </div>
@@ -940,7 +940,7 @@
           <div class="sb-section-header">
             <div class="sb-section-left">
               <svg class="sb-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-              <span>เครื่องบิน</span>
+              <span data-i18n="sidebar_flights">เครื่องบิน</span>
             </div>
           </div>
           <label class="sb-flight-label">
@@ -1591,6 +1591,7 @@
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
   <script src="assets/js/excel-export.js"></script>
+  <script src="assets/js/i18n.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     // ── State ──

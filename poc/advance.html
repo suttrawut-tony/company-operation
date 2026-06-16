@@ -76,26 +76,26 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1>Advance</h1></div>
+      <div><h1 data-i18n="page_advance">Advance</h1></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" id="btn-new" onclick="openNewModal()">+ New Advance</button>
-        <button class="btn btn-secondary" onclick="exportAdvanceExcel()">Export Excel</button>
+        <button class="btn btn-primary" id="btn-new" onclick="openNewModal()" data-i18n="btn_new_advance">+ New Advance</button>
+        <button class="btn btn-secondary" onclick="exportAdvanceExcel()" data-i18n="btn_export_excel">Export Excel</button>
       </div>
     </div>
 
     <!-- Flow -->
     <div class="flow-bar-horizontal" id="flow-bar">
-      <div class="flow-step current">1. Request</div>
+      <div class="flow-step current" data-i18n="flow_request">1. Request</div>
       <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step pending">2. Approve</div>
+      <div class="flow-step pending" data-i18n="flow_approve">2. Approve</div>
       <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step pending">3. Payment</div>
+      <div class="flow-step pending" data-i18n="flow_payment">3. Payment</div>
       <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step pending">4. Clear</div>
+      <div class="flow-step pending" data-i18n="flow_clear">4. Clear</div>
       <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step pending">5. Closed</div>
+      <div class="flow-step pending" data-i18n="flow_closed">5. Closed</div>
       <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step pending">6. Employee Received</div>
+      <div class="flow-step pending" data-i18n="flow_employee_received">6. Employee Received</div>
     </div>
 
     <!-- Tabs -->
@@ -106,14 +106,14 @@
 
     <!-- Filters -->
     <div class="filter-bar">
-      <select class="form-select searchable" id="filter-project" style="width:220px;" onchange="renderList()"><option value="">All Projects</option></select>
+      <select class="form-select searchable" id="filter-project" style="width:220px;" onchange="renderList()"><option value="" data-i18n="filter_all_projects">All Projects</option></select>
       <select class="form-select" id="filter-type" style="width:140px;" onchange="renderList()">
-        <option value="">All Types</option>
-        <option value="advance">Advance</option>
-        <option value="reimburse">Reimburse</option>
+        <option value="" data-i18n="filter_all_types">All Types</option>
+        <option value="advance" data-i18n="label_advance">Advance</option>
+        <option value="reimburse" data-i18n="label_reimburse">Reimburse</option>
       </select>
       <select class="form-select" id="filter-status" style="width:140px;" onchange="renderList()">
-        <option value="">All Status</option>
+        <option value="" data-i18n="filter_all_status">All Status</option>
         <option value="draft">Draft</option>
         <option value="pending">Pending</option>
         <option value="approved">Approved</option>
@@ -122,7 +122,7 @@
         <option value="settled">Settled</option>
         <option value="overdue">Overdue</option>
       </select>
-      <select class="form-select searchable" id="filter-employee" style="width:180px;" onchange="renderList()"><option value="">All Employees</option></select>
+      <select class="form-select searchable" id="filter-employee" style="width:180px;" onchange="renderList()"><option value="" data-i18n="filter_all_employees">All Employees</option></select>
     </div>
 
     <!-- List -->
@@ -131,7 +131,7 @@
     <!-- New Advance Modal -->
     <div class="modal-overlay" id="new-modal" onclick="if(event.target===this)closeNewModal()">
       <div class="modal-box">
-        <div class="modal-header"><h3>New Advance Request</h3><button class="modal-close" onclick="closeNewModal()">&times;</button></div>
+        <div class="modal-header"><h3 data-i18n="modal_new_advance">New Advance Request</h3><button class="modal-close" onclick="closeNewModal()">&times;</button></div>
         <div class="modal-body">
           <div style="display:flex;gap:16px;margin-bottom:16px;padding:10px;background:var(--bg-light);border-radius:var(--radius);">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
@@ -142,13 +142,13 @@
             </label>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Project</label><select class="form-input searchable" id="f-project"></select></div>
-            <div class="form-group"><label class="form-label">Employee</label><select class="form-input searchable" id="f-employee"></select></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_project">Project</label><select class="form-input searchable" id="f-project"></select></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_employee">Employee</label><select class="form-input searchable" id="f-employee"></select></div>
           </div>
-          <div class="form-group"><label class="form-label">Description / Purpose</label><input type="text" class="form-input" id="f-desc" placeholder="Purpose of advance"></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_description_purpose">Description / Purpose</label><input type="text" class="form-input" id="f-desc" placeholder="Purpose of advance" data-i18n-placeholder="placeholder_purpose"></div>
           <div class="form-row" id="amount-row">
-            <div class="form-group"><label class="form-label">Amount</label><input type="number" class="form-input" id="f-amount" placeholder="0" min="0"></div>
-            <div class="form-group"><label class="form-label">Purpose</label>
+            <div class="form-group"><label class="form-label" data-i18n="label_amount">Amount</label><input type="number" class="form-input" id="f-amount" placeholder="0" min="0"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_purpose">Purpose</label>
               <select class="form-input" id="f-purpose">
                 <option value="travel">Travel / Business Trip</option>
                 <option value="procurement">Procurement / Purchase</option>
@@ -160,28 +160,28 @@
           <!-- Receipt lines for reimburse -->
           <div id="reimburse-section" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <label class="form-label" style="margin:0;">Receipt Lines</label>
+              <label class="form-label" style="margin:0;" data-i18n="label_receipt_lines">Receipt Lines</label>
               <button class="btn btn-sm" style="font-size:11px;" onclick="addReceiptLine()">+ Add Line</button>
             </div>
             <div id="receipt-lines"></div>
             <div style="text-align:right;font-size:13px;font-weight:700;margin-top:8px;">Total: <span id="receipt-total">0</span></div>
           </div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeNewModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveAdvance()">Create</button></div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeNewModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveAdvance()" data-i18n="btn_create">Create</button></div>
       </div>
     </div>
 
     <!-- Clear Modal -->
     <div class="modal-overlay" id="settle-modal" onclick="if(event.target===this)closeSettleModal()">
       <div class="modal-box">
-        <div class="modal-header"><h3>Clear</h3><button class="modal-close" onclick="closeSettleModal()">&times;</button></div>
+        <div class="modal-header"><h3 data-i18n="modal_clear">Clear</h3><button class="modal-close" onclick="closeSettleModal()">&times;</button></div>
         <div class="modal-body">
           <input type="hidden" id="s-adv-id">
           <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;">
             <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Advance Amount</span><strong id="s-adv-amount">0</strong></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <label class="form-label" style="margin:0;">Expense Items</label>
+            <label class="form-label" style="margin:0;" data-i18n="label_expense_items">Expense Items</label>
             <button class="btn btn-secondary btn-sm" onclick="addSettleLine()" style="font-size:11px;">+ Add Line</button>
           </div>
           <div style="display:grid;grid-template-columns:2fr 80px 1fr 32px;gap:8px;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;margin-bottom:4px;">
@@ -194,16 +194,16 @@
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="s-diff-label"></div>
           </div>
           <div style="margin-top:12px;padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;" id="s-gl-preview"></div>
-          <div class="form-group" style="margin-top:12px;"><label class="form-label">Remarks</label><input type="text" class="form-input" id="s-remarks" placeholder="Clear remarks"></div>
+          <div class="form-group" style="margin-top:12px;"><label class="form-label" data-i18n="label_remarks">Remarks</label><input type="text" class="form-input" id="s-remarks" placeholder="Clear remarks" data-i18n-placeholder="placeholder_clear_remarks"></div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeSettleModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveClear()">Submit</button></div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeSettleModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveClear()" data-i18n="btn_submit">Submit</button></div>
       </div>
     </div>
 
     <!-- Payment Modal -->
     <div class="modal-overlay" id="pay-modal" onclick="if(event.target===this)closePayModal()">
       <div class="modal-box" style="width:420px;">
-        <div class="modal-header"><h3>Record Payment</h3><button class="modal-close" onclick="closePayModal()">&times;</button></div>
+        <div class="modal-header"><h3 data-i18n="modal_record_payment">Record Payment</h3><button class="modal-close" onclick="closePayModal()">&times;</button></div>
         <div class="modal-body">
           <input type="hidden" id="p-adv-id">
           <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
@@ -212,36 +212,36 @@
             <div style="text-align:center;"><div style="font-size:10px;color:var(--text-muted);font-weight:600;">TO (Employee)</div><div id="p-emp-info" style="font-weight:600;margin-top:4px;">-</div></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Amount</label><input type="number" class="form-input" id="p-amount" min="0"></div>
-            <div class="form-group"><label class="form-label">Method</label>
+            <div class="form-group"><label class="form-label" data-i18n="label_amount">Amount</label><input type="number" class="form-input" id="p-amount" min="0"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_method">Method</label>
               <select class="form-input" id="p-method"><option value="transfer">Bank Transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option></select>
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Company Bank Account</label><select class="form-input" id="p-bank"><option value="">Select bank account</option></select></div>
-            <div class="form-group"><label class="form-label">Payment Date</label><input type="date" class="form-input" id="p-date"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_company_bank">Company Bank Account</label><select class="form-input" id="p-bank"><option value="" data-i18n="placeholder_select_bank">Select bank account</option></select></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_payment_date">Payment Date</label><input type="date" class="form-input" id="p-date"></div>
           </div>
-          <div class="form-group"><label class="form-label">Reference <span style="color:var(--danger);">*</span></label><input type="text" class="form-input" id="p-ref" placeholder="Transfer ref / Cheque no." required></div>
-          <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="p-remarks"></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_reference">Reference <span style="color:var(--danger);">*</span></label><input type="text" class="form-input" id="p-ref" placeholder="Transfer ref / Cheque no." data-i18n-placeholder="placeholder_reference" required></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_remarks">Remarks</label><input type="text" class="form-input" id="p-remarks"></div>
           <div class="form-group">
-            <label class="form-label">Attachment (Slip / Receipt)</label>
+            <label class="form-label" data-i18n="label_attachment">Attachment (Slip / Receipt)</label>
             <input type="file" class="form-input" id="p-attachment" accept="image/*,.pdf" style="padding:6px;">
             <div id="p-attachment-preview" style="margin-top:6px;"></div>
           </div>
           <div style="margin-top:12px;padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;">
-            <div style="font-weight:600;margin-bottom:4px;">GL Journal Entry (auto)</div>
+            <div style="font-weight:600;margin-bottom:4px;" data-i18n="label_gl_journal_auto">GL Journal Entry (auto)</div>
             <div style="color:var(--primary);">Dr. 113103 Employee Receivable (Advance)</div>
             <div style="color:var(--success);">Cr. <span id="p-gl-bank">111201 Bank Account</span></div>
           </div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closePayModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="savePayment()">Record Payment</button></div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closePayModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary btn-sm" onclick="savePayment()" data-i18n="btn_record_payment">Record Payment</button></div>
       </div>
     </div>
 
     <!-- Return / Reimburse Modal -->
     <div class="modal-overlay" id="return-modal" onclick="if(event.target===this)closeReturnModal()">
       <div class="modal-box" style="width:440px;">
-        <div class="modal-header"><h3 id="ret-title">Receive Return</h3><button class="modal-close" onclick="closeReturnModal()">&times;</button></div>
+        <div class="modal-header"><h3 id="ret-title" data-i18n="modal_receive_return">Receive Return</h3><button class="modal-close" onclick="closeReturnModal()">&times;</button></div>
         <div class="modal-body">
           <input type="hidden" id="r-adv-id">
           <input type="hidden" id="r-action">
@@ -252,25 +252,25 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Bank Account</label>
-            <select class="form-input" id="r-bank"><option value="">Select bank</option></select>
+            <label class="form-label" data-i18n="label_bank_account">Bank Account</label>
+            <select class="form-input" id="r-bank"><option value="" data-i18n="placeholder_select_bank">Select bank</option></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Reference</label>
-            <input type="text" class="form-input" id="r-ref" placeholder="Transfer ref / Slip no.">
+            <label class="form-label" data-i18n="label_reference">Reference</label>
+            <input type="text" class="form-input" id="r-ref" placeholder="Transfer ref / Slip no." data-i18n-placeholder="placeholder_reference_slip">
           </div>
           <div class="form-group">
-            <label class="form-label">Remarks</label>
+            <label class="form-label" data-i18n="label_remarks">Remarks</label>
             <input type="text" class="form-input" id="r-remarks">
           </div>
           <div class="form-group">
-            <label class="form-label">Attachment (Slip / Receipt)</label>
+            <label class="form-label" data-i18n="label_attachment">Attachment (Slip / Receipt)</label>
             <input type="file" class="form-input" id="r-attachment" accept="image/*,.pdf" style="padding:6px;">
             <div id="r-attachment-preview" style="margin-top:6px;"></div>
           </div>
           <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;" id="r-gl-preview"></div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeReturnModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveReturnReimburse()">Confirm</button></div>
+        <div class="modal-footer"><button class="btn btn-secondary btn-sm" onclick="closeReturnModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveReturnReimburse()" data-i18n="btn_confirm">Confirm</button></div>
       </div>
     </div>
   </main>
@@ -280,6 +280,7 @@
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/highlight.js"></script>
   <script src="assets/js/excel-export.js"></script>
+  <script src="assets/js/i18n.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
     let allAdvances = [];
