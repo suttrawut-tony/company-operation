@@ -312,7 +312,7 @@
            onclick="window.location='doc-detail.html?type=${docType==='all'?(d.doc_number.startsWith('PO')?'po':'pr'):docType}&doc=${d.doc_number}'"
            style="cursor:pointer;${border}">
         <div class="kanban-card-header">
-          <span class="kanban-card-id">${d.doc_number}</span>
+          <span class="kanban-card-id">${d.doc_number}${d._project_code ? ' <span style="color:var(--text-secondary);font-weight:500;">['+d._project_code+']</span>' : ''}</span>
           ${statusBadge(d.status)}
         </div>
         ${d._project_code ? '<div style="margin-bottom:6px;"><span style="background:var(--bg-light);padding:2px 8px;border-radius:var(--radius-full);font-size:10px;font-weight:500;">'+d._project_code+'</span></div>' : ''}
@@ -367,7 +367,7 @@
             actionHtml += '<button style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--danger-bg);color:var(--danger);font-weight:600;border:none;cursor:pointer;" onclick="event.stopPropagation();deletePO(\''+d.id+'\',\''+d.doc_number+'\')">Del</button>';
         }
         return `<tr style="cursor:pointer;" onclick="window.location='doc-detail.html?type=${dt}&doc=${d.doc_number}'">
-          <td><span class="doc-id" style="color:var(--primary);font-weight:600;">${d.doc_number}</span></td>
+          <td><span class="doc-id" style="color:var(--primary);font-weight:600;">${d.doc_number}</span>${d._project_code ? ' <span style="color:var(--text-secondary);font-size:11px;font-weight:500;">['+d._project_code+']</span>' : ''}</td>
           <td>${d.sap_doc_num ? '<span class="sap-doc-badge" style="font-size:10px;padding:2px 8px;">ERP #' + d.sap_doc_num + '</span>' : '<span style="color:var(--text-muted);font-size:11px;">—</span>'}</td>
           <td>${fmtDateShort(d.doc_date)}</td>
           <td>${d._project_code ? '<span style="background:var(--bg-light);padding:2px 8px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:500;">'+d._project_code+'</span>' : '<span style="font-size:var(--text-xs);color:var(--text-muted);">-</span>'}</td>

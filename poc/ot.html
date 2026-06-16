@@ -43,7 +43,7 @@
     .ot-hours .hrs { font-size: var(--text-2xl); font-weight: 800; font-family: var(--font-mono); }
     .ot-hours .lbl { font-size: var(--text-2xs); color: var(--text-muted); text-transform: uppercase; }
     .ot-rate { text-align: center; }
-    .ot-rate .multiplier { font-size: var(--text-md); font-weight: 700; color: var(--purple); font-family: var(--font-mono); }
+    .ot-rate .multiplier { font-size: var(--text-sm); font-weight: 700; color: var(--purple); font-family: var(--font-mono); }
     .ot-rate .type { font-size: var(--text-2xs); color: var(--text-muted); }
     .ot-amount { text-align: right; }
     .ot-amount .total { font-size: var(--text-lg); font-weight: 800; font-family: var(--font-mono); }
@@ -138,22 +138,22 @@
           <div class="rate-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> OT Rate Policy</div>
           <table class="rate-table">
             <thead>
-              <tr><th>Type</th><th>Multiplier</th><th>Max/Day</th></tr>
+              <tr><th>Type</th><th>Flat Rate</th><th>Max/Day</th></tr>
             </thead>
             <tbody>
               <tr>
                 <td><span class="badge badge-gray">Normal OT</span></td>
-                <td style="font-weight:700;color:var(--primary);">x1.5</td>
+                <td style="font-weight:700;color:var(--primary);">&#3647;400/hr</td>
                 <td>4 hours</td>
               </tr>
               <tr>
                 <td><span class="badge badge-warning">Holiday OT</span></td>
-                <td style="font-weight:700;color:var(--warning);">x2.0</td>
+                <td style="font-weight:700;color:var(--warning);">&#3647;500/hr</td>
                 <td>8 hours</td>
               </tr>
               <tr>
                 <td><span class="badge badge-danger">Special OT</span></td>
-                <td style="font-weight:700;color:var(--danger);">x3.0</td>
+                <td style="font-weight:700;color:var(--danger);">&#3647;500/hr</td>
                 <td>8 hours</td>
               </tr>
             </tbody>
@@ -188,9 +188,9 @@
           <div class="form-group">
             <label class="form-label">OT Type</label>
             <select class="form-select" id="ot-type">
-              <option value="1.5">Normal OT (x1.5)</option>
-              <option value="2.0">Holiday OT (x2.0)</option>
-              <option value="3.0">Special OT (x3.0)</option>
+              <option value="normal">Normal OT (&#3647;400/hr)</option>
+              <option value="holiday">Holiday OT (&#3647;500/hr)</option>
+              <option value="special">Special OT (&#3647;500/hr)</option>
             </select>
           </div>
         </div>
@@ -214,8 +214,7 @@
         <!-- Auto Calculation Preview -->
         <div class="calc-preview" id="calc-preview">
           <div style="font-size:13px;font-weight:600;margin-bottom:8px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Compensation Preview</div>
-          <div class="calc-row"><span style="color:var(--text-secondary);">Base Rate</span><span id="preview-base-rate">&#3647;0/hr</span></div>
-          <div class="calc-row"><span style="color:var(--text-secondary);">Multiplier</span><span id="preview-multiplier">x1.5 (Normal)</span></div>
+          <div class="calc-row"><span style="color:var(--text-secondary);">Flat Rate</span><span id="preview-base-rate">&#3647;0/hr</span></div>
           <div class="calc-row"><span style="color:var(--text-secondary);">Hours</span><span id="preview-hours">0 hours</span></div>
           <div class="calc-row total"><span>Total Compensation</span><span style="color:var(--primary);" id="preview-total">&#3647;0</span></div>
         </div>
@@ -234,8 +233,8 @@
   <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
-    const OT_BASE_RATE = 300; // Base rate per hour (THB) — change here or read from config
-    const OT_MULTIPLIERS = { '1.5': { label: 'Normal', mult: 1.5 }, '2.0': { label: 'Holiday', mult: 2.0 }, '3.0': { label: 'Special', mult: 3.0 } };
+    // Flat OT rates per hour (THB) — no multiplier
+    const OT_FLAT_RATES = { 'normal': { label: 'Normal', rate: 400 }, 'holiday': { label: 'Holiday', rate: 500 }, 'special': { label: 'Special', rate: 500 } };
 
     const userRole = (API.getUser()||{}).role||'';
     const userId = (API.getUser()||{}).id||'';
@@ -250,8 +249,8 @@
         modal.querySelector('.modal-footer .btn-primary').textContent = 'อัปเดต';
         modal.querySelector('.modal-footer .btn-primary').setAttribute('onclick', 'saveOT()');
         modal.querySelector('.modal-body .form-input[type="date"]').value = editRow.ot_date ? editRow.ot_date.substring(0,10) : '';
-        const mult = parseFloat(editRow.multiplier) || 1.5;
-        document.getElementById('ot-type').value = mult === 3.0 ? '3.0' : mult === 2.0 ? '2.0' : '1.5';
+        const t = (editRow.ot_type || 'normal').toLowerCase();
+        document.getElementById('ot-type').value = t.includes('special') ? 'special' : t.includes('holiday') ? 'holiday' : 'normal';
         document.getElementById('ot-hours').value = editRow.hours || 4;
         document.getElementById('ot-project').value = editRow.project_id || '';
         modal.querySelector('.form-textarea').value = editRow.reason || '';
@@ -267,12 +266,11 @@
     function closeOTModal() { document.getElementById('ot-modal').classList.add('hidden'); editingOTId = null; }
 
     function updateCompensationPreview() {
-      const multVal = document.getElementById('ot-type').value;
-      const info = OT_MULTIPLIERS[multVal] || OT_MULTIPLIERS['1.5'];
+      const typeVal = document.getElementById('ot-type').value;
+      const info = OT_FLAT_RATES[typeVal] || OT_FLAT_RATES['normal'];
       const hours = parseFloat(document.getElementById('ot-hours').value) || 0;
-      const total = OT_BASE_RATE * info.mult * hours;
-      document.getElementById('preview-base-rate').innerHTML = '&#3647;' + fmtNum(OT_BASE_RATE) + '/hr';
-      document.getElementById('preview-multiplier').textContent = 'x' + info.mult.toFixed(1) + ' (' + info.label + ')';
+      const total = info.rate * hours;
+      document.getElementById('preview-base-rate').innerHTML = '&#3647;' + fmtNum(info.rate) + '/hr (' + info.label + ')';
       document.getElementById('preview-hours').textContent = hours + ' hours';
       document.getElementById('preview-total').innerHTML = '&#3647;' + fmtNum(total);
     }
@@ -286,13 +284,13 @@
     async function saveOT() {
       const modal = document.getElementById('ot-modal');
       const ot_date = modal.querySelector('.modal-body .form-input[type="date"]').value;
-      const ot_type_val = document.getElementById('ot-type').value;
-      const ot_type = ot_type_val === '3.0' ? 'special' : ot_type_val === '2.0' ? 'holiday' : 'normal';
+      const ot_type = document.getElementById('ot-type').value;
       const hours = parseFloat(document.getElementById('ot-hours').value) || 0;
       const reason = modal.querySelector('.form-textarea').value;
       if (!ot_date || !hours) { showToast('Fill date and hours', 'error'); return; }
       const project_id = document.getElementById('ot-project').value;
-      const data = { ot_date, ot_type, hours, base_rate: OT_BASE_RATE, reason, project_id };
+      const flatRate = (OT_FLAT_RATES[ot_type] || OT_FLAT_RATES['normal']).rate;
+      const data = { ot_date, ot_type, hours, base_rate: flatRate, reason, project_id };
       try {
         if (editingOTId) {
           await API.put('/ot/' + editingOTId, data);
@@ -333,14 +331,13 @@
 
     function exportOT() {
       if (!otData.length) { showToast('No OT data to export', 'warning'); return; }
-      const headers = ['Doc No', 'Employee', 'Type', 'Date', 'Hours', 'Rate', 'Multiplier', 'Compensation', 'Project', 'Status'];
+      const headers = ['Doc No', 'Employee', 'Type', 'Date', 'Hours', 'Flat Rate', 'Compensation', 'Project', 'Status'];
       const rows = otData.map((r, i) => {
         const t = (r.ot_type || '').toLowerCase();
         const typeName = t.includes('holiday') ? 'Holiday' : t.includes('special') ? 'Special' : 'Normal';
         const hrs = parseFloat(r.hours) || 0;
-        const mult = parseFloat(r.multiplier) || 1;
         const comp = parseFloat(r.compensation) || 0;
-        const baseRate = parseFloat(r.base_rate) || (hrs > 0 && mult > 0 ? Math.round(comp / mult / hrs) : 0);
+        const baseRate = parseFloat(r.base_rate) || (hrs > 0 ? Math.round(comp / hrs) : 0);
         const projCode = projectMap[r.project_id] || '';
         return [
           r.doc_no || r.id || (i + 1),
@@ -349,7 +346,6 @@
           r.ot_date ? r.ot_date.substring(0, 10) : '',
           hrs,
           baseRate,
-          mult,
           comp,
           projCode,
           r.status || 'draft'
@@ -488,8 +484,8 @@
             </div>
           </div>
           <div class="ot-hours"><div class="hrs">${fmtNum(hrs)}</div><div class="lbl">hours</div></div>
-          <div class="ot-rate"><div class="multiplier">x${mult.toFixed(1)}</div><div class="type">${otTypeName(r.ot_type)}</div></div>
-          <div class="ot-amount"><div class="total">${fmtMoney(comp)}</div><div class="calc" style="font-family:var(--font-mono);font-size:var(--text-2xs);">${fmtMoney(baseRate)} &times; ${mult.toFixed(1)} &times; ${hrs}h = ${fmtMoney(comp)}</div></div>
+          <div class="ot-rate"><div class="multiplier">${fmtMoney(baseRate)}</div><div class="type">${otTypeName(r.ot_type)}/hr</div></div>
+          <div class="ot-amount"><div class="total">${fmtMoney(comp)}</div><div class="calc" style="font-family:var(--font-mono);font-size:var(--text-2xs);">${fmtMoney(baseRate)} &times; ${hrs}h = ${fmtMoney(comp)}</div></div>
           ${statusBadge(r.status || 'draft')}
           <div style="text-align:center;">${otActionBtn(r)}</div>
         </div>`;

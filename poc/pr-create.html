@@ -127,7 +127,7 @@
             <div class="form-group">
               <label class="form-label">Project <span style="color:var(--danger);">*</span></label>
               <!-- FIXED: Dynamic project dropdown from API -->
-              <select class="form-select" id="pr-project">
+              <select class="form-select" id="pr-project" onchange="toggleFormFields()">
                 <option value="">-- Select Project --</option>
               </select>
             </div>
@@ -144,25 +144,19 @@
         </div>
       </div>
 
-      <!-- Section 2: Vendor -->
+      <!-- Section 2: Delivery & Terms -->
       <div class="form-section">
         <div class="form-section-header">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Vendor Information
+          Delivery & Terms
         </div>
         <div class="form-section-body">
+          <!-- Hidden vendor fields — kept for backend, vendor will be per-line-item (7.5) -->
+          <select class="form-select" id="pr-vendor" style="display:none;">
+            <option value="">-- Select Vendor --</option>
+          </select>
+          <input type="hidden" id="pr-contact" value="">
           <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Vendor (ERP Business Partner) <span style="color:var(--danger);">*</span></label>
-              <!-- FIXED: Dynamic vendor dropdown from API -->
-              <select class="form-select" id="pr-vendor">
-                <option value="">-- Select Vendor --</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contact Person</label>
-              <input class="form-input" placeholder="ชื่อผู้ติดต่อ" id="pr-contact">
-            </div>
             <div class="form-group">
               <label class="form-label">Payment Terms</label>
               <select class="form-select" id="pr-terms">
@@ -175,7 +169,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Required Delivery Date</label>
+              <label class="form-label">Required Date</label>
               <input class="form-input" type="date" id="pr-delivery">
             </div>
             <div class="form-group">
@@ -533,8 +527,43 @@
       };
     }
 
+    // 7.2: Disable all form fields until a project is selected
+    function toggleFormFields() {
+      const hasProject = !!document.getElementById('pr-project').value;
+      // Header fields
+      ['pr-priority', 'pr-date'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !hasProject;
+      });
+      // Delivery & Terms fields
+      ['pr-terms', 'pr-delivery', 'pr-warehouse', 'pr-currency'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !hasProject;
+      });
+      // Line item inputs and selects
+      document.querySelectorAll('#line-items input, #line-items select').forEach(el => {
+        el.disabled = !hasProject;
+      });
+      // Add line / remove line buttons
+      document.querySelectorAll('.add-line-btn, .remove-btn').forEach(btn => {
+        btn.disabled = !hasProject;
+        btn.style.opacity = hasProject ? '' : '0.5';
+        btn.style.pointerEvents = hasProject ? '' : 'none';
+      });
+      // Remarks
+      const remarks = document.getElementById('pr-remarks');
+      if (remarks) remarks.disabled = !hasProject;
+      // Submit / Draft buttons
+      document.querySelectorAll('.form-footer .btn-primary, .form-footer .btn-secondary:not([href])').forEach(btn => {
+        btn.disabled = !hasProject;
+        btn.style.opacity = hasProject ? '' : '0.5';
+      });
+    }
+
     // Init
     if (API.requireAuth()) { loadDropdowns(); }
+    // Set initial disabled state
+    toggleFormFields();
   </script>
 </body>
 </html>

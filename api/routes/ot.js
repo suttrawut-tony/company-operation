@@ -33,8 +33,11 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { project_id, ot_date, ot_type, hours, base_rate, reason } = req.body;
-    const multiplier = ot_type === 'holiday' ? 2.0 : ot_type === 'special' ? 3.0 : 1.5;
-    const compensation = base_rate * multiplier * hours;
+    // Flat rate: holiday/special = 500, normal = 400 (ignore multiplier)
+    const flatRate = (ot_type === 'holiday' || ot_type === 'special') ? 500 : 400;
+    const effectiveRate = base_rate || flatRate;
+    const multiplier = 1.0;
+    const compensation = effectiveRate * hours;
 
     const { rows: [series] } = await db.query(
       `INSERT INTO number_series (company_id, doc_type, prefix, year_month, current_number)
@@ -46,7 +49,7 @@ router.post('/', async (req, res) => {
     const { rows: [ot] } = await db.query(
       `INSERT INTO ot_requests (company_id, project_id, doc_number, user_id, ot_date, ot_type, hours, base_rate, multiplier, compensation, reason, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$4) RETURNING *`,
-      [req.user.company_id, project_id, docNumber, req.user.id, ot_date, ot_type || 'normal', hours, base_rate, multiplier, compensation, reason]);
+      [req.user.company_id, project_id, docNumber, req.user.id, ot_date, ot_type || 'normal', hours, effectiveRate, multiplier, compensation, reason]);
     res.status(201).json(ot);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -72,9 +75,11 @@ router.put('/:id', async (req, res) => {
     const { project_id, ot_date, ot_type, hours, base_rate, reason, status } = req.body;
     const newType = ot_type || ot.ot_type;
     const newHours = hours != null ? hours : ot.hours;
-    const newRate = base_rate != null ? base_rate : ot.base_rate;
-    const multiplier = newType === 'holiday' ? 2.0 : newType === 'special' ? 3.0 : 1.5;
-    const compensation = parseFloat(newRate) * multiplier * parseFloat(newHours);
+    // Flat rate: holiday/special = 500, normal = 400 (ignore multiplier)
+    const flatRate = (newType === 'holiday' || newType === 'special') ? 500 : 400;
+    const newRate = base_rate != null ? base_rate : flatRate;
+    const multiplier = 1.0;
+    const compensation = parseFloat(newRate) * parseFloat(newHours);
     const { rows } = await db.query(
       `UPDATE ot_requests SET project_id=COALESCE($1,project_id), ot_date=COALESCE($2,ot_date),
        ot_type=COALESCE($3,ot_type), hours=COALESCE($4,hours), base_rate=COALESCE($5,base_rate),
