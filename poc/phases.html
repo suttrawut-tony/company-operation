@@ -443,7 +443,7 @@
               <div class="phase-pct" style="color:${phaseStatusColor(p.status)};">${pct}%</div>
               ${phaseStatusBadge(p.status)}
               ${canEditPlan ? `<div class="phase-actions">
-                <button onclick="event.stopPropagation();editPhase('${p.id}','${(p.name||'').replace(/'/g,"\\'")}','${p.description||''}','${p.start_date||''}','${p.end_date||''}')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                <button onclick="event.stopPropagation();editPhase('${p.id}')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                 <button class="btn-del" onclick="event.stopPropagation();deletePhase('${p.id}')" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
               </div>` : ''}
             </div>
@@ -541,16 +541,35 @@
       document.getElementById('phase-modal').classList.add('show');
     }
 
-    function editPhase(phaseId, name, desc, startDate, endDate) {
+    function editPhase(phaseId) {
       if (!currentProjectId) return;
+      // Look up phase data from currentPhases instead of relying on inline parameters
+      const phase = currentPhases.find(p => String(p.id) === String(phaseId));
+      if (!phase) { showToast('Phase not found', 'error'); return; }
+
       document.getElementById('phase-modal-title').textContent = 'แก้ไข Phase';
       document.getElementById('phase-edit-id').value = phaseId;
-      document.getElementById('phase-name').value = name;
-      document.getElementById('phase-desc').value = desc;
-      document.getElementById('phase-start').value = startDate ? startDate.substring(0, 10) : '';
-      document.getElementById('phase-end').value = endDate ? endDate.substring(0, 10) : '';
+      document.getElementById('phase-name').value = phase.name || '';
+      document.getElementById('phase-desc').value = phase.description || '';
+      document.getElementById('phase-start').value = phase.start_date ? phase.start_date.substring(0, 10) : '';
+      document.getElementById('phase-end').value = phase.end_date ? phase.end_date.substring(0, 10) : '';
       document.getElementById('steps-container').innerHTML = '';
       stepCounter = 0;
+
+      // Re-populate existing steps from phase data
+      const steps = phase.steps || [];
+      if (steps.length) {
+        steps.forEach(step => {
+          addStepRow();
+          const row = document.getElementById('step-row-' + stepCounter);
+          if (row) {
+            row.querySelector('[data-step-name]').value = step.name || '';
+            row.querySelector('[data-step-start]').value = step.start_date ? step.start_date.substring(0, 10) : '';
+            row.querySelector('[data-step-end]').value = step.end_date ? step.end_date.substring(0, 10) : '';
+          }
+        });
+      }
+
       document.getElementById('phase-modal').classList.add('show');
     }
 

@@ -201,10 +201,8 @@
           </div>
           <div class="form-group">
             <label class="form-label">Project</label>
-            <select class="form-select">
-              <option>SDA-2026-001 Marine Nav</option>
-              <option>SDA-2026-002 Sonar</option>
-              <option>SDA-2026-003 Radar</option>
+            <select class="form-select" id="ot-project">
+              <option value="">-- Select Project --</option>
             </select>
           </div>
         </div>
@@ -214,12 +212,12 @@
         </div>
 
         <!-- Auto Calculation Preview -->
-        <div class="calc-preview">
+        <div class="calc-preview" id="calc-preview">
           <div style="font-size:13px;font-weight:600;margin-bottom:8px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Compensation Preview</div>
-          <div class="calc-row"><span style="color:var(--text-secondary);">Base Rate</span><span>&#3647;300/hr</span></div>
-          <div class="calc-row"><span style="color:var(--text-secondary);">Multiplier</span><span>x1.5 (Normal)</span></div>
-          <div class="calc-row"><span style="color:var(--text-secondary);">Hours</span><span>4 hours</span></div>
-          <div class="calc-row total"><span>Total Compensation</span><span style="color:var(--primary);">&#3647;1,800</span></div>
+          <div class="calc-row"><span style="color:var(--text-secondary);">Base Rate</span><span id="preview-base-rate">&#3647;0/hr</span></div>
+          <div class="calc-row"><span style="color:var(--text-secondary);">Multiplier</span><span id="preview-multiplier">x1.5 (Normal)</span></div>
+          <div class="calc-row"><span style="color:var(--text-secondary);">Hours</span><span id="preview-hours">0 hours</span></div>
+          <div class="calc-row total"><span>Total Compensation</span><span style="color:var(--primary);" id="preview-total">&#3647;0</span></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -236,6 +234,9 @@
   <script src="assets/js/excel-export.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
+    const OT_BASE_RATE = 300; // Base rate per hour (THB) — change here or read from config
+    const OT_MULTIPLIERS = { '1.5': { label: 'Normal', mult: 1.5 }, '2.0': { label: 'Holiday', mult: 2.0 }, '3.0': { label: 'Special', mult: 3.0 } };
+
     const userRole = (API.getUser()||{}).role||'';
     const userId = (API.getUser()||{}).id||'';
     let editingOTId = null;
@@ -252,14 +253,35 @@
         const mult = parseFloat(editRow.multiplier) || 1.5;
         document.getElementById('ot-type').value = mult === 3.0 ? '3.0' : mult === 2.0 ? '2.0' : '1.5';
         document.getElementById('ot-hours').value = editRow.hours || 4;
+        document.getElementById('ot-project').value = editRow.project_id || '';
         modal.querySelector('.form-textarea').value = editRow.reason || '';
+        updateCompensationPreview();
       } else {
         modal.querySelector('.modal-header h2').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> New OT Request';
         modal.querySelector('.modal-footer .btn-primary').textContent = 'Submit for Approval';
         modal.querySelector('.modal-footer .btn-primary').setAttribute('onclick', 'saveOT()');
+        document.getElementById('ot-project').value = '';
+        updateCompensationPreview();
       }
     }
     function closeOTModal() { document.getElementById('ot-modal').classList.add('hidden'); editingOTId = null; }
+
+    function updateCompensationPreview() {
+      const multVal = document.getElementById('ot-type').value;
+      const info = OT_MULTIPLIERS[multVal] || OT_MULTIPLIERS['1.5'];
+      const hours = parseFloat(document.getElementById('ot-hours').value) || 0;
+      const total = OT_BASE_RATE * info.mult * hours;
+      document.getElementById('preview-base-rate').innerHTML = '&#3647;' + fmtNum(OT_BASE_RATE) + '/hr';
+      document.getElementById('preview-multiplier').textContent = 'x' + info.mult.toFixed(1) + ' (' + info.label + ')';
+      document.getElementById('preview-hours').textContent = hours + ' hours';
+      document.getElementById('preview-total').innerHTML = '&#3647;' + fmtNum(total);
+    }
+
+    // BUG-606: dynamically recalculate compensation preview
+    document.getElementById('ot-type').addEventListener('change', updateCompensationPreview);
+    document.getElementById('ot-hours').addEventListener('input', updateCompensationPreview);
+    // Initialize preview on load
+    updateCompensationPreview();
 
     async function saveOT() {
       const modal = document.getElementById('ot-modal');
@@ -269,7 +291,8 @@
       const hours = parseFloat(document.getElementById('ot-hours').value) || 0;
       const reason = modal.querySelector('.form-textarea').value;
       if (!ot_date || !hours) { showToast('Fill date and hours', 'error'); return; }
-      const data = { ot_date, ot_type, hours, base_rate: 300, reason };
+      const project_id = document.getElementById('ot-project').value;
+      const data = { ot_date, ot_type, hours, base_rate: OT_BASE_RATE, reason, project_id };
       try {
         if (editingOTId) {
           await API.put('/ot/' + editingOTId, data);
@@ -481,12 +504,19 @@
         try {
           const projects = await API.getProjects();
           const filterEl = document.getElementById('filter-project');
+          const modalProjectEl = document.getElementById('ot-project');
           projects.forEach(p => {
             projectMap[p.id] = p.code;
+            // Populate filter dropdown
             const opt = document.createElement('option');
             opt.value = p.id;
             opt.textContent = p.code + ' — ' + p.name;
             filterEl.appendChild(opt);
+            // Populate modal project dropdown (BUG-604)
+            const opt2 = document.createElement('option');
+            opt2.value = p.id;
+            opt2.textContent = p.code + ' — ' + p.name;
+            modalProjectEl.appendChild(opt2);
           });
         } catch(e) {}
 

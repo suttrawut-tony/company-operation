@@ -651,11 +651,11 @@ function renderCompanyProfile() {
           <div style="flex:1;">
             <div class="form-group">
               <label class="form-label">Company Name</label>
-              <input class="form-input" value="บริษัท เอส.ดี.เอ. กรุ๊ป จำกัด">
+              <input class="form-input" id="cp-name" value="บริษัท เอส.ดี.เอ. กรุ๊ป จำกัด">
             </div>
             <div class="form-group">
               <label class="form-label">Company Slug</label>
-              <input class="form-input" value="sda-group" style="font-family:var(--font-mono);font-size:var(--text-sm);">
+              <input class="form-input" id="cp-slug" value="sda-group" style="font-family:var(--font-mono);font-size:var(--text-sm);">
               <div class="form-hint">Used in URLs and API paths</div>
             </div>
           </div>
@@ -663,20 +663,20 @@ function renderCompanyProfile() {
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Tax ID</label>
-            <input class="form-input" value="0105529041298" style="font-family:var(--font-mono);">
+            <input class="form-input" id="cp-taxid" value="0105529041298" style="font-family:var(--font-mono);">
           </div>
           <div class="form-group">
             <label class="form-label">Phone</label>
-            <input class="form-input" value="02-3195588">
+            <input class="form-input" id="cp-phone" value="02-3195588">
           </div>
           <div class="form-group full-width">
             <label class="form-label">Address</label>
-            <textarea class="form-textarea" rows="2">367/1 อาคารเดชะรินทร์ ซอยศูนย์วิจัย 4 ถนนพระรามที่ 9</textarea>
+            <textarea class="form-textarea" id="cp-address" rows="2">367/1 อาคารเดชะรินทร์ ซอยศูนย์วิจัย 4 ถนนพระรามที่ 9</textarea>
           </div>
         </div>
         <div class="card-actions">
           <button class="btn btn-secondary">Cancel</button>
-          <button class="btn btn-primary" onclick="showToast('Company profile saved')">
+          <button class="btn btn-primary" onclick="saveCompanyProfile()">
             ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
           </button>
         </div>
@@ -1173,6 +1173,65 @@ async function saveERPSettings() {
 }
 
 // ═══════════════════════════════════════
+// 5b. Company Profile Save
+// ═══════════════════════════════════════
+async function saveCompanyProfile() {
+  try {
+    const data = {
+      company_profile: {
+        name: document.getElementById('cp-name')?.value || '',
+        slug: document.getElementById('cp-slug')?.value || '',
+        tax_id: document.getElementById('cp-taxid')?.value || '',
+        phone: document.getElementById('cp-phone')?.value || '',
+        address: document.getElementById('cp-address')?.value || '',
+      }
+    };
+    await API.put('/company/settings', data);
+    showToast('บันทึกข้อมูลบริษัทสำเร็จ', 'success');
+  } catch (e) {
+    showToast('บันทึกไม่สำเร็จ: ' + (e.message||e), 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// 5c. OT Rate Policy Save
+// ═══════════════════════════════════════
+async function saveOTRatePolicy() {
+  try {
+    const rows = document.querySelectorAll('#section-ot-rates .inline-input');
+    const rates = [];
+    for (let i = 0; i < rows.length; i += 2) {
+      rates.push({ multiplier: parseFloat(rows[i]?.value) || 0, maxHours: parseFloat(rows[i+1]?.value) || 0 });
+    }
+    await API.put('/company/settings', { ot_rate_policy: rates });
+    showToast('บันทึกนโยบาย OT สำเร็จ', 'success');
+  } catch (e) {
+    showToast('บันทึกไม่สำเร็จ: ' + (e.message||e), 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// 5d. Notification Settings Save
+// ═══════════════════════════════════════
+async function saveNotificationSettings() {
+  try {
+    const data = {
+      notifications: {
+        discord_webhook: document.getElementById('notif-discord')?.value || '',
+        smtp_host: document.getElementById('notif-smtp-host')?.value || '',
+        smtp_port: document.getElementById('notif-smtp-port')?.value || '',
+        smtp_user: document.getElementById('notif-smtp-user')?.value || '',
+        from_address: document.getElementById('notif-from')?.value || '',
+      }
+    };
+    await API.put('/company/settings', data);
+    showToast('บันทึกการตั้งค่าการแจ้งเตือนสำเร็จ', 'success');
+  } catch (e) {
+    showToast('บันทึกไม่สำเร็จ: ' + (e.message||e), 'error');
+  }
+}
+
+// ═══════════════════════════════════════
 // 6. Tax Codes
 // ═══════════════════════════════════════
 function renderTaxCodes() {
@@ -1365,7 +1424,7 @@ function renderOTRatePolicy() {
         </div>
       </div>
       <div class="card-footer" style="display:flex;justify-content:flex-end;">
-        <button class="btn btn-primary" onclick="showToast('OT rate policy saved')">
+        <button class="btn btn-primary" onclick="saveOTRatePolicy()">
           ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save Changes
         </button>
       </div>
@@ -1413,7 +1472,7 @@ function renderNotifications() {
       <div class="card-body">
         <div class="form-group">
           <label class="form-label">Webhook URL</label>
-          <input class="form-input" placeholder="https://discord.com/api/webhooks/..." style="font-family:var(--font-mono);font-size:var(--text-sm);">
+          <input class="form-input" id="notif-discord" placeholder="https://discord.com/api/webhooks/..." style="font-family:var(--font-mono);font-size:var(--text-sm);">
         </div>
       </div>
     </div>
@@ -1430,30 +1489,30 @@ function renderNotifications() {
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">SMTP Host</label>
-            <input class="form-input" placeholder="smtp.gmail.com">
+            <input class="form-input" id="notif-smtp-host" placeholder="smtp.gmail.com">
           </div>
           <div class="form-group">
             <label class="form-label">Port</label>
-            <input class="form-input" placeholder="587" style="font-family:var(--font-mono);">
+            <input class="form-input" id="notif-smtp-port" placeholder="587" style="font-family:var(--font-mono);">
           </div>
           <div class="form-group">
             <label class="form-label">Username</label>
-            <input class="form-input" placeholder="noreply@sda-group.com">
+            <input class="form-input" id="notif-smtp-user" placeholder="noreply@sda-group.com">
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
-            <input class="form-input" type="password" placeholder="••••••••" autocomplete="off">
+            <input class="form-input" id="notif-smtp-pass" type="password" placeholder="••••••••" autocomplete="off">
           </div>
           <div class="form-group full-width">
             <label class="form-label">From Address</label>
-            <input class="form-input" placeholder="Company Operation <noreply@sda-group.com>">
+            <input class="form-input" id="notif-from" placeholder="Company Operation <noreply@sda-group.com>">
           </div>
         </div>
       </div>
     </div>
 
     <div class="card-actions" style="border:none;margin-top:0;padding-top:0;">
-      <button class="btn btn-primary" onclick="showToast('Notification settings saved')">
+      <button class="btn btn-primary" onclick="saveNotificationSettings()">
         ${sIcon('<polyline points="20 6 9 17 4 12"/>', 14)} Save All Changes
       </button>
     </div>

@@ -300,8 +300,9 @@ router.get('/:id/transfers', async (req, res) => {
 // PUT /api/budget/:id — Edit budget
 // Permission: executive=any status, finance=draft/rejected/revised, pm=draft (own project)
 router.put('/:id', async (req, res) => {
+  const client = await db.pool.connect();
   try {
-    const { rows: [b] } = await db.query('SELECT * FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
+    const { rows: [b] } = await client.query('SELECT * FROM budgets WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!b) return res.status(404).json({ error: 'Not found' });
 
     const role = req.user.role;
@@ -310,11 +311,13 @@ router.put('/:id', async (req, res) => {
       || (role === 'pm' && b.status === 'draft');
     if (!canEdit) return res.status(403).json({ error: 'PERMISSION_DENIED', message: 'ไม่มีสิทธิ์แก้ไข budget สถานะ ' + b.status });
 
+    await client.query('BEGIN');
+
     // If approved → snapshot + change to revised
     if (b.status === 'approved') {
-      const { rows: oldLines } = await db.query('SELECT * FROM budget_lines WHERE budget_id=$1 ORDER BY sort_order', [req.params.id]);
+      const { rows: oldLines } = await client.query('SELECT * FROM budget_lines WHERE budget_id=$1 ORDER BY sort_order', [req.params.id]);
       const newVersion = (b.revision || 0) + 1;
-      await db.query(
+      await client.query(
         `INSERT INTO budget_revisions (budget_id, version, reason, old_total_budget, new_total_budget, changes, revised_by)
          VALUES ($1,$2,$3,$4,$5,$6,$7)`,
         [req.params.id, newVersion, 'Edited approved budget', parseFloat(b.total_budget), parseFloat(b.total_budget),
@@ -327,12 +330,47 @@ router.put('/:id', async (req, res) => {
     const fields = ['name','fiscal_year','notes','warn_threshold','block_threshold','control_mode','status'];
     const sets = []; const params = []; let idx = 1;
     for (const f of fields) { if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); } }
-    if (!sets.length) return res.status(400).json({ error: 'No fields' });
-    sets.push('updated_at = NOW()');
-    params.push(req.params.id);
-    const { rows } = await db.query(`UPDATE budgets SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
-    res.json(rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    if (!sets.length && !req.body.lines) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'No fields' }); }
+
+    let budget = b;
+    if (sets.length) {
+      sets.push('updated_at = NOW()');
+      params.push(req.params.id);
+      const { rows } = await client.query(`UPDATE budgets SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
+      budget = rows[0];
+    }
+
+    // BUG-209 fix: handle lines array — delete existing and re-insert
+    const { lines } = req.body;
+    if (Array.isArray(lines)) {
+      await client.query('DELETE FROM budget_lines WHERE budget_id = $1', [req.params.id]);
+
+      for (const line of lines) {
+        await client.query(
+          `INSERT INTO budget_lines (budget_id, name, category, tor_amount, budget_amount, sap_account, sort_order)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [req.params.id, line.name, line.category, line.tor_amount || 0, line.budget_amount || 0, line.sap_account, line.sort_order || 0]
+        );
+      }
+
+      // Recalculate header totals from new lines
+      const totalTor = lines.reduce((s, l) => s + (parseFloat(l.tor_amount) || 0), 0);
+      const totalBudget = lines.reduce((s, l) => s + (parseFloat(l.budget_amount) || 0), 0);
+      const { rows: updated } = await client.query(
+        'UPDATE budgets SET total_tor = $1, total_budget = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+        [totalTor, totalBudget, req.params.id]
+      );
+      budget = updated[0];
+    }
+
+    await client.query('COMMIT');
+    res.json(budget);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
 });
 
 // POST /api/budget/:id/resubmit — Resubmit revised budget for approval
