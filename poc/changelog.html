@@ -92,6 +92,32 @@
     // Version changelog data — updated when saving versions
     const VERSIONS = [
       {
+        tag: 'v2.2',
+        date: '2026-06-16',
+        summary: 'Warranty สินค้า, ข้อมูลรถในการจอง, Performance',
+        stats: { added: 4, changed: 2, fixed: 2 },
+        changes: [
+          { type: 'new', module: 'Warranty', desc: 'ตั้งค่าใน Item Master ว่าสินค้าไหนมีการรับประกัน + ระยะเวลา (เดือน) + เงื่อนไข (มี badge 🛡️ ในรายการ)' },
+          { type: 'new', module: 'Warranty', desc: 'เพิ่มสินค้าที่มีการรับประกันลงใบขาย (SQ) → แจ้งเตือนพนักงานขายทันที' },
+          { type: 'new', module: 'Warranty', desc: 'ปุ่ม "บัตร Warranty" ในหน้า SQ → ออกเอกสารรับประกัน (พิมพ์ได้) อ้างอิงเลขที่ใบขาย + ลูกค้า + รายการ + ระยะประกัน (เริ่ม-สิ้นสุด)' },
+          { type: 'new', module: 'Booking (จองรถ)', desc: 'เลือกรถแล้วแสดงข้อมูลรถครบเหมือน Vehicle Management (ยี่ห้อ/รุ่น/ปี/สี/ที่นั่ง/เลขไมล์/น้ำมัน/VIN/เครื่อง/การถือครอง)' },
+          { type: 'fix', module: 'Booking (จองรถ)', desc: 'สถานะรถ (ว่าง/ไม่ว่าง) ดูจากการจองจริงตามวันที่ที่เลือก ไม่ใช่สถานะ master ที่ค้าง' },
+          { type: 'fix', module: 'Booking', desc: 'วันสิ้นสุดขยับตามวันเริ่มต้นเสมอ — เลือกวันก่อนวันเริ่มต้นไม่ได้ (จองรถ + จองช่าง)' },
+          { type: 'update', module: 'Performance', desc: 'เพิ่ม index ฐานข้อมูล + keepAlive การเชื่อมต่อ + โหลดข้อมูลขนานในหน้า Booking (เร็วขึ้นบนเว็บจริง)' },
+          { type: 'update', module: 'Performance', desc: 'ยืนยันบีบอัด (gzip) ข้อมูลทุก API — payload ใหญ่วิ่งบนสายเล็กลง ~90%' },
+        ],
+        files: [
+          { path: 'poc/booking.html', added: 84, removed: 10 },
+          { path: 'poc/sq-detail.html', added: 68, removed: 0 },
+          { path: 'api/migrations/036_perf_indexes.sql', added: 34, removed: 0 },
+          { path: 'poc/item-master.html', added: 14, removed: 4 },
+          { path: 'api/routes/masterdata.js', added: 10, removed: 6 },
+          { path: 'api/db.js', added: 7, removed: 0 },
+          { path: 'api/migrations/037_item_warranty.sql', added: 5, removed: 0 },
+          { path: 'poc/assets/js/item-picker.js', added: 3, removed: 0 },
+        ]
+      },
+      {
         tag: 'v2.1',
         date: '2026-06-15',
         summary: 'ERP Integration toggle, ความปลอดภัย, ฟิกซ์สีปฏิทิน & หน้าค้าง',
