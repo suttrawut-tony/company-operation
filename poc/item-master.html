@@ -144,7 +144,7 @@
       if (c) list = list.filter(i => i.category === c);
       document.getElementById('item-table').innerHTML = list.map(i => `
         <tr style="border-bottom:1px solid var(--border-light);cursor:${erpMode?'default':'pointer'};" ${erpMode?'':`onclick="openEditItem('${i.id}')"`}>
-          <td style="padding:10px;font-weight:600;color:var(--primary);">${i.item_code}</td>
+          <td style="padding:10px;font-weight:600;"><a href="item-detail.html?id=${i.id}" style="color:var(--primary);text-decoration:none;" onclick="event.stopPropagation();" title="View detail">${i.item_code}</a></td>
           <td style="padding:10px;">${i.item_name}${i.has_warranty?` <span title="รับประกัน ${i.warranty_months||0} เดือน" style="font-size:10px;padding:1px 7px;border-radius:8px;background:#eff6ff;color:#2563eb;font-weight:600;white-space:nowrap;">🛡️ ${i.warranty_months||0} ด.</span>`:''}</td>
           <td style="padding:10px;color:var(--text-secondary);">${i.item_name_th||''}</td>
           <td style="padding:10px;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(i.description||'').replace(/"/g,'&quot;')}">${i.description||''}</td>
@@ -154,7 +154,7 @@
           <td style="padding:10px;text-align:right;font-weight:600;">${fmtMoney(parseFloat(i.unit_price||0))}</td>
           <td style="padding:10px;text-align:center;font-size:11px;">${i.gl_account||''}</td>
           <td style="padding:10px;text-align:center;font-size:11px;">${i.tax_code||''}</td>
-          <td style="padding:10px;text-align:center;">${i.is_active?'<span style="color:var(--success);">Active</span>':'<span style="color:var(--text-muted);">Inactive</span>'}</td>
+          <td style="padding:10px;text-align:center;">${i.is_active?'<span style="color:var(--success);">Active</span>':'<span style="color:var(--text-muted);">Inactive</span>'} <a href="item-detail.html?id=${i.id}" onclick="event.stopPropagation();" style="margin-left:6px;font-size:11px;color:var(--primary);text-decoration:none;" title="View detail">View</a></td>
         </tr>`).join('') || '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">No items</td></tr>';
     }
     function openItemModal() { if(erpMode){showToast('โหมด ERP: เพิ่ม Item จาก '+erpSystem+' แล้วกด "ดึงจาก ERP"','warning');return;} document.getElementById('im-id').value=''; document.getElementById('im-code').value=''; document.getElementById('im-code').readOnly=false; document.getElementById('im-name').value=''; document.getElementById('im-name-th').value=''; document.getElementById('im-cat').value='equipment'; document.getElementById('im-uom').value='EA'; document.getElementById('im-price').value=''; document.getElementById('im-gl').value='114101'; document.getElementById('im-description').value=''; document.getElementById('im-expiry-date').value=''; document.getElementById('im-qty-on-hand').value='0'; setWarranty(false,12,''); document.getElementById('item-modal-title').textContent='New Item'; document.getElementById('item-modal').style.display='flex'; }

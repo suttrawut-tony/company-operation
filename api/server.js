@@ -134,6 +134,8 @@ app.use('/api/quotations',    require('./routes/quotations'));
 app.use('/api/technicians',   require('./routes/technicians'));
 app.use('/api/admin',         require('./routes/admin'));
 app.use('/api/company',       require('./routes/company'));
+app.use('/api/warehouses',    require('./routes/warehouse'));
+app.use('/api/reports',       require('./routes/reports'));
 
 // Health check — includes a DB ping so monitoring sees real status
 app.get('/api/health', async (req, res) => {

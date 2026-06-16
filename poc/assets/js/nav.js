@@ -46,6 +46,7 @@ const ICONS = {
   itemMaster:   icon('<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
   changeLog:    icon('<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-4"/><path d="m8 18 4-4 4 4"/>'),
   bpGroup:      icon('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  warehouse:    icon('<path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/>'),
 };
 
 // Navigation groups — hardcode fallback if API fails
@@ -72,6 +73,7 @@ const NAV_GROUPS_FALLBACK = [
   { label: 'Resource', collapsible: true, iconColor: 'icon-amber', items: [
     { id: 'booking', label: 'Booking', icon: ICONS.booking, href: 'booking.html' },
     { id: 'vehicle', label: 'Vehicles', icon: ICONS.vehicle, href: 'vehicle.html' },
+    { id: 'warehouse', label: 'Warehouse', icon: ICONS.warehouse, href: 'warehouse.html' },
     { id: 'ot', label: 'Holiday / OT', icon: ICONS.ot, href: 'ot.html' },
   ]},
   { label: 'System', collapsible: true, iconColor: 'icon-rose', items: [
@@ -465,7 +467,7 @@ window.checkSapStatus = checkSapStatus;
 // Contextual Help — map page to help section
 function openContextHelp() {
   const page = location.pathname.split('/').pop().replace('.html','');
-  const map = { vehicle:'vehicle', booking:'vehicle', advance:'advance', phases:'phases', budget:'budget', 'pr-po':'prpo', 'pr-create':'prpo', 'pr-detail':'prpo', projects:'projects', 'petty-cash':'petty-cash', travel:'travel', ot:'ot', dashboard:'dashboard', 'item-master':'item-master', 'bp-master':'bp-master', 'user-permissions':'user-permission', overview:'projects' };
+  const map = { vehicle:'vehicle', booking:'vehicle', advance:'advance', phases:'phases', budget:'budget', 'pr-po':'prpo', 'pr-create':'prpo', 'pr-detail':'prpo', projects:'projects', 'petty-cash':'petty-cash', travel:'travel', ot:'ot', dashboard:'dashboard', 'item-master':'item-master', 'item-detail':'item-master', 'bp-master':'bp-master', 'user-permissions':'user-permission', overview:'projects' };
   const section = map[page] || '';
   window.open('help.html' + (section ? '#' + section : ''), '_blank');
 }

@@ -183,6 +183,15 @@
           <p>รายการ Debit/Credit ทั้งหมด จาก PR/PO/Expense/OT — GL Account + Balanced</p>
         </div>
       </div>
+      <div class="report-card" data-report="cashflow-forecast" onclick="runReport('cashflow-forecast',this)">
+        <div class="report-icon" style="background:var(--info-bg);color:var(--info);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </div>
+        <div class="report-info">
+          <h3>Cash Flow Forecast (เงินเข้า-ออก รายเดือน)</h3>
+          <p>เงินออก (AP ยังไม่จ่าย) + เงินเข้า (งวดงาน plan) รายเดือน พร้อม Net</p>
+        </div>
+      </div>
     </div>
 
     <!-- PM Reports -->
@@ -250,6 +259,20 @@
         <div class="report-info">
           <h3>Vehicle Usage Report</h3>
           <p>Per vehicle: plate, total bookings, total KM, trips/month</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Reports -->
+    <div class="report-section-title">Inventory Reports</div>
+    <div class="report-grid">
+      <div class="report-card" data-report="inventory-aging" onclick="runReport('inventory-aging',this)">
+        <div class="report-icon" style="background:#fef3c7;color:#d97706;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </div>
+        <div class="report-info">
+          <h3>Inventory Aging</h3>
+          <p>สินค้าคงเหลือแยกตามอายุ: 0-30, 31-60, 61-90, 90+ วัน</p>
         </div>
       </div>
     </div>
@@ -1145,6 +1168,103 @@
           <table class="rpt-table">
             <thead><tr><th>Name</th><th>Role</th><th>Position</th><th>Department</th><th class="c">Can Approve</th></tr></thead>
             <tbody>${rows.join('')}</tbody>
+          </table>`;
+      },
+
+      /* ── 15. Inventory Aging ── */
+      'inventory-aging': async (titleEl, el) => {
+        titleEl.textContent = 'Inventory Aging Quantity Report';
+        _csvTitle = 'Inventory_Aging';
+        const items = await API.get('/master/items');
+        if (!items.length) { el.innerHTML = emptyMsg('No items found.'); return; }
+
+        const now = new Date();
+        const rows = items.filter(i => (parseFloat(i.quantity_on_hand) || 0) > 0).map(i => {
+          const qty = parseFloat(i.quantity_on_hand) || 0;
+          const updated = i.updated_at || i.created_at || now.toISOString();
+          const days = Math.floor((now - new Date(updated)) / 86400000);
+          let bucket = '0-30';
+          if (days > 90) bucket = '90+';
+          else if (days > 60) bucket = '61-90';
+          else if (days > 30) bucket = '31-60';
+          const bucketColor = bucket === '90+' ? 'var(--danger)' : bucket === '61-90' ? 'var(--warning)' : bucket === '31-60' ? '#d97706' : 'var(--success)';
+          _csvData.push({ ItemCode: i.item_code, ItemName: i.item_name, Qty: qty, Days: days, Bucket: bucket, ExpiryDate: i.expiry_date || '' });
+          return `<tr>
+            <td class="bold">${i.item_code||'-'}</td>
+            <td>${i.item_name||'-'}</td>
+            <td class="r">${qty.toLocaleString('th-TH')}</td>
+            <td class="c">${days}</td>
+            <td class="c"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:${bucketColor}20;color:${bucketColor};">${bucket}</span></td>
+            <td class="c">${i.expiry_date ? new Date(i.expiry_date).toLocaleDateString('th-TH') : '-'}</td>
+          </tr>`;
+        });
+
+        const buckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+        _csvData.forEach(r => { buckets[r.Bucket] = (buckets[r.Bucket]||0) + r.Qty; });
+
+        el.innerHTML = `
+          <div class="rpt-summary-cards">
+            <div class="rpt-summary-card"><div class="sc-label">0-30 วัน</div><div class="sc-value" style="color:var(--success);">${buckets['0-30'].toLocaleString('th-TH')}</div></div>
+            <div class="rpt-summary-card"><div class="sc-label">31-60 วัน</div><div class="sc-value" style="color:#d97706;">${buckets['31-60'].toLocaleString('th-TH')}</div></div>
+            <div class="rpt-summary-card"><div class="sc-label">61-90 วัน</div><div class="sc-value" style="color:var(--warning);">${buckets['61-90'].toLocaleString('th-TH')}</div></div>
+            <div class="rpt-summary-card"><div class="sc-label">90+ วัน</div><div class="sc-value" style="color:var(--danger);">${buckets['90+'].toLocaleString('th-TH')}</div></div>
+          </div>
+          <table class="rpt-table">
+            <thead><tr><th>Item Code</th><th>Item Name</th><th class="r">Qty</th><th class="c">Days</th><th class="c">Bucket</th><th class="c">Expiry</th></tr></thead>
+            <tbody>${rows.length ? rows.join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">ไม่มีสินค้าคงเหลือ</td></tr>'}</tbody>
+          </table>`;
+      },
+
+      /* ── 16. Cash Flow Forecast (เงินเข้า-ออก รายเดือน) ── */
+      'cashflow-forecast': async (titleEl, el) => {
+        titleEl.textContent = 'Cash Flow Forecast — เงินเข้า/ออก รายเดือน';
+        _csvTitle = 'CashFlow_Forecast';
+        const { from, to } = getDateFilter();
+        let qs = '';
+        if (from) qs += `from=${from}&`;
+        if (to) qs += `to=${to}&`;
+        if (qs) qs = '?' + qs.slice(0, -1);
+
+        const data = await API.get(`/reports/cashflow${qs}`);
+        const { months, cash_in, cash_out, net } = data;
+        if (!months || !months.length) { el.innerHTML = emptyMsg('No cash flow data found. (ไม่มีข้อมูล PO ค้างจ่ายหรืองวดงานในช่วงนี้)'); return; }
+
+        // Month label formatting
+        const monthLabel = (m) => {
+          const [y, mo] = m.split('-');
+          const names = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+          return `${names[parseInt(mo)-1]} ${y}`;
+        };
+
+        let totalIn = 0, totalOut = 0, totalNet = 0;
+        const rows = months.map((m, i) => {
+          totalIn += cash_in[i];
+          totalOut += cash_out[i];
+          totalNet += net[i];
+          _csvData.push({ Month: m, CashIn: cash_in[i], CashOut: cash_out[i], Net: net[i] });
+          return `<tr>
+            <td class="bold">${monthLabel(m)}</td>
+            <td class="r mono pos">${money(cash_in[i])}</td>
+            <td class="r mono neg">${money(cash_out[i])}</td>
+            <td class="r mono bold ${net[i]>=0?'pos':'neg'}">${net[i]>=0?'+':''}${money(net[i])}</td>
+          </tr>`;
+        });
+
+        el.innerHTML = `
+          <div class="rpt-summary-cards">
+            <div class="rpt-summary-card"><div class="sc-label">Total Cash In (งวดงาน)</div><div class="sc-value" style="color:var(--success);">${fmtMoney(totalIn)}</div></div>
+            <div class="rpt-summary-card"><div class="sc-label">Total Cash Out (AP)</div><div class="sc-value" style="color:var(--danger);">${fmtMoney(totalOut)}</div></div>
+            <div class="rpt-summary-card"><div class="sc-label">Net Cash Flow</div><div class="sc-value" style="color:${totalNet>=0?'var(--success)':'var(--danger)'};">${totalNet>=0?'+':''}${fmtMoney(totalNet)}</div></div>
+            <div class="rpt-summary-card"><div class="sc-label">Months</div><div class="sc-value">${months.length}</div></div>
+          </div>
+          <table class="rpt-table">
+            <thead><tr><th>Month</th><th class="r">Cash In - งวดงาน (฿)</th><th class="r">Cash Out - AP (฿)</th><th class="r">Net (฿)</th></tr></thead>
+            <tbody>${rows.join('')}</tbody>
+            <tfoot><tr><td style="text-align:right;font-weight:700;">TOTAL</td>
+              <td class="r pos">${money(totalIn)}</td>
+              <td class="r neg">${money(totalOut)}</td>
+              <td class="r bold ${totalNet>=0?'pos':'neg'}">${totalNet>=0?'+':''}${money(totalNet)}</td>
+            </tr></tfoot>
           </table>`;
       }
     };

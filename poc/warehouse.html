@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Warehouse</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .wh-layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; min-height: 500px; }
+    @media (max-width: 900px) { .wh-layout { grid-template-columns: 1fr; } }
+    .wh-list { display: flex; flex-direction: column; gap: 8px; }
+    .wh-card { padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s; background: var(--bg-white); }
+    .wh-card:hover { border-color: var(--primary); background: var(--bg-light); }
+    .wh-card.active { border-color: var(--primary); background: #eff6ff; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+    .wh-card-code { font-weight: 700; font-size: 14px; color: var(--primary); }
+    .wh-card-name { font-size: 13px; color: var(--text-primary); margin-top: 2px; }
+    .wh-card-meta { font-size: 11px; color: var(--text-muted); margin-top: 6px; display: flex; gap: 12px; }
+    .wh-card-status { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .wh-card-status.active { background: #dcfce7; color: #16a34a; }
+    .wh-card-status.inactive { background: #f3f4f6; color: #9ca3af; }
+    .stock-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .stock-low { color: var(--danger); font-weight: 600; }
+    .stock-ok { color: var(--success); }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1>Warehouse Management</h1><p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">จัดการคลังสินค้าและสต๊อก</p></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="openWhModal()" style="display:flex;align-items:center;gap:6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          เพิ่มคลังสินค้า
+        </button>
+      </div>
+    </div>
+
+    <div class="wh-layout">
+      <!-- Left: Warehouse list -->
+      <div>
+        <input type="text" class="form-input" id="wh-search" placeholder="ค้นหาคลังสินค้า..." oninput="renderWhList()" style="margin-bottom:12px;">
+        <div class="wh-list" id="wh-list"></div>
+      </div>
+
+      <!-- Right: Stock table -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h3 id="stock-title" style="margin:0;font-size:15px;">เลือกคลังสินค้า</h3>
+            <div id="stock-subtitle" style="font-size:11px;color:var(--text-muted);margin-top:2px;"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="add-stock-btn" onclick="openStockModal()" style="display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            เพิ่มสินค้า
+          </button>
+        </div>
+        <div class="table-container">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr style="background:var(--bg-light);">
+              <th style="text-align:left;padding:10px;">Item Code</th>
+              <th style="text-align:left;padding:10px;">Item Name</th>
+              <th style="text-align:left;padding:10px;">Category</th>
+              <th style="text-align:center;padding:10px;">UOM</th>
+              <th style="text-align:right;padding:10px;">Quantity</th>
+              <th style="text-align:right;padding:10px;">Min Qty</th>
+              <th style="text-align:center;padding:10px;">Status</th>
+              <th style="text-align:center;padding:10px;">Last Updated</th>
+            </tr></thead>
+            <tbody id="stock-table">
+              <tr><td colspan="8" class="stock-empty">เลือกคลังสินค้าจากรายการด้านซ้ายเพื่อดูสต๊อก</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warehouse Modal -->
+    <div class="modal-overlay" id="wh-modal" onclick="if(event.target===this)closeWhModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:440px;max-width:95vw;">
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="wh-modal-title">เพิ่มคลังสินค้า</h3><button onclick="closeWhModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px;">
+          <input type="hidden" id="wh-edit-id">
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-input" id="wh-code" placeholder="WH01" maxlength="20"></div>
+            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="wh-name" placeholder="ชื่อคลังสินค้า"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-input" id="wh-location" placeholder="ที่ตั้ง (optional)"></div>
+          <div class="form-group" id="wh-status-group" style="display:none;">
+            <label class="form-label">Status</label>
+            <select class="form-input" id="wh-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="closeWhModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveWarehouse()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stock Modal -->
+    <div class="modal-overlay" id="stock-modal" onclick="if(event.target===this)closeStockModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:440px;max-width:95vw;">
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3>เพิ่ม/แก้ไขสินค้าในคลัง</h3><button onclick="closeStockModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px;">
+          <div class="form-group">
+            <label class="form-label">Item</label>
+            <select class="form-input" id="stock-item-id">
+              <option value="">-- เลือกสินค้า --</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Quantity</label><input type="number" class="form-input" id="stock-qty" min="0" step="0.01" value="0"></div>
+            <div class="form-group"><label class="form-label">Min Quantity</label><input type="number" class="form-input" id="stock-min-qty" min="0" step="0.01" value="0"></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="closeStockModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveStock()">Save</button>
+        </div>
+      </div>
+    </div>
+
+  </main></div>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allWarehouses = [];
+    let allItems = [];
+    let selectedWhId = null;
+
+    // ─── Load warehouses ───
+    async function loadWarehouses() {
+      try {
+        allWarehouses = await API.get('/warehouses');
+        renderWhList();
+      } catch (err) {
+        if (err && (err.message === 'Session expired' || err.message === 'Password change required')) return;
+        showToast('โหลดข้อมูลคลังไม่สำเร็จ: ' + (err.message || err), 'error');
+      }
+    }
+
+    // ─── Render warehouse list ───
+    function renderWhList() {
+      const s = (document.getElementById('wh-search')?.value || '').toLowerCase();
+      let list = allWarehouses;
+      if (s) list = list.filter(w => (w.code + w.name + (w.location || '')).toLowerCase().includes(s));
+
+      document.getElementById('wh-list').innerHTML = list.map(w => `
+        <div class="wh-card${w.id === selectedWhId ? ' active' : ''}" onclick="selectWarehouse('${w.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="wh-card-code">${w.code}</span>
+            <span class="wh-card-status ${w.status}">${w.status === 'active' ? 'Active' : 'Inactive'}</span>
+          </div>
+          <div class="wh-card-name">${w.name}</div>
+          <div class="wh-card-meta">
+            <span>${w.item_count || 0} รายการ</span>
+            <span>${parseFloat(w.total_qty || 0).toLocaleString('th-TH', {maximumFractionDigits:2})} ชิ้น</span>
+            ${w.location ? '<span>' + w.location + '</span>' : ''}
+          </div>
+          <div style="margin-top:6px;text-align:right;">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openEditWh('${w.id}')" style="font-size:11px;padding:3px 10px;">Edit</button>
+          </div>
+        </div>
+      `).join('') || '<div style="text-align:center;padding:20px;color:var(--text-muted);">ไม่พบคลังสินค้า</div>';
+    }
+
+    // ─── Select warehouse & load stock ───
+    async function selectWarehouse(id) {
+      selectedWhId = id;
+      renderWhList();
+      const wh = allWarehouses.find(w => w.id === id);
+      document.getElementById('stock-title').textContent = wh ? wh.code + ' — ' + wh.name : '';
+      document.getElementById('stock-subtitle').textContent = wh?.location || '';
+      document.getElementById('add-stock-btn').style.display = '';
+
+      try {
+        const stock = await API.get('/warehouses/' + id + '/stock');
+        renderStockTable(stock);
+      } catch (err) {
+        showToast('โหลดสต๊อกไม่สำเร็จ: ' + (err.message || err), 'error');
+      }
+    }
+
+    // ─── Render stock table ───
+    function renderStockTable(stock) {
+      const tbody = document.getElementById('stock-table');
+      if (!stock || !stock.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="stock-empty">ยังไม่มีสินค้าในคลังนี้</td></tr>';
+        return;
+      }
+      tbody.innerHTML = stock.map(s => {
+        const qty = parseFloat(s.quantity) || 0;
+        const minQty = parseFloat(s.min_quantity) || 0;
+        const isLow = minQty > 0 && qty <= minQty;
+        return `<tr style="border-bottom:1px solid var(--border-light);">
+          <td style="padding:10px;font-weight:600;color:var(--primary);">${s.item_code}</td>
+          <td style="padding:10px;">${s.item_name}${s.item_name_th ? ' <span style="color:var(--text-muted);font-size:11px;">(' + s.item_name_th + ')</span>' : ''}</td>
+          <td style="padding:10px;text-align:left;"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg-hover);">${s.category || '-'}</span></td>
+          <td style="padding:10px;text-align:center;">${s.uom || '-'}</td>
+          <td style="padding:10px;text-align:right;font-weight:600;">${qty.toLocaleString('th-TH', {maximumFractionDigits:2})}</td>
+          <td style="padding:10px;text-align:right;">${minQty.toLocaleString('th-TH', {maximumFractionDigits:2})}</td>
+          <td style="padding:10px;text-align:center;">${isLow ? '<span class="stock-low">Low Stock</span>' : '<span class="stock-ok">OK</span>'}</td>
+          <td style="padding:10px;text-align:center;font-size:11px;color:var(--text-muted);">${s.last_updated ? fmtDate(s.last_updated) : '-'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ─── Warehouse Modal ───
+    function openWhModal() {
+      document.getElementById('wh-edit-id').value = '';
+      document.getElementById('wh-code').value = '';
+      document.getElementById('wh-code').readOnly = false;
+      document.getElementById('wh-name').value = '';
+      document.getElementById('wh-location').value = '';
+      document.getElementById('wh-status-group').style.display = 'none';
+      document.getElementById('wh-modal-title').textContent = 'เพิ่มคลังสินค้า';
+      document.getElementById('wh-modal').style.display = 'flex';
+    }
+
+    function openEditWh(id) {
+      const w = allWarehouses.find(x => x.id === id);
+      if (!w) return;
+      document.getElementById('wh-edit-id').value = id;
+      document.getElementById('wh-code').value = w.code;
+      document.getElementById('wh-code').readOnly = true;
+      document.getElementById('wh-name').value = w.name;
+      document.getElementById('wh-location').value = w.location || '';
+      document.getElementById('wh-status').value = w.status;
+      document.getElementById('wh-status-group').style.display = '';
+      document.getElementById('wh-modal-title').textContent = 'แก้ไขคลังสินค้า';
+      document.getElementById('wh-modal').style.display = 'flex';
+    }
+
+    function closeWhModal() { document.getElementById('wh-modal').style.display = 'none'; }
+
+    async function saveWarehouse() {
+      const id = document.getElementById('wh-edit-id').value;
+      const body = {
+        code: document.getElementById('wh-code').value.trim(),
+        name: document.getElementById('wh-name').value.trim(),
+        location: document.getElementById('wh-location').value.trim() || null,
+      };
+      if (!body.code || !body.name) { showToast('กรุณากรอก Code และ Name', 'warning'); return; }
+      if (id) body.status = document.getElementById('wh-status').value;
+
+      try {
+        if (id) await API.put('/warehouses/' + id, body);
+        else await API.post('/warehouses', body);
+        closeWhModal();
+        await loadWarehouses();
+        if (selectedWhId) await selectWarehouse(selectedWhId);
+        showToast('บันทึกสำเร็จ', 'success');
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    // ─── Stock Modal ───
+    async function loadItemOptions() {
+      try {
+        allItems = await API.get('/master/items');
+        const sel = document.getElementById('stock-item-id');
+        sel.innerHTML = '<option value="">-- เลือกสินค้า --</option>' +
+          allItems.filter(i => i.is_active !== false).map(i =>
+            `<option value="${i.id}">${i.item_code} — ${i.item_name}</option>`
+          ).join('');
+      } catch (e) { /* ignore */ }
+    }
+
+    function openStockModal() {
+      if (!selectedWhId) { showToast('กรุณาเลือกคลังสินค้าก่อน', 'warning'); return; }
+      document.getElementById('stock-item-id').value = '';
+      document.getElementById('stock-qty').value = '0';
+      document.getElementById('stock-min-qty').value = '0';
+      document.getElementById('stock-modal').style.display = 'flex';
+    }
+
+    function closeStockModal() { document.getElementById('stock-modal').style.display = 'none'; }
+
+    async function saveStock() {
+      const itemId = document.getElementById('stock-item-id').value;
+      if (!itemId) { showToast('กรุณาเลือกสินค้า', 'warning'); return; }
+      const body = {
+        item_id: itemId,
+        quantity: parseFloat(document.getElementById('stock-qty').value) || 0,
+        min_quantity: parseFloat(document.getElementById('stock-min-qty').value) || 0,
+      };
+      try {
+        await API.post('/warehouses/' + selectedWhId + '/stock', body);
+        closeStockModal();
+        await loadWarehouses();
+        await selectWarehouse(selectedWhId);
+        showToast('บันทึกสต๊อกสำเร็จ', 'success');
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    // ─── Init ───
+    if (!API.requireAuth()) throw new Error('Not authenticated');
+    (async () => {
+      await loadWarehouses();
+      await loadItemOptions();
+    })();
+  </script>
+</body></html>
