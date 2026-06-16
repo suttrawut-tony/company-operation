@@ -104,6 +104,7 @@ const API = {
   },
 
   async getMe() { return this.get('/auth/me'); },
+  async getUsers() { return this.get('/auth/users'); },
   async changePassword(currentPassword, newPassword) {
     return this.post('/auth/change-password', { currentPassword, newPassword });
   },

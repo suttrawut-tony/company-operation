@@ -393,20 +393,27 @@
       const saveBtn = document.querySelector('#proj-modal .modal-footer .btn-primary');
       saveBtn.textContent = 'Create';
       saveBtn.setAttribute('onclick', 'saveNewProject()');
-      document.getElementById('np-code').value = 'SDA-' + new Date().getFullYear() + '-' + String(allProjects.length + 1).padStart(3, '0');
+      // Auto-generate next code from existing max, not array length
+      const yr = new Date().getFullYear();
+      const prefix = 'SDA-' + yr + '-';
+      const existingNums = allProjects.filter(p => (p.code||'').startsWith(prefix)).map(p => parseInt(p.code.replace(prefix, '')) || 0);
+      const nextNum = (existingNums.length ? Math.max(...existingNums) : 0) + 1;
+      document.getElementById('np-code').value = prefix + String(nextNum).padStart(3, '0');
       document.getElementById('np-name').value = '';
       document.getElementById('np-desc').value = '';
       document.getElementById('np-start').value = new Date().toISOString().split('T')[0];
       document.getElementById('np-end').value = '';
       document.getElementById('np-tor').value = '';
-      // Load users for PM dropdown
+      // Load all users for PM dropdown
       try {
-        const me = await API.getMe();
+        const users = await API.getUsers();
         const sel = document.getElementById('np-pm');
         sel.innerHTML = '<option value="">-- Select PM --</option>';
-        // Use current user as only option (full user list needs admin API)
-        sel.innerHTML += '<option value="' + me.id + '">' + (me.first_name||'') + ' ' + (me.last_name||'') + '</option>';
-      } catch(e) {}
+        (Array.isArray(users) ? users : []).forEach(u => {
+          const name = ((u.first_name_th || u.first_name || '') + ' ' + (u.last_name_th || u.last_name || '')).trim();
+          sel.innerHTML += '<option value="' + u.id + '">' + name + ' (' + (u.role||'') + ')' + '</option>';
+        });
+      } catch(e) { console.warn('Cannot load users for PM dropdown', e); }
       document.getElementById('proj-modal').classList.add('show');
     }
     function closeProjModal() { document.getElementById('proj-modal').classList.remove('show'); }
@@ -518,17 +525,17 @@
       document.getElementById('np-start').value = p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '';
       document.getElementById('np-end').value = p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '';
       document.getElementById('np-tor').value = p.tor_amount || '';
-      // Load PM dropdown
+      // Load all users for PM dropdown
       try {
-        const me = await API.getMe();
+        const users = await API.getUsers();
         const sel = document.getElementById('np-pm');
         sel.innerHTML = '<option value="">-- Select PM --</option>';
-        sel.innerHTML += '<option value="' + me.id + '">' + (me.first_name||'') + ' ' + (me.last_name||'') + '</option>';
-        if (p.pm_user_id && p.pm_user_id !== me.id) {
-          sel.innerHTML += '<option value="' + p.pm_user_id + '">' + (p.pm_name||'PM') + '</option>';
-        }
+        (Array.isArray(users) ? users : []).forEach(u => {
+          const name = ((u.first_name_th || u.first_name || '') + ' ' + (u.last_name_th || u.last_name || '')).trim();
+          sel.innerHTML += '<option value="' + u.id + '">' + name + ' (' + (u.role||'') + ')' + '</option>';
+        });
         sel.value = p.pm_user_id || '';
-      } catch(e) {}
+      } catch(e) { console.warn('Cannot load users for PM dropdown', e); }
       // Change save button
       const saveBtn = document.querySelector('#proj-modal .modal-footer .btn-primary');
       saveBtn.textContent = 'อัปเดต';

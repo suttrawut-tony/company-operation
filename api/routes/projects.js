@@ -81,7 +81,10 @@ router.post('/', async (req, res) => {
       [req.user.company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount || 0, req.user.id]
     );
     res.status(201).json(rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'รหัสโปรเจกต์ "' + code + '" ซ้ำ กรุณาใช้รหัสอื่น' });
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // PUT /api/projects/:id
