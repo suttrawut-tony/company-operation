@@ -1074,7 +1074,8 @@
         </div>
         <div class="form-group">
           <label>รถ</label>
-          <select id="vehSelect"></select>
+          <select id="vehSelect" onchange="renderVehInfo()"></select>
+          <div id="vehInfo" style="display:none;margin-top:10px;"></div>
         </div>
         <div class="form-group">
           <label>ชื่อการจอง</label>
@@ -1083,11 +1084,11 @@
         <div class="form-row">
           <div class="form-group">
             <label>วันเริ่มต้น</label>
-            <input type="date" id="vehStartDate">
+            <input type="date" id="vehStartDate" onchange="clampEndDate('vehStartDate','vehEndDate');renderVehInfo()">
           </div>
           <div class="form-group">
             <label>วันสิ้นสุด</label>
-            <input type="date" id="vehEndDate">
+            <input type="date" id="vehEndDate" onchange="renderVehInfo()">
           </div>
         </div>
         <div class="form-check">
@@ -1246,7 +1247,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>วันเริ่มต้น</label>
-            <input type="date" id="solarStartDate">
+            <input type="date" id="solarStartDate" onchange="clampEndDate('solarStartDate','solarEndDate')">
           </div>
           <div class="form-group">
             <label>วันสิ้นสุด</label>
@@ -2065,6 +2066,66 @@
       });
     }
 
+    // Keep an end-date field >= its start-date field. Sets the picker's min so
+    // earlier dates can't be chosen, and bumps the end up to the start if it
+    // ever falls behind (start must always be <= end).
+    function clampEndDate(startId, endId) {
+      const s = document.getElementById(startId), e = document.getElementById(endId);
+      if (!s || !e) return;
+      e.min = s.value || '';
+      if (s.value && e.value && e.value < s.value) e.value = s.value;
+    }
+
+    // Show full vehicle info (same fields as Vehicle Management) under the
+    // booking dropdown when a vehicle is picked.
+    function renderVehInfo() {
+      const box = document.getElementById('vehInfo');
+      if (!box) return;
+      const id = document.getElementById('vehSelect').value;
+      const v = vehicles.find(x => x.id === id);
+      if (!v) { box.style.display = 'none'; box.innerHTML = ''; return; }
+      const fmtNum = n => (n == null || n === '') ? '-' : Number(n).toLocaleString();
+      // Status reflects real availability for the SELECTED booking dates, not the
+      // static master status (which may say in_use even on a free day).
+      const st = (function() {
+        if (v.status === 'maintenance') return ['ซ่อมบำรุง','#dc2626','#fef2f2'];
+        if (v.status === 'retired')     return ['ปลดระวาง','#64748b','#f1f5f9'];
+        const selS = document.getElementById('vehStartDate').value || fmt(new Date());
+        const selE = document.getElementById('vehEndDate').value || selS;
+        const busy = (allBookings || []).some(b => {
+          if (b.booking_type !== 'vehicle' || b.vehicle_id !== v.id || b.id === editingId || isCancelled(b)) return false;
+          const bs = toLocalDate(b.start_date);
+          const be = b.end_date ? toLocalDate(b.end_date) : bs;
+          return bs <= selE && be >= selS;   // date ranges overlap (YYYY-MM-DD lexical compare)
+        });
+        return busy ? ['ไม่ว่าง (มีจองช่วงนี้)','#d97706','#fffbeb'] : ['ว่าง','#16a34a','#f0fdf4'];
+      })();
+      const brandLine = [v.brand, v.model, v.year].filter(Boolean).join(' ') || '-';
+      const ownership = v.ownership_type === 'leased' ? 'เช่า (Leased)' : v.ownership_type === 'rented' ? 'เช่า (Rented)' : v.ownership_type === 'owned' ? 'เป็นเจ้าของ' : (v.ownership_type || '-');
+      const colorDot = v.color ? `<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${v.color};border:1px solid var(--border);vertical-align:middle;margin-right:5px;"></span>` : '';
+      const cell = (label, val) => `<div><div style="font-size:10px;color:var(--text-muted);">${label}</div><div style="font-size:12px;font-weight:600;">${val}</div></div>`;
+      box.style.display = 'block';
+      box.innerHTML = `
+        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;background:var(--bg-light);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="font-weight:700;font-size:13px;">${v.plate_number || '-'} <span style="font-weight:400;color:var(--text-secondary);">${v.name || ''}</span></div>
+            <span style="font-size:10px;font-weight:600;padding:2px 10px;border-radius:10px;background:${st[2]};color:${st[1]};">${st[0]}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px;">
+            ${cell('ยี่ห้อ / รุ่น / ปี', brandLine)}
+            ${cell('ประเภท', v.vehicle_type || '-')}
+            ${cell('ที่นั่ง', (v.seats || '-') + ' ที่นั่ง')}
+            ${cell('สี', colorDot + (v.color || '-'))}
+            ${cell('เลขไมล์ (KM)', fmtNum(v.current_km))}
+            ${cell('น้ำมัน', v.fuel_level || 'N/A')}
+            ${cell('การถือครอง', ownership)}
+            ${cell('เลขตัวถัง (VIN)', v.vin_number || '-')}
+            ${cell('เลขเครื่อง', v.engine_number || '-')}
+          </div>
+          ${v.notes ? `<div style="margin-top:8px;font-size:11px;color:var(--text-muted);">หมายเหตุ: ${v.notes}</div>` : ''}
+        </div>`;
+    }
+
     async function fetchBookings() {
       let startDate, endDate;
       const y = currentDate.getFullYear(), m = currentDate.getMonth();
@@ -2560,6 +2621,9 @@
         toggleVehTime();
         document.getElementById('vehJobOrder').value = '';
         document.getElementById('vehJOForm').classList.remove('show');
+        document.getElementById('vehSelect').value = '';
+        clampEndDate('vehStartDate','vehEndDate');
+        renderVehInfo();
         document.getElementById('modalVehicle').classList.add('show');
       } else if (type === 'solar') {
         document.getElementById('solarStartDate').value = defaultDate;
@@ -2580,6 +2644,7 @@
         solarItems = [];
         renderBookingItems();
         showSolarSections('');
+        clampEndDate('solarStartDate','solarEndDate');
         document.getElementById('modalSolar').classList.add('show');
       } else if (type === 'flight') {
         document.getElementById('flightAirline').value = '';
@@ -2874,6 +2939,7 @@
       if (btype === 'vehicle') {
         // FIX: use vehicle_id not resource_id (resource_id doesn't exist in API response)
         document.getElementById('vehSelect').value = ev.vehicle_id || '';
+        renderVehInfo();
         document.getElementById('vehTitle').value = ev.title || '';
         document.getElementById('vehStartDate').value = toLocalDate(ev.start_date);
         document.getElementById('vehEndDate').value = toLocalDate(ev.end_date || ev.start_date);
@@ -2887,6 +2953,7 @@
         document.getElementById('vehPassengers').value = ev.passengers || '1';
         document.getElementById('vehColor').value = ev.color || '#4285f4';
         document.getElementById('vehJobOrder').value = ev.job_order_id || '';
+        clampEndDate('vehStartDate','vehEndDate');
         document.getElementById('modalVehicle').classList.add('show');
       } else if (btype === 'solar') {
         // FIX: use technician_id not resource_id
@@ -2924,6 +2991,7 @@
         document.getElementById('solarSurveyNotes').value = ev.survey_notes || '';
         showSolarSections(ev.status || '');
         loadBookingItems(ev.id);
+        clampEndDate('solarStartDate','solarEndDate');
         document.getElementById('modalSolar').classList.add('show');
       } else if (btype === 'flight') {
         document.getElementById('flightAirline').value = ev.airline || '';
