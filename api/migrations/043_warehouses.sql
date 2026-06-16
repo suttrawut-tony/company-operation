@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS warehouses (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_warehouses_company ON warehouses(company_id);
-CREATE UNIQUE INDEX idx_warehouses_code_company ON warehouses(company_id, code);
+CREATE INDEX IF NOT EXISTS idx_warehouses_company ON warehouses(company_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_warehouses_code_company ON warehouses(company_id, code);
 
 CREATE TABLE IF NOT EXISTS warehouse_stock (
   id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS warehouse_stock (
   last_updated  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_warehouse_stock_warehouse ON warehouse_stock(warehouse_id);
-CREATE INDEX idx_warehouse_stock_item ON warehouse_stock(item_id);
-CREATE UNIQUE INDEX idx_warehouse_stock_wh_item ON warehouse_stock(warehouse_id, item_id);
+CREATE INDEX IF NOT EXISTS idx_warehouse_stock_warehouse ON warehouse_stock(warehouse_id);
+CREATE INDEX IF NOT EXISTS idx_warehouse_stock_item ON warehouse_stock(item_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_warehouse_stock_wh_item ON warehouse_stock(warehouse_id, item_id);
 
 -- Seed default warehouses for all existing companies
 INSERT INTO warehouses (company_id, code, name, location, status)

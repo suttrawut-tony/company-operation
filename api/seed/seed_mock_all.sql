@@ -425,10 +425,7 @@ VALUES
    'PJ00', 'คลังโครงการ', 'คลังสินค้าประจำโครงการ', 'active', NOW()),
   ('77770001-0001-0001-0001-000000000003', '11111111-1111-1111-1111-111111111111',
    'PJ01', 'คลังสินค้าคงเหลือ', 'คลังเก็บสินค้าคงเหลือจากโครงการ', 'active', NOW())
-ON CONFLICT (id) DO NOTHING;
-
--- Also handle the unique index on (company_id, code) from migration 043
--- In case warehouses already exist with different IDs, we skip gracefully
+ON CONFLICT DO NOTHING;  -- catches both PK and unique(company_id, code)
 
 -- ═══════════════════════════════════════════════════════════
 -- 8. WAREHOUSE STOCK (15 entries)
