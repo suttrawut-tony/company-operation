@@ -496,7 +496,7 @@
     if (!API.requireAuth()) throw new Error('Not authenticated');
     loadPRPO();
     API.onRealtime(msg => {
-      if (msg.type.startsWith('pr_')) loadPRPO();
+      if (msg.type.startsWith('pr_') || msg.type.startsWith('po_')) loadPRPO();
     });
   </script>
 </body>

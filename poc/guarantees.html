@@ -68,10 +68,10 @@
           <select id="filterProject" onchange="loadData()"><option value="">All Projects</option></select>
           <select id="filterStatus" onchange="loadData()">
             <option value="">All Status</option>
+            <option value="pending">Pending</option>
             <option value="active">Active</option>
-            <option value="expiring">Expiring Soon</option>
-            <option value="expired">Expired</option>
             <option value="released">Released</option>
+            <option value="cancelled">Cancelled</option>
           </select>
           <select id="filterType" onchange="loadData()">
             <option value="">All Types</option>
@@ -108,6 +108,7 @@
     let allGuarantees = [];
     let editGuarantee = null;
     let projects = [];
+    let contracts = [];
 
     async function loadProjects() {
       try {
@@ -117,10 +118,14 @@
         projects.forEach(p => {
           const o = document.createElement('option');
           o.value = p.id;
-          o.textContent = p.project_code ? (p.project_code + ' - ' + (p.project_name||'')) : (p.project_name||p.id);
+          o.textContent = p.code ? (p.code + ' - ' + (p.name||'')) : (p.name||p.id);
           sel.appendChild(o);
         });
       } catch(e) { projects = []; }
+      try {
+        contracts = await API.get('/contracts');
+        if (!Array.isArray(contracts)) contracts = [];
+      } catch(e) { contracts = []; }
     }
 
     async function loadData() {
@@ -172,10 +177,12 @@
 
     function statusStyle(s) {
       return {
+        pending:'background:var(--warning-bg,#fef3c7);color:#92400e',
         active:'background:var(--success-bg);color:#065f46',
         expired:'background:var(--danger-bg);color:#991b1b',
         released:'background:#e2e3e5;color:#383d41',
-        expiring:'background:var(--warning-bg);color:#92400e'
+        expiring:'background:var(--warning-bg);color:#92400e',
+        cancelled:'background:#f8d7da;color:#721c24'
       }[s] || 'background:#e2e3e5;color:#383d41';
     }
 
@@ -247,19 +254,23 @@
       document.getElementById('modalTitle').textContent = isNew ? 'New Guarantee' : 'Edit Guarantee — ' + (g.guarantee_number||'');
 
       const projectOpts = projects.map(p =>
-        `<option value="${p.id}" ${g.project_id==p.id?'selected':''}>${p.project_code||''} - ${p.project_name||''}</option>`
+        `<option value="${p.id}" ${g.project_id==p.id?'selected':''}>${p.code||''} - ${p.name||''}</option>`
       ).join('');
 
       let h = '<div class="sq-info-grid"><div>';
+      const contractOpts = contracts.map(c =>
+        `<option value="${c.id}" ${g.contract_id==c.id?'selected':''}>${c.contract_number||''} - ${c.counterparty_name||''}</option>`
+      ).join('');
+
       h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
-      h += fg('Contract Reference', 'text', 'fContract', g.contract_number || g.contract_ref);
+      h += `<div class="sq-fg"><label>Contract</label><select id="fContract"><option value="">-- Select --</option>${contractOpts}</select></div>`;
       h += `<div class="sq-fg"><label>Type</label><select id="fType">
         <option value="bid_bond" ${g.guarantee_type==='bid_bond'?'selected':''}>Bid Bond</option>
         <option value="performance_bond" ${g.guarantee_type==='performance_bond'?'selected':''}>Performance Bond</option>
         <option value="advance_payment" ${g.guarantee_type==='advance_payment'?'selected':''}>Advance Payment</option>
         <option value="retention_bond" ${g.guarantee_type==='retention_bond'?'selected':''}>Retention Bond</option>
       </select></div>`;
-      h += fg('Guarantee Number', 'text', 'fGNumber', g.guarantee_number);
+      if (!isNew) h += fg('Guarantee Number', 'text', 'fGNumber', g.guarantee_number, 'disabled');
       h += fg('Bank Name', 'text', 'fBankName', g.bank_name);
       h += '</div><div>';
       h += fg('Bank Branch', 'text', 'fBankBranch', g.bank_branch);
@@ -284,7 +295,6 @@
         project_id: document.getElementById('fProject').value || null,
         contract_id: document.getElementById('fContract').value || null,
         guarantee_type: document.getElementById('fType').value,
-        guarantee_number: document.getElementById('fGNumber').value || null,
         bank_name: document.getElementById('fBankName').value || null,
         bank_branch: document.getElementById('fBankBranch').value || null,
         guarantee_amount: parseFloat(document.getElementById('fAmount').value) || 0,

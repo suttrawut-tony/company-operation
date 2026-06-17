@@ -831,12 +831,12 @@
         ${canEditVehicle ? '<div style="margin-top:16px;display:flex;gap:6px;"><button class="btn btn-sm btn-primary" onclick="openEditVehicleModal(\''+v.id+'\')">แก้ไข</button><button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="retireVehicle(\''+v.id+'\',\''+v.name+'\')">ปลดระวาง</button></div>' : ''}`;
     }
 
-    const canEditVehicle = ['executive','manager','finance'].includes((API.getUser()||{}).role||'');
+    const canEditVehicle = ['executive','pm','admin','finance'].includes((API.getUser()||{}).role||'');
 
     async function retireVehicle(vid, name) {
       if (!confirm('ปลดระวางรถ "'+name+'" ? (เปลี่ยนสถานะเป็น retired)')) return;
       try {
-        await API.del('/vehicle/'+vid);
+        await API.put('/vehicle/'+vid, { status: 'retired' });
         document.getElementById('vehicle-detail-modal').classList.add('hidden');
         loadVehicles();
       } catch(e) { showToast('Error: '+e.message, 'error'); }

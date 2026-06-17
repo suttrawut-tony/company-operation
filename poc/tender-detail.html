@@ -151,7 +151,9 @@
         draft:'background:#e2e3e5;color:#383d41',
         published:'background:#dbeafe;color:#1d4ed8',
         closed:'background:#fef3c7;color:#92400e',
-        awarded:'background:#d4edda;color:#155724'
+        evaluating:'background:#e0e7ff;color:#3730a3',
+        awarded:'background:#d4edda;color:#155724',
+        cancelled:'background:#f8d7da;color:#721c24'
       }[s]||'background:#e2e3e5;color:#383d41');
     }
 
@@ -183,7 +185,7 @@
       let btns = '';
       if (tender.status==='draft') btns += `<button class="btn-sm btn-primary" onclick="changeStatus('published')">Publish</button>`;
       if (tender.status==='published') btns += `<button class="btn-sm btn-warning" onclick="changeStatus('closed')">Close Tender</button>`;
-      if (tender.status==='closed') btns += `<button class="btn-sm btn-success" onclick="awardTender()">Award</button>`;
+      if (tender.status==='closed' || tender.status==='evaluating') btns += `<button class="btn-sm btn-success" onclick="awardTender()">Award</button>`;
       document.getElementById('actionButtons').innerHTML = btns;
 
       document.getElementById('infoCards').innerHTML = `
@@ -195,7 +197,7 @@
 
       // Show award button in eval tab if status is closed
       const awardBtn = document.getElementById('awardBtn');
-      if (awardBtn) awardBtn.style.display = tender.status==='closed' ? '' : 'none';
+      if (awardBtn) awardBtn.style.display = (tender.status==='closed' || tender.status==='evaluating') ? '' : 'none';
     }
 
     // ════════════════════════════════

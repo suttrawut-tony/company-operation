@@ -119,10 +119,12 @@
       renderTable();
     }
 
-    async function loadMasterItems() {
+    async function loadMasterItemsLocal() {
       try {
         const res = await API.get('/master/items');
         masterItems = Array.isArray(res) ? res : (res.items || []);
+        // Also set window._masterItems so item-picker.js buildItemOptions works
+        window._masterItems = masterItems;
       } catch(e) { masterItems = []; }
     }
 
@@ -396,7 +398,7 @@
     // Init
     if (API.requireAuth()) {
       loadData();
-      loadMasterItems();
+      loadMasterItemsLocal();
       loadMasterCustomers();
       if (typeof I!=='undefined') document.getElementById('pgIcon').innerHTML = I.fileText+' Quotation (ใบเสนอราคา)';
       else document.getElementById('pgIcon').textContent = 'Quotation (ใบเสนอราคา)';

@@ -684,7 +684,7 @@
         'Balance %': parseFloat(f.fund_limit) > 0 ? Math.round(parseFloat(f.current_balance) / parseFloat(f.fund_limit) * 100) : 0,
         'Low Threshold %': parseFloat(f.low_threshold || 0),
       }));
-      exportToExcel(rows, 'Petty_Cash_Funds');
+      exportExcel(rows, 'Petty_Cash_Funds');
     }
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeFundModal(); closeDisbModal(); closeReceiptModal(); closeReplModal(); closeCountModal(); closeApproveReplModal(); } });

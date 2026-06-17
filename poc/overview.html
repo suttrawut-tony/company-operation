@@ -370,7 +370,7 @@
             <div class="team-item">
               <div class="avatar" style="background:var(--primary);">${(m.first_name||'?')[0]}</div>
               <div class="name">${m.first_name_th||m.first_name} ${m.last_name}</div>
-              <span class="badge badge-${m.role==='pm'?'primary':'gray'}" style="font-size:10px;">${m.role.toUpperCase()}</span>
+              <span class="badge badge-${m.role==='pm'?'primary':'gray'}" style="font-size:10px;">${(m.role||'member').toUpperCase()}</span>
             </div>`).join('') : '<div style="color:var(--text-muted);font-size:13px;">No members</div>';
         } catch(e) { document.getElementById('team-list').textContent = '-'; }
 
@@ -599,7 +599,7 @@
               '<span style="color:'+color+';">'+data.role+'</span>' +
               '<span>'+timeAgo(data.created_at)+'</span>' +
             '</div>' +
-            '<div style="font-size:14px;line-height:1.7;">'+(data.body||'').replace(/\\n/g,'<br>')+'</div>' +
+            '<div style="font-size:14px;line-height:1.7;">'+(data.body||'').replace(/\n/g,'<br>')+'</div>' +
           '</div></div>';
 
         // Replies
@@ -805,7 +805,7 @@
     function fmtD(d) { return d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '-'; }
     function fmtN(n) { return Number(n).toLocaleString('th-TH'); }
     function empty(msg) { return `<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">${msg}</div>`; }
-    function statusBadge(s) { return `<span class="badge badge-${s.includes('pending')?'warning':s==='approved'||s==='completed'||s==='paid'?'success':s==='draft'?'gray':'primary'}" style="font-size:9px;">${s.replace(/_/g,' ')}</span>`; }
+    function statusBadge(s) { s=s||''; return `<span class="badge badge-${s.includes('pending')?'warning':s==='approved'||s==='completed'||s==='paid'?'success':s==='draft'?'gray':'primary'}" style="font-size:9px;">${s.replace(/_/g,' ')}</span>`; }
     function docRow(num, desc, amount, status, link) {
       return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;cursor:pointer;" onclick="window.location='${link}'">
         <span style="font-weight:600;color:var(--primary);min-width:90px;">${num}</span>

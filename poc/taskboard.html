@@ -393,7 +393,7 @@
       const timelineFilter = document.getElementById('filterTimeline').value;
       let filtered = allTasks;
       if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
-      if (assigneeFilter) filtered = filtered.filter(t => t.assigned_to === assigneeFilter);
+      if (assigneeFilter) filtered = filtered.filter(t => String(t.assigned_to) === String(assigneeFilter));
       if (timelineFilter) {
         const now = new Date(); const today = now.toDateString();
         const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
@@ -434,7 +434,7 @@
 
       let filtered = allTasks;
       if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
-      if (assigneeFilter) filtered = filtered.filter(t => t.assigned_to === assigneeFilter);
+      if (assigneeFilter) filtered = filtered.filter(t => String(t.assigned_to) === String(assigneeFilter));
       if (timelineFilter) {
         const now = new Date(); const today = now.toDateString();
         const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
@@ -597,12 +597,11 @@
     }
 
     function updateColumnCounts() {
-      const priorityFilter = document.getElementById('filterPriority').value;
-      let filtered = allTasks;
-      if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
+      const filtered = getFilteredTasks();
       const totalCount = filtered.length;
       const doneCount = filtered.filter(t => t.status === 'done').length;
-      document.getElementById('taskStats').textContent = totalCount + ' tasks \u2022 ' + doneCount + ' completed';
+      const overdueCount = filtered.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length;
+      document.getElementById('taskStats').innerHTML = totalCount + ' tasks | ' + doneCount + ' done' + (overdueCount > 0 ? ' | <span style="color:var(--danger);font-weight:600;">'+overdueCount+' overdue</span>' : '');
     }
 
     // ═══ Task Modal ═══
@@ -688,7 +687,7 @@
       const startDate = document.getElementById('task-start').value || null;
       const dueDate = document.getElementById('task-due').value || null;
       if (startDate && dueDate && startDate > dueDate) {
-        showToast('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด', 'error'); return;
+        showToast('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด', 'error'); btn.disabled = false; btn.textContent = 'บันทึก'; return;
       }
       const body = {
         title,

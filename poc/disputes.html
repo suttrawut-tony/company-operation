@@ -90,7 +90,7 @@
             <option value="">All Status</option>
             <option value="open">Open</option>
             <option value="investigating">Investigating</option>
-            <option value="negotiating">Negotiating</option>
+            <option value="escalated">Escalated</option>
             <option value="resolved">Resolved</option>
             <option value="closed">Closed</option>
           </select>
@@ -150,6 +150,7 @@
     let editDispute = null;
     let currentDetailId = null;
     let projects = [];
+    let contracts = [];
 
     async function loadProjects() {
       try {
@@ -159,10 +160,14 @@
         projects.forEach(p => {
           const o = document.createElement('option');
           o.value = p.id;
-          o.textContent = p.project_code ? (p.project_code + ' - ' + (p.project_name||'')) : (p.project_name||p.id);
+          o.textContent = p.code ? (p.code + ' - ' + (p.name||'')) : (p.name||p.id);
           sel.appendChild(o);
         });
       } catch(e) { projects = []; }
+      try {
+        contracts = await API.get('/contracts');
+        if (!Array.isArray(contracts)) contracts = [];
+      } catch(e) { contracts = []; }
     }
 
     async function loadData() {
@@ -200,7 +205,7 @@
       return {
         open:'background:var(--warning-bg);color:#92400e',
         investigating:'background:var(--info-bg);color:#1e40af',
-        negotiating:'background:var(--purple-bg);color:#6d28d9',
+        escalated:'background:var(--purple-bg,#ede9fe);color:#6d28d9',
         resolved:'background:var(--success-bg);color:#065f46',
         closed:'background:#e2e3e5;color:#383d41'
       }[s] || 'background:#e2e3e5;color:#383d41';
@@ -215,20 +220,17 @@
         document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No disputes found</div>';
         return;
       }
-      let h = '<table class="sq-table"><thead><tr><th>Dispute No.</th><th>Project</th><th>Type</th><th>Priority</th><th>Title</th><th>Raised By</th><th>Assigned To</th><th>Amount Claimed</th><th>Status</th><th>Deadline</th><th>Actions</th></tr></thead><tbody>';
+      let h = '<table class="sq-table"><thead><tr><th>Dispute No.</th><th>Project</th><th>Type</th><th>Priority</th><th>Title</th><th>Amount Claimed</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>';
       allDisputes.forEach(d => {
-        const isOverdue = d.deadline && new Date(d.deadline) < new Date() && d.status !== 'resolved' && d.status !== 'closed';
         h += `<tr onclick="showDetail('${d.id}')">
           <td style="font-weight:600;color:var(--primary)">${d.dispute_number || '-'}</td>
           <td>${d.project_name || d.project_code || '-'}</td>
           <td>${d.dispute_type ? d.dispute_type.charAt(0).toUpperCase() + d.dispute_type.slice(1) : '-'}</td>
           <td><span class="sq-badge ${priorityClass(d.priority)}">${(d.priority||'low').toUpperCase()}</span></td>
           <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.title || '-'}</td>
-          <td>${d.raised_by || '-'}</td>
-          <td>${d.assigned_to || '-'}</td>
           <td class="sq-amount">${d.amount_claimed ? fmtNum(d.amount_claimed) : '-'}</td>
           <td><span class="sq-badge" style="${statusStyle(d.status)}">${(d.status||'open').replace(/_/g,' ')}</span></td>
-          <td style="${isOverdue ? 'color:var(--danger);font-weight:600' : ''}">${fmtDateShort(d.deadline)}${isOverdue ? ' (overdue)' : ''}</td>
+          <td>${fmtDateShort(d.created_at)}</td>
           <td onclick="event.stopPropagation()">
             <button class="btn-sm" onclick="showDetail('${d.id}')">View</button>
           </td>
@@ -249,13 +251,16 @@
       document.getElementById('modalTitle').textContent = 'New Dispute';
 
       const projectOpts = projects.map(p =>
-        `<option value="${p.id}">${p.project_code||''} - ${p.project_name||''}</option>`
+        `<option value="${p.id}">${p.code||''} - ${p.name||''}</option>`
       ).join('');
 
       let h = '<div class="sq-info-grid"><div>';
+      const contractOpts = contracts.map(c =>
+        `<option value="${c.id}">${c.contract_number||''} - ${c.counterparty_name||''}</option>`
+      ).join('');
+
       h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
-      h += fg('Tender Reference', 'text', 'fTender', '');
-      h += fg('Contract Reference', 'text', 'fContract', '');
+      h += `<div class="sq-fg"><label>Contract</label><select id="fContract"><option value="">-- Select --</option>${contractOpts}</select></div>`;
       h += `<div class="sq-fg"><label>Type</label><select id="fType">
         <option value="payment">Payment</option>
         <option value="quality">Quality</option>
@@ -273,9 +278,7 @@
       h += '</div><div>';
       h += fg('Title', 'text', 'fTitle', '');
       h += `<div class="sq-fg"><label>Description</label><textarea id="fDesc" rows="4" placeholder="Describe the dispute..."></textarea></div>`;
-      h += fg('Assigned To', 'text', 'fAssigned', '');
       h += fg('Amount Claimed', 'number', 'fAmount', '', 'step="0.01"');
-      h += fg('Deadline', 'date', 'fDeadline', '');
       h += '</div></div>';
       document.getElementById('modalBody').innerHTML = h;
 
@@ -290,15 +293,12 @@
       if (!title) { typeof showToast==='function' && showToast('Title is required','warning'); return; }
       const data = {
         project_id: document.getElementById('fProject').value || null,
-        tender_id: document.getElementById('fTender').value || null,
         contract_id: document.getElementById('fContract').value || null,
         dispute_type: document.getElementById('fType').value,
         priority: document.getElementById('fPriority').value,
         title: title,
         description: document.getElementById('fDesc').value || null,
-        assigned_to: document.getElementById('fAssigned').value || null,
         amount_claimed: parseFloat(document.getElementById('fAmount').value) || null,
-        deadline: document.getElementById('fDeadline').value || null,
       };
       try {
         await API.post('/disputes', data);
@@ -330,10 +330,8 @@
         h += `<p><strong>Priority:</strong> <span class="sq-badge ${priorityClass(d.priority)}">${(d.priority||'low').toUpperCase()}</span></p>`;
         h += `<p><strong>Status:</strong> <span class="sq-badge" style="${statusStyle(d.status)}">${(d.status||'open').replace(/_/g,' ')}</span></p>`;
         h += '</div><div>';
-        h += `<p><strong>Raised By:</strong> ${d.raised_by||'-'}</p>`;
-        h += `<p><strong>Assigned To:</strong> ${d.assigned_to||'-'}</p>`;
         h += `<p><strong>Amount Claimed:</strong> <span class="sq-amount">${d.amount_claimed ? moneyBaht(d.amount_claimed) : '-'}</span></p>`;
-        h += `<p><strong>Deadline:</strong> ${fmtDate(d.deadline)}</p>`;
+        h += `<p><strong>Amount Settled:</strong> <span class="sq-amount">${d.amount_settled ? moneyBaht(d.amount_settled) : '-'}</span></p>`;
         h += `<p><strong>Created:</strong> ${fmtDate(d.created_at)}</p>`;
         h += '</div></div>';
         if (d.description) h += `<p style="margin-top:8px;font-size:12px;"><strong>Description:</strong> ${d.description}</p>`;
@@ -351,7 +349,7 @@
             h += `<div class="activity-item">
               <div class="activity-icon ${iconClass}">${iconSymbol}</div>
               <div class="activity-content">
-                <div class="meta"><span class="user">${a.user||'System'}</span><span>${timeAgo(a.created_at)}</span><span style="color:var(--text-muted)">${fmtDate(a.created_at)}</span></div>
+                <div class="meta"><span class="user">${a.action||'note'}</span><span>${timeAgo(a.created_at)}</span><span style="color:var(--text-muted)">${fmtDate(a.created_at)}</span></div>
                 <div class="body">${a.description||''}</div>
               </div>
             </div>`;

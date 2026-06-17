@@ -73,7 +73,9 @@
         <option value="draft">Draft</option>
         <option value="published">Published</option>
         <option value="closed">Closed</option>
+        <option value="evaluating">Evaluating</option>
         <option value="awarded">Awarded</option>
+        <option value="cancelled">Cancelled</option>
       </select>
       <select id="filterType" onchange="applyFilters()">
         <option value="">All Types</option>
@@ -133,7 +135,7 @@
     function renderProjectFilter() {
       const sel = document.getElementById('filterProject');
       let opts = '<option value="">All Projects</option>';
-      projects.forEach(p => { opts += `<option value="${p.id}">${p.project_code||''} — ${p.project_name||''}</option>`; });
+      projects.forEach(p => { opts += `<option value="${p.id}">${p.code||''} — ${p.name||''}</option>`; });
       sel.innerHTML = opts;
     }
 
@@ -156,7 +158,7 @@
     function renderStats() {
       const t = filteredTenders.length;
       const pub = filteredTenders.filter(x=>x.status==='published').length;
-      const evl = filteredTenders.filter(x=>x.status==='closed').length;
+      const evl = filteredTenders.filter(x=>x.status==='evaluating').length;
       const awd = filteredTenders.filter(x=>x.status==='awarded').length;
       document.getElementById('stats').innerHTML = `
         <div class="sq-stat"><div class="val">${t}</div><div class="lbl">Total Tenders</div></div>
@@ -170,7 +172,9 @@
         draft:'background:#e2e3e5;color:#383d41',
         published:'background:#dbeafe;color:#1d4ed8',
         closed:'background:#fef3c7;color:#92400e',
-        awarded:'background:#d4edda;color:#155724'
+        evaluating:'background:#e0e7ff;color:#3730a3',
+        awarded:'background:#d4edda;color:#155724',
+        cancelled:'background:#f8d7da;color:#721c24'
       }[s]||'background:#e2e3e5;color:#383d41');
     }
 
@@ -189,7 +193,7 @@
         h+=`<tr onclick="window.location='tender-detail.html?id=${t.id}'">
           <td style="font-weight:600;color:var(--primary)">${t.tender_number||'-'}</td>
           <td>${t.title||'-'}</td>
-          <td>${projName?projName.project_code||projName.project_name:'-'}</td>
+          <td>${projName?projName.code||projName.name:'-'}</td>
           <td>${typeLabel(t.tender_type)}</td>
           <td class="sq-amount">${fmtNum(t.budget_amount||0)}</td>
           <td><span class="sq-badge" style="${statusStyle(t.status)}">${t.status||'-'}</span></td>
@@ -230,7 +234,7 @@
       document.getElementById('modalTitle').textContent = isNew ? 'Create New Tender' : 'Edit Tender — '+(t.tender_number||'');
 
       let projOpts = '<option value="">-- Select Project --</option>';
-      projects.forEach(p => { projOpts += `<option value="${p.id}" ${p.id===t.project_id?'selected':''}>${p.project_code||''} — ${p.project_name||''}</option>`; });
+      projects.forEach(p => { projOpts += `<option value="${p.id}" ${p.id===t.project_id?'selected':''}>${p.code||''} — ${p.name||''}</option>`; });
 
       let h = '<div class="sq-info-grid"><div>';
       h += fg('Title', 'text', 'tdTitle', t.title||'');
@@ -315,7 +319,7 @@
       const rows = filteredTenders.map(t => {
         const proj = projects.find(p=>p.id===t.project_id);
         return [
-          t.tender_number||'', t.title||'', proj?proj.project_code||proj.project_name:'',
+          t.tender_number||'', t.title||'', proj?proj.code||proj.name:'',
           typeLabel(t.tender_type), parseFloat(t.budget_amount||0), t.status||'',
           t.opening_date?new Date(t.opening_date).toLocaleDateString('th-TH'):'',
           t.close_date?new Date(t.close_date).toLocaleDateString('th-TH'):'',

@@ -376,7 +376,7 @@
 
     // ═══ Task Detail Modal ═══
     function showTask(id) {
-      const t=allTasks.find(x=>x.id===id);
+      const t=allTasks.find(x=>String(x.id)===String(id));
       if(!t) return;
       const pri=PRI_C[t.priority]||PRI_C.low;
       const stat=STAT_C[t.status]||STAT_C.todo;
@@ -408,7 +408,7 @@
     function closeModal() { document.getElementById('taskModal').classList.remove('show'); }
 
     async function changeStatus(taskId, projectId, newStatus) {
-      if(!projectId||projectId==='null') return;
+      if(!projectId||projectId==='null'||projectId==='undefined') return;
       try {
         await API.put('/projects/'+projectId+'/tasks/'+taskId, {status:newStatus});
         const t=allTasks.find(x=>x.id===taskId);

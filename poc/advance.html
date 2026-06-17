@@ -431,7 +431,7 @@
         if (st === 'draft') actions += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();submitAdv(\''+a.id+'\')">Submit</button>';
         else if (st.includes('pending') && ['pm','finance','executive','admin','owner'].includes(userRole)) actions = '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveAdv(\''+a.id+'\')">Approve</button>';
         else if (st === 'approved' && ['finance','executive','admin','owner'].includes(userRole)) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPayModal(\''+a.id+'\','+parseFloat(a.amount)+')">Pay</button>';
-        else if ((st === 'paid' || st === 'overdue') && !a.clear_status && (a.sap_status === 'posted' || a.sap_status === 'skipped')) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
+        else if ((st === 'paid' || st === 'overdue') && !a.clear_status && (!a.sap_status || a.sap_status === 'posted' || a.sap_status === 'skipped')) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
         // After Clear is approved by Finance: show Return/Reimburse
         const clearApproved = a.clear_status === 'approved';
         // balance > 0 = employee owes money: employee confirms return first, then finance receives
@@ -654,7 +654,18 @@
 
     // ═══ New Modal ═══
     function openNewModal() {
-      document.getElementById('new-modal').classList.add('show');
+      // Reset modal to "New" mode (in case it was previously in edit mode)
+      const modal = document.getElementById('new-modal');
+      modal.querySelector('h3').textContent = 'New Advance Request';
+      const footer = modal.querySelector('.modal-footer');
+      footer.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="closeNewModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveAdvance()">Create</button>';
+      document.getElementById('f-desc').value = '';
+      document.getElementById('f-amount').value = '';
+      document.getElementById('f-purpose').value = 'travel';
+      document.getElementById('f-project').value = '';
+      if (document.getElementById('f-employee').options.length) document.getElementById('f-employee').selectedIndex = 0;
+      document.querySelector('input[name="f-type"][value="advance"]').checked = true;
+      modal.classList.add('show');
       toggleAdvType();
     }
     function closeNewModal() {

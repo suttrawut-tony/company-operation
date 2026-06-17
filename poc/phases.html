@@ -845,7 +845,7 @@
 
     // Close modals on ESC
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closePhaseModal(); closeStepModal(); }
+      if (e.key === 'Escape') { closePhaseModal(); closeStepModal(); closeSubModal(); }
     });
 
     if (!canEditPlan) document.getElementById('btn-add-phase').style.display = 'none';
@@ -1008,7 +1008,7 @@
     async function prefillPaymentModal(paymentId) {
       try {
         var schedule = await API.get('/projects/' + currentProjectId + '/payment-schedule');
-        var p = (schedule.payments || []).find(function(x) { return x.id === paymentId; });
+        var p = (schedule.payments || []).find(function(x) { return String(x.id) === String(paymentId); });
         if (!p) return;
         document.getElementById('pmt-term').value = p.payment_term || '';
         document.getElementById('pmt-phase').value = p.phase_id || '';

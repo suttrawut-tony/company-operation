@@ -592,7 +592,7 @@
     }
 
     // Close modal on ESC
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRetModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeProjModal(); closeRetModal(); } });
 
     // FIXED: Auth guard
     if (API.requireAuth()) {

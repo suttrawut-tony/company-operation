@@ -413,7 +413,7 @@
         ${isEditing ? '<button class="erp-btn" onclick="cancelEdit()"><span data-i18n="btn_cancel">Cancel</span></button>' : ''}
         ${isDraft && !isEditing ? '<button class="erp-btn primary" onclick="submitDoc()"><span data-i18n="btn_submit">Submit</span></button>' : ''}
         ${isPending ? '<button class="erp-btn success" onclick="approveDoc()"><span data-i18n="btn_approve">Approve</span></button>' : ''}
-        ${isPending ? '<button class="erp-btn danger" onclick="rejectDoc()"><span data-i18n="btn_reject">Reject</span></button>' : ''}
+        ${isPending && docType !== 'expense' ? '<button class="erp-btn danger" onclick="rejectDoc()"><span data-i18n="btn_reject">Reject</span></button>' : ''}
         ${!isNew && docType==='pr' && (doc.status==='approved'||doc.status==='sent_to_erp') ? '<button class="erp-btn primary" onclick="copyToPO()"><span data-i18n="btn_copy_to_po">Copy To PO</span></button>' : ''}
         ${!isNew ? '<button class="erp-btn" onclick="copyDoc()"><span data-i18n="btn_copy_to">Copy To</span></button>' : ''}
         ${!isNew && isDraft ? '<button class="erp-btn danger" onclick="cancelDoc()"><span data-i18n="btn_cancel_doc">Cancel</span></button>' : ''}
@@ -843,24 +843,28 @@
     function calcLines() {
       const rows = document.querySelectorAll('#lines-body tr');
       let grandTotal = 0;
-      rows.forEach((row, i) => {
-        const inputs = row.querySelectorAll('input, select');
-        if (inputs.length >= 6) {
-          const qty = parseFloat(inputs[2]?.value) || 0;
-          const price = parseFloat(inputs[4]?.value) || 0;
-          const disc = parseFloat(inputs[5]?.value) || 0;
-          const total = qty * price * (1 - disc / 100);
-          lines[i] = lines[i] || {};
-          lines[i].quantity = qty;
-          lines[i].unit_price = price;
-          lines[i].discount = disc;
-          lines[i].total_price = total;
-          // Update total cell (second to last td in the row)
-          const tds = row.querySelectorAll('td');
-          const totalTd = tds[tds.length - 2]; // last is delete button
-          if (totalTd) totalTd.textContent = money(total);
-          grandTotal += total;
+      let lineIdx = 0;
+      rows.forEach((row) => {
+        // Skip VQ sub-rows
+        const priceInp = row.querySelector('[data-field="price"]');
+        if (!priceInp) return;
+        const qtyInputs = Array.from(row.querySelectorAll('input[type="number"]')).filter(inp => !inp.classList.contains('vq-price'));
+        const qty = parseFloat(qtyInputs[0]?.value) || 0;
+        const price = parseFloat(priceInp.value) || 0;
+        const disc = parseFloat(qtyInputs[2]?.value) || 0;
+        const total = qty * price * (1 - disc / 100);
+        if (lines[lineIdx]) {
+          lines[lineIdx].quantity = qty;
+          lines[lineIdx].unit_price = price;
+          lines[lineIdx].discount = disc;
+          lines[lineIdx].total_price = total;
         }
+        // Update total cell (second to last td in the row)
+        const tds = row.querySelectorAll('td');
+        const totalTd = tds[tds.length - 2]; // last is delete button
+        if (totalTd) totalTd.textContent = money(total);
+        grandTotal += total;
+        lineIdx++;
       });
       // Update footer grand total
       const grandTotalCell = document.querySelector('#lines-foot .grand-total td.num');
@@ -884,29 +888,42 @@
         if (label.includes('tax')) data.tax_code = f.value?.split(' ')[0] || '';
         if (label.includes('type') && f.tagName === 'SELECT') data.expense_type = f.value.toLowerCase().includes('advance') ? (f.value.toLowerCase().includes('clear') ? 'advance_clear' : 'advance') : 'reimbursement';
         if (label.includes('remarks')) data.remarks = f.value;
-        if (label.includes('project')) data.project_code = f.value;
+        if (label.includes('project') && f.tagName === 'SELECT') { data.project_id = f.value; data.project_code = f.options[f.selectedIndex]?.textContent || ''; }
+        else if (label.includes('project') && f.tagName === 'INPUT') data.project_code = f.value;
       });
 
-      // Read line items from grid
+      // Read line items from grid using data-field attributes and specific selectors
       if (docType !== 'expense') {
         const rows = document.querySelectorAll('#lines-body tr');
         data.lines = [];
         rows.forEach(row => {
-          const inputs = row.querySelectorAll('input, select');
-          if (inputs.length >= 6) {
-            const qty = parseFloat(inputs[2]?.value) || 1;
-            const price = parseFloat(inputs[4]?.value) || 0;
-            data.lines.push({
-              item_code: inputs[0]?.value || '',
-              item_name: inputs[1]?.value || '',
-              quantity: qty,
-              uom: inputs[3]?.value || 'EA',
-              unit_price: price,
-              total_price: qty * price,
-              tax_code: inputs[5]?.value || 'IG07',
-              sap_account: inputs[6]?.value || '114101',
-            });
-          }
+          // Skip VQ sub-rows and empty rows
+          const itemSel = row.querySelector('select.item-code-select');
+          const nameInp = row.querySelector('[data-field="item_name"]');
+          if (!itemSel && !nameInp) return;
+          const qtyInputs = row.querySelectorAll('input[type="number"]');
+          // Find qty and price from non-VQ inputs (skip .vq-price inputs)
+          const nonVqNumInputs = Array.from(qtyInputs).filter(inp => !inp.classList.contains('vq-price'));
+          const qty = parseFloat(nonVqNumInputs[0]?.value) || 1;
+          const price = parseFloat(row.querySelector('[data-field="price"]')?.value) || 0;
+          const disc = parseFloat(nonVqNumInputs[2]?.value) || 0;
+          const item_code = itemSel?.value || '';
+          const item_name = nameInp?.value || '';
+          const uom = row.querySelector('[data-field="uom"]')?.value || 'EA';
+          const tax_code = row.querySelector('[data-field="tax"]')?.value || 'IG07';
+          const sap_account = row.querySelector('[data-field="account"]')?.value || '114101';
+          const total_price = qty * price * (1 - disc / 100);
+          if (!item_code && !item_name) return;
+          // Collect vendor quotes
+          const vendor_quotes = [];
+          row.querySelectorAll('.vq-cell div').forEach(vqDiv => {
+            const vSel = vqDiv.querySelector('.vq-vendor');
+            const vPrice = vqDiv.querySelector('.vq-price');
+            if (vSel?.value && parseFloat(vPrice?.value) > 0) {
+              vendor_quotes.push({ bp_code: vSel.value, price: parseFloat(vPrice.value) });
+            }
+          });
+          data.lines.push({ item_code, description: item_name, quantity: qty, uom, unit_price: price, total_price, tax_code, sap_account, vendor_quotes });
         });
         data.total_amount = data.lines.reduce((s, l) => s + l.total_price, 0);
       }
@@ -1262,6 +1279,7 @@
       try {
         if (docType === 'pr') await API.del('/pr/' + doc.id);
         else if (docType === 'po') await API.del('/po/' + doc.id);
+        else if (docType === 'expense') await API.del('/expense/' + doc.id);
         doc.status = 'cancelled';
         render();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }

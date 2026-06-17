@@ -138,6 +138,7 @@
     let allContracts = [];
     let editContract = null;
     let projects = [];
+    let tenders = [];
 
     async function loadProjects() {
       try {
@@ -147,10 +148,14 @@
         projects.forEach(p => {
           const o = document.createElement('option');
           o.value = p.id;
-          o.textContent = p.project_code ? (p.project_code + ' - ' + (p.project_name||'')) : (p.project_name||p.id);
+          o.textContent = p.code ? (p.code + ' - ' + (p.name||'')) : (p.name||p.id);
           sel.appendChild(o);
         });
       } catch(e) { projects = []; }
+      try {
+        tenders = await API.get('/tenders');
+        if (!Array.isArray(tenders)) tenders = [];
+      } catch(e) { tenders = []; }
     }
 
     async function loadData() {
@@ -249,12 +254,16 @@
       document.getElementById('modalTitle').textContent = isNew ? 'New Contract' : 'Edit Contract — ' + (c.contract_number||'');
 
       const projectOpts = projects.map(p =>
-        `<option value="${p.id}" ${c.project_id==p.id?'selected':''}>${p.project_code||''} - ${p.project_name||''}</option>`
+        `<option value="${p.id}" ${c.project_id==p.id?'selected':''}>${p.code||''} - ${p.name||''}</option>`
       ).join('');
 
       let h = '<div class="sq-info-grid"><div>';
+      const tenderOpts = tenders.map(t =>
+        `<option value="${t.id}" ${c.tender_id==t.id?'selected':''}>${t.tender_number||''} — ${t.title||''}</option>`
+      ).join('');
+
       h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
-      h += fg('Tender Reference', 'text', 'fTender', c.tender_id);
+      h += `<div class="sq-fg"><label>Tender</label><select id="fTender"><option value="">-- Select --</option>${tenderOpts}</select></div>`;
       h += `<div class="sq-fg"><label>Type</label><select id="fType">
         <option value="main" ${c.contract_type==='main'?'selected':''}>Main Contract</option>
         <option value="subcontract" ${c.contract_type==='subcontract'?'selected':''}>Subcontract</option>
