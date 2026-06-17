@@ -1459,10 +1459,13 @@
       closeAllMenus();
       const map = {
         alerts: loadAlerts, mytasks: loadMyTasks, projects: loadDashboard,
-        budget: loadBudgetSummary, approvals: loadApprovals, pendingConvert: loadPendingConvert,
-        expenseChart: loadExpenseChart, budgetChart: loadBudgetChart
+        budget: () => { loadBudgetSummary(); loadDashboard(); },
+        approvals: loadApprovals, pendingConvert: loadPendingConvert,
+        expenseChart: loadExpenseChart, budgetChart: loadBudgetChart,
+        kpi: loadDashboard,
       };
-      if (map[id]) map[id]();
+      const fn = map[id];
+      if (fn) fn();
     }
 
     function maximizeWidget(id) {
@@ -1531,8 +1534,9 @@
 
     function saveSetup() {
       if (!_activeSetupWidget) return;
+      const widgetId = _activeSetupWidget;
       const config = loadConfig();
-      if (!config.widgets[_activeSetupWidget]) return;
+      if (!config.widgets[widgetId]) return;
       const settings = {};
 
       // Collect select values
@@ -1544,12 +1548,15 @@
         settings[el.dataset.setupKey] = el.dataset.value;
       });
 
-      config.widgets[_activeSetupWidget].settings = settings;
-      saveConfig(config);
+      config.widgets[widgetId].settings = settings;
+      _cachedConfig = config;
+      // Save to server immediately (bypass debounce for setup save)
+      clearTimeout(_saveTimer);
+      API.put('/dashboard/config', config).catch(e => console.warn('Config save failed:', e));
       closeSetup();
 
-      // Re-render affected widget
-      refreshWidget(_activeSetupWidget);
+      // Re-render affected widget immediately
+      refreshWidget(widgetId);
     }
 
     // Get widget settings helper
