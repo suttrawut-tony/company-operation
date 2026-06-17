@@ -429,20 +429,20 @@
         if (canEdit) actions += '<button class="btn btn-sm btn-secondary" style="font-size:10px;" onclick="event.stopPropagation();editAdvance(\''+a.id+'\')">แก้ไข</button> ';
         if (canDelete) actions += '<button class="btn btn-sm" style="font-size:10px;background:var(--danger);color:#fff;" onclick="event.stopPropagation();deleteAdvance(\''+a.id+'\',\''+a.doc_number+'\')">ลบ</button> ';
         if (st === 'draft') actions += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();submitAdv(\''+a.id+'\')">Submit</button>';
-        else if (st.includes('pending') && ['pm','finance','executive','admin'].includes(userRole)) actions = '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveAdv(\''+a.id+'\')">Approve</button>';
-        else if (st === 'approved' && ['finance','executive','admin'].includes(userRole)) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPayModal(\''+a.id+'\','+parseFloat(a.amount)+')">Pay</button>';
-        else if ((st === 'paid' || st === 'overdue') && !a.clear_status && a.sap_status === 'posted') actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
+        else if (st.includes('pending') && ['pm','finance','executive','admin','owner'].includes(userRole)) actions = '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveAdv(\''+a.id+'\')">Approve</button>';
+        else if (st === 'approved' && ['finance','executive','admin','owner'].includes(userRole)) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPayModal(\''+a.id+'\','+parseFloat(a.amount)+')">Pay</button>';
+        else if ((st === 'paid' || st === 'overdue') && !a.clear_status && (a.sap_status === 'posted' || a.sap_status === 'skipped')) actions = '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSettleModal(\''+a.id+'\','+paidAmt+')">Clear</button>';
         // After Clear is approved by Finance: show Return/Reimburse
         const clearApproved = a.clear_status === 'approved';
         // balance > 0 = employee owes money: employee confirms return first, then finance receives
         if (st === 'settling' && clearApproved && balance > 0 && !a.employee_confirmed) {
           actions += ' <button class="btn btn-sm" style="background:var(--info);color:#fff;" onclick="event.stopPropagation();confirmReturn(\''+a.id+'\','+balance+')">ยืนยันคืนเงิน ฿'+fmtNum(balance)+'</button>';
         }
-        if (st === 'settling' && clearApproved && balance > 0 && a.employee_confirmed && ['finance','executive','admin'].includes(userRole)) {
+        if (st === 'settling' && clearApproved && balance > 0 && a.employee_confirmed && ['finance','executive','admin','owner'].includes(userRole)) {
           actions += ' <button class="btn btn-sm" style="background:var(--success);color:#fff;" onclick="event.stopPropagation();openReturnModal(\''+a.id+'\','+balance+')">รับเงินคืน ฿'+fmtNum(balance)+'</button>';
         }
         // balance < 0 = company owes employee: finance pays reimburse directly
-        if (st === 'settling' && clearApproved && balance < 0 && ['finance','executive','admin'].includes(userRole)) {
+        if (st === 'settling' && clearApproved && balance < 0 && ['finance','executive','admin','owner'].includes(userRole)) {
           actions += ' <button class="btn btn-sm" style="background:var(--warning);color:#fff;" onclick="event.stopPropagation();openReimburseModal(\''+a.id+'\','+Math.abs(balance)+')">Pay Reimburse ฿'+fmtNum(Math.abs(balance))+'</button>';
         }
 
@@ -469,7 +469,7 @@
             </div>
             <div style="display:flex;gap:4px;align-items:center;">
               ${statusBadge(st)}
-              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">ERP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<button class="btn btn-sm" style="font-size:9px;padding:2px 8px;background:var(--danger-bg);color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">ERP Retry</button>':(['paid','overdue','settled'].includes(st) && a.sap_status!=='posted' && ['finance','executive','admin'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:9px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-color:#93c5fd;" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">Push ERP</button>' : ''}
+              ${a.sap_status==='posted'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-weight:600;">ERP #'+a.sap_doc_num+'</span>':a.sap_status==='error'?'<button class="btn btn-sm" style="font-size:9px;padding:2px 8px;background:var(--danger-bg);color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">ERP Retry</button>':(['paid','overdue','settled'].includes(st) && a.sap_status!=='posted' && ['finance','executive','admin','owner'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:9px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-color:#93c5fd;" onclick="event.stopPropagation();pushToERP(\''+a.id+'\')">Push ERP</button>' : ''}
               <div onclick="event.stopPropagation();">${actions}</div>
             </div>
           </div>
@@ -535,7 +535,7 @@
               const diffLabel = s.settlement_type === 'reimburse' ? 'Company owes employee' : s.settlement_type === 'return' ? 'Employee returns' : 'Exact match';
               clrHtml += `<div style="padding:8px;background:var(--bg-white);border-radius:var(--radius);margin-bottom:6px;border:1px solid var(--border-light);">
                 <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px;">
-                  <span>${s.doc_number} ${statusBadge(s.status)} ${s.status==='pending_finance'&&['finance','executive','admin'].includes(userRole)?'<button class="btn btn-success btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();approveClear(\''+s.id+'\')">Approve</button> <button class="btn btn-sm" style="margin-left:4px;background:var(--danger);color:#fff;" onclick="event.stopPropagation();rejectClear(\''+s.id+'\')">Reject</button>':''}</span>
+                  <span>${s.doc_number} ${statusBadge(s.status)} ${s.status==='pending_finance'&&['finance','executive','admin','owner'].includes(userRole)?'<button class="btn btn-success btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();approveClear(\''+s.id+'\')">Approve</button> <button class="btn btn-sm" style="margin-left:4px;background:var(--danger);color:#fff;" onclick="event.stopPropagation();rejectClear(\''+s.id+'\')">Reject</button>':''}</span>
                   <span>Total: ฿${fmtNum(parseFloat(s.total_expense))}</span>
                 </div>
                 <table style="width:100%;border-collapse:collapse;font-size:11px;">
