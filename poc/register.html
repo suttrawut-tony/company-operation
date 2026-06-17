@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — Sign Up</title>
+  <title data-i18n="register_page_title">Company Operation — Sign Up</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     body { background: var(--bg-body); display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 24px 0; }
@@ -39,73 +39,73 @@
 </head>
 <body>
   <div class="card fade-in">
-    <h2>Create your account</h2>
-    <div class="subtitle">สร้างบัญชีใหม่ — ต้องรอแอดมินอนุมัติก่อนใช้งาน</div>
+    <h2 data-i18n="register_heading">Create your account</h2>
+    <div class="subtitle" data-i18n="register_subtitle">สร้างบัญชีใหม่ — ต้องรอแอดมินอนุมัติก่อนใช้งาน</div>
 
     <form onsubmit="event.preventDefault(); handleRegister();">
 
       <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-input" id="r-email" placeholder="name@company.com"
+        <label class="form-label" data-i18n="label_email">Email</label>
+        <input type="email" class="form-input" id="r-email" data-i18n-placeholder="placeholder_email" placeholder="name@company.com"
                autocomplete="email" required oninput="this.value=this.value.toLowerCase()">
       </div>
 
       <div class="row-2">
         <div class="form-group">
-          <label class="form-label">First name (EN)</label>
+          <label class="form-label" data-i18n="label_first_name_en">First name (EN)</label>
           <input type="text" class="form-input" id="r-fname" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Last name (EN)</label>
+          <label class="form-label" data-i18n="label_last_name_en">Last name (EN)</label>
           <input type="text" class="form-input" id="r-lname">
         </div>
       </div>
 
       <div class="row-2">
         <div class="form-group">
-          <label class="form-label">ชื่อ (TH)</label>
+          <label class="form-label" data-i18n="label_first_name_th">ชื่อ (TH)</label>
           <input type="text" class="form-input" id="r-fname-th">
         </div>
         <div class="form-group">
-          <label class="form-label">นามสกุล (TH)</label>
+          <label class="form-label" data-i18n="label_last_name_th">นามสกุล (TH)</label>
           <input type="text" class="form-input" id="r-lname-th">
         </div>
       </div>
 
       <div class="row-2">
         <div class="form-group">
-          <label class="form-label">Position</label>
-          <input type="text" class="form-input" id="r-position" placeholder="เช่น Engineer">
+          <label class="form-label" data-i18n="label_position">Position</label>
+          <input type="text" class="form-input" id="r-position" data-i18n-placeholder="placeholder_position" placeholder="เช่น Engineer">
         </div>
         <div class="form-group">
-          <label class="form-label">Department</label>
-          <input type="text" class="form-input" id="r-dept" placeholder="เช่น IT">
+          <label class="form-label" data-i18n="label_department">Department</label>
+          <input type="text" class="form-input" id="r-dept" data-i18n-placeholder="placeholder_department" placeholder="เช่น IT">
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Phone</label>
+        <label class="form-label" data-i18n="label_phone">Phone</label>
         <input type="tel" class="form-input" id="r-phone">
       </div>
 
       <div class="form-group">
-        <label class="form-label">Password</label>
+        <label class="form-label" data-i18n="label_password">Password</label>
         <input type="password" class="form-input" id="r-password" autocomplete="new-password" required>
-        <div class="hint">อย่างน้อย 8 ตัวอักษร, ต้องมีตัวอักษร และ ตัวเลข</div>
+        <div class="hint" data-i18n="register_password_hint">อย่างน้อย 8 ตัวอักษร, ต้องมีตัวอักษร และ ตัวเลข</div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Confirm password</label>
+        <label class="form-label" data-i18n="label_confirm_password">Confirm password</label>
         <input type="password" class="form-input" id="r-password2" autocomplete="new-password" required>
       </div>
 
-      <button type="submit" class="submit" id="r-submit">Create account</button>
+      <button type="submit" class="submit" id="r-submit" data-i18n="btn_create_account">Create account</button>
     </form>
 
     <div id="msg-error"></div>
     <div id="msg-info"></div>
 
-    <div class="footer">มีบัญชีอยู่แล้ว? <a href="login.html">Sign in</a></div>
+    <div class="footer" data-i18n-html="register_have_account">มีบัญชีอยู่แล้ว? <a href="login.html">Sign in</a></div>
   </div>
 
   <script src="assets/js/api.js"></script>

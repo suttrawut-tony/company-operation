@@ -4,6 +4,14 @@
  * Style: Linear / Notion / Vercel-inspired
  */
 
+// Auto-load i18n.js if not already present
+if (typeof I18N === 'undefined') {
+  const s = document.createElement('script');
+  s.src = 'assets/js/i18n.js';
+  s.onload = () => { if (typeof I18N !== 'undefined') I18N.applyTranslations(); };
+  document.head.appendChild(s);
+}
+
 // Load searchable select
 (function(){const s=document.createElement('script');s.src='assets/js/searchable-select.js';document.head.appendChild(s);})();
 
@@ -193,6 +201,21 @@ function renderSidebar() {
   const collapsed = localStorage.getItem('sidebar_collapsed') === 'true';
 
   el.className = 'sidebar' + (collapsed ? ' collapsed' : '');
+  // Map sidebar group labels to i18n keys
+  const groupI18nKeys = { Main: 'nav_main', Project: 'nav_project', Document: 'nav_document', Resource: 'nav_resource', System: 'nav_system' };
+  // Map sidebar item IDs to i18n keys
+  const itemI18nKeys = {
+    dashboard: 'dashboard', 'my-tasks': 'my_tasks', projects: 'projects',
+    overview: 'project_detail', phases: 'plan_project', taskboard: 'taskboard',
+    budget: 'budget', 'pr-po': 'pr_po', quotation: 'quotation',
+    advance: 'advance', 'petty-cash': 'petty_cash', expense: 'expense',
+    travel: 'travel', booking: 'booking', vehicle: 'vehicle',
+    warehouse: 'warehouse', ot: 'holiday_ot', items: 'item_master',
+    bp: 'bp_master', 'number-running': 'number_running', reports: 'reports',
+    permissions: 'user_permission', setup: 'setup', changelog: 'changelog',
+    help: 'user_guide'
+  };
+
   el.innerHTML = `
     <div class="sidebar-header">
       <a href="dashboard.html" class="sidebar-logo">
@@ -214,10 +237,11 @@ function renderSidebar() {
         const hasActiveChild = group.items.some(i => currentFile === i.href || (currentFile === 'user-permissions.html' && i.id === 'permissions'));
         const storageKey = 'nav_collapsed_' + group.label;
         const isCollapsed = group.collapsible && !hasActiveChild && localStorage.getItem(storageKey) !== 'open';
+        const groupKey = groupI18nKeys[group.label] || '';
         return `
         <div class="sidebar-group">
           <div class="sidebar-group-label${group.collapsible ? ' collapsible' : ''}" ${group.collapsible ? `onclick="toggleNavGroup('${group.label}')"` : ''}>
-            ${group.label}
+            <span${groupKey ? ` data-i18n="${groupKey}"` : ''}>${group.label}</span>
             ${group.collapsible ? '<span class="nav-arrow" style="font-size:10px;transition:transform 0.2s;transform:rotate('+(isCollapsed?'0':'180')+'deg);">&#9650;</span>' : ''}
           </div>
           <div class="sidebar-group-items" id="nav-group-${group.label}" style="${isCollapsed ? 'display:none;' : ''}">
@@ -225,9 +249,10 @@ function renderSidebar() {
             const isActive = currentFile === item.href ||
               (currentFile === 'user-permissions.html' && item.id === 'permissions');
             const iconCls = group.iconColor || 'icon-blue';
+            const itemKey = itemI18nKeys[item.id] || '';
             return `<a class="sidebar-item${isActive ? ' active' : ''}" href="${item.href}" title="${item.label}">
               <span class="sidebar-item-icon ${iconCls}">${item.icon}</span>
-              <span class="sidebar-item-label">${item.label}</span>
+              <span class="sidebar-item-label"${itemKey ? ` data-i18n="${itemKey}"` : ''}>${item.label}</span>
             </a>`;
           }).join('')}
           </div>
@@ -524,6 +549,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setTimeout(checkModuleAccess, 300);
   setTimeout(checkSubscriptionBanner, 600);
   setTimeout(checkSapStatus, 400);
-  // Apply i18n after initial render
-  if (typeof I18N !== 'undefined') setTimeout(() => I18N.applyTranslations(), 100);
+  // Apply i18n after sidebar and topnav render
+  if (typeof I18N !== 'undefined') I18N.applyTranslations();
 });

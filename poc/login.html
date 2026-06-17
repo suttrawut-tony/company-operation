@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — Login</title>
+  <title data-i18n="login_page_title">Company Operation — Login</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     body {
@@ -224,30 +224,30 @@
 
     <!-- Left: Branding -->
     <div class="login-brand">
-      <h1>Company Operation</h1>
-      <div class="tagline">
+      <h1 data-i18n="login_brand_title">Company Operation</h1>
+      <div class="tagline" data-i18n="login_brand_tagline">
         ระบบบริหารโปรเจกต์และงบประมาณ
       </div>
       <div class="features">
         <div class="feature">
           <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></div>
-          <span>Executive Dashboard — ดู KPI ตัดสินใจได้ทันที</span>
+          <span data-i18n="login_feature_dashboard">Executive Dashboard — ดู KPI ตัดสินใจได้ทันที</span>
         </div>
         <div class="feature">
           <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          <span>Budget Control — TOR vs Budget vs Actual</span>
+          <span data-i18n="login_feature_budget">Budget Control — TOR vs Budget vs Actual</span>
         </div>
         <div class="feature">
           <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></div>
-          <span>PR/PO → SAP — สร้างเว็บ ยิง ERP อัตโนมัติ</span>
+          <span data-i18n="login_feature_prpo">PR/PO → SAP — สร้างเว็บ ยิง ERP อัตโนมัติ</span>
         </div>
         <div class="feature">
           <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h4"/></svg></div>
-          <span>Expense — สแกนใบเสร็จ ไม่ต้องคีย์ซ้ำ</span>
+          <span data-i18n="login_feature_expense">Expense — สแกนใบเสร็จ ไม่ต้องคีย์ซ้ำ</span>
         </div>
         <div class="feature">
           <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg></div>
-          <span>Approval Workflow — Chain of Command</span>
+          <span data-i18n="login_feature_approval">Approval Workflow — Chain of Command</span>
         </div>
       </div>
     </div>
@@ -257,51 +257,51 @@
 
       <!-- ── Login panel ── -->
       <div class="login-panel" id="loginPanel">
-        <h2>Welcome back</h2>
-        <div class="subtitle">เข้าสู่ระบบด้วยบัญชีของคุณ</div>
+        <h2 data-i18n="login_heading">Welcome back</h2>
+        <div class="subtitle" data-i18n="login_subtitle">เข้าสู่ระบบด้วยบัญชีของคุณ</div>
 
         <form onsubmit="event.preventDefault(); handleLogin();">
           <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-input" placeholder="name@company.com" id="login-email" autocomplete="email" required>
+            <label class="form-label" data-i18n="label_email">Email</label>
+            <input type="email" class="form-input" data-i18n-placeholder="placeholder_email" placeholder="name@company.com" id="login-email" autocomplete="email" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-input" placeholder="Enter your password" id="login-password" autocomplete="current-password" required>
+            <label class="form-label" data-i18n="label_password">Password</label>
+            <input type="password" class="form-input" data-i18n-placeholder="placeholder_password" placeholder="Enter your password" id="login-password" autocomplete="current-password" required>
           </div>
           <div class="remember-row">
-            <label><input type="checkbox" id="login-remember"> Remember me for 30 days</label>
-            <a id="show-forgot">Forgot password?</a>
+            <label><input type="checkbox" id="login-remember"> <span data-i18n="login_remember_me">Remember me for 30 days</span></label>
+            <a id="show-forgot" data-i18n="login_forgot_password">Forgot password?</a>
           </div>
-          <button type="submit" class="login-submit" id="login-submit">Sign In</button>
+          <button type="submit" class="login-submit" id="login-submit" data-i18n="btn_sign_in">Sign In</button>
         </form>
 
         <div id="login-error"></div>
         <div id="login-info"></div>
 
-        <div class="form-footer">
+        <div class="form-footer" data-i18n-html="login_no_account">
           ยังไม่มีบัญชี? <a href="register.html">สมัครสมาชิก</a>
         </div>
       </div>
 
       <!-- ── Forgot password panel ── -->
       <div class="forgot-panel" id="forgotPanel">
-        <h2>Reset password</h2>
-        <div class="subtitle">ใส่อีเมลที่ลงทะเบียนไว้ ระบบจะส่งลิงก์รีเซ็ตให้</div>
+        <h2 data-i18n="login_reset_heading">Reset password</h2>
+        <div class="subtitle" data-i18n="login_reset_subtitle">ใส่อีเมลที่ลงทะเบียนไว้ ระบบจะส่งลิงก์รีเซ็ตให้</div>
 
         <form onsubmit="event.preventDefault(); handleForgot();">
           <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-input" placeholder="name@company.com" id="forgot-email" autocomplete="email" required>
+            <label class="form-label" data-i18n="label_email">Email</label>
+            <input type="email" class="form-input" data-i18n-placeholder="placeholder_email" placeholder="name@company.com" id="forgot-email" autocomplete="email" required>
           </div>
-          <button type="submit" class="login-submit" id="forgot-submit">Send reset link</button>
+          <button type="submit" class="login-submit" id="forgot-submit" data-i18n="btn_send_reset_link">Send reset link</button>
         </form>
 
         <div id="forgot-info" style="background:#ecfdf5;color:#047857;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none;"></div>
         <div id="forgot-error" style="background:#fef2f2;color:#ef4444;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none;"></div>
 
         <div class="form-footer">
-          <a id="back-to-login">← Back to sign in</a>
+          <a id="back-to-login" data-i18n="login_back_to_signin">← Back to sign in</a>
         </div>
       </div>
 

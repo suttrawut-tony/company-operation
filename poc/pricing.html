@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — Pricing</title>
+  <title data-i18n="pricing_page_title">Company Operation — Pricing</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     body { background: var(--bg-light); }
@@ -16,7 +16,7 @@
     .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1000px; margin: 0 auto; padding: 0 20px 48px; }
     .plan-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; position: relative; }
     .plan-card.featured { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
-    .plan-card.featured::before { content: 'แนะนำ'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; font-size: 11px; font-weight: 700; padding: 2px 16px; border-radius: var(--radius-full); }
+    .plan-card.featured::before { content: attr(data-featured-label); position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; font-size: 11px; font-weight: 700; padding: 2px 16px; border-radius: var(--radius-full); }
     .plan-name { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
     .plan-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; }
     .plan-price { font-size: 36px; font-weight: 800; color: var(--primary); }
@@ -31,16 +31,16 @@
 <body>
   <div style="max-width:1100px;margin:0 auto;">
     <div class="pricing-hero">
-      <h1>Company Operation</h1>
-      <p>ระบบจัดการงานปฏิบัติการครบวงจร เลือกแพลนที่เหมาะกับทีมของคุณ</p>
+      <h1 data-i18n="pricing_heading">Company Operation</h1>
+      <p data-i18n="pricing_subtitle">ระบบจัดการงานปฏิบัติการครบวงจร เลือกแพลนที่เหมาะกับทีมของคุณ</p>
     </div>
     <div class="cycle-toggle">
-      <button class="cycle-btn active" onclick="setCycle('monthly',this)">รายเดือน</button>
-      <button class="cycle-btn" onclick="setCycle('yearly',this)">รายปี (ประหยัด 17%)</button>
+      <button class="cycle-btn active" onclick="setCycle('monthly',this)" data-i18n="pricing_cycle_monthly">รายเดือน</button>
+      <button class="cycle-btn" onclick="setCycle('yearly',this)" data-i18n="pricing_cycle_yearly">รายปี (ประหยัด 17%)</button>
     </div>
     <div class="pricing-grid" id="pricing-grid"></div>
     <div style="text-align:center;padding:20px;">
-      <a href="login.html" style="color:var(--primary);font-size:13px;">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
+      <a href="login.html" style="color:var(--primary);font-size:13px;" data-i18n="pricing_already_have_account">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
     </div>
   </div>
 
@@ -57,7 +57,7 @@
         renderPlans();
       } catch(e) {
         console.error(e);
-        document.querySelector('.pricing-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">ไม่สามารถโหลดแพลนได้</div>';
+        document.querySelector('.pricing-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)" data-i18n="pricing_load_error">ไม่สามารถโหลดแพลนได้</div>';
       }
     }
 
@@ -69,26 +69,27 @@
     }
 
     function renderPlans() {
+      const t = window.i18n ? window.i18n.t.bind(window.i18n) : (k, fb) => fb;
       document.getElementById('pricing-grid').innerHTML = plans.map((p, i) => {
         const price = cycle === 'yearly' ? p.price_yearly : p.price_monthly;
         const monthly = cycle === 'yearly' ? Math.round(p.price_yearly / 12) : p.price_monthly;
         const savings = cycle === 'yearly' ? Math.round((1 - p.price_yearly / (p.price_monthly * 12)) * 100) : 0;
         const featured = i === 1;
-        return `<div class="plan-card${featured ? ' featured' : ''}">
+        return `<div class="plan-card${featured ? ' featured' : ''}" ${featured ? 'data-featured-label="' + t('pricing_featured_label', 'แนะนำ') + '"' : ''}>
           <div class="plan-name">${p.display_name}</div>
           <div class="plan-desc">${p.description || ''}</div>
-          <div class="plan-price">฿${Number(monthly).toLocaleString()}<span>/เดือน</span></div>
-          <div class="plan-savings">${savings > 0 ? 'ประหยัด '+savings+'% (฿'+Number(price).toLocaleString()+'/ปี)' : ''}</div>
+          <div class="plan-price">฿${Number(monthly).toLocaleString()}<span data-i18n="pricing_per_month">/เดือน</span></div>
+          <div class="plan-savings">${savings > 0 ? t('pricing_savings_prefix', 'ประหยัด ')+savings+'% (฿'+Number(price).toLocaleString()+t('pricing_per_year', '/ปี')+')' : ''}</div>
           <ul class="plan-features">
-            <li>${p.max_users ? p.max_users + ' ผู้ใช้' : 'ไม่จำกัดผู้ใช้'}</li>
-            <li>${p.max_projects ? p.max_projects + ' โปรเจกต์' : 'ไม่จำกัดโปรเจกต์'}</li>
-            <li>${p.max_storage_gb} GB พื้นที่</li>
-            ${p.features?.sap_integration ? '<li>เชื่อมต่อ ERP</li>' : ''}
-            ${p.features?.api_access ? '<li>API Access</li>' : ''}
-            ${p.features?.custom_reports ? '<li>Custom Reports</li>' : ''}
+            <li>${p.max_users ? p.max_users + ' ' + t('pricing_users', 'ผู้ใช้') : t('pricing_unlimited_users', 'ไม่จำกัดผู้ใช้')}</li>
+            <li>${p.max_projects ? p.max_projects + ' ' + t('pricing_projects', 'โปรเจกต์') : t('pricing_unlimited_projects', 'ไม่จำกัดโปรเจกต์')}</li>
+            <li>${p.max_storage_gb} GB <span data-i18n="pricing_storage">${t('pricing_storage', 'พื้นที่')}</span></li>
+            ${p.features?.sap_integration ? '<li data-i18n="pricing_feature_erp">' + t('pricing_feature_erp', 'เชื่อมต่อ ERP') + '</li>' : ''}
+            ${p.features?.api_access ? '<li data-i18n="pricing_feature_api">' + t('pricing_feature_api', 'API Access') + '</li>' : ''}
+            ${p.features?.custom_reports ? '<li data-i18n="pricing_feature_reports">' + t('pricing_feature_reports', 'Custom Reports') + '</li>' : ''}
           </ul>
-          <a href="register.html?plan=${p.id}&cycle=${cycle}" class="btn btn-${featured ? 'primary' : 'secondary'}" style="width:100%;display:block;text-align:center;text-decoration:none;">
-            ทดลองใช้ฟรี 14 วัน
+          <a href="register.html?plan=${p.id}&cycle=${cycle}" class="btn btn-${featured ? 'primary' : 'secondary'}" style="width:100%;display:block;text-align:center;text-decoration:none;" data-i18n="btn_start_trial">
+            ${t('btn_start_trial', 'ทดลองใช้ฟรี 14 วัน')}
           </a>
         </div>`;
       }).join('');
