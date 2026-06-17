@@ -16,7 +16,7 @@
   <!-- Top bar -->
   <div class="doc-toolbar">
     <div class="doc-toolbar-left">
-      <a href="quotation.html" class="doc-back">&larr; Back</a>
+      <a href="quotation.html" class="doc-back" data-i18n="sq_btn_back">&larr; Back</a>
       <span style="color:var(--border);">|</span>
       <span style="font-size:12px;color:var(--text-muted);" id="doc-nav-info">-</span>
       <button class="doc-nav-btn" onclick="navDoc(-1)">&laquo;</button>
@@ -31,7 +31,7 @@
     <div class="doc-card">
       <div class="doc-card-top">
         <div>
-          <div class="doc-type-label">SALES QUOTATION</div>
+          <div class="doc-type-label" data-i18n="sq_type_label">SALES QUOTATION</div>
           <div class="doc-number" id="docNumber">-</div>
         </div>
         <div id="statusBadge"></div>
@@ -42,8 +42,8 @@
     <!-- Line Items -->
     <div class="doc-lines">
       <div class="doc-lines-header">
-        <h3>Line Items</h3>
-        <button class="btn btn-sm btn-primary" id="btn-add-line" onclick="addLine()" style="display:none;">+ Add Row</button>
+        <h3 data-i18n="sq_line_items">Line Items</h3>
+        <button class="btn btn-sm btn-primary" id="btn-add-line" onclick="addLine()" style="display:none;" data-i18n="sq_btn_add_row">+ Add Row</button>
       </div>
       <div style="overflow-x:auto;">
         <table>
@@ -59,8 +59,8 @@
     <!-- Bottom Tabs -->
     <div class="doc-tabs">
       <div class="doc-tabs-bar">
-        <div class="doc-tab active" onclick="switchTab('info',this)">Document Info</div>
-        <div class="doc-tab" onclick="switchTab('print',this)">Print Preview</div>
+        <div class="doc-tab active" onclick="switchTab('info',this)" data-i18n="sq_tab_info">Document Info</div>
+        <div class="doc-tab" onclick="switchTab('print',this)" data-i18n="sq_tab_print">Print Preview</div>
       </div>
       <div class="doc-tab-panel active" id="tab-info"></div>
       <div class="doc-tab-panel" id="tab-print"></div>

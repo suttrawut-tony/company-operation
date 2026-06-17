@@ -142,15 +142,15 @@
   <main class="page fade-in">
     <div class="page-header">
       <div>
-        <h1>User & Permission</h1>
+        <h1 data-i18n="permissions_title">User & Permission</h1>
         <div class="subtitle" id="subtitle-info">Loading...</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-primary" id="btn-add-user" onclick="openUserModal()" style="display:none;">+ Add User</button>
+        <button class="btn btn-primary" id="btn-add-user" onclick="openUserModal()" style="display:none;" data-i18n="permissions_add_user">+ Add User</button>
         <div class="view-toggles">
-          <button class="view-toggle active" onclick="switchView('users',this)">Users</button>
-          <button class="view-toggle" onclick="switchView('matrix',this)">Permission Matrix</button>
-          <button class="view-toggle" onclick="switchView('approval',this)">Approval Flow</button>
+          <button class="view-toggle active" onclick="switchView('users',this)" data-i18n="permissions_tab_users">Users</button>
+          <button class="view-toggle" onclick="switchView('matrix',this)" data-i18n="permissions_tab_matrix">Permission Matrix</button>
+          <button class="view-toggle" onclick="switchView('approval',this)" data-i18n="permissions_tab_approval">Approval Flow</button>
         </div>
       </div>
     </div>
@@ -162,9 +162,9 @@
     <div id="view-users">
       <div style="display:flex;gap:12px;margin-bottom:16px;">
         <select class="form-select" id="filter-user-project" style="width:250px;" onchange="renderUsers()">
-          <option value="">All Projects</option>
+          <option value="" data-i18n="permissions_all_projects">All Projects</option>
         </select>
-        <input type="text" class="form-input" id="filter-user-search" placeholder="Search name, email..." oninput="renderUsers()" style="width:250px;">
+        <input type="text" class="form-input" id="filter-user-search" placeholder="Search name, email..." oninput="renderUsers()" style="width:250px;" data-i18n-placeholder="permissions_search_placeholder">
       </div>
       <div class="user-grid" id="user-grid">Loading...</div>
     </div>
@@ -173,15 +173,15 @@
     <div id="view-matrix" class="hidden">
       <div class="card">
         <div class="card-header">
-          <h2>Permission Matrix — Role x Module x Action</h2>
+          <h2 data-i18n="permissions_matrix_heading">Permission Matrix — Role x Module x Action</h2>
         </div>
         <div class="matrix-scroll">
           <table class="perm-table" id="perm-table"></table>
         </div>
         <div style="padding:12px 20px;border-top:1px solid var(--border-light);display:flex;gap:20px;font-size:12px;color:var(--text-secondary);">
-          <span><span class="p-yes">&#10003;</span> Full Access</span>
-          <span><span class="p-own">own</span> Own Records Only</span>
-          <span><span class="p-no">&mdash;</span> No Access</span>
+          <span><span class="p-yes">&#10003;</span> <span data-i18n="permissions_full_access">Full Access</span></span>
+          <span><span class="p-own">own</span> <span data-i18n="permissions_own_records">Own Records Only</span></span>
+          <span><span class="p-no">&mdash;</span> <span data-i18n="permissions_no_access">No Access</span></span>
         </div>
       </div>
     </div>
@@ -195,40 +195,40 @@
     <div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeUserModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;">
         <div style="padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center;">
-          <h3 id="user-modal-title" style="font-size:16px;font-weight:700;">Add User</h3>
+          <h3 id="user-modal-title" style="font-size:16px;font-weight:700;" data-i18n="permissions_modal_add_user">Add User</h3>
           <button onclick="closeUserModal()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
         </div>
         <div style="padding:20px 24px;">
           <input type="hidden" id="um-id">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
-              <label class="form-label">Email</label>
+              <label class="form-label" data-i18n="permissions_label_email">Email</label>
               <input type="email" class="form-input" id="um-email" placeholder="name@company.com" oninput="this.value=this.value.toLowerCase()">
               <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">อีเมลจะถูกแปลงเป็นตัวพิมพ์เล็กอัตโนมัติ</div>
             </div>
             <div class="form-group">
-              <label class="form-label">Password</label>
+              <label class="form-label" data-i18n="permissions_label_password">Password</label>
               <input type="password" class="form-input" id="um-password" placeholder="Set password">
               <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">อย่างน้อย 8 ตัวอักษร, ต้องมีตัวอักษร และ ตัวเลข — ผู้ใช้จะถูกบังคับเปลี่ยนรหัสเมื่อเข้าใช้ครั้งแรก</div>
             </div>
             <div class="form-group">
-              <label class="form-label">First Name</label>
+              <label class="form-label" data-i18n="permissions_label_first_name">First Name</label>
               <input type="text" class="form-input" id="um-fname" placeholder="First name">
             </div>
             <div class="form-group">
-              <label class="form-label">Last Name</label>
+              <label class="form-label" data-i18n="permissions_label_last_name">Last Name</label>
               <input type="text" class="form-input" id="um-lname" placeholder="Last name">
             </div>
             <div class="form-group">
-              <label class="form-label">First Name (TH)</label>
+              <label class="form-label" data-i18n="permissions_label_first_name_th">First Name (TH)</label>
               <input type="text" class="form-input" id="um-fname-th" placeholder="ชื่อภาษาไทย">
             </div>
             <div class="form-group">
-              <label class="form-label">Last Name (TH)</label>
+              <label class="form-label" data-i18n="permissions_label_last_name_th">Last Name (TH)</label>
               <input type="text" class="form-input" id="um-lname-th" placeholder="นามสกุลภาษาไทย">
             </div>
             <div class="form-group">
-              <label class="form-label">Role</label>
+              <label class="form-label" data-i18n="permissions_label_role">Role</label>
               <select class="form-input" id="um-role">
                 <option value="staff">Staff</option>
                 <option value="admin">Admin</option>
@@ -240,27 +240,27 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Position</label>
+              <label class="form-label" data-i18n="permissions_label_position">Position</label>
               <input type="text" class="form-input" id="um-position" placeholder="e.g. Engineer">
             </div>
             <div class="form-group">
-              <label class="form-label">Department</label>
+              <label class="form-label" data-i18n="permissions_label_department">Department</label>
               <input type="text" class="form-input" id="um-dept" placeholder="e.g. Operations">
             </div>
             <div class="form-group">
-              <label class="form-label">Approval Limit</label>
+              <label class="form-label" data-i18n="permissions_label_approval_limit">Approval Limit</label>
               <input type="number" class="form-input" id="um-limit" placeholder="0" min="0">
             </div>
             <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:24px;">
-              <input type="checkbox" id="um-approve" checked> <label for="um-approve" style="font-size:12px;">Can Approve</label>
+              <input type="checkbox" id="um-approve" checked> <label for="um-approve" style="font-size:12px;" data-i18n="permissions_label_can_approve">Can Approve</label>
             </div>
             <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:24px;">
-              <input type="checkbox" id="um-active" checked> <label for="um-active" style="font-size:12px;">Active</label>
+              <input type="checkbox" id="um-active" checked> <label for="um-active" style="font-size:12px;" data-i18n="permissions_label_active">Active</label>
             </div>
           </div>
           <!-- Project Membership -->
           <div id="um-projects-section" style="margin-top:16px;display:none;">
-            <label class="form-label">Projects</label>
+            <label class="form-label" data-i18n="permissions_label_projects">Projects</label>
             <div id="um-projects-list" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;"></div>
             <div style="display:flex;gap:8px;">
               <select class="form-input" id="um-add-project" style="flex:1;font-size:12px;"></select>
@@ -269,10 +269,10 @@
           </div>
         </div>
         <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;">
-          <button class="btn btn-sm" id="um-delete-btn" style="background:var(--danger);color:#fff;display:none;" onclick="deleteUser()">Deactivate</button>
+          <button class="btn btn-sm" id="um-delete-btn" style="background:var(--danger);color:#fff;display:none;" onclick="deleteUser()" data-i18n="permissions_btn_deactivate">Deactivate</button>
           <div style="display:flex;gap:8px;margin-left:auto;">
-            <button class="btn btn-secondary btn-sm" onclick="closeUserModal()">Cancel</button>
-            <button class="btn btn-primary btn-sm" id="um-save-btn" onclick="saveUser()">Save</button>
+            <button class="btn btn-secondary btn-sm" onclick="closeUserModal()" data-i18n="cancel">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="um-save-btn" onclick="saveUser()" data-i18n="save">Save</button>
           </div>
         </div>
       </div>

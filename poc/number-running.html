@@ -41,14 +41,14 @@
   <main class="page fade-in">
     <div class="page-header">
       <div>
-        <h1>Document Number Running</h1>
+        <h1 data-i18n="numrun_title">Document Number Running</h1>
       </div>
       <span class="badge badge-success badge-dot" id="sync-status" style="font-size:var(--text-sm);">Loading...</span>
     </div>
 
     <!-- Format Breakdown -->
     <div class="card" style="margin-bottom:20px;">
-      <div class="card-header"><h2>Document Number Format</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">Based on ERP Blueprint</span></div>
+      <div class="card-header"><h2 data-i18n="numrun_format_heading">Document Number Format</h2><span style="font-size:var(--text-xs);color:var(--text-muted);" data-i18n="numrun_based_on_erp">Based on ERP Blueprint</span></div>
       <div class="card-body">
         <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:8px;">Format: <strong>Prefix + Year(YY) + Month(MM) + Running(4 digits)</strong></div>
         <div class="format-parts" id="format-parts">Loading...</div>
@@ -59,19 +59,19 @@
     <!-- Series Tables -->
     <div class="nr-grid">
       <div class="card">
-        <div class="card-header"><h2>Web App Documents</h2></div>
+        <div class="card-header"><h2 data-i18n="numrun_web_docs">Web App Documents</h2></div>
         <div class="table-container">
           <table class="nr-table">
-            <thead><tr><th>Document</th><th>Format</th><th>Current No.</th><th>SAP</th></tr></thead>
+            <thead><tr><th data-i18n="numrun_th_document">Document</th><th data-i18n="numrun_th_format">Format</th><th data-i18n="numrun_th_current">Current No.</th><th>SAP</th></tr></thead>
             <tbody id="web-series">Loading...</tbody>
           </table>
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><h2>ERP Synced Documents</h2><span style="font-size:var(--text-xs);color:var(--text-muted);">From ERP Blueprint</span></div>
+        <div class="card-header"><h2 data-i18n="numrun_erp_docs">ERP Synced Documents</h2><span style="font-size:var(--text-xs);color:var(--text-muted);" data-i18n="numrun_from_erp">From ERP Blueprint</span></div>
         <div class="table-container">
           <table class="nr-table">
-            <thead><tr><th>Document</th><th>SAP Prefix</th><th>Range</th><th>Status</th></tr></thead>
+            <thead><tr><th data-i18n="numrun_th_document">Document</th><th data-i18n="numrun_th_sap_prefix">SAP Prefix</th><th data-i18n="numrun_th_range">Range</th><th data-i18n="status">Status</th></tr></thead>
             <tbody id="sap-series">Loading...</tbody>
           </table>
         </div>

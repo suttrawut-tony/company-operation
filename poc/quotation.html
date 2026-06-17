@@ -60,20 +60,20 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1 id="pgIcon"></h1></div>
+      <div><h1 id="pgIcon" data-i18n="quotation_page_title"></h1></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportQuotations()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
-        <button class="btn btn-primary" onclick="window.location='sq-detail.html?mode=new'">+ สร้างใบเสนอราคา</button>
+        <button class="btn btn-secondary" onclick="exportQuotations()" style="display:flex;align-items:center;gap:6px;" data-i18n="quotation_btn_export"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="window.location='sq-detail.html?mode=new'" data-i18n="quotation_btn_new">+ สร้างใบเสนอราคา</button>
       </div>
     </div>
     <div class="sq-stats" id="stats"></div>
     <div class="card">
       <div class="card-header">
-        <h2>รายการใบเสนอราคา</h2>
+        <h2 data-i18n="quotation_card_header">รายการใบเสนอราคา</h2>
         <select class="form-select" id="filterStatus" style="font-size:12px;padding:4px 8px;" onchange="loadData()">
-          <option value="">ทุกสถานะ</option>
-          <option value="draft">Draft</option><option value="sent">Sent</option>
-          <option value="accepted">Accepted</option><option value="rejected">Rejected</option>
+          <option value="" data-i18n="quotation_filter_all">ทุกสถานะ</option>
+          <option value="draft" data-i18n="quotation_filter_draft">Draft</option><option value="sent" data-i18n="quotation_filter_sent">Sent</option>
+          <option value="accepted" data-i18n="quotation_filter_accepted">Accepted</option><option value="rejected" data-i18n="quotation_filter_rejected">Rejected</option>
         </select>
       </div>
       <div id="tableWrap"></div>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — Project Detail</title>
+  <title data-i18n="overview_page_title">Company Operation — Project Detail</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     /* Gantt Chart */
@@ -81,7 +81,7 @@
 
   <main class="page fade-in">
     <div class="proj-select-bar">
-      <a href="projects.html" class="btn btn-secondary btn-sm">&larr; All Projects</a>
+      <a href="projects.html" class="btn btn-secondary btn-sm" data-i18n="overview_btn_all_projects">&larr; All Projects</a>
       <select class="form-select" id="project-select" onchange="switchProject(this.value)" style="max-width:400px;"></select>
     </div>
 
@@ -90,7 +90,7 @@
 
     <!-- Timeline Gantt Chart -->
     <div class="card" style="margin-bottom:20px;" id="gantt-card">
-      <div class="card-header"><h2>Project Timeline</h2></div>
+      <div class="card-header"><h2 data-i18n="overview_section_timeline">Project Timeline</h2></div>
       <div class="card-body" style="padding:16px 20px;overflow-x:auto;" id="gantt-chart">
         <div style="color:var(--text-muted);font-size:13px;">Loading timeline...</div>
       </div>
@@ -99,11 +99,11 @@
     <!-- Row 1: Team + Budget -->
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><h2>Project Team</h2></div>
+        <div class="card-header"><h2 data-i18n="overview_section_team">Project Team</h2></div>
         <div class="card-body" id="team-list">Loading...</div>
       </div>
       <div class="card">
-        <div class="card-header"><h2>Budget Overview</h2><a href="budget.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-header"><h2 data-i18n="overview_section_budget">Budget Overview</h2><a href="budget.html" class="btn btn-ghost btn-sm" data-i18n="overview_btn_detail">Detail &rarr;</a></div>
         <div class="card-body" id="budget-info">Loading...</div>
       </div>
     </div>
@@ -111,11 +111,11 @@
     <!-- Row 2: Tasks + Phases -->
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><h2>Tasks</h2><a href="taskboard.html" class="btn btn-ghost btn-sm">Taskboard &rarr;</a></div>
+        <div class="card-header"><h2 data-i18n="overview_section_tasks">Tasks</h2><a href="taskboard.html" class="btn btn-ghost btn-sm" data-i18n="overview_btn_taskboard">Taskboard &rarr;</a></div>
         <div class="card-body" id="tasks-section">Loading...</div>
       </div>
       <div class="card">
-        <div class="card-header"><h2>Phases</h2><a href="phases.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-header"><h2 data-i18n="overview_section_phases">Phases</h2><a href="phases.html" class="btn btn-ghost btn-sm" data-i18n="overview_btn_detail">Detail &rarr;</a></div>
         <div class="card-body" id="phases-section">Loading...</div>
       </div>
     </div>
@@ -123,11 +123,11 @@
     <!-- Row 3: PR + Advance -->
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><h2>Purchase Requests</h2><a href="pr-po.html" class="btn btn-ghost btn-sm">PR/PO &rarr;</a></div>
+        <div class="card-header"><h2 data-i18n="overview_section_pr">Purchase Requests</h2><a href="pr-po.html" class="btn btn-ghost btn-sm" data-i18n="overview_btn_prpo">PR/PO &rarr;</a></div>
         <div class="card-body" id="pr-section">Loading...</div>
       </div>
       <div class="card">
-        <div class="card-header"><h2>Advance</h2><a href="advance.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-header"><h2 data-i18n="overview_section_advance">Advance</h2><a href="advance.html" class="btn btn-ghost btn-sm" data-i18n="overview_btn_detail">Detail &rarr;</a></div>
         <div class="card-body" id="advance-section">Loading...</div>
       </div>
     </div>
@@ -135,11 +135,11 @@
     <!-- Row 4: OT + Vehicle -->
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><h2>OT Records</h2><a href="ot.html" class="btn btn-ghost btn-sm">Detail &rarr;</a></div>
+        <div class="card-header"><h2 data-i18n="overview_section_ot">OT Records</h2><a href="ot.html" class="btn btn-ghost btn-sm" data-i18n="overview_btn_detail">Detail &rarr;</a></div>
         <div class="card-body" id="ot-section">Loading...</div>
       </div>
       <div class="card">
-        <div class="card-header"><h2>Vehicle Bookings</h2><a id="vehicle-detail-link" href="vehicle.html" class="btn btn-ghost btn-sm">Detail more &rarr;</a></div>
+        <div class="card-header"><h2 data-i18n="overview_section_vehicle">Vehicle Bookings</h2><a id="vehicle-detail-link" href="vehicle.html" class="btn btn-ghost btn-sm" data-i18n="overview_btn_detail_more">Detail more &rarr;</a></div>
         <div class="card-body" id="vehicle-section">Loading...</div>
       </div>
     </div>
@@ -147,13 +147,13 @@
     <!-- Row 5: Activity + Discussion -->
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><h2>Activity Log</h2></div>
+        <div class="card-header"><h2 data-i18n="overview_section_activity">Activity Log</h2></div>
         <div class="card-body" id="activity-section">Loading...</div>
       </div>
       <div class="card" style="grid-column:1/-1;">
         <div class="card-header">
-          <h2>Discussion</h2>
-          <button class="btn btn-primary btn-sm" onclick="openNewThread()">+ New Thread</button>
+          <h2 data-i18n="overview_section_discussion">Discussion</h2>
+          <button class="btn btn-primary btn-sm" onclick="openNewThread()" data-i18n="overview_btn_new_thread">+ New Thread</button>
         </div>
         <div class="card-body" style="padding:0;">
           <!-- Thread List -->

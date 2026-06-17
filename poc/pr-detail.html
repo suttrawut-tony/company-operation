@@ -104,10 +104,10 @@
       <div class="doc-actions">
         <button class="btn btn-secondary" onclick="window.print()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
-          Print
+          <span data-i18n="print">Print</span>
         </button>
-        <button class="btn btn-danger">Reject</button>
-        <button class="btn btn-success">Approve</button>
+        <button class="btn btn-danger" data-i18n="reject">Reject</button>
+        <button class="btn btn-success" data-i18n="approve">Approve</button>
       </div>
     </div>
 
@@ -117,30 +117,30 @@
 
         <!-- Document Info -->
         <div class="card">
-          <div class="card-header"><h2>Document Information</h2></div>
+          <div class="card-header"><h2 data-i18n="prdetail_doc_info">Document Information</h2></div>
           <div class="info-grid">
-            <div class="info-row"><span class="label">PR Number</span><span class="value" style="color:var(--primary);">PR26050012</span></div>
-            <div class="info-row"><span class="label">Document Date</span><span class="value">8 May 2026</span></div>
-            <div class="info-row"><span class="label">Status</span><span class="value"><span class="badge badge-warning badge-dot">Pending Manager</span></span></div>
-            <div class="info-row"><span class="label">Priority</span><span class="value"><span class="badge badge-danger">High</span></span></div>
-            <div class="info-row"><span class="label">Project</span><span class="value" style="color:var(--primary);cursor:pointer;">SDA-2026-001</span></div>
-            <div class="info-row"><span class="label">Project Name</span><span class="value">Marine Navigation System - Phuket</span></div>
-            <div class="info-row"><span class="label">Vendor Code</span><span class="value">VD0001</span></div>
-            <div class="info-row"><span class="label">Vendor Name</span><span class="value">Marine Electronics Co.</span></div>
-            <div class="info-row"><span class="label">Created By</span><span class="value">Jathuthep K. (PM)</span></div>
-            <div class="info-row"><span class="label">Created Date</span><span class="value">8 May 2026, 09:15</span></div>
-            <div class="info-row"><span class="label">Tax Code</span><span class="value">IG07 (VAT 7%)</span></div>
-            <div class="info-row"><span class="label">Payment Terms</span><span class="value">30 days</span></div>
-            <div class="info-row"><span class="label">Delivery Date</span><span class="value">22 May 2026</span></div>
-            <div class="info-row"><span class="label">Ship To</span><span class="value">HQ01 - คลังสินค้า</span></div>
-            <div class="info-row" style="grid-column:1/-1;"><span class="label">Remarks</span><span class="value">ต้องการด่วน สำหรับงานติดตั้งที่ภูเก็ต 15-17 May</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_pr_number">PR Number</span><span class="value" style="color:var(--primary);">PR26050012</span></div>
+            <div class="info-row"><span class="label" data-i18n="document_date">Document Date</span><span class="value">8 May 2026</span></div>
+            <div class="info-row"><span class="label" data-i18n="status">Status</span><span class="value"><span class="badge badge-warning badge-dot">Pending Manager</span></span></div>
+            <div class="info-row"><span class="label" data-i18n="priority">Priority</span><span class="value"><span class="badge badge-danger">High</span></span></div>
+            <div class="info-row"><span class="label" data-i18n="project">Project</span><span class="value" style="color:var(--primary);cursor:pointer;">SDA-2026-001</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_project_name">Project Name</span><span class="value">Marine Navigation System - Phuket</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_vendor_code">Vendor Code</span><span class="value">VD0001</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_vendor_name">Vendor Name</span><span class="value">Marine Electronics Co.</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_created_by">Created By</span><span class="value">Jathuthep K. (PM)</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_created_date">Created Date</span><span class="value">8 May 2026, 09:15</span></div>
+            <div class="info-row"><span class="label" data-i18n="tax_code">Tax Code</span><span class="value">IG07 (VAT 7%)</span></div>
+            <div class="info-row"><span class="label" data-i18n="payment_terms">Payment Terms</span><span class="value">30 days</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_delivery_date">Delivery Date</span><span class="value">22 May 2026</span></div>
+            <div class="info-row"><span class="label" data-i18n="prdetail_ship_to">Ship To</span><span class="value">HQ01 - คลังสินค้า</span></div>
+            <div class="info-row" style="grid-column:1/-1;"><span class="label" data-i18n="remarks">Remarks</span><span class="value">ต้องการด่วน สำหรับงานติดตั้งที่ภูเก็ต 15-17 May</span></div>
           </div>
         </div>
 
         <!-- Line Items -->
         <div class="card">
           <div class="card-header">
-            <h2>Line Items</h2>
+            <h2 data-i18n="prdetail_line_items">Line Items</h2>
             <span style="font-size:12px;color:var(--text-muted);">1 item</span>
           </div>
           <div class="table-container">
@@ -194,23 +194,23 @@
 
         <!-- Budget Impact -->
         <div class="card">
-          <div class="card-header"><h2>Budget Impact</h2></div>
+          <div class="card-header"><h2 data-i18n="prdetail_budget_impact">Budget Impact</h2></div>
           <div class="card-body">
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
               <div>
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;">Project Budget</div>
+                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;" data-i18n="prdetail_project_budget">Project Budget</div>
                 <div style="font-size:18px;font-weight:700;margin-top:4px;">&#3647;1,235,000</div>
               </div>
               <div>
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;">Used Before</div>
+                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;" data-i18n="prdetail_used_before">Used Before</div>
                 <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--warning);">&#3647;1,028,000</div>
               </div>
               <div>
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;">This PR</div>
+                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;" data-i18n="prdetail_this_pr">This PR</div>
                 <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--danger);">&#3647;85,000</div>
               </div>
               <div>
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;">Remaining After</div>
+                <div style="font-size:11px;color:var(--text-secondary);font-weight:500;" data-i18n="prdetail_remaining_after">Remaining After</div>
                 <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--success);">&#3647;122,000</div>
               </div>
             </div>
@@ -227,7 +227,7 @@
 
         <!-- Attachments -->
         <div class="card">
-          <div class="card-header"><h2>Attachments</h2><button class="btn btn-secondary btn-sm">+ Upload</button></div>
+          <div class="card-header"><h2 data-i18n="prcreate_attachments">Attachments</h2><button class="btn btn-secondary btn-sm" data-i18n="prdetail_upload">+ Upload</button></div>
           <div class="card-body" style="padding:12px 20px;">
             <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-light);">
               <div style="width:36px;height:36px;background:var(--primary-light);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;">
@@ -259,7 +259,7 @@
 
         <!-- Approval Flow -->
         <div class="card">
-          <div class="card-header"><h2>Approval Flow</h2></div>
+          <div class="card-header"><h2 data-i18n="prdetail_approval_flow">Approval Flow</h2></div>
           <div class="card-body">
             <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
               Amount &#3647;85,000 &rarr; Tier 2: Manager + Finance
@@ -320,7 +320,7 @@
 
         <!-- ERP Integration -->
         <div class="card sap-only">
-          <div class="card-header"><h2>ERP Integration</h2></div>
+          <div class="card-header"><h2 data-i18n="prdetail_erp_integration">ERP Integration</h2></div>
           <div class="card-body">
             <div class="sap-section">
               <h4>ERP Service Layer</h4>
@@ -337,7 +337,7 @@
 
         <!-- Activity Log -->
         <div class="card">
-          <div class="card-header"><h2>Activity</h2></div>
+          <div class="card-header"><h2 data-i18n="prdetail_activity">Activity</h2></div>
           <div class="card-body" style="padding:12px 20px;">
             <div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--border-light);display:flex;gap:8px;">
               <span style="color:var(--text-muted);min-width:50px;">09:20</span>
@@ -363,7 +363,7 @@
 
     <!-- Back button -->
     <div style="margin-top:20px;">
-      <a href="pr-po.html" class="btn btn-secondary">&larr; Back to PR/PO</a>
+      <a href="pr-po.html" class="btn btn-secondary" data-i18n="prdetail_back">&larr; Back to PR/PO</a>
     </div>
   </main>
   </div>

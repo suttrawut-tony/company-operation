@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — Plan Project</title>
+  <title data-i18n="phases_page_title">Company Operation — Plan Project</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     .phase-timeline { display: flex; flex-direction: column; gap: 0; }
@@ -134,13 +134,13 @@
   <main class="page fade-in">
     <div class="page-header">
       <div>
-        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Plan Project</h1>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> <span data-i18n="phases_heading">Plan Project</span></h1>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <select class="form-select" id="project-select" onchange="onProjectChange()" style="min-width:280px;">
           <option value="">Loading projects...</option>
         </select>
-        <button class="btn btn-primary" id="btn-add-phase" onclick="openAddPhase()">+ Add Phase</button>
+        <button class="btn btn-primary" id="btn-add-phase" onclick="openAddPhase()" data-i18n="phases_btn_add_phase">+ Add Phase</button>
       </div>
     </div>
 
@@ -152,10 +152,10 @@
       <!-- Payment Schedule -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <h3 style="font-size:14px;font-weight:700;">Payment Schedule (งวดรับเงิน)</h3>
+          <h3 style="font-size:14px;font-weight:700;" data-i18n="phases_payment_schedule_header">Payment Schedule (งวดรับเงิน)</h3>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-sm btn-secondary" onclick="generatePaymentSchedule()">Auto Generate</button>
-            <button class="btn btn-sm btn-primary" onclick="openPaymentModal()">+ Add</button>
+            <button class="btn btn-sm btn-secondary" onclick="generatePaymentSchedule()" data-i18n="phases_btn_auto_generate">Auto Generate</button>
+            <button class="btn btn-sm btn-primary" onclick="openPaymentModal()" data-i18n="phases_btn_add_payment">+ Add</button>
           </div>
         </div>
         <div id="payment-schedule-table" style="padding:0 16px 16px;"></div>
@@ -172,41 +172,41 @@
     <div class="modal-overlay" id="phase-modal" onclick="if(event.target===this)closePhaseModal()">
       <div class="modal-box">
         <div class="modal-header">
-          <h3 id="phase-modal-title">เพิ่ม Phase ใหม่</h3>
+          <h3 id="phase-modal-title" data-i18n="phases_modal_add_title">เพิ่ม Phase ใหม่</h3>
           <button class="modal-close" onclick="closePhaseModal()">&times;</button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="phase-edit-id">
           <div class="form-group">
-            <label class="form-label">ชื่อ Phase</label>
+            <label class="form-label" data-i18n="phases_label_phase_name">ชื่อ Phase</label>
             <input type="text" class="form-input" id="phase-name" placeholder="e.g. Phase 1 — Survey & Design">
           </div>
           <div class="form-group">
-            <label class="form-label">รายละเอียด</label>
+            <label class="form-label" data-i18n="phases_label_description">รายละเอียด</label>
             <textarea class="form-input" id="phase-desc" rows="2" placeholder="อธิบายรายละเอียดของ Phase"></textarea>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">วันเริ่มต้น</label>
+              <label class="form-label" data-i18n="phases_label_start_date">วันเริ่มต้น</label>
               <input type="date" class="form-input" id="phase-start">
             </div>
             <div class="form-group">
-              <label class="form-label">วันสิ้นสุด</label>
+              <label class="form-label" data-i18n="phases_label_end_date">วันสิ้นสุด</label>
               <input type="date" class="form-input" id="phase-end">
             </div>
           </div>
 
           <div style="margin-top:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-              <label class="form-label" style="margin:0;">Steps</label>
-              <button class="btn btn-secondary btn-sm" onclick="addStepRow()" style="font-size:11px;">+ Add Step</button>
+              <label class="form-label" style="margin:0;" data-i18n="phases_label_steps">Steps</label>
+              <button class="btn btn-secondary btn-sm" onclick="addStepRow()" style="font-size:11px;" data-i18n="phases_btn_add_step">+ Add Step</button>
             </div>
             <div id="steps-container"></div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closePhaseModal()">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" id="phase-save-btn" onclick="savePhase()">บันทึก</button>
+          <button class="btn btn-secondary btn-sm" onclick="closePhaseModal()" data-i18n="phases_btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" id="phase-save-btn" onclick="savePhase()" data-i18n="phases_btn_save">บันทึก</button>
         </div>
       </div>
     </div>
@@ -215,35 +215,35 @@
     <div class="modal-overlay" id="step-modal" onclick="if(event.target===this)closeStepModal()">
       <div class="modal-box" style="width:420px;">
         <div class="modal-header">
-          <h3>เพิ่ม Step</h3>
+          <h3 data-i18n="phases_modal_add_step_title">เพิ่ม Step</h3>
           <button class="modal-close" onclick="closeStepModal()">&times;</button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="step-phase-id">
           <div class="form-group">
-            <label class="form-label">ชื่อ Step</label>
+            <label class="form-label" data-i18n="phases_label_step_name">ชื่อ Step</label>
             <input type="text" class="form-input" id="step-name" placeholder="e.g. Site survey">
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">วันเริ่มต้น</label>
+              <label class="form-label" data-i18n="phases_label_start_date">วันเริ่มต้น</label>
               <input type="date" class="form-input" id="step-start">
             </div>
             <div class="form-group">
-              <label class="form-label">วันสิ้นสุด</label>
+              <label class="form-label" data-i18n="phases_label_end_date">วันสิ้นสุด</label>
               <input type="date" class="form-input" id="step-end">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">ผู้รับผิดชอบ</label>
+            <label class="form-label" data-i18n="phases_label_assignee">ผู้รับผิดชอบ</label>
             <select class="form-input" id="step-assignee">
               <option value="">ไม่ระบุ</option>
             </select>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closeStepModal()">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" onclick="saveStep()">เพิ่ม Step</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeStepModal()" data-i18n="phases_btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" onclick="saveStep()" data-i18n="phases_btn_add_step">เพิ่ม Step</button>
         </div>
       </div>
     </div>
@@ -251,18 +251,18 @@
     <div id="sub-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)closeSubModal()">
       <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:400px;max-width:95vw;">
         <div style="padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center;">
-          <h3 style="font-size:16px;font-weight:700;">Sub-task</h3>
+          <h3 style="font-size:16px;font-weight:700;" data-i18n="phases_modal_subtask_title">Sub-task</h3>
           <button onclick="closeSubModal()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
         </div>
         <div style="padding:20px 24px;">
           <input type="hidden" id="sub-step-id">
           <div class="form-group">
-            <label class="form-label">Name</label>
+            <label class="form-label" data-i18n="phases_label_subtask_name">Name</label>
             <input type="text" class="form-input" id="sub-name" placeholder="Sub-task name">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
-              <label class="form-label">Status</label>
+              <label class="form-label" data-i18n="phases_label_status">Status</label>
               <select class="form-input" id="sub-status">
                 <option value="pending">Pending</option>
                 <option value="active">Active</option>
@@ -270,18 +270,18 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Due Date</label>
+              <label class="form-label" data-i18n="phases_label_due_date">Due Date</label>
               <input type="date" class="form-input" id="sub-due">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Assignee</label>
+            <label class="form-label" data-i18n="phases_label_assignee">Assignee</label>
             <select class="form-input" id="sub-assignee"><option value="">ไม่ระบุ</option></select>
           </div>
         </div>
         <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="closeSubModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="saveSubtask()">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeSubModal()" data-i18n="phases_btn_cancel_en">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveSubtask()" data-i18n="phases_btn_save_en">Save</button>
         </div>
       </div>
     </div>
@@ -909,7 +909,7 @@
       };
 
       let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;">Term</th><th>Phase</th><th style="text-align:right;">%</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Retention</th><th style="text-align:right;">Net</th><th>Status</th><th>Inspection</th><th>Expected</th><th>Invoice No.</th><th>Actions</th></tr></thead><tbody>`;
+        <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:8px;" data-i18n="phases_th_term">Term</th><th data-i18n="phases_th_phase">Phase</th><th style="text-align:right;" data-i18n="phases_th_percent">%</th><th style="text-align:right;" data-i18n="phases_th_amount">Amount</th><th style="text-align:right;" data-i18n="phases_th_retention">Retention</th><th style="text-align:right;" data-i18n="phases_th_net">Net</th><th data-i18n="phases_th_status">Status</th><th data-i18n="phases_th_inspection">Inspection</th><th data-i18n="phases_th_expected">Expected</th><th data-i18n="phases_th_invoice_no">Invoice No.</th><th data-i18n="phases_th_actions">Actions</th></tr></thead><tbody>`;
       for (const p of payments) {
         const isFinal = p.id === finalPaymentId;
         const invoiceCell = p.invoice_number

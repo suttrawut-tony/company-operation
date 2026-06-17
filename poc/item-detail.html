@@ -85,11 +85,11 @@
     <div style="margin-bottom:16px;">
       <a class="back-link" href="item-master.html">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        Back to Item Master
+        <span data-i18n="itemdetail_back">Back to Item Master</span>
       </a>
     </div>
     <div class="page-header">
-      <div><h1 id="page-title">Item Detail</h1></div>
+      <div><h1 id="page-title" data-i18n="itemdetail_title">Item Detail</h1></div>
     </div>
 
     <!-- Item Header Info -->
@@ -97,7 +97,7 @@
       <div style="padding:20px 24px;">
         <div class="section-title">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-          Item Information
+          <span data-i18n="itemdetail_info">Item Information</span>
           <span id="item-status-badge"></span>
         </div>
         <div id="item-info" class="detail-grid">
@@ -111,15 +111,15 @@
       <div style="padding:20px 24px;">
         <div class="section-title">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          Stock by Warehouse
+          <span data-i18n="itemdetail_stock_by_wh">Stock by Warehouse</span>
         </div>
         <div class="table-container">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:var(--bg-light);">
-                <th style="text-align:left;padding:10px;">Warehouse Code</th>
-                <th style="text-align:left;padding:10px;">Warehouse Name</th>
-                <th style="text-align:right;padding:10px;">Qty on Hand</th>
+                <th style="text-align:left;padding:10px;" data-i18n="itemdetail_th_wh_code">Warehouse Code</th>
+                <th style="text-align:left;padding:10px;" data-i18n="itemdetail_th_wh_name">Warehouse Name</th>
+                <th style="text-align:right;padding:10px;" data-i18n="itemdetail_th_qty">Qty on Hand</th>
               </tr>
             </thead>
             <tbody id="stock-table">

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — Taskboard</title>
+  <title data-i18n="taskboard_page_title">Company Operation — Taskboard</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     .tb-header-row {
@@ -156,12 +156,12 @@
   <main class="page fade-in">
     <div class="page-header">
       <div>
-        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="6" height="14" x="2" y="6" rx="2"/><rect width="6" height="10" x="9" y="2" rx="2"/><rect width="6" height="14" x="16" y="8" rx="2"/></svg> Taskboard</h1>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="6" height="14" x="2" y="6" rx="2"/><rect width="6" height="10" x="9" y="2" rx="2"/><rect width="6" height="14" x="16" y="8" rx="2"/></svg> <span data-i18n="taskboard_heading">Taskboard</span></h1>
         <div class="subtitle" id="boardSubtitle"></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportTasks()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
-        <button class="btn btn-primary" onclick="openAddTask()">+ Add Task</button>
+        <button class="btn btn-secondary" onclick="exportTasks()" style="display:flex;align-items:center;gap:6px;" data-i18n="taskboard_btn_export_excel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openAddTask()" data-i18n="taskboard_btn_add_task">+ Add Task</button>
       </div>
     </div>
 
@@ -171,28 +171,28 @@
           <option value="">-- Select Project --</option>
         </select>
         <select class="form-select" id="filterPriority" style="width:120px;font-size:12px;padding:6px 10px;" onchange="renderBoard()">
-          <option value="">All Priority</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
+          <option value="" data-i18n="taskboard_filter_all_priority">All Priority</option>
+          <option value="high" data-i18n="taskboard_filter_high">High</option>
+          <option value="medium" data-i18n="taskboard_filter_medium">Medium</option>
+          <option value="low" data-i18n="taskboard_filter_low">Low</option>
         </select>
         <select class="form-select" id="filterAssignee" style="width:140px;font-size:12px;padding:6px 10px;" onchange="renderBoard()">
-          <option value="">All Assignee</option>
+          <option value="" data-i18n="taskboard_filter_all_assignee">All Assignee</option>
         </select>
         <select class="form-select" id="filterTimeline" style="width:130px;font-size:12px;padding:6px 10px;" onchange="renderBoard()">
-          <option value="">All Timeline</option>
-          <option value="overdue">Overdue</option>
-          <option value="today">Due Today</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="none">No Due Date</option>
+          <option value="" data-i18n="taskboard_filter_all_timeline">All Timeline</option>
+          <option value="overdue" data-i18n="taskboard_filter_overdue">Overdue</option>
+          <option value="today" data-i18n="taskboard_filter_due_today">Due Today</option>
+          <option value="week" data-i18n="taskboard_filter_this_week">This Week</option>
+          <option value="month" data-i18n="taskboard_filter_this_month">This Month</option>
+          <option value="none" data-i18n="taskboard_filter_no_due_date">No Due Date</option>
         </select>
       </div>
       <div style="display:flex;align-items:center;gap:12px">
         <div class="view-toggle">
-          <button class="active" data-tv="kanban" onclick="setTaskView('kanban')">Kanban</button>
-          <button data-tv="calendar" onclick="setTaskView('calendar')">Calendar</button>
-          <button data-tv="list" onclick="setTaskView('list')">List</button>
+          <button class="active" data-tv="kanban" onclick="setTaskView('kanban')" data-i18n="taskboard_view_kanban">Kanban</button>
+          <button data-tv="calendar" onclick="setTaskView('calendar')" data-i18n="taskboard_view_calendar">Calendar</button>
+          <button data-tv="list" onclick="setTaskView('list')" data-i18n="taskboard_view_list">List</button>
         </div>
         <span id="taskStats" style="font-size:12px;color:var(--text-secondary);"></span>
       </div>
@@ -218,22 +218,22 @@
     <div class="modal-overlay" id="task-modal" onclick="if(event.target===this)closeTaskModal()">
       <div class="modal-box">
         <div class="modal-header">
-          <h3 id="task-modal-title">เพิ่ม Task ใหม่</h3>
+          <h3 id="task-modal-title" data-i18n="taskboard_modal_add_title">เพิ่ม Task ใหม่</h3>
           <button class="modal-close" onclick="closeTaskModal()">&times;</button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="task-edit-id">
           <div class="form-group">
-            <label class="form-label">ชื่อ Task</label>
+            <label class="form-label" data-i18n="taskboard_label_task_name">ชื่อ Task</label>
             <input type="text" class="form-input" id="task-title" placeholder="e.g. GPS module calibration">
           </div>
           <div class="form-group">
-            <label class="form-label">รายละเอียด</label>
+            <label class="form-label" data-i18n="taskboard_label_description">รายละเอียด</label>
             <textarea class="form-input" id="task-desc" rows="2" placeholder="อธิบายรายละเอียด (optional)"></textarea>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Priority</label>
+              <label class="form-label" data-i18n="taskboard_label_priority">Priority</label>
               <select class="form-input" id="task-priority">
                 <option value="low">Low</option>
                 <option value="medium" selected>Medium</option>
@@ -241,7 +241,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Status</label>
+              <label class="form-label" data-i18n="taskboard_label_status">Status</label>
               <select class="form-input" id="task-status">
                 <option value="todo">To-do</option>
                 <option value="in_progress">In Progress</option>
@@ -251,29 +251,29 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">ผู้รับผิดชอบ</label>
+            <label class="form-label" data-i18n="taskboard_label_assignee">ผู้รับผิดชอบ</label>
             <select class="form-input" id="task-assignee">
               <option value="">ไม่ระบุ</option>
             </select>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">วันเริ่มต้น</label><input type="date" class="form-input" id="task-start"></div>
-            <div class="form-group"><label class="form-label">วันสิ้นสุด</label><input type="date" class="form-input" id="task-due"></div>
+            <div class="form-group"><label class="form-label" data-i18n="taskboard_label_start_date">วันเริ่มต้น</label><input type="date" class="form-input" id="task-start"></div>
+            <div class="form-group"><label class="form-label" data-i18n="taskboard_label_end_date">วันสิ้นสุด</label><input type="date" class="form-input" id="task-due"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">เวลาเริ่ม</label><input type="time" class="form-input" id="task-start-time"></div>
-            <div class="form-group"><label class="form-label">เวลาสิ้นสุด</label><input type="time" class="form-input" id="task-end-time"></div>
+            <div class="form-group"><label class="form-label" data-i18n="taskboard_label_start_time">เวลาเริ่ม</label><input type="time" class="form-input" id="task-start-time"></div>
+            <div class="form-group"><label class="form-label" data-i18n="taskboard_label_end_time">เวลาสิ้นสุด</label><input type="time" class="form-input" id="task-end-time"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">ชั่วโมงประมาณ</label><input type="number" class="form-input" id="task-est-hours" step="0.5" min="0" placeholder="เช่น 4"></div>
-            <div class="form-group"><label class="form-label">ชั่วโมงจริง</label><input type="number" class="form-input" id="task-actual-hours" step="0.5" min="0" placeholder="กรอกตอนเสร็จ"></div>
+            <div class="form-group"><label class="form-label" data-i18n="taskboard_label_est_hours">ชั่วโมงประมาณ</label><input type="number" class="form-input" id="task-est-hours" step="0.5" min="0" placeholder="เช่น 4"></div>
+            <div class="form-group"><label class="form-label" data-i18n="taskboard_label_actual_hours">ชั่วโมงจริง</label><input type="number" class="form-input" id="task-actual-hours" step="0.5" min="0" placeholder="กรอกตอนเสร็จ"></div>
           </div>
-          <div class="form-group"><label class="form-label">สถานที่</label><input type="text" class="form-input" id="task-location" placeholder="ชื่อสถานที่"></div>
-          <div class="form-group" id="task-jo-group" style="display:none"><label class="form-label">Job Order</label><div id="task-jo-info" style="font-size:12px;padding:8px 12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border-light)"></div></div>
+          <div class="form-group"><label class="form-label" data-i18n="taskboard_label_location">สถานที่</label><input type="text" class="form-input" id="task-location" placeholder="ชื่อสถานที่"></div>
+          <div class="form-group" id="task-jo-group" style="display:none"><label class="form-label" data-i18n="taskboard_label_job_order">Job Order</label><div id="task-jo-info" style="font-size:12px;padding:8px 12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border-light)"></div></div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closeTaskModal()">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" id="task-save-btn" onclick="saveTask()">บันทึก</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeTaskModal()" data-i18n="taskboard_btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" id="task-save-btn" onclick="saveTask()" data-i18n="taskboard_btn_save">บันทึก</button>
         </div>
       </div>
     </div>

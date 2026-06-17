@@ -56,12 +56,12 @@
   <main class="page fade-in">
     <div class="page-header">
       <div>
-        <h1>Journal Entries — การบันทึกบัญชี</h1>
-        <div class="subtitle">รายการบันทึกบัญชีทั้งหมดจากเอกสาร PR/PO/Expense/OT</div>
+        <h1 data-i18n="journal_title">Journal Entries — การบันทึกบัญชี</h1>
+        <div class="subtitle" data-i18n="journal_subtitle">รายการบันทึกบัญชีทั้งหมดจากเอกสาร PR/PO/Expense/OT</div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportJEExcel()">Export Excel</button>
-        <button class="btn btn-secondary" onclick="window.print()">Print</button>
+        <button class="btn btn-secondary" onclick="exportJEExcel()" data-i18n="export_excel">Export Excel</button>
+        <button class="btn btn-secondary" onclick="window.print()" data-i18n="print">Print</button>
       </div>
     </div>
 
@@ -69,14 +69,14 @@
 
     <div class="filter-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
       <select class="form-select" id="je-filter-type" onchange="renderJE()" style="width:140px;">
-        <option value="">All Types</option>
+        <option value="" data-i18n="journal_all_types">All Types</option>
         <option value="pr">Purchase Request</option>
         <option value="po">Purchase Order</option>
         <option value="expense">Expense</option>
         <option value="ot">OT / Holiday</option>
       </select>
       <select class="form-select" id="je-filter-status" onchange="renderJE()" style="width:140px;">
-        <option value="">All Status</option>
+        <option value="" data-i18n="journal_all_status">All Status</option>
         <option value="posted">Posted</option>
         <option value="pending">Pending</option>
       </select>
@@ -87,23 +87,23 @@
 
     <div class="card">
       <div class="card-header">
-        <h2>Journal Entry Listing</h2>
+        <h2 data-i18n="journal_listing">Journal Entry Listing</h2>
         <span style="font-size:var(--text-xs);color:var(--text-muted);" id="je-count"></span>
       </div>
       <div style="overflow-x:auto;">
         <table class="je-table">
           <thead>
             <tr>
-              <th>JE No.</th>
-              <th>Source Doc</th>
-              <th>Type</th>
-              <th>Date</th>
-              <th>Description</th>
-              <th>GL Account</th>
-              <th>Account Name</th>
-              <th class="r">Debit (฿)</th>
-              <th class="r">Credit (฿)</th>
-              <th>Status</th>
+              <th data-i18n="journal_th_je_no">JE No.</th>
+              <th data-i18n="journal_th_source_doc">Source Doc</th>
+              <th data-i18n="type">Type</th>
+              <th data-i18n="date">Date</th>
+              <th data-i18n="description">Description</th>
+              <th data-i18n="journal_th_gl_account">GL Account</th>
+              <th data-i18n="journal_th_account_name">Account Name</th>
+              <th class="r" data-i18n="journal_th_debit">Debit (฿)</th>
+              <th class="r" data-i18n="journal_th_credit">Credit (฿)</th>
+              <th data-i18n="status">Status</th>
             </tr>
           </thead>
           <tbody id="je-body"></tbody>
