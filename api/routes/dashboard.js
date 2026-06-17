@@ -165,4 +165,31 @@ router.get('/budget-by-project', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/dashboard/config — Load user's dashboard config
+router.get('/config', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT config FROM user_dashboard_config WHERE user_id = $1',
+      [req.user.id]
+    );
+    res.json(rows.length ? rows[0].config : null);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/dashboard/config — Save user's dashboard config
+router.put('/config', async (req, res) => {
+  try {
+    const config = req.body;
+    if (!config || typeof config !== 'object') {
+      return res.status(400).json({ error: 'Invalid config' });
+    }
+    await db.query(`
+      INSERT INTO user_dashboard_config (user_id, config, updated_at)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET config = $2, updated_at = NOW()
+    `, [req.user.id, JSON.stringify(config)]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

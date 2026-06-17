@@ -808,8 +808,7 @@
       } catch(e) { console.error('Alerts error:', e); }
     }
 
-    // ═══ Customize Dashboard ═══
-    const STORAGE_KEY = 'sda_dashboard_config';
+    // ═══ Customize Dashboard (per-user, server-synced) ═══
     const DEFAULT_CONFIG = {
       layout: 'default',
       widgets: {
@@ -825,24 +824,52 @@
       }
     };
 
-    // FIX: Merge saved config with DEFAULT_CONFIG to include new widgets
+    // In-memory cache (loaded from server on boot)
+    let _cachedConfig = null;
+
     function loadConfig() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const config = JSON.parse(saved);
-          if (!config.widgets) config.widgets = {};
-          for (const [id, def] of Object.entries(DEFAULT_CONFIG.widgets)) {
-            if (!config.widgets[id]) config.widgets[id] = { ...def };
-          }
-          return config;
+      if (_cachedConfig) {
+        // Merge with defaults to include new widgets
+        const config = _cachedConfig;
+        if (!config.widgets) config.widgets = {};
+        for (const [id, def] of Object.entries(DEFAULT_CONFIG.widgets)) {
+          if (!config.widgets[id]) config.widgets[id] = { ...def };
         }
-      } catch(e) {}
+        return config;
+      }
       return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
     }
 
+    // Save to server (debounced) + local cache
+    let _saveTimer = null;
     function saveConfig(config) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      _cachedConfig = config;
+      // Debounce: wait 500ms before saving to server (avoids rapid fire during drag)
+      clearTimeout(_saveTimer);
+      _saveTimer = setTimeout(() => {
+        API.put('/dashboard/config', config).catch(e => console.warn('Config save failed:', e));
+      }, 500);
+    }
+
+    // Load config from server on boot
+    async function loadConfigFromServer() {
+      try {
+        const config = await API.get('/dashboard/config');
+        if (config && typeof config === 'object' && config.layout) {
+          _cachedConfig = config;
+          // Merge new widgets
+          if (!_cachedConfig.widgets) _cachedConfig.widgets = {};
+          for (const [id, def] of Object.entries(DEFAULT_CONFIG.widgets)) {
+            if (!_cachedConfig.widgets[id]) _cachedConfig.widgets[id] = { ...def };
+          }
+        } else {
+          _cachedConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        }
+      } catch(e) {
+        console.warn('Config load failed, using defaults:', e);
+        _cachedConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      }
+      applyConfig(_cachedConfig);
     }
 
     let customizeMode = false;
@@ -1085,7 +1112,8 @@
     }
 
     function resetDashboard() {
-      localStorage.removeItem(STORAGE_KEY);
+      _cachedConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      saveConfig(_cachedConfig);
       applyConfig(DEFAULT_CONFIG);
       if (customizeMode) {
         renderWidgetList();
@@ -1095,7 +1123,7 @@
       }
     }
 
-    // Apply saved config on load
+    // Apply default config first, then override from server
     applyConfig(loadConfig());
 
     // ═══ My Tasks ═══
@@ -1341,7 +1369,7 @@
     }
 
     // Load everything
-    Promise.all([loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks(), loadPendingConvert(), loadExpenseChart(), loadBudgetChart()])
+    Promise.all([loadConfigFromServer(), loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks(), loadPendingConvert(), loadExpenseChart(), loadBudgetChart()])
       .then(() => { applyConfig(loadConfig()); I18N.applyTranslations(); });
 
     // Real-time: auto-refresh on changes
