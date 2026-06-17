@@ -13,15 +13,15 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1>Item Master</h1><div id="item-mode-note" style="font-size:12px;color:var(--text-secondary);margin-top:2px;"></div></div>
+      <div><h1 data-i18n="item_page_title">Item Master</h1><div id="item-mode-note" style="font-size:12px;color:var(--text-secondary);margin-top:2px;"></div></div>
       <div style="display:flex;gap:8px;" id="item-header-actions">
-        <button class="btn btn-secondary" onclick="exportItems()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-secondary" onclick="exportItems()" style="display:flex;align-items:center;gap:6px;" data-i18n="item_btn_export"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
       </div>
     </div>
     <div style="margin-bottom:16px;display:flex;gap:12px;">
-      <input type="text" class="form-input" id="item-search" placeholder="Search code, name..." oninput="renderItems()" style="width:300px;">
+      <input type="text" class="form-input" id="item-search" placeholder="Search code, name..." data-i18n-placeholder="item_placeholder_search" oninput="renderItems()" style="width:300px;">
       <select class="form-select" id="item-cat-filter" onchange="renderItems()" style="width:150px;">
-        <option value="">All Category</option>
+        <option value="" data-i18n="item_filter_all_category">All Category</option>
         <option value="equipment">Equipment</option>
         <option value="material">Material</option>
         <option value="service">Service</option>
@@ -30,7 +30,7 @@
     <div class="card">
       <div class="table-container">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:10px;">Code</th><th style="text-align:left;padding:10px;">Name</th><th style="text-align:left;padding:10px;">Name (TH)</th><th style="text-align:left;padding:10px;">Description</th><th style="padding:10px;">Category</th><th style="padding:10px;">UOM</th><th style="text-align:right;padding:10px;">Qty</th><th style="text-align:right;padding:10px;">Unit Price</th><th style="padding:10px;">GL</th><th style="padding:10px;">Tax</th><th style="padding:10px;">Actions</th></tr></thead>
+          <thead><tr style="background:var(--bg-light);"><th style="text-align:left;padding:10px;" data-i18n="item_th_code">Code</th><th style="text-align:left;padding:10px;" data-i18n="item_th_name">Name</th><th style="text-align:left;padding:10px;" data-i18n="item_th_name_th">Name (TH)</th><th style="text-align:left;padding:10px;" data-i18n="item_th_description">Description</th><th style="padding:10px;" data-i18n="item_th_category">Category</th><th style="padding:10px;" data-i18n="item_th_uom">UOM</th><th style="text-align:right;padding:10px;" data-i18n="item_th_qty">Qty</th><th style="text-align:right;padding:10px;" data-i18n="item_th_unit_price">Unit Price</th><th style="padding:10px;" data-i18n="item_th_gl">GL</th><th style="padding:10px;" data-i18n="item_th_tax">Tax</th><th style="padding:10px;" data-i18n="item_th_actions">Actions</th></tr></thead>
           <tbody id="item-table"></tbody>
         </table>
       </div>
@@ -38,24 +38,24 @@
     <!-- Modal -->
     <div class="modal-overlay" id="item-modal" onclick="if(event.target===this)closeItemModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:520px;max-width:95vw;">
-        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="item-modal-title">New Item</h3><button onclick="closeItemModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="item-modal-title" data-i18n="item_modal_new">New Item</h3><button onclick="closeItemModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
         <div style="padding:20px 24px;">
           <input type="hidden" id="im-id">
           <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-input" id="im-code" placeholder="ITM-XXX"></div>
-            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="im-name"></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_code">Code</label><input type="text" class="form-input" id="im-code" placeholder="ITM-XXX"></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_name">Name</label><input type="text" class="form-input" id="im-name"></div>
           </div>
-          <div class="form-group"><label class="form-label">Name (TH)</label><input type="text" class="form-input" id="im-name-th"></div>
-          <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="im-description" rows="2" placeholder="Long description (optional)" style="resize:vertical;"></textarea></div>
+          <div class="form-group"><label class="form-label" data-i18n="item_label_name_th">Name (TH)</label><input type="text" class="form-input" id="im-name-th"></div>
+          <div class="form-group"><label class="form-label" data-i18n="item_label_description">Description</label><textarea class="form-input" id="im-description" rows="2" placeholder="Long description (optional)" style="resize:vertical;"></textarea></div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Category</label><select class="form-input" id="im-cat"><option value="equipment">Equipment</option><option value="material">Material</option><option value="service">Service</option></select></div>
-            <div class="form-group"><label class="form-label">UOM</label><input type="text" class="form-input" id="im-uom" value="EA"></div>
-            <div class="form-group"><label class="form-label">Unit Price</label><input type="number" class="form-input" id="im-price" min="0"></div>
-            <div class="form-group"><label class="form-label">GL Account</label><input type="text" class="form-input" id="im-gl" value="114101"></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_category">Category</label><select class="form-input" id="im-cat"><option value="equipment">Equipment</option><option value="material">Material</option><option value="service">Service</option></select></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_uom">UOM</label><input type="text" class="form-input" id="im-uom" value="EA"></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_unit_price">Unit Price</label><input type="number" class="form-input" id="im-price" min="0"></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_gl_account">GL Account</label><input type="text" class="form-input" id="im-gl" value="114101"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Expiry Date</label><input type="date" class="form-input" id="im-expiry-date"></div>
-            <div class="form-group"><label class="form-label">Quantity on Hand</label><input type="number" class="form-input" id="im-qty-on-hand" min="0" step="0.01" value="0"></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_expiry_date">Expiry Date</label><input type="date" class="form-input" id="im-expiry-date"></div>
+            <div class="form-group"><label class="form-label" data-i18n="item_label_qty_on_hand">Quantity on Hand</label><input type="number" class="form-input" id="im-qty-on-hand" min="0" step="0.01" value="0"></div>
           </div>
           <div style="margin-top:6px;border-top:1px dashed var(--border-light);padding-top:12px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;">
@@ -68,8 +68,8 @@
           </div>
         </div>
         <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="closeItemModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="saveItem()">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeItemModal()" data-i18n="btn_cancel">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveItem()" data-i18n="btn_save">Save</button>
         </div>
       </div>
     </div>

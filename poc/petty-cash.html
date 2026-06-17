@@ -64,10 +64,10 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1>Petty Cash</h1></div>
+      <div><h1 data-i18n="pettycash_page_title">Petty Cash</h1></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportPettyCash()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
-        <button class="btn btn-primary" onclick="openNewFundModal()">+ New Fund</button>
+        <button class="btn btn-secondary" onclick="exportPettyCash()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> <span data-i18n="btn_export_excel">Export Excel</span></button>
+        <button class="btn btn-primary" onclick="openNewFundModal()" data-i18n="btn_new_fund">+ New Fund</button>
       </div>
     </div>
 
@@ -80,7 +80,7 @@
     <!-- Filter -->
     <div class="filter-bar">
       <select class="form-select" id="filter-fund" onchange="renderFunds()" style="width:200px;">
-        <option value="">All Funds</option>
+        <option value="" data-i18n="pettycash_filter_all_funds">All Funds</option>
       </select>
     </div>
 
@@ -92,145 +92,145 @@
   <!-- ═══ New Fund Modal ═══ -->
   <div class="modal-overlay" id="fund-modal" onclick="if(event.target===this)closeFundModal()">
     <div class="modal-box">
-      <div class="modal-header"><h3>Create Petty Cash Fund</h3><button class="modal-close" onclick="closeFundModal()">&times;</button></div>
+      <div class="modal-header"><h3 data-i18n="modal_create_fund">Create Petty Cash Fund</h3><button class="modal-close" onclick="closeFundModal()">&times;</button></div>
       <div class="modal-body">
-        <div class="form-group"><label class="form-label">Fund Name</label><input type="text" class="form-input" id="f-name" placeholder="e.g. Office Petty Cash"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_fund_name">Fund Name</label><input type="text" class="form-input" id="f-name" placeholder="e.g. Office Petty Cash" data-i18n-placeholder="pettycash_fund_name_placeholder"></div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Fund Limit (฿)</label><input type="number" class="form-input" id="f-limit" value="5000" min="0"></div>
-          <div class="form-group"><label class="form-label">Low Threshold (%)</label><input type="number" class="form-input" id="f-threshold" value="20" min="0" max="100"></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_fund_limit">Fund Limit (&#3647;)</label><input type="number" class="form-input" id="f-limit" value="5000" min="0"></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_low_threshold">Low Threshold (%)</label><input type="number" class="form-input" id="f-threshold" value="20" min="0" max="100"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Custodian</label><select class="form-input" id="f-custodian"><option value="">Select</option></select></div>
-          <div class="form-group"><label class="form-label">Project</label><select class="form-input" id="f-project"><option value="">None</option></select></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_custodian">Custodian</label><select class="form-input" id="f-custodian"><option value="" data-i18n="pettycash_select">Select</option></select></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_project">Project</label><select class="form-input" id="f-project"><option value="" data-i18n="pettycash_none">None</option></select></div>
         </div>
-        <div class="form-group"><label class="form-label">GL Account</label><input type="text" class="form-input" id="f-gl" value="111101" placeholder="111101"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_gl_account">GL Account</label><input type="text" class="form-input" id="f-gl" value="111101" placeholder="111101"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeFundModal()">Cancel</button><button class="btn btn-primary" onclick="saveFund()">Create Fund</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeFundModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary" onclick="saveFund()" data-i18n="btn_create_fund">Create Fund</button></div>
     </div>
   </div>
 
   <!-- ═══ Disbursement Modal ═══ -->
   <div class="modal-overlay" id="disb-modal" onclick="if(event.target===this)closeDisbModal()">
     <div class="modal-box">
-      <div class="modal-header"><h3>New Disbursement</h3><button class="modal-close" onclick="closeDisbModal()">&times;</button></div>
+      <div class="modal-header"><h3 data-i18n="modal_new_disbursement">New Disbursement</h3><button class="modal-close" onclick="closeDisbModal()">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="d-fund-id">
         <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
-          Fund: <strong id="d-fund-name">-</strong> | Balance: <strong id="d-fund-bal" style="color:var(--primary);">฿0</strong>
+          <span data-i18n="pettycash_fund">Fund</span>: <strong id="d-fund-name">-</strong> | <span data-i18n="pettycash_balance">Balance</span>: <strong id="d-fund-bal" style="color:var(--primary);">&#3647;0</strong>
         </div>
-        <div class="form-group"><label class="form-label">Recipient</label><input type="text" class="form-input" id="d-recipient" placeholder="Name of person receiving cash"></div>
-        <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="d-desc" placeholder="Purpose of disbursement"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_recipient">Recipient</label><input type="text" class="form-input" id="d-recipient" placeholder="Name of person receiving cash" data-i18n-placeholder="pettycash_recipient_placeholder"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_description">Description</label><input type="text" class="form-input" id="d-desc" placeholder="Purpose of disbursement" data-i18n-placeholder="pettycash_purpose_placeholder"></div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Amount (฿)</label><input type="number" class="form-input" id="d-amount" min="0"></div>
-          <div class="form-group"><label class="form-label">Category</label>
+          <div class="form-group"><label class="form-label" data-i18n="label_amount_baht">Amount (&#3647;)</label><input type="number" class="form-input" id="d-amount" min="0"></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_category">Category</label>
             <select class="form-input" id="d-category">
-              <option value="travel">Travel</option>
-              <option value="food">Food</option>
-              <option value="office">Office Supplies</option>
-              <option value="delivery">Delivery</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="misc" selected>Misc</option>
+              <option value="travel" data-i18n="pettycash_cat_travel">Travel</option>
+              <option value="food" data-i18n="pettycash_cat_food">Food</option>
+              <option value="office" data-i18n="pettycash_cat_office">Office Supplies</option>
+              <option value="delivery" data-i18n="pettycash_cat_delivery">Delivery</option>
+              <option value="maintenance" data-i18n="pettycash_cat_maintenance">Maintenance</option>
+              <option value="misc" selected data-i18n="pettycash_cat_misc">Misc</option>
             </select>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="d-remarks"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_remarks">Remarks</label><input type="text" class="form-input" id="d-remarks"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeDisbModal()">Cancel</button><button class="btn btn-primary" onclick="saveDisb()">Disburse</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeDisbModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary" onclick="saveDisb()" data-i18n="btn_disburse">Disburse</button></div>
     </div>
   </div>
 
   <!-- ═══ Submit Receipt Modal ═══ -->
   <div class="modal-overlay" id="receipt-modal" onclick="if(event.target===this)closeReceiptModal()">
     <div class="modal-box">
-      <div class="modal-header"><h3>Submit Receipt</h3><button class="modal-close" onclick="closeReceiptModal()">&times;</button></div>
+      <div class="modal-header"><h3 data-i18n="modal_submit_receipt">Submit Receipt</h3><button class="modal-close" onclick="closeReceiptModal()">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="r-disb-id">
         <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;font-size:12px;">
-          Disbursed: <strong id="r-disb-amount" style="color:var(--primary);">฿0</strong> | <span id="r-disb-desc">-</span>
+          <span data-i18n="pettycash_disbursed">Disbursed</span>: <strong id="r-disb-amount" style="color:var(--primary);">&#3647;0</strong> | <span id="r-disb-desc">-</span>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Actual Amount (฿)</label><input type="number" class="form-input" id="r-amount" min="0" onchange="updateChange()"></div>
-          <div class="form-group"><label class="form-label">Category</label>
+          <div class="form-group"><label class="form-label" data-i18n="label_actual_amount">Actual Amount (&#3647;)</label><input type="number" class="form-input" id="r-amount" min="0" onchange="updateChange()"></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_category">Category</label>
             <select class="form-input" id="r-category">
-              <option value="travel">Travel</option>
-              <option value="food">Food</option>
-              <option value="office">Office Supplies</option>
-              <option value="delivery">Delivery</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="misc">Misc</option>
+              <option value="travel" data-i18n="pettycash_cat_travel">Travel</option>
+              <option value="food" data-i18n="pettycash_cat_food">Food</option>
+              <option value="office" data-i18n="pettycash_cat_office">Office Supplies</option>
+              <option value="delivery" data-i18n="pettycash_cat_delivery">Delivery</option>
+              <option value="maintenance" data-i18n="pettycash_cat_maintenance">Maintenance</option>
+              <option value="misc" data-i18n="pettycash_cat_misc">Misc</option>
             </select>
           </div>
         </div>
         <div id="r-change" style="display:none;padding:8px 12px;background:#ecfdf5;border-radius:var(--radius);font-size:12px;font-weight:600;color:#059669;margin-bottom:12px;"></div>
         <div class="form-group">
-          <label class="form-label">Receipt Image</label>
+          <label class="form-label" data-i18n="label_receipt_image">Receipt Image</label>
           <input type="file" class="form-input" id="r-file" accept="image/*,.pdf" style="padding:6px;">
           <div id="r-preview" style="margin-top:6px;"></div>
         </div>
         <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;margin-top:12px;">
-          <div style="font-weight:600;margin-bottom:4px;">GL Journal Entry (auto)</div>
-          <div style="color:var(--primary);" id="r-gl-dr">Dr. 522709 Expense</div>
-          <div style="color:var(--success);">Cr. 111101 Petty Cash</div>
+          <div style="font-weight:600;margin-bottom:4px;" data-i18n="label_gl_journal_auto">GL Journal Entry (auto)</div>
+          <div style="color:var(--primary);" id="r-gl-dr"><span data-i18n="pettycash_gl_dr">Dr.</span> 522709 Expense</div>
+          <div style="color:var(--success);"><span data-i18n="pettycash_gl_cr">Cr.</span> 111101 Petty Cash</div>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeReceiptModal()">Cancel</button><button class="btn btn-primary" onclick="submitReceipt()">Submit Receipt</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeReceiptModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary" onclick="submitReceipt()" data-i18n="btn_submit_receipt">Submit Receipt</button></div>
     </div>
   </div>
 
   <!-- ═══ Replenish Modal ═══ -->
   <div class="modal-overlay" id="repl-modal" onclick="if(event.target===this)closeReplModal()">
     <div class="modal-box">
-      <div class="modal-header"><h3>Request Replenishment</h3><button class="modal-close" onclick="closeReplModal()">&times;</button></div>
+      <div class="modal-header"><h3 data-i18n="modal_request_replenishment">Request Replenishment</h3><button class="modal-close" onclick="closeReplModal()">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="rp-fund-id">
         <div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;">
-          <div class="count-row"><span>Fund Limit</span><strong id="rp-limit">฿0</strong></div>
-          <div class="count-row"><span>Current Balance</span><strong id="rp-balance" style="color:var(--primary);">฿0</strong></div>
-          <div class="count-row total"><span>Suggested Replenish</span><strong id="rp-suggest" style="color:var(--warning);">฿0</strong></div>
+          <div class="count-row"><span data-i18n="pettycash_fund_limit">Fund Limit</span><strong id="rp-limit">&#3647;0</strong></div>
+          <div class="count-row"><span data-i18n="pettycash_current_balance">Current Balance</span><strong id="rp-balance" style="color:var(--primary);">&#3647;0</strong></div>
+          <div class="count-row total"><span data-i18n="pettycash_suggested_replenish">Suggested Replenish</span><strong id="rp-suggest" style="color:var(--warning);">&#3647;0</strong></div>
         </div>
-        <div class="form-group"><label class="form-label">Amount (฿)</label><input type="number" class="form-input" id="rp-amount" min="0"></div>
-        <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="rp-remarks"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_amount_baht">Amount (&#3647;)</label><input type="number" class="form-input" id="rp-amount" min="0"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_remarks">Remarks</label><input type="text" class="form-input" id="rp-remarks"></div>
         <div style="padding:10px;background:var(--bg-light);border-radius:var(--radius);font-size:11px;margin-top:12px;">
-          <div style="font-weight:600;margin-bottom:4px;">GL Journal Entry (auto)</div>
-          <div style="color:var(--primary);">Dr. 111101 Petty Cash</div>
-          <div style="color:var(--success);">Cr. 111201 Bank Account</div>
+          <div style="font-weight:600;margin-bottom:4px;" data-i18n="label_gl_journal_auto">GL Journal Entry (auto)</div>
+          <div style="color:var(--primary);"><span data-i18n="pettycash_gl_dr">Dr.</span> 111101 Petty Cash</div>
+          <div style="color:var(--success);"><span data-i18n="pettycash_gl_cr">Cr.</span> 111201 Bank Account</div>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeReplModal()">Cancel</button><button class="btn btn-primary" onclick="saveRepl()">Submit Request</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeReplModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary" onclick="saveRepl()" data-i18n="btn_submit_request">Submit Request</button></div>
     </div>
   </div>
 
   <!-- ═══ Cash Count Modal ═══ -->
   <div class="modal-overlay" id="count-modal" onclick="if(event.target===this)closeCountModal()">
     <div class="modal-box">
-      <div class="modal-header"><h3>Cash Count</h3><button class="modal-close" onclick="closeCountModal()">&times;</button></div>
+      <div class="modal-header"><h3 data-i18n="modal_cash_count">Cash Count</h3><button class="modal-close" onclick="closeCountModal()">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="cc-fund-id">
         <div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;">
-          <div class="count-row"><span>System Balance</span><strong id="cc-system">฿0</strong></div>
+          <div class="count-row"><span data-i18n="pettycash_system_balance">System Balance</span><strong id="cc-system">&#3647;0</strong></div>
         </div>
-        <div class="form-group"><label class="form-label">Actual Cash Counted (฿)</label><input type="number" class="form-input" id="cc-actual" min="0" onchange="updateCountDiff()"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_actual_cash_counted">Actual Cash Counted (&#3647;)</label><input type="number" class="form-input" id="cc-actual" min="0" onchange="updateCountDiff()"></div>
         <div id="cc-diff" style="display:none;padding:10px;border-radius:var(--radius);font-size:13px;font-weight:600;margin-bottom:12px;"></div>
-        <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-input" id="cc-remarks"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_remarks">Remarks</label><input type="text" class="form-input" id="cc-remarks"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeCountModal()">Cancel</button><button class="btn btn-primary" onclick="saveCashCount()">Record Count</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeCountModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary" onclick="saveCashCount()" data-i18n="btn_record_count">Record Count</button></div>
     </div>
   </div>
 
   <!-- ═══ Approve Replenish Modal ═══ -->
   <div class="modal-overlay" id="approve-repl-modal" onclick="if(event.target===this)closeApproveReplModal()">
     <div class="modal-box" style="width:440px;">
-      <div class="modal-header"><h3>Approve Replenishment</h3><button class="modal-close" onclick="closeApproveReplModal()">&times;</button></div>
+      <div class="modal-header"><h3 data-i18n="modal_approve_replenishment">Approve Replenishment</h3><button class="modal-close" onclick="closeApproveReplModal()">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="ar-id">
         <div style="padding:12px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:16px;text-align:center;">
-          <div style="font-size:10px;color:var(--text-muted);">Amount</div>
-          <div style="font-size:22px;font-weight:800;color:var(--primary);" id="ar-amount">฿0</div>
+          <div style="font-size:10px;color:var(--text-muted);" data-i18n="label_amount">Amount</div>
+          <div style="font-size:22px;font-weight:800;color:var(--primary);" id="ar-amount">&#3647;0</div>
         </div>
-        <div class="form-group"><label class="form-label">Bank Account</label><select class="form-input" id="ar-bank"><option value="">Select bank</option></select></div>
-        <div class="form-group"><label class="form-label">Reference</label><input type="text" class="form-input" id="ar-ref" placeholder="Transfer ref"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_bank_account">Bank Account</label><select class="form-input" id="ar-bank"><option value="" data-i18n="pettycash_select_bank">Select bank</option></select></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_reference">Reference</label><input type="text" class="form-input" id="ar-ref" placeholder="Transfer ref" data-i18n-placeholder="pettycash_transfer_ref_placeholder"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeApproveReplModal()">Cancel</button><button class="btn btn-primary" onclick="approveRepl()">Approve & Transfer</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeApproveReplModal()" data-i18n="btn_cancel">Cancel</button><button class="btn btn-primary" onclick="approveRepl()" data-i18n="btn_approve_transfer">Approve & Transfer</button></div>
     </div>
   </div>
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — Document</title>
+  <title data-i18n="doc_page_title">Company Operation — Document</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     /* ── ERP Document Form ── */
@@ -218,7 +218,7 @@
       <div class="erp-toolbar-left">
         <button class="erp-btn" onclick="history.back()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          Back
+          <span data-i18n="btn_back">Back</span>
         </button>
         <div class="erp-nav">
           <button onclick="navDoc(-1)" title="Previous">&#9664;</button>
@@ -244,8 +244,8 @@
     <!-- Line Items Grid -->
     <div class="erp-grid-wrap">
       <div class="erp-grid-header">
-        <span>Line Items</span>
-        <button class="erp-btn" onclick="addLine()" id="btn-add-line">+ Add Row</button>
+        <span data-i18n="doc_label_line_items">Line Items</span>
+        <button class="erp-btn" onclick="addLine()" id="btn-add-line" data-i18n="btn_add_row">+ Add Row</button>
       </div>
       <div style="overflow-x:auto;">
         <table class="erp-grid" id="lines-grid">
@@ -391,19 +391,19 @@
       document.getElementById('action-buttons').innerHTML = `
         <button class="erp-btn primary" onclick="addNew()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Add</button>
+          <span data-i18n="btn_add">Add</span></button>
         ${!isEditing && !isNew ? `<button class="erp-btn" onclick="toggleEdit()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-          Edit</button>` : ''}
-        ${isEditing ? '<button class="erp-btn primary" onclick="saveDoc()">Save</button>' : ''}
-        ${isEditing ? '<button class="erp-btn" onclick="cancelEdit()">Cancel</button>' : ''}
-        ${isDraft && !isEditing ? '<button class="erp-btn primary" onclick="submitDoc()">Submit</button>' : ''}
-        ${isPending ? '<button class="erp-btn success" onclick="approveDoc()">Approve</button>' : ''}
-        ${isPending ? '<button class="erp-btn danger" onclick="rejectDoc()">Reject</button>' : ''}
-        ${!isNew && docType==='pr' && (doc.status==='approved'||doc.status==='sent_to_erp') ? '<button class="erp-btn primary" onclick="copyToPO()">Copy To PO</button>' : ''}
-        ${!isNew ? '<button class="erp-btn" onclick="copyDoc()">Copy To</button>' : ''}
-        ${!isNew && isDraft ? '<button class="erp-btn danger" onclick="cancelDoc()">Cancel</button>' : ''}
-        ${!isNew ? '<button class="erp-btn" onclick="window.print()">Print</button>' : ''}
+          <span data-i18n="btn_edit">Edit</span></button>` : ''}
+        ${isEditing ? '<button class="erp-btn primary" onclick="saveDoc()"><span data-i18n="btn_save">Save</span></button>' : ''}
+        ${isEditing ? '<button class="erp-btn" onclick="cancelEdit()"><span data-i18n="btn_cancel">Cancel</span></button>' : ''}
+        ${isDraft && !isEditing ? '<button class="erp-btn primary" onclick="submitDoc()"><span data-i18n="btn_submit">Submit</span></button>' : ''}
+        ${isPending ? '<button class="erp-btn success" onclick="approveDoc()"><span data-i18n="btn_approve">Approve</span></button>' : ''}
+        ${isPending ? '<button class="erp-btn danger" onclick="rejectDoc()"><span data-i18n="btn_reject">Reject</span></button>' : ''}
+        ${!isNew && docType==='pr' && (doc.status==='approved'||doc.status==='sent_to_erp') ? '<button class="erp-btn primary" onclick="copyToPO()"><span data-i18n="btn_copy_to_po">Copy To PO</span></button>' : ''}
+        ${!isNew ? '<button class="erp-btn" onclick="copyDoc()"><span data-i18n="btn_copy_to">Copy To</span></button>' : ''}
+        ${!isNew && isDraft ? '<button class="erp-btn danger" onclick="cancelDoc()"><span data-i18n="btn_cancel_doc">Cancel</span></button>' : ''}
+        ${!isNew ? '<button class="erp-btn" onclick="window.print()"><span data-i18n="btn_print">Print</span></button>' : ''}
       `;
 
       // Header Fields
@@ -555,23 +555,23 @@
       const steps = buildApprovalSteps(doc, amount);
 
       document.getElementById('bottom-tabs').innerHTML = `
-        <div class="erp-btab active" onclick="switchBTab('budget',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Budget Impact</div>
-        <div class="erp-btab" onclick="switchBTab('flow',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Document Flow</div>
-        <div class="erp-btab" onclick="switchBTab('approval',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg> Approval</div>
-        <div class="erp-btab" onclick="switchBTab('remarks',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/></svg> Remarks</div>
-        <div class="erp-btab" onclick="switchBTab('attach',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Attachments</div>
+        <div class="erp-btab active" onclick="switchBTab('budget',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> <span data-i18n="tab_budget_impact">Budget Impact</span></div>
+        <div class="erp-btab" onclick="switchBTab('flow',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> <span data-i18n="tab_document_flow">Document Flow</span></div>
+        <div class="erp-btab" onclick="switchBTab('approval',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg> <span data-i18n="tab_approval">Approval</span></div>
+        <div class="erp-btab" onclick="switchBTab('remarks',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/></svg> <span data-i18n="tab_remarks">Remarks</span></div>
+        <div class="erp-btab" onclick="switchBTab('attach',this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> <span data-i18n="tab_attachments">Attachments</span></div>
       `;
 
       document.getElementById('bottom-content').innerHTML = `
         <!-- Budget Impact -->
         <div class="erp-tab-panel active" id="btab-budget">
-          <div style="font-size:var(--text-base);font-weight:600;margin-bottom:12px;">Budget Impact Analysis</div>
+          <div style="font-size:var(--text-base);font-weight:600;margin-bottom:12px;" data-i18n="doc_label_budget_impact_analysis">Budget Impact Analysis</div>
           <div id="budget-impact-content"><div style="text-align:center;color:var(--text-muted);padding:24px;">Loading budget data...</div></div>
         </div>
 
         <!-- Document Flow -->
         <div class="erp-tab-panel" id="btab-flow">
-          <div style="font-size:var(--text-base);font-weight:600;margin-bottom:16px;">Document Flow Chain</div>
+          <div style="font-size:var(--text-base);font-weight:600;margin-bottom:16px;" data-i18n="doc_label_document_flow_chain">Document Flow Chain</div>
           <div style="display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;" id="doc-flow-chain"></div>
           <div style="margin-top:16px;font-size:var(--text-xs);color:var(--text-muted);">
             ERP Objects: PR (OPRQ) &rarr; PO (OPOR) &rarr; Sent to ERP &rarr; ERP Document (received)
@@ -592,8 +592,8 @@
         <!-- Attachments -->
         <div class="erp-tab-panel" id="btab-attach">
           <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;">
-            <div style="font-size:13px;font-weight:500;">Drop files here or click to upload</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">PDF, JPG, PNG, Excel (max 10MB)</div>
+            <div style="font-size:13px;font-weight:500;" data-i18n="doc_label_drop_files">Drop files here or click to upload</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" data-i18n="doc_label_file_types">PDF, JPG, PNG, Excel (max 10MB)</div>
           </div>
         </div>
       `;

@@ -112,19 +112,19 @@
   <main class="page fade-in">
     <div class="page-header">
       <div>
-        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Budget Management</h1>
+        <h1 data-i18n="budget_page_title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Budget Management</h1>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" onclick="openNewBudget()">+ New Budget</button>
-        <button class="btn btn-secondary" onclick="exportBudgetExcel()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openNewBudget()" data-i18n="budget_btn_new">+ New Budget</button>
+        <button class="btn btn-secondary" onclick="exportBudgetExcel()" data-i18n="budget_btn_export"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
       </div>
     </div>
 
     <!-- Budget Sub-tabs -->
     <div class="budget-tabs">
-      <div class="budget-tab active" onclick="switchTab('master',this)">Master Budget</div>
-      <div class="budget-tab" onclick="switchTab('project',this)">Project Budget</div>
-      <div class="budget-tab" onclick="switchTab('comparison',this)">Comparison View</div>
+      <div class="budget-tab active" onclick="switchTab('master',this)" data-i18n="budget_tab_master">Master Budget</div>
+      <div class="budget-tab" onclick="switchTab('project',this)" data-i18n="budget_tab_project">Project Budget</div>
+      <div class="budget-tab" onclick="switchTab('comparison',this)" data-i18n="budget_tab_comparison">Comparison View</div>
     </div>
 
     <!-- Summary Strip (shared) -->
@@ -134,18 +134,18 @@
     <div class="tab-panel active" id="panel-master">
       <div class="filter-bar">
         <select class="form-select" id="filterStatus" style="width:140px;" onchange="loadMaster()">
-          <option value="">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
+          <option value="" data-i18n="budget_filter_all_status">All Status</option>
+          <option value="draft" data-i18n="budget_filter_draft">Draft</option>
+          <option value="pending" data-i18n="budget_filter_pending">Pending</option>
+          <option value="approved" data-i18n="budget_filter_approved">Approved</option>
         </select>
         <select class="form-select" id="filterYear" style="width:140px;" onchange="loadMaster()">
-          <option value="">All Years</option>
+          <option value="" data-i18n="budget_filter_all_years">All Years</option>
           <option value="2026">Year 2026</option>
           <option value="2025">Year 2025</option>
         </select>
         <select class="form-select" id="filterProject" style="width:180px;" onchange="loadMaster()">
-          <option value="">All Projects</option>
+          <option value="" data-i18n="budget_filter_all_projects">All Projects</option>
         </select>
       </div>
       <div id="masterCards"></div>
@@ -173,29 +173,29 @@
     <div class="modal-overlay" id="budget-modal" onclick="if(event.target===this)closeBudgetModal()">
       <div class="modal-box">
         <div class="modal-header">
-          <h3 id="budget-modal-title">สร้าง Budget ใหม่</h3>
+          <h3 id="budget-modal-title" data-i18n="budget_modal_title">สร้าง Budget ใหม่</h3>
           <button class="modal-close" onclick="closeBudgetModal()">&times;</button>
         </div>
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">โปรเจกต์</label>
+              <label class="form-label" data-i18n="budget_label_project">โปรเจกต์</label>
               <select class="form-input" id="bg-project" onchange="autoFillBudgetCode()">
-                <option value="">เลือกโปรเจกต์</option>
+                <option value="" data-i18n="budget_select_project">เลือกโปรเจกต์</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Budget Code</label>
+              <label class="form-label" data-i18n="budget_label_code">Budget Code</label>
               <input type="text" class="form-input" id="bg-code" placeholder="e.g. BG-2026-006">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">ชื่อ Budget</label>
+              <label class="form-label" data-i18n="budget_label_name">ชื่อ Budget</label>
               <input type="text" class="form-input" id="bg-name" placeholder="e.g. Budget Marine Nav">
             </div>
             <div class="form-group">
-              <label class="form-label">ปีงบ</label>
+              <label class="form-label" data-i18n="budget_label_fiscal_year">ปีงบ</label>
               <select class="form-input" id="bg-year">
                 <option value="2026">2026</option>
                 <option value="2025">2025</option>
@@ -205,10 +205,10 @@
 
           <div style="margin-top:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-              <label class="form-label" style="margin:0;">Group Budgets</label>
+              <label class="form-label" style="margin:0;" data-i18n="budget_label_group_budgets">Group Budgets</label>
               <div style="display:flex;gap:6px;">
                 <button class="btn btn-ghost btn-sm" onclick="addDefaultCategories()" style="font-size:11px;">📋 หมวดมาตรฐาน</button>
-                <button class="btn btn-secondary btn-sm" onclick="addLineRow()" style="font-size:11px;">+ Add Line</button>
+                <button class="btn btn-secondary btn-sm" onclick="addLineRow()" style="font-size:11px;" data-i18n="budget_btn_add_line">+ Add Line</button>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:2fr 1fr 1fr 32px;gap:8px;margin-bottom:6px;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">
@@ -223,9 +223,9 @@
         </div>
         <!-- Budget Control Settings -->
         <div style="margin:0 20px 16px;padding-top:16px;border-top:1px solid var(--border-light);">
-          <label class="form-label" style="font-size:13px;font-weight:700;margin-bottom:12px;">Budget Control</label>
+          <label class="form-label" style="font-size:13px;font-weight:700;margin-bottom:12px;" data-i18n="budget_label_control">Budget Control</label>
           <div class="form-group">
-            <label class="form-label">Control Mode</label>
+            <label class="form-label" data-i18n="budget_label_control_mode">Control Mode</label>
             <select class="form-input" id="bg-control-mode" onchange="updateControlPreview()">
               <option value="warn">Warn (alert when near limit, can still create docs)</option>
               <option value="block">Block (block when over limit)</option>
@@ -234,19 +234,19 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
-              <label class="form-label">Warn at (%)</label>
+              <label class="form-label" data-i18n="budget_label_warn_at">Warn at (%)</label>
               <input type="number" class="form-input" id="bg-warn-threshold" value="80" min="0" max="100" step="5" oninput="updateControlPreview()">
             </div>
             <div class="form-group">
-              <label class="form-label">Block at (%) - Block mode only</label>
+              <label class="form-label" data-i18n="budget_label_block_at">Block at (%) - Block mode only</label>
               <input type="number" class="form-input" id="bg-block-threshold" value="100" min="0" max="200" step="5" oninput="updateControlPreview()">
             </div>
           </div>
           <div id="bg-control-preview" style="padding:10px 14px;background:var(--bg-light);border-radius:var(--radius);font-size:12px;"></div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" onclick="closeBudgetModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" id="bg-save-btn" onclick="saveBudget()">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeBudgetModal()" data-i18n="budget_btn_cancel">Cancel</button>
+          <button class="btn btn-primary btn-sm" id="bg-save-btn" onclick="saveBudget()" data-i18n="budget_btn_save">Save</button>
         </div>
       </div>
     </div>

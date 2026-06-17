@@ -156,12 +156,12 @@
   <main class="page fade-in">
     <div class="page-header">
       <div>
-        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Vehicle Management</h1>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> <span data-i18n="vehicle_page_title">Vehicle Management</span></h1>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportVehicles()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
-        <button class="btn btn-secondary" onclick="openAddVehicleModal()">+ Add Vehicle</button>
-        <button class="btn btn-primary" onclick="openBookingModal()">+ Book Vehicle</button>
+        <button class="btn btn-secondary" onclick="exportVehicles()" style="display:flex;align-items:center;gap:6px;" data-i18n="vehicle_btn_export"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-secondary" onclick="openAddVehicleModal()" data-i18n="vehicle_btn_add">+ Add Vehicle</button>
+        <button class="btn btn-primary" onclick="openBookingModal()" data-i18n="vehicle_btn_book">+ Book Vehicle</button>
       </div>
     </div>
 
@@ -171,11 +171,11 @@
     <!-- Booking Calendar -->
     <div class="card" style="margin-bottom:20px;">
       <div class="card-header">
-        <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Booking Calendar</h2>
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> <span data-i18n="vehicle_booking_calendar">Booking Calendar</span></h2>
         <div style="display:flex;gap:8px;align-items:center;">
           <div style="display:flex;gap:0;background:var(--bg-light);border-radius:6px;padding:2px;margin-right:8px;">
-            <button class="btn btn-sm" id="btn-cal-view" style="font-size:11px;padding:4px 10px;border-radius:4px;background:var(--bg-white);box-shadow:var(--shadow-xs);" onclick="switchCalView('calendar')">Calendar</button>
-            <button class="btn btn-sm btn-ghost" id="btn-grid-view" style="font-size:11px;padding:4px 10px;border-radius:4px;" onclick="switchCalView('grid')">Grid</button>
+            <button class="btn btn-sm" id="btn-cal-view" style="font-size:11px;padding:4px 10px;border-radius:4px;background:var(--bg-white);box-shadow:var(--shadow-xs);" onclick="switchCalView('calendar')" data-i18n="vehicle_view_calendar">Calendar</button>
+            <button class="btn btn-sm btn-ghost" id="btn-grid-view" style="font-size:11px;padding:4px 10px;border-radius:4px;" onclick="switchCalView('grid')" data-i18n="vehicle_view_grid">Grid</button>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">&#9664; Prev</button>
           <span style="font-weight:600;" id="cal-month-label"></span>
@@ -192,10 +192,10 @@
     <!-- Recent Bookings -->
     <div class="card">
       <div class="card-header">
-        <h2>Recent Bookings</h2>
+        <h2 data-i18n="vehicle_recent_bookings">Recent Bookings</h2>
         <div style="display:flex;gap:8px;align-items:center;">
           <select class="form-select" id="filter-project" style="font-size:12px;padding:4px 8px;min-width:180px;" onchange="applyProjectFilter()">
-            <option value="">All Projects</option>
+            <option value="" data-i18n="vehicle_filter_all_projects">All Projects</option>
           </select>
         </div>
       </div>
@@ -208,38 +208,38 @@
   <div id="booking-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeBookingModal()">
     <div class="modal" style="max-width:560px;">
       <div class="modal-header">
-        <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Book Vehicle</h2>
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> <span data-i18n="vehicle_modal_book">Book Vehicle</span></h2>
         <button class="btn btn-ghost" onclick="closeBookingModal()" style="font-size:18px;">&#10005;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Vehicle</label>
+          <label class="form-label" data-i18n="vehicle_label_vehicle">Vehicle</label>
           <select class="form-select" id="book-vehicle">
             <option value="">Select vehicle...</option>
           </select>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div class="form-group">
-            <label class="form-label">Start Date</label>
+            <label class="form-label" data-i18n="vehicle_label_start_date">Start Date</label>
             <input class="form-input" type="date" id="book-start-date">
           </div>
           <div class="form-group">
-            <label class="form-label">End Date</label>
+            <label class="form-label" data-i18n="vehicle_label_end_date">End Date</label>
             <input class="form-input" type="date" id="book-end-date">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Project</label>
+          <label class="form-label" data-i18n="vehicle_label_project">Project</label>
           <select class="form-select" id="book-project">
             <option value="">Select project...</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Purpose</label>
+          <label class="form-label" data-i18n="vehicle_label_purpose">Purpose</label>
           <textarea class="form-textarea" id="book-purpose" placeholder="เหตุผลในการจองรถ..."></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">Passengers</label>
+          <label class="form-label" data-i18n="vehicle_label_passengers">Passengers</label>
           <input class="form-input" id="book-passengers" placeholder="ชื่อผู้โดยสาร (เช่น Winit N., Noppamas B.)">
         </div>
 
@@ -250,8 +250,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeBookingModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="doBooking()">Submit Booking</button>
+        <button class="btn btn-secondary" onclick="closeBookingModal()" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn btn-primary" onclick="doBooking()" data-i18n="vehicle_btn_submit_booking">Submit Booking</button>
       </div>
     </div>
   </div>
@@ -782,11 +782,11 @@
             <button class="btn btn-ghost" onclick="document.getElementById('vehicle-detail-modal').classList.add('hidden')" style="font-size:18px;">&#10005;</button>
           </div>
           <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;">
-            <div class="vd-tab active" data-tab="general" onclick="switchVDTab(this)">General</div>
-            <div class="vd-tab" data-tab="lease" onclick="switchVDTab(this)">Lease</div>
-            <div class="vd-tab" data-tab="insurance" onclick="switchVDTab(this)">Insurance</div>
-            <div class="vd-tab" data-tab="maintenance" onclick="switchVDTab(this)">Maintenance</div>
-            <div class="vd-tab" data-tab="bookings" onclick="switchVDTab(this)">Bookings</div>
+            <div class="vd-tab active" data-tab="general" onclick="switchVDTab(this)" data-i18n="vehicle_tab_general">General</div>
+            <div class="vd-tab" data-tab="lease" onclick="switchVDTab(this)" data-i18n="vehicle_tab_lease">Lease</div>
+            <div class="vd-tab" data-tab="insurance" onclick="switchVDTab(this)" data-i18n="vehicle_tab_insurance">Insurance</div>
+            <div class="vd-tab" data-tab="maintenance" onclick="switchVDTab(this)" data-i18n="vehicle_tab_maintenance">Maintenance</div>
+            <div class="vd-tab" data-tab="bookings" onclick="switchVDTab(this)" data-i18n="vehicle_tab_bookings">Bookings</div>
           </div>
           <div class="modal-body" style="padding:0 20px 20px;">
             <div id="vd-general" class="vd-panel">${renderVDGeneral(v)}</div>

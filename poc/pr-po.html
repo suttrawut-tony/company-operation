@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Operation — PR/PO</title>
+  <title data-i18n="prpo_page_title">Company Operation — PR/PO</title>
   <link rel="stylesheet" href="assets/css/theme.css">
   <style>
     /* PR/PO specific */
@@ -126,19 +126,19 @@
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg> Purchase Request / Purchase Order</h1>
+        <h1><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg> <span data-i18n="prpo_title">Purchase Request / Purchase Order</span></h1>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-secondary" onclick="exportPRPO()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-secondary" onclick="exportPRPO()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> <span data-i18n="btn_export_excel">Export Excel</span></button>
         <div class="view-switch">
-          <button class="active" onclick="switchPRView('kanban')">&#9638; Kanban</button>
-          <button onclick="switchPRView('list')">&#9776; List</button>
+          <button class="active" onclick="switchPRView('kanban')">&#9638; <span data-i18n="prpo_view_kanban">Kanban</span></button>
+          <button onclick="switchPRView('list')">&#9776; <span data-i18n="prpo_view_list">List</span></button>
         </div>
         <div id="btn-new-doc" style="position:relative;">
-          <button class="btn btn-primary" id="btn-new-main" onclick="newDocClick()">+ New PR</button>
+          <button class="btn btn-primary" id="btn-new-main" onclick="newDocClick()" data-i18n="btn_new_pr">+ New PR</button>
           <div id="new-doc-dropdown" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:160px;z-index:100;">
-            <a href="doc-detail.html?type=pr&mode=new" style="display:block;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-primary);text-decoration:none;border-bottom:1px solid var(--border-light);">+ New PR</a>
-            <a href="doc-detail.html?type=po&mode=new" style="display:block;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-primary);text-decoration:none;">+ New PO</a>
+            <a href="doc-detail.html?type=pr&mode=new" style="display:block;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-primary);text-decoration:none;border-bottom:1px solid var(--border-light);" data-i18n="btn_new_pr">+ New PR</a>
+            <a href="doc-detail.html?type=po&mode=new" style="display:block;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-primary);text-decoration:none;" data-i18n="btn_new_po">+ New PO</a>
           </div>
         </div>
       </div>
@@ -150,7 +150,7 @@
     <!-- Filters -->
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
       <select class="form-select" id="pr-filter-project" onchange="refresh()" style="width:180px;">
-        <option value="">All Projects</option>
+        <option value="" data-i18n="prpo_filter_all_projects">All Projects</option>
       </select>
     </div>
 
@@ -163,12 +163,12 @@
     <!-- ═══ LIST VIEW ═══ -->
     <div id="view-list" class="hidden">
       <div class="card">
-        <div class="card-header"><h2 id="list-title">All Purchase Requests</h2></div>
+        <div class="card-header"><h2 id="list-title" data-i18n="prpo_label_all_purchase_requests">All Purchase Requests</h2></div>
         <div class="table-container">
           <table class="list-table">
             <thead><tr>
-              <th>Doc No.</th><th>ERP Doc No.</th><th>Date</th><th>Project</th><th>Vendor</th><th>Requester</th>
-              <th style="text-align:right;">Amount</th><th>Status</th><th>Actions</th>
+              <th data-i18n="prpo_th_doc_no">Doc No.</th><th data-i18n="prpo_th_erp_doc_no">ERP Doc No.</th><th data-i18n="prpo_th_date">Date</th><th data-i18n="prpo_th_project">Project</th><th data-i18n="prpo_th_vendor">Vendor</th><th data-i18n="prpo_th_requester">Requester</th>
+              <th style="text-align:right;" data-i18n="prpo_th_amount">Amount</th><th data-i18n="prpo_th_status">Status</th><th data-i18n="prpo_th_actions">Actions</th>
             </tr></thead>
             <tbody id="list-body"></tbody>
           </table>
@@ -233,7 +233,7 @@
 
         // Populate project filter
         const projSelect = document.getElementById('pr-filter-project');
-        projSelect.innerHTML = '<option value="">All Projects</option>' +
+        projSelect.innerHTML = '<option value="" data-i18n="prpo_filter_all_projects">All Projects</option>' +
           allProjects.map(p => `<option value="${p.id}">${p.code} — ${p.name}</option>`).join('');
 
         // Map project codes
@@ -267,9 +267,9 @@
 
     function renderTabs() {
       document.getElementById('pr-tabs').innerHTML = `
-        <div class="pr-po-tab ${docType==='pr'?'active':''}" onclick="docType='pr';refresh()">Purchase Request <span class="count">${allPRs.length}</span></div>
-        <div class="pr-po-tab ${docType==='po'?'active':''}" onclick="docType='po';refresh()">Purchase Order <span class="count">${allPOs.length}</span></div>
-        <div class="pr-po-tab ${docType==='all'?'active':''}" onclick="docType='all';refresh()">All Documents <span class="count">${allPRs.length+allPOs.length}</span></div>
+        <div class="pr-po-tab ${docType==='pr'?'active':''}" onclick="docType='pr';refresh()"><span data-i18n="tab_purchase_request">Purchase Request</span> <span class="count">${allPRs.length}</span></div>
+        <div class="pr-po-tab ${docType==='po'?'active':''}" onclick="docType='po';refresh()"><span data-i18n="tab_purchase_order">Purchase Order</span> <span class="count">${allPOs.length}</span></div>
+        <div class="pr-po-tab ${docType==='all'?'active':''}" onclick="docType='all';refresh()"><span data-i18n="tab_all_documents">All Documents</span> <span class="count">${allPRs.length+allPOs.length}</span></div>
       `;
     }
 

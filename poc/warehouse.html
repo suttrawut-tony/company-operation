@@ -30,11 +30,11 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1>Warehouse Management</h1><p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">จัดการคลังสินค้าและสต๊อก</p></div>
+      <div><h1 data-i18n="warehouse_page_title">Warehouse Management</h1><p style="font-size:12px;color:var(--text-secondary);margin-top:2px;" data-i18n="warehouse_subtitle">จัดการคลังสินค้าและสต๊อก</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" onclick="openWhModal()" style="display:flex;align-items:center;gap:6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          เพิ่มคลังสินค้า
+<span data-i18n="warehouse_btn_add">เพิ่มคลังสินค้า</span>
         </button>
       </div>
     </div>
@@ -50,25 +50,25 @@
       <div class="card" style="padding:0;overflow:hidden;">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <h3 id="stock-title" style="margin:0;font-size:15px;">เลือกคลังสินค้า</h3>
+            <h3 id="stock-title" style="margin:0;font-size:15px;" data-i18n="warehouse_select_warehouse">เลือกคลังสินค้า</h3>
             <div id="stock-subtitle" style="font-size:11px;color:var(--text-muted);margin-top:2px;"></div>
           </div>
           <button class="btn btn-primary btn-sm" id="add-stock-btn" onclick="openStockModal()" style="display:none;">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            เพิ่มสินค้า
+<span data-i18n="warehouse_btn_add_item">เพิ่มสินค้า</span>
           </button>
         </div>
         <div class="table-container">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead><tr style="background:var(--bg-light);">
-              <th style="text-align:left;padding:10px;">Item Code</th>
-              <th style="text-align:left;padding:10px;">Item Name</th>
-              <th style="text-align:left;padding:10px;">Category</th>
-              <th style="text-align:center;padding:10px;">UOM</th>
-              <th style="text-align:right;padding:10px;">Quantity</th>
-              <th style="text-align:right;padding:10px;">Min Qty</th>
-              <th style="text-align:center;padding:10px;">Status</th>
-              <th style="text-align:center;padding:10px;">Last Updated</th>
+              <th style="text-align:left;padding:10px;" data-i18n="warehouse_th_item_code">Item Code</th>
+              <th style="text-align:left;padding:10px;" data-i18n="warehouse_th_item_name">Item Name</th>
+              <th style="text-align:left;padding:10px;" data-i18n="warehouse_th_category">Category</th>
+              <th style="text-align:center;padding:10px;" data-i18n="warehouse_th_uom">UOM</th>
+              <th style="text-align:right;padding:10px;" data-i18n="warehouse_th_quantity">Quantity</th>
+              <th style="text-align:right;padding:10px;" data-i18n="warehouse_th_min_qty">Min Qty</th>
+              <th style="text-align:center;padding:10px;" data-i18n="warehouse_th_status">Status</th>
+              <th style="text-align:center;padding:10px;" data-i18n="warehouse_th_last_updated">Last Updated</th>
             </tr></thead>
             <tbody id="stock-table">
               <tr><td colspan="8" class="stock-empty">เลือกคลังสินค้าจากรายการด้านซ้ายเพื่อดูสต๊อก</td></tr>
@@ -81,22 +81,22 @@
     <!-- Warehouse Modal -->
     <div class="modal-overlay" id="wh-modal" onclick="if(event.target===this)closeWhModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:440px;max-width:95vw;">
-        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="wh-modal-title">เพิ่มคลังสินค้า</h3><button onclick="closeWhModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="wh-modal-title" data-i18n="warehouse_modal_add">เพิ่มคลังสินค้า</h3><button onclick="closeWhModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
         <div style="padding:20px 24px;">
           <input type="hidden" id="wh-edit-id">
           <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-input" id="wh-code" placeholder="WH01" maxlength="20"></div>
-            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="wh-name" placeholder="ชื่อคลังสินค้า"></div>
+            <div class="form-group"><label class="form-label" data-i18n="warehouse_label_code">Code</label><input type="text" class="form-input" id="wh-code" placeholder="WH01" maxlength="20"></div>
+            <div class="form-group"><label class="form-label" data-i18n="warehouse_label_name">Name</label><input type="text" class="form-input" id="wh-name" placeholder="ชื่อคลังสินค้า"></div>
           </div>
-          <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-input" id="wh-location" placeholder="ที่ตั้ง (optional)"></div>
+          <div class="form-group"><label class="form-label" data-i18n="warehouse_label_location">Location</label><input type="text" class="form-input" id="wh-location" placeholder="ที่ตั้ง (optional)"></div>
           <div class="form-group" id="wh-status-group" style="display:none;">
-            <label class="form-label">Status</label>
+            <label class="form-label" data-i18n="warehouse_label_status">Status</label>
             <select class="form-input" id="wh-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
           </div>
         </div>
         <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="closeWhModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="saveWarehouse()">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeWhModal()" data-i18n="btn_cancel">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveWarehouse()" data-i18n="btn_save">Save</button>
         </div>
       </div>
     </div>
@@ -104,22 +104,22 @@
     <!-- Stock Modal -->
     <div class="modal-overlay" id="stock-modal" onclick="if(event.target===this)closeStockModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:440px;max-width:95vw;">
-        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3>เพิ่ม/แก้ไขสินค้าในคลัง</h3><button onclick="closeStockModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 data-i18n="warehouse_modal_add_stock">เพิ่ม/แก้ไขสินค้าในคลัง</h3><button onclick="closeStockModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
         <div style="padding:20px 24px;">
           <div class="form-group">
-            <label class="form-label">Item</label>
+            <label class="form-label" data-i18n="warehouse_label_item">Item</label>
             <select class="form-input" id="stock-item-id">
               <option value="">-- เลือกสินค้า --</option>
             </select>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Quantity</label><input type="number" class="form-input" id="stock-qty" min="0" step="0.01" value="0"></div>
-            <div class="form-group"><label class="form-label">Min Quantity</label><input type="number" class="form-input" id="stock-min-qty" min="0" step="0.01" value="0"></div>
+            <div class="form-group"><label class="form-label" data-i18n="warehouse_label_quantity">Quantity</label><input type="number" class="form-input" id="stock-qty" min="0" step="0.01" value="0"></div>
+            <div class="form-group"><label class="form-label" data-i18n="warehouse_label_min_quantity">Min Quantity</label><input type="number" class="form-input" id="stock-min-qty" min="0" step="0.01" value="0"></div>
           </div>
         </div>
         <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="closeStockModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="saveStock()">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeStockModal()" data-i18n="btn_cancel">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveStock()" data-i18n="btn_save">Save</button>
         </div>
       </div>
     </div>

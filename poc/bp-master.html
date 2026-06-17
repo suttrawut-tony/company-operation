@@ -13,15 +13,15 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1>Business Partner</h1><div id="bp-mode-note" style="font-size:12px;color:var(--text-secondary);margin-top:2px;"></div></div>
+      <div><h1 data-i18n="bp_page_title">Business Partner</h1><div id="bp-mode-note" style="font-size:12px;color:var(--text-secondary);margin-top:2px;"></div></div>
       <div style="display:flex;gap:8px;" id="bp-header-actions">
-        <button class="btn btn-secondary" onclick="exportBPs()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-secondary" onclick="exportBPs()" style="display:flex;align-items:center;gap:6px;" data-i18n="bp_btn_export"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
       </div>
     </div>
     <div style="margin-bottom:16px;display:flex;gap:12px;">
-      <input type="text" class="form-input" id="bp-search" placeholder="Search code, name, contact..." oninput="renderBPs()" style="width:300px;">
+      <input type="text" class="form-input" id="bp-search" placeholder="Search code, name, contact..." data-i18n-placeholder="bp_placeholder_search" oninput="renderBPs()" style="width:300px;">
       <select class="form-select" id="bp-type-filter" onchange="renderBPs()" style="width:150px;">
-        <option value="">All Types</option>
+        <option value="" data-i18n="bp_filter_all_types">All Types</option>
         <option value="vendor">Vendor</option>
         <option value="customer">Customer</option>
       </select>
@@ -30,35 +30,35 @@
     <!-- Modal -->
     <div class="modal-overlay" id="bp-modal" onclick="if(event.target===this)closeBPModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:var(--bg-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;">
-        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="bp-modal-title">New Partner</h3><button onclick="closeBPModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
+        <div style="padding:20px 24px 0;display:flex;justify-content:space-between;"><h3 id="bp-modal-title" data-i18n="bp_modal_new">New Partner</h3><button onclick="closeBPModal()" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button></div>
         <div style="padding:20px 24px;">
           <input type="hidden" id="bm-id">
           <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-input" id="bm-code" placeholder="VD0001"></div>
-            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="bm-name"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_code">Code</label><input type="text" class="form-input" id="bm-code" placeholder="VD0001"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_name">Name</label><input type="text" class="form-input" id="bm-name"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Name (TH)</label><input type="text" class="form-input" id="bm-name-th"></div>
-            <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="bm-type"><option value="vendor">Vendor</option><option value="customer">Customer</option></select></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_name_th">Name (TH)</label><input type="text" class="form-input" id="bm-name-th"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_type">Type</label><select class="form-input" id="bm-type"><option value="vendor">Vendor</option><option value="customer">Customer</option></select></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Contact Person</label><input type="text" class="form-input" id="bm-contact"></div>
-            <div class="form-group"><label class="form-label">Phone</label><input type="text" class="form-input" id="bm-phone"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_contact_person">Contact Person</label><input type="text" class="form-input" id="bm-contact"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_phone">Phone</label><input type="text" class="form-input" id="bm-phone"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="bm-email"></div>
-            <div class="form-group"><label class="form-label">Tax ID</label><input type="text" class="form-input" id="bm-taxid"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_email">Email</label><input type="email" class="form-input" id="bm-email"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_tax_id">Tax ID</label><input type="text" class="form-input" id="bm-taxid"></div>
           </div>
-          <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-input" id="bm-address"></div>
+          <div class="form-group"><label class="form-label" data-i18n="bp_label_address">Address</label><input type="text" class="form-input" id="bm-address"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-            <div class="form-group"><label class="form-label">Payment Terms (days)</label><input type="number" class="form-input" id="bm-terms" value="30"></div>
-            <div class="form-group"><label class="form-label">Bank</label><input type="text" class="form-input" id="bm-bank"></div>
-            <div class="form-group"><label class="form-label">Bank Account</label><input type="text" class="form-input" id="bm-bankacc"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_payment_terms">Payment Terms (days)</label><input type="number" class="form-input" id="bm-terms" value="30"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_bank">Bank</label><input type="text" class="form-input" id="bm-bank"></div>
+            <div class="form-group"><label class="form-label" data-i18n="bp_label_bank_account">Bank Account</label><input type="text" class="form-input" id="bm-bankacc"></div>
           </div>
         </div>
         <div style="padding:16px 24px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="closeBPModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="saveBP()">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeBPModal()" data-i18n="btn_cancel">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveBP()" data-i18n="btn_save">Save</button>
         </div>
       </div>
     </div>
