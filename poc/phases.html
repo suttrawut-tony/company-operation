@@ -960,7 +960,7 @@
       html += '</tbody></table>';
       const s = data.summary;
       const pct = s.total_contract > 0 ? Math.round(s.total_received / s.total_contract * 100) : 0;
-      html += `<div style="margin-top:12px;"><div style="height:8px;background:var(--bg-hover);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--success);border-radius:4px;"></div></div><div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${pct}% received (฿${fmtNum(s.total_received)} / ฿${fmtNum(s.total_contract)})</div></div>`;
+      html += `<div style="margin-top:12px;"><div style="height:8px;background:var(--bg-hover);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:4px;"></div></div><div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${pct}% received (฿${fmtNum(s.total_received)} / ฿${fmtNum(s.total_contract)})</div></div>`;
       document.getElementById('payment-schedule-table').innerHTML = html;
     }
 

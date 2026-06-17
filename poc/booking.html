@@ -745,7 +745,10 @@
       padding: 8px 16px; border-top: 1px solid var(--border-light);
       display: flex; align-items: center; justify-content: space-between; font-size: 12px;
     }
-    .res-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .res-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; background: linear-gradient(135deg,#10b981,#06b6d4); }
+    .res-status-dot.warning { background: linear-gradient(135deg,#f59e0b,#f97316); }
+    .res-status-dot.danger { background: linear-gradient(135deg,#ef4444,#ec4899); }
+    .res-status-dot.muted { background: var(--text-muted); }
     .res-card-stats {
       display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
       border-top: 1px solid var(--border-light); text-align: center;
@@ -3089,7 +3092,7 @@
           const vBookings = allBookings.filter(b => b.vehicle_id === v.id);
           const upcoming = vBookings.filter(b => toLocalDate(b.start_date) >= todayStr && !isCancelled(b)).length;
           const completed = vBookings.filter(b => b.status === 'completed' || b.status === 'checked_in').length;
-          const statusColor = v.status === 'available' ? 'var(--success)' : v.status === 'maintenance' ? 'var(--danger)' : 'var(--warning)';
+          const statusColor = v.status === 'available' ? 'linear-gradient(135deg,#10b981,#06b6d4)' : v.status === 'maintenance' ? 'linear-gradient(135deg,#ef4444,#ec4899)' : 'linear-gradient(135deg,#f59e0b,#f97316)';
           html += `<div class="res-card" onclick="filterByResource('vehicle',${v.id})">
             <div class="res-card-top">
               <div class="res-card-icon" style="background:rgba(66,133,244,0.1)">${I.car}</div>
@@ -3123,7 +3126,7 @@
           const tBookings = allBookings.filter(b => b.technician_id === t.id);
           const upcoming = tBookings.filter(b => toLocalDate(b.start_date) >= todayStr && !isCancelled(b)).length;
           const completed = tBookings.filter(b => b.status === 'completed').length;
-          const statusColor = t.status === 'available' ? 'var(--success)' : t.status === 'on_job' ? 'var(--warning)' : 'var(--text-muted)';
+          const statusColor = t.status === 'available' ? 'linear-gradient(135deg,#10b981,#06b6d4)' : t.status === 'on_job' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'var(--text-muted)';
           html += `<div class="res-card" onclick="filterByResource('solar',${t.id})">
             <div class="res-card-top">
               <div class="res-card-icon" style="background:rgba(15,157,88,0.1)">${I.user}</div>

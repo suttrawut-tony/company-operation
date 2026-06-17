@@ -298,7 +298,7 @@
           <div class="ov-card"><h3>TOR Amount</h3><div class="ov-big">฿${fmtN(tor)}</div><div class="ov-sub">Remaining: ฿${fmtN(remaining)}</div></div>
           <div class="ov-card"${isContractOverdue?' style="border-left:3px solid var(--danger);"':(isAtRisk?' style="border-left:3px solid var(--warning);"':'')}>
             <h3>Status</h3>
-            <div class="ov-big" style="color:${pct>=80?'var(--success)':pct>=50?'var(--warning)':'var(--danger)'};">${pct>=80?'On Track':pct>=50?'At Risk':pct>0?'Delayed':'Not Started'}</div>
+            <div class="ov-big" style="color:${pct>=80?'#059669':pct>=50?'#d97706':'#e11d48'};">${pct>=80?'On Track':pct>=50?'At Risk':pct>0?'Delayed':'Not Started'}</div>
             <div class="ov-sub">${pct}% complete</div>
             ${isContractOverdue?`
               <div style="margin-top:10px;padding:10px;background:var(--danger-bg);border-radius:var(--radius);font-size:11px;">
@@ -690,8 +690,8 @@
 
         // Status badge
         let statusBdg = '';
-        if (r.status === 'completed' || r.status === 'done') statusBdg = '<span class="g-status" style="background:var(--success-bg);color:var(--success);">Done</span>';
-        else if (r.delayed) statusBdg = '<span class="g-status" style="background:var(--danger-bg);color:var(--danger);">Delayed</span>';
+        if (r.status === 'completed' || r.status === 'done') statusBdg = '<span class="g-status" style="background:#ecfdf5;color:#059669;">Done</span>';
+        else if (r.delayed) statusBdg = '<span class="g-status" style="background:#fef2f2;color:#e11d48;">Delayed</span>';
         else if (r.status === 'active' || r.status === 'in_progress') statusBdg = '<span class="g-status" style="background:var(--primary-light);color:var(--primary);">Active</span>';
         else statusBdg = '<span class="g-status" style="background:var(--bg-hover);color:var(--text-muted);">Upcoming</span>';
 

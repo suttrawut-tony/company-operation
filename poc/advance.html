@@ -34,7 +34,7 @@
 
     .flow-bar-horizontal { display:flex; align-items:center; gap:4px; margin-bottom:20px; padding:12px 16px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow-x:auto; }
     .flow-bar-horizontal .flow-step { padding:6px 14px; border-radius:var(--radius-full); font-size:11px; font-weight:600; white-space:nowrap; }
-    .flow-bar-horizontal .flow-step.done { background:var(--success-bg); color:var(--success); }
+    .flow-bar-horizontal .flow-step.done { background:#ecfdf5; color:#059669; }
     .flow-bar-horizontal .flow-step.current { background:var(--primary-light); color:var(--primary); border:2px solid var(--primary); }
     .flow-bar-horizontal .flow-step.pending { background:var(--bg-hover); color:var(--text-muted); }
     .flow-bar-horizontal .flow-arrow { color:var(--text-muted); font-size:14px; }
@@ -42,7 +42,7 @@
     .flow-step-row { display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:12px; font-weight:600; border-bottom:1px solid var(--border-light); }
     .flow-step-row:last-child { border-bottom:none; }
     .flow-step-row .step-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
-    .flow-step-row.done .step-dot { background:var(--success); color:#fff; }
+    .flow-step-row.done .step-dot { background:linear-gradient(135deg,#10b981,#06b6d4); color:#fff; }
     .flow-step-row.current .step-dot { background:var(--primary); color:#fff; }
     .flow-step-row.pending .step-dot { background:var(--bg-hover); color:var(--text-muted); }
     .flow-step-row.done { color:var(--success); }
@@ -408,17 +408,17 @@
 
         // Type badge
         const typeBadge = a.advance_type === 'reimburse'
-          ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:var(--success-bg);color:var(--success);font-weight:600;">Reimburse</span>'
+          ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#ecfdf5;color:#059669;font-weight:600;">Reimburse</span>'
           : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:var(--primary-light);color:var(--primary);font-weight:600;">Advance</span>';
 
         // Countdown badge (advance type only)
         let countdownBadge = '';
         if (a.advance_type === 'advance' && a.days_remaining !== null && a.days_remaining !== undefined && ['paid','overdue'].includes(st)) {
           const d = parseInt(a.days_remaining);
-          if (d < 0) countdownBadge = '<div style="font-size:10px;font-weight:700;color:#8B0000;padding:2px 8px;border-radius:10px;background:#8B000015;">Overdue '+Math.abs(d)+'d</div>';
-          else if (d <= 1) countdownBadge = '<div style="font-size:10px;font-weight:700;color:var(--danger);padding:2px 8px;border-radius:10px;background:var(--danger-bg);">'+d+'d left</div>';
-          else if (d <= 4) countdownBadge = '<div style="font-size:10px;font-weight:700;color:var(--warning);padding:2px 8px;border-radius:10px;background:var(--warning-bg);">'+d+'d left</div>';
-          else countdownBadge = '<div style="font-size:10px;font-weight:700;color:var(--success);padding:2px 8px;border-radius:10px;background:var(--success-bg);">'+d+'d left</div>';
+          if (d < 0) countdownBadge = '<div style="font-size:10px;font-weight:700;color:#e11d48;padding:2px 8px;border-radius:10px;background:#fef2f2;">Overdue '+Math.abs(d)+'d</div>';
+          else if (d <= 1) countdownBadge = '<div style="font-size:10px;font-weight:700;color:#e11d48;padding:2px 8px;border-radius:10px;background:#fef2f2;">'+d+'d left</div>';
+          else if (d <= 4) countdownBadge = '<div style="font-size:10px;font-weight:700;color:#d97706;padding:2px 8px;border-radius:10px;background:#fffbeb;">'+d+'d left</div>';
+          else countdownBadge = '<div style="font-size:10px;font-weight:700;color:#059669;padding:2px 8px;border-radius:10px;background:#ecfdf5;">'+d+'d left</div>';
         }
 
         // Action buttons based on status + role

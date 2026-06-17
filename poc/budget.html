@@ -325,9 +325,9 @@
       }
       const revLabel = b.revision > 0 ? ' <span style="font-size:10px;color:var(--text-muted);">(Rev.'+b.revision+')</span>' : '';
       const controlBadge = b.control_mode === 'block'
-        ? '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--danger-bg);color:var(--danger);">Block '+b.block_threshold+'%</span><span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--warning-bg);color:var(--warning);margin-left:4px;">Warn '+b.warn_threshold+'%</span>'
+        ? '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:#fef2f2;color:#e11d48;">Block '+b.block_threshold+'%</span><span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:#fffbeb;color:#d97706;margin-left:4px;">Warn '+b.warn_threshold+'%</span>'
         : b.control_mode === 'warn'
-        ? '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--warning-bg);color:var(--warning);">Warn '+b.warn_threshold+'%</span>'
+        ? '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:#fffbeb;color:#d97706;">Warn '+b.warn_threshold+'%</span>'
         : '<span style="font-size:9px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;background:var(--bg-hover);color:var(--text-muted);">No Control</span>';
 
       // Budget status badge
@@ -340,11 +340,11 @@
       const warnThreshold = parseFloat(b.warn_threshold) || 80;
       let budgetStatusBadge = '';
       if (bPct >= blockThreshold) {
-        budgetStatusBadge = '<span style="background:var(--danger);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;animation:pulse 2s infinite;">Over Budget ' + bPct.toFixed(0) + '%</span>';
+        budgetStatusBadge = '<span style="background:linear-gradient(135deg,#ef4444,#ec4899);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;animation:pulse 2s infinite;">Over Budget ' + bPct.toFixed(0) + '%</span>';
       } else if (bPct >= warnThreshold) {
-        budgetStatusBadge = '<span style="background:var(--warning);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;">Near Limit ' + bPct.toFixed(0) + '%</span>';
+        budgetStatusBadge = '<span style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;">Near Limit ' + bPct.toFixed(0) + '%</span>';
       } else if (bPct >= 50 && bTotal > 0) {
-        budgetStatusBadge = '<span style="background:var(--success);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:600;">Normal ' + bPct.toFixed(0) + '%</span>';
+        budgetStatusBadge = '<span style="background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:600;">Normal ' + bPct.toFixed(0) + '%</span>';
       }
 
       const clickAttr = clickable ? ` style="margin-bottom:20px;cursor:pointer;" onclick="viewProjectBudget('${b.project_id}')"` : ' style="margin-bottom:20px;"';

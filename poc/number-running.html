@@ -108,8 +108,8 @@
         const num = String(first.current_number).padStart(4, '0');
         document.getElementById('format-parts').innerHTML = `
           <div class="format-part" style="background:var(--primary-light);"><div class="val">${first.prefix}</div><div class="lbl">Prefix</div></div>
-          <div class="format-part" style="background:var(--warning-bg);"><div class="val">${first.year_month.substring(0,2)}</div><div class="lbl">Year</div></div>
-          <div class="format-part" style="background:var(--success-bg);"><div class="val">${first.year_month.substring(2,4)}</div><div class="lbl">Month</div></div>
+          <div class="format-part" style="background:#fffbeb;"><div class="val">${first.year_month.substring(0,2)}</div><div class="lbl">Year</div></div>
+          <div class="format-part" style="background:#ecfdf5;"><div class="val">${first.year_month.substring(2,4)}</div><div class="lbl">Month</div></div>
           <div class="format-part" style="background:var(--purple-bg);"><div class="val">${num}</div><div class="lbl">Running</div></div>`;
         document.getElementById('format-example').innerHTML = `<span style="font-family:var(--font-mono);font-size:var(--text-2xl);font-weight:800;color:var(--primary);">${first.prefix}${first.year_month}${num}</span>`;
 

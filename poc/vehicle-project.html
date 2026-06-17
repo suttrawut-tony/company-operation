@@ -50,8 +50,8 @@
 
     const columns = [
       { key:'checked_out', label:'In Use', color:'var(--primary)', thLabel:'กำลังใช้' },
-      { key:'pending', label:'Pending', color:'var(--warning)', thLabel:'รออนุมัติ' },
-      { key:'approved', label:'Approved', color:'var(--info)', thLabel:'รอรับรถ' },
+      { key:'pending', label:'Pending', color:'#d97706', thLabel:'รออนุมัติ' },
+      { key:'approved', label:'Approved', color:'#3b82f6', thLabel:'รอรับรถ' },
       { key:'checked_in', label:'Returned', color:'var(--success)', thLabel:'คืนแล้ว' },
     ];
 
@@ -76,7 +76,7 @@
         document.getElementById('stats').innerHTML = `
           <div class="vk-stat"><div class="val">${total}</div><div class="lbl">Total Bookings</div></div>
           <div class="vk-stat"><div class="val" style="color:var(--primary);">${inUse}</div><div class="lbl">In Use</div></div>
-          <div class="vk-stat"><div class="val" style="color:var(--warning);">${pending}</div><div class="lbl">Pending/Approved</div></div>
+          <div class="vk-stat"><div class="val" style="color:#d97706;">${pending}</div><div class="lbl">Pending/Approved</div></div>
           <div class="vk-stat"><div class="val" style="color:var(--success);">${returned}</div><div class="lbl">Returned</div></div>
         `;
 

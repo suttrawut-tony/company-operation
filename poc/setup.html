@@ -183,6 +183,12 @@
       border-radius: 50%;
       background: currentColor;
     }
+    .status-indicator.connected::before {
+      background: linear-gradient(135deg,#10b981,#06b6d4);
+    }
+    .status-indicator.disconnected::before {
+      background: linear-gradient(135deg,#ef4444,#ec4899);
+    }
 
     /* ─── Checkbox Group ─── */
     .checkbox-row {

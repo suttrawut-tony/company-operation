@@ -98,7 +98,7 @@
       text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary);
     }
     .p-yes { color: var(--success); font-weight: 700; }
-    .p-own { color: #8b5cf6; font-weight: 600; font-size: 10px; }
+    .p-own { color: #7c3aed; font-weight: 600; font-size: 10px; }
     .p-no { color: var(--border); }
 
     /* Approval Flow */
@@ -431,7 +431,7 @@
           <div class="user-meta-grid">
             <div class="user-meta-item"><span class="lbl">Role</span><span class="role-pill ${u.role}">${ROLE_NAMES[u.role]}</span></div>
             <div class="user-meta-item"><span class="lbl">ERP License</span><span style="font-size:11px;padding:2px 8px;background:var(--bg-hover);border-radius:4px;">${u.sap_license || '-'}</span></div>
-            <div class="user-meta-item"><span class="lbl">Can Approve</span><span style="font-size:11px;padding:2px 8px;border-radius:4px;${u.can_approve?'background:var(--success-bg);color:var(--success);':'background:var(--bg-hover);color:var(--text-muted);'}">${u.can_approve ? 'Yes — ' + limitText : 'No'}</span></div>
+            <div class="user-meta-item"><span class="lbl">Can Approve</span><span style="font-size:11px;padding:2px 8px;border-radius:4px;${u.can_approve?'background:#ecfdf5;color:#059669;':'background:var(--bg-hover);color:var(--text-muted);'}">${u.can_approve ? 'Yes — ' + limitText : 'No'}</span></div>
             ${u.email ? `<div class="user-meta-item"><span class="lbl">Email</span><span style="font-size:11px;color:var(--text-muted);">${u.email}</span></div>` : ''}
             <div class="user-meta-item" style="flex-wrap:wrap;gap:4px;">
               <span class="lbl">Projects</span>

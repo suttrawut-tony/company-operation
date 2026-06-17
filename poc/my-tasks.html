@@ -164,7 +164,7 @@
     const TH_D = ['อา','จ','อ','พ','พฤ','ศ','ส'];
     const TH_M = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
     const TH_ML = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-    const PRI_C = { high:{bg:'#fce4e4',c:'#c62828',l:'สูง'}, medium:{bg:'#fff8e1',c:'#f57f17',l:'กลาง'}, low:{bg:'#e8f5e9',c:'#2e7d32',l:'ต่ำ'} };
+    const PRI_C = { high:{bg:'#fef2f2',c:'#e11d48',l:'สูง'}, medium:{bg:'#fff8e1',c:'#f57f17',l:'กลาง'}, low:{bg:'#e8f5e9',c:'#2e7d32',l:'ต่ำ'} };
     const STAT_C = { todo:{bg:'#e2e3e5',c:'#383d41',l:'รอทำ'}, in_progress:{bg:'#dbeafe',c:'#1d4ed8',l:'กำลังทำ'}, review:{bg:'#fff3cd',c:'#856404',l:'รีวิว'}, done:{bg:'#d1fae5',c:'#065f46',l:'เสร็จ'} };
     const PRJ_COLORS = ['#4285f4','#0f9d58','#f4b400','#db4437','#ab47bc','#00acc1','#ff7043','#7cb342'];
 
@@ -180,7 +180,7 @@
     function dueInfo(t) {
       if (!t.due_date || t.status==='done') return null;
       const diff = Math.ceil((new Date(tl(t.due_date))-new Date(fd(new Date())))/86400000);
-      if (diff<0) return {text:'เลย '+Math.abs(diff)+' วัน', bg:'#fce4e4', c:'#c62828'};
+      if (diff<0) return {text:'เลย '+Math.abs(diff)+' วัน', bg:'#fef2f2', c:'#e11d48'};
       if (diff===0) return {text:'วันนี้', bg:'#fff8e1', c:'#f57f17'};
       if (diff<=3) return {text:'อีก '+diff+' วัน', bg:'#fff8e1', c:'#856404'};
       return null;
@@ -271,7 +271,7 @@
 
       // Overdue card
       if (overdue.length && isToday) {
-        h += `<div class="mt-card"><div class="mt-card-header overdue"><h3><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:4px"></span> เลยกำหนด</h3><span class="badge" style="background:#fce4e4;color:#c62828">${overdue.length}</span></div>`;
+        h += `<div class="mt-card"><div class="mt-card-header overdue"><h3><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:4px"></span> เลยกำหนด</h3><span class="badge" style="background:#fef2f2;color:#e11d48">${overdue.length}</span></div>`;
         h += '<div class="mt-card-body">';
         overdue.forEach((t,i)=>{ h+=taskRow(t,i); });
         h += '</div></div>';
@@ -298,7 +298,7 @@
 
       // Overdue
       if (overdue.length) {
-        h += `<div class="mt-card"><div class="mt-card-header overdue"><h3><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger)"></span> เลยกำหนด</h3><span class="badge" style="background:#fce4e4;color:#c62828">${overdue.length}</span></div>`;
+        h += `<div class="mt-card"><div class="mt-card-header overdue"><h3><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger)"></span> เลยกำหนด</h3><span class="badge" style="background:#fef2f2;color:#e11d48">${overdue.length}</span></div>`;
         h += '<div class="mt-card-body">';
         overdue.forEach((t,i)=>{h+=taskRow(t,i);});
         h += '</div></div>';

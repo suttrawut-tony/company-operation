@@ -68,7 +68,7 @@
     .progress-bar-wrap {
       background: var(--bg-hover); border-radius: 10px; height: 8px; width: 100px; display: inline-block; vertical-align: middle;
     }
-    .progress-bar-fill { height: 100%; border-radius: 10px; transition: width 0.3s; }
+    .progress-bar-fill { height: 100%; border-radius: 10px; transition: width 0.3s; background: linear-gradient(90deg,#10b981,#06b6d4); }
 
     .rpt-summary-cards { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
     .rpt-summary-card {
@@ -359,7 +359,7 @@
     }
     function progressBar(pct) {
       pct = Math.min(100, Math.max(0, Math.round(pct)));
-      const c = pct >= 100 ? 'var(--success)' : pct >= 60 ? 'var(--primary)' : pct >= 30 ? 'var(--warning)' : 'var(--text-muted)';
+      const c = pct >= 100 ? 'linear-gradient(90deg,#10b981,#06b6d4)' : pct >= 60 ? 'linear-gradient(90deg,#4f6ef7,#7c3aed)' : pct >= 30 ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'var(--text-muted)';
       return `<span class="progress-bar-wrap"><span class="progress-bar-fill" style="width:${pct}%;background:${c};"></span></span> <span class="mono" style="font-size:11px;">${pct}%</span>`;
     }
 

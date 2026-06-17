@@ -392,7 +392,7 @@
       document.getElementById('vehicle-fleet').innerHTML = vehicles.map((v, i) => {
         const bg = vehicleColors[i % vehicleColors.length];
         const brandLine = [v.brand, v.model, v.year].filter(Boolean).join(' ');
-        const ownerBadge = v.ownership_type === 'leased' ? '<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--warning-bg);color:var(--warning);font-weight:600;">Leased</span>'
+        const ownerBadge = v.ownership_type === 'leased' ? '<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:#fffbeb;color:#d97706;font-weight:600;">Leased</span>'
           : v.ownership_type === 'rented' ? '<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--info-bg);color:var(--info);font-weight:600;">Rented</span>' : '';
         const colorDot = v.color ? '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+v.color+';border:1px solid var(--border);vertical-align:middle;margin-right:4px;" title="'+v.color+'"></span>' : '';
         return `<div class="vehicle-card" style="cursor:pointer;" onclick="openVehicleDetail('${v.id}')">
@@ -677,7 +677,7 @@
               KM ปัจจุบัน: <strong style="color:var(--primary);">${fmtNum(currentKm)}</strong>
             </div>
             <div class="form-group"><label class="form-label">KM ใหม่</label><input type="number" class="form-input" id="km-new" value="${currentKm}" min="${currentKm}" oninput="updateKmDiff(${currentKm})"></div>
-            <div id="km-diff" style="display:none;padding:8px;background:var(--success-bg);border-radius:var(--radius);font-size:12px;color:var(--success);margin-bottom:12px;"></div>
+            <div id="km-diff" style="display:none;padding:8px;background:#ecfdf5;border-radius:var(--radius);font-size:12px;color:#059669;margin-bottom:12px;"></div>
             <div class="form-group"><label class="form-label">ระดับน้ำมัน</label>
               <select class="form-input" id="km-fuel">
                 <option value="full" ${fuelLevel==='full'?'selected':''}>เต็มถัง</option>
