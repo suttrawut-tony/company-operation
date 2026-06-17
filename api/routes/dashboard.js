@@ -121,4 +121,48 @@ router.get('/my-tasks-all', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/dashboard/expense-trend — Monthly expense totals (last 6 months)
+router.get('/expense-trend', async (req, res) => {
+  try {
+    const cid = req.user.company_id;
+    const { rows } = await db.query(`
+      SELECT
+        TO_CHAR(date_trunc('month', doc_date), 'YYYY-MM') AS month,
+        TO_CHAR(date_trunc('month', doc_date), 'Mon') AS label,
+        COALESCE(SUM(amount), 0) AS total
+      FROM expenses
+      WHERE company_id = $1
+        AND doc_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '5 months'
+      GROUP BY date_trunc('month', doc_date)
+      ORDER BY month
+    `, [cid]);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/dashboard/budget-by-project — Budget usage per project (top 8)
+router.get('/budget-by-project', async (req, res) => {
+  try {
+    const cid = req.user.company_id;
+    const projectIds = await getUserProjectIds(req.user);
+    let filter = '';
+    const params = [cid];
+    if (projectIds !== null && projectIds.length > 0) {
+      filter = ' AND b.project_id = ANY($2)';
+      params.push(projectIds);
+    }
+    const { rows } = await db.query(`
+      SELECT p.code, p.name,
+        COALESCE(b.total_budget, 0) AS budget,
+        COALESCE(b.total_actual, 0) AS actual
+      FROM budgets b
+      JOIN projects p ON b.project_id = p.id
+      WHERE b.company_id = $1 AND b.status = 'approved'${filter}
+      ORDER BY b.total_budget DESC
+      LIMIT 8
+    `, params);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
