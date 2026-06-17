@@ -377,15 +377,17 @@
           </div>
 
           <div class="proj-card-footer">
-            <div class="proj-pm">
-              <div class="avatar avatar-xs" style="background:var(--primary);">${(pm[0]||'?')}</div>
-              <span>PM: ${pm}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+              <div class="proj-pm">
+                <div class="avatar avatar-xs" style="background:var(--primary);">${(pm[0]||'?')}</div>
+                <span>PM: ${pm}</span>
+              </div>
               <div class="proj-dates">${p.start_date ? new Date(p.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''} — ${p.end_date ? new Date(p.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
-              ${(['executive','manager','admin','owner','pm','finance'].includes(userRole) || String(p.pm_user_id) === String(userId)) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();openEditProject(\''+p.id+'\')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> แก้ไข</button>' : ''}
-              ${['executive','admin','owner'].includes(userRole) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();deleteProject(\''+p.id+'\',\''+p.code+'\')" title="Delete" style="color:var(--danger);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> ลบ</button>' : ''}
             </div>
+            ${(['executive','manager','admin','owner','pm','finance'].includes(userRole) || String(p.pm_user_id) === String(userId)) ? '<div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);justify-content:flex-end;">' +
+              '<button class="btn-ret-edit" onclick="event.stopPropagation();openEditProject(\''+p.id+'\')" title="แก้ไข"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> แก้ไข</button>' +
+              (['executive','admin','owner'].includes(userRole) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();deleteProject(\''+p.id+'\',\''+p.code+'\')" title="ลบ" style="color:var(--danger);"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> ลบ</button>' : '') +
+            '</div>' : ''}
           </div>
         </div>`;
       }).join('') || '<div class="empty-state"><h3>No projects found</h3></div>';
