@@ -111,7 +111,7 @@ router.put('/:id', async (req, res) => {
     const marginAmount = totalCost * marginPercent / 100;
     const bidPrice = totalCost + marginAmount;
 
-    const allowed = ['tender_id','remarks'];
+    const allowed = ['project_id','tender_id','remarks'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) {
       if (b[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(b[f]); }

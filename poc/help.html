@@ -1142,6 +1142,7 @@
   <script src="assets/js/highlight.js"></script>
   <script src="assets/js/nav.js"></script>
   <script>
+    if (!API.requireAuth()) throw new Error('Not authenticated');
     function toggleGuide(header) {
       const body = header.nextElementSibling;
       const isOpen = body.classList.contains('show');

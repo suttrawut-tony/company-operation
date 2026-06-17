@@ -93,13 +93,16 @@ router.put('/:id', async (req, res) => {
     const { rows: [existing] } = await db.query(
       'SELECT * FROM tenders WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    if (existing.status !== 'draft') return res.status(400).json({ error: 'Only draft tenders can be updated' });
 
+    // Header fields can only be updated when draft
     const allowed = ['title','tender_type','budget_amount','close_date','opening_date',
       'evaluation_criteria','remarks'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) {
-      if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); }
+      if (req.body[f] !== undefined) {
+        if (existing.status !== 'draft') return res.status(400).json({ error: 'Only draft tenders can update header fields' });
+        sets.push(`${f} = $${idx++}`); params.push(req.body[f]);
+      }
     }
     if (sets.length) {
       sets.push('updated_at = NOW()');
@@ -108,8 +111,9 @@ router.put('/:id', async (req, res) => {
         `UPDATE tenders SET ${sets.join(', ')} WHERE id = $${idx}`, params);
     }
 
-    // Replace items if provided
+    // Replace items if provided (draft only)
     if (req.body.items && Array.isArray(req.body.items)) {
+      if (existing.status !== 'draft') return res.status(400).json({ error: 'Only draft tenders can update items' });
       await db.query('DELETE FROM tender_items WHERE tender_id = $1', [req.params.id]);
       for (let i = 0; i < req.body.items.length; i++) {
         const it = req.body.items[i];
@@ -121,8 +125,11 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    // Replace vendors if provided
+    // Replace vendors if provided (allowed in draft, published, closed, evaluating for scoring)
     if (req.body.vendors && Array.isArray(req.body.vendors)) {
+      if (existing.status === 'awarded' || existing.status === 'cancelled') {
+        return res.status(400).json({ error: 'Cannot update vendors for awarded or cancelled tenders' });
+      }
       await db.query('DELETE FROM tender_vendors WHERE tender_id = $1', [req.params.id]);
       for (const v of req.body.vendors) {
         await db.query(
