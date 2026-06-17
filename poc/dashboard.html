@@ -649,10 +649,18 @@
         document.getElementById('kpi-pending').textContent = k.pendingApprovals;
         document.getElementById('kpi-expense').textContent = formatMoney(k.expenseThisMonth);
 
-        // Update project list
+        // Update project list (apply settings)
+        const projSettings = getWidgetSettings('projects');
         const container = document.getElementById('project-list');
         if (data.projects && data.projects.length) {
-          container.innerHTML = data.projects.map(p => {
+          let projList = [...data.projects];
+          // Sort
+          if (projSettings.sortBy === 'progress_asc') projList.sort((a,b) => a.progress - b.progress);
+          else if (projSettings.sortBy === 'name') projList.sort((a,b) => a.name.localeCompare(b.name));
+          else projList.sort((a,b) => b.progress - a.progress);
+          // Limit
+          projList = projList.slice(0, parseInt(projSettings.maxItems) || 10);
+          container.innerHTML = projList.map(p => {
             const grad = p.progress >= 80 ? 'linear-gradient(135deg,#10b981,#06b6d4)' : p.progress >= 50 ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'linear-gradient(135deg,#ef4444,#ec4899)';
             const textColor = p.progress >= 80 ? '#0d9488' : p.progress >= 50 ? '#d97706' : '#e11d48';
             const barClass = p.progress >= 80 ? 'green' : p.progress >= 50 ? 'yellow' : 'red';
@@ -732,6 +740,7 @@
 
     async function loadBudgetSummary() {
       try {
+        const budgetSettings = getWidgetSettings('budget');
         const data = await API.getDashboard();
         const k = data.kpi;
         const pct = k.budgetTotal > 0 ? Math.round(k.budgetUsed / k.budgetTotal * 100) : 0;
@@ -739,16 +748,28 @@
         const circumference = 100.53;
         const offset = circumference - (circumference * pct / 100);
 
+        // Apply donut color from settings
+        const donutGradients = {
+          blue: ['#4f6ef7','#7c3aed'],
+          green: ['#10b981','#06b6d4'],
+          warm: ['#f59e0b','#f97316'],
+        };
+        const donutColors = donutGradients[budgetSettings.donutColor] || donutGradients.blue;
+        const gradientEl = document.querySelector('#donut-gradient stop:first-child');
+        const gradientEl2 = document.querySelector('#donut-gradient stop:last-child');
+        if (gradientEl) gradientEl.style.stopColor = donutColors[0];
+        if (gradientEl2) gradientEl2.style.stopColor = donutColors[1];
+        const donutPctEl = document.querySelector('.donut-center .pct');
+        if (donutPctEl) donutPctEl.style.color = donutColors[0];
+
         document.getElementById('donut-pct').textContent = pct + '%';
         document.getElementById('donut-arc').setAttribute('stroke-dashoffset', offset);
 
-        // Count over-budget projects
-        const overCount = data.projects.filter(p => p.progress < 50).length; // simplified
-
+        const showRemaining = budgetSettings.showRemaining !== 'no';
         document.getElementById('budget-summary-lines').innerHTML = `
           <div class="budget-line"><span style="color:var(--text-secondary);">Total Budget</span><span class="amount">&#3647;${fmtNum(k.budgetTotal)}</span></div>
-          <div class="budget-line"><span style="color:var(--primary);">Used</span><span class="amount" style="color:var(--primary);">&#3647;${fmtNum(k.budgetUsed)}</span></div>
-          <div class="budget-line"><span style="color:var(--success);">Remaining</span><span class="amount" style="color:var(--success);">&#3647;${fmtNum(remaining)}</span></div>
+          <div class="budget-line"><span style="color:${donutColors[0]};">Used</span><span class="amount" style="color:${donutColors[0]};">&#3647;${fmtNum(k.budgetUsed)}</span></div>
+          ${showRemaining ? `<div class="budget-line"><span style="color:var(--success);">Remaining</span><span class="amount" style="color:var(--success);">&#3647;${fmtNum(remaining)}</span></div>` : ''}
         `;
       } catch(e) { console.error('Budget summary error:', e); }
     }
@@ -877,8 +898,16 @@
           alerts.push({ level: 'info', link: '#', icon: '&#10003;', html: 'ไม่มี alerts — ทุกอย่างปกติ' });
         }
 
-        document.getElementById('alert-count').textContent = alerts.length + ' alerts';
-        document.getElementById('alert-list').innerHTML = alerts.map(a => `
+        // Apply alert settings
+        const alertSettings = getWidgetSettings('alerts');
+        let filteredAlerts = alerts;
+        if (alertSettings.showLevel === 'critical') filteredAlerts = alerts.filter(a => a.level === 'critical');
+        else if (alertSettings.showLevel === 'warning') filteredAlerts = alerts.filter(a => a.level === 'critical' || a.level === 'warning');
+        const maxAlerts = parseInt(alertSettings.maxAlerts) || 10;
+        filteredAlerts = filteredAlerts.slice(0, maxAlerts);
+
+        document.getElementById('alert-count').textContent = filteredAlerts.length + ' alerts';
+        document.getElementById('alert-list').innerHTML = filteredAlerts.map(a => `
           <div class="alert-card ${a.level}" style="cursor:pointer;" onclick="window.location='${a.link}'">
             <span class="alert-icon">${a.icon}</span>
             <div class="alert-text">${a.html}</div>
@@ -1208,7 +1237,10 @@
     // ═══ My Tasks ═══
     async function loadMyTasks() {
       try {
-        const tasks = await API.get('/dashboard/my-tasks');
+        const taskSettings = getWidgetSettings('mytasks');
+        const maxTasks = parseInt(taskSettings.maxTasks) || 10;
+        const allTasks = await API.get('/dashboard/my-tasks');
+        const tasks = allTasks.slice(0, maxTasks);
         const el = document.getElementById('my-tasks-list');
         if (!tasks.length) {
           el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--success);font-size:13px;">No pending tasks</div>';
