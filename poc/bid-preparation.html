@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Bid Preparation</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .sq-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    .sq-stat { background: var(--bg-white); border:1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; text-align: center; }
+    .sq-stat .val { font-size: 22px; font-weight: 800; }
+    .sq-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .sq-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sq-table th { background:var(--bg-light); padding:10px 14px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-table td { padding:10px 14px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .sq-table tr:hover td { background:var(--bg-hover); }
+    .sq-badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; }
+    .sq-amount { font-weight:700; font-family:monospace; }
+    .sq-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; }
+    .sq-modal-overlay.show { display:flex; }
+    .sq-modal { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:950px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .sq-modal-header { padding:16px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
+    .sq-modal-header h3 { font-size:16px; font-weight:700; }
+    .sq-modal-body { padding:20px; }
+    .sq-modal-footer { padding:12px 20px; border-top:1px solid var(--border-light); display:flex; gap:8px; justify-content:flex-end; }
+    .sq-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .sq-fg { margin-bottom:10px; }
+    .sq-fg label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    .sq-fg input, .sq-fg select, .sq-fg textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; background:var(--bg-white); }
+    .sq-fg input:focus, .sq-fg select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .sq-items-table { width:100%; border-collapse:collapse; font-size:12px; margin:12px 0; }
+    .sq-items-table th { background:var(--bg-light); padding:8px 10px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-items-table td { padding:6px 10px; border-bottom:1px solid var(--border-light); }
+    .sq-items-table .amt { text-align:right; font-family:monospace; }
+    .sq-items-table input[type="number"], .sq-items-table input[type="text"] { width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; }
+    .sq-items-table input[type="number"] { text-align:right; width:80px; }
+    .sq-items-table select { padding:4px 6px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; }
+    .sq-totals { width:320px; margin-left:auto; margin-top:12px; font-size:13px; }
+    .sq-totals .trow { display:flex; justify-content:space-between; padding:4px 0; }
+    .sq-totals .trow.grand { font-size:16px; font-weight:800; border-top:2px solid var(--border); padding-top:8px; margin-top:4px; color:var(--primary); }
+    .sq-totals .trow.highlight { color:var(--success,#0f9d58); font-weight:700; }
+    .filter-bar { display:flex; gap:10px; margin-bottom:16px; align-items:center; flex-wrap:wrap; }
+    .filter-bar select, .filter-bar input { padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; background:var(--bg-white); }
+    .filter-bar input[type="search"] { min-width:200px; }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-muted); line-height:1; }
+    .close-btn:hover { color:var(--text-primary); }
+    .btn-sm { font-size:12px; padding:6px 14px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); color:var(--text-primary); }
+    .btn-sm:hover { background:var(--bg-hover); }
+    .btn-primary { background:var(--primary); color:white; border-color:var(--primary); }
+    .btn-primary:hover { filter:brightness(0.9); }
+    .btn-danger { background:var(--danger); color:white; border-color:var(--danger); }
+    .btn-success { background:var(--success,#0f9d58); color:white; border-color:var(--success,#0f9d58); }
+    .del-btn { border:none; background:none; color:var(--danger); cursor:pointer; font-size:16px; }
+    @media (max-width:768px) { .sq-stats { grid-template-columns: repeat(2,1fr); } .sq-info-grid { grid-template-columns:1fr; } .filter-bar { flex-direction:column; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1 id="pgIcon">Bid Preparation</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportBids()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Bid</button>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <select id="filterProject" onchange="applyFilters()">
+        <option value="">All Projects</option>
+      </select>
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="draft">Draft</option>
+        <option value="submitted">Submitted</option>
+        <option value="won">Won</option>
+        <option value="lost">Lost</option>
+      </select>
+      <input type="search" id="filterSearch" placeholder="Search bids..." oninput="applyFilters()">
+    </div>
+
+    <div class="sq-stats" id="stats"></div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Bid List</h2>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="sq-modal-overlay" id="bidModal" onclick="if(event.target===this)closeModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="modalTitle"></h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="modalBody"></div>
+      <div class="sq-modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/excel-export.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allBids = [];
+    let filteredBids = [];
+    let editBid = null;
+    let editCostItems = [];
+    let projects = [];
+    let tenders = [];
+
+    async function loadData() {
+      try {
+        allBids = await API.get('/bids');
+        if (!Array.isArray(allBids)) allBids = [];
+      } catch(e) { allBids = []; }
+      try {
+        const res = await API.get('/projects');
+        projects = Array.isArray(res) ? res : (res.projects || []);
+        renderProjectFilter();
+      } catch(e) { projects = []; }
+      try {
+        tenders = await API.get('/tenders');
+        if (!Array.isArray(tenders)) tenders = [];
+      } catch(e) { tenders = []; }
+      applyFilters();
+    }
+
+    function renderProjectFilter() {
+      const sel = document.getElementById('filterProject');
+      let opts = '<option value="">All Projects</option>';
+      projects.forEach(p => { opts += `<option value="${p.id}">${p.project_code||''} — ${p.project_name||''}</option>`; });
+      sel.innerHTML = opts;
+    }
+
+    function applyFilters() {
+      const status = document.getElementById('filterStatus').value;
+      const project = document.getElementById('filterProject').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+      filteredBids = allBids.filter(b => {
+        if (status && b.status !== status) return false;
+        if (project && String(b.project_id) !== project) return false;
+        if (search && !(b.bid_no||'').toLowerCase().includes(search) && !(b.tender_no||'').toLowerCase().includes(search)) return false;
+        return true;
+      });
+      renderStats();
+      renderTable();
+    }
+
+    function renderStats() {
+      const total = filteredBids.length;
+      const draft = filteredBids.filter(b=>b.status==='draft').length;
+      const submitted = filteredBids.filter(b=>b.status==='submitted').length;
+      const won = filteredBids.filter(b=>b.status==='won').length;
+      document.getElementById('stats').innerHTML = `
+        <div class="sq-stat"><div class="val">${total}</div><div class="lbl">Total Bids</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--text-muted)">${draft}</div><div class="lbl">Draft</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--primary)">${submitted}</div><div class="lbl">Submitted</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success,#0f9d58)">${won}</div><div class="lbl">Won</div></div>`;
+    }
+
+    function statusStyle(s) {
+      return ({
+        draft:'background:#e2e3e5;color:#383d41',
+        submitted:'background:#dbeafe;color:#1d4ed8',
+        won:'background:#d4edda;color:#155724',
+        lost:'background:#f8d7da;color:#721c24'
+      }[s]||'background:#e2e3e5;color:#383d41');
+    }
+
+    function renderTable() {
+      if (!filteredBids.length) {
+        document.getElementById('tableWrap').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No bids found</div>';
+        return;
+      }
+      let h='<table class="sq-table"><thead><tr><th>Bid No.</th><th>Project</th><th>Tender</th><th>Total Cost</th><th>Margin %</th><th>Bid Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      filteredBids.forEach(b=>{
+        const proj = projects.find(p=>p.id===b.project_id);
+        h+=`<tr>
+          <td style="font-weight:600;color:var(--primary)">${b.bid_no||'-'}</td>
+          <td>${proj?proj.project_code||proj.project_name:'-'}</td>
+          <td>${b.tender_no||'-'}</td>
+          <td class="sq-amount">${fmtNum(b.total_cost||0)}</td>
+          <td style="font-weight:600;color:${(b.margin_pct||0)>=0?'var(--success,#0f9d58)':'var(--danger)'}">${(b.margin_pct||0).toFixed(1)}%</td>
+          <td class="sq-amount" style="font-weight:800">${fmtNum(b.bid_price||0)}</td>
+          <td><span class="sq-badge" style="${statusStyle(b.status)}">${b.status||'-'}</span></td>
+          <td onclick="event.stopPropagation()">
+            <div style="display:flex;gap:4px;">
+              <button class="btn-sm" onclick="openEditModal('${b.id}')" style="font-size:11px;padding:3px 8px;">Edit</button>
+              <button class="btn-sm btn-danger" onclick="deleteBid('${b.id}')" style="font-size:11px;padding:3px 8px;color:white;">Delete</button>
+            </div>
+          </td></tr>`;
+      });
+      h+='</tbody></table>';
+      document.getElementById('tableWrap').innerHTML=h;
+    }
+
+    // ════════════════════════════════
+    //  MODAL: CREATE / EDIT
+    // ════════════════════════════════
+    function openCreateModal() {
+      editBid = { status:'draft', margin_pct:15 };
+      editCostItems = [];
+      renderModal(true);
+      document.getElementById('bidModal').classList.add('show');
+    }
+
+    async function openEditModal(id) {
+      try {
+        editBid = await API.get('/bids/'+id);
+        editCostItems = (editBid.cost_items||[]).map(it=>({...it}));
+        renderModal(false);
+        document.getElementById('bidModal').classList.add('show');
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function renderModal(isNew) {
+      const b = editBid;
+      document.getElementById('modalTitle').textContent = isNew ? 'Create New Bid' : 'Edit Bid — '+(b.bid_no||'');
+
+      let projOpts = '<option value="">-- Select Project --</option>';
+      projects.forEach(p => { projOpts += `<option value="${p.id}" ${p.id===b.project_id?'selected':''}>${p.project_code||''} — ${p.project_name||''}</option>`; });
+
+      let tenderOpts = '<option value="">-- Select Tender --</option>';
+      tenders.forEach(t => { tenderOpts += `<option value="${t.id}" data-no="${t.tender_no||''}" ${t.id===b.tender_id?'selected':''}>${t.tender_no||''} — ${t.title||''}</option>`; });
+
+      let h = '<div class="sq-info-grid"><div>';
+      h += `<div class="sq-fg"><label>Project</label><select id="bdProject">${projOpts}</select></div>`;
+      h += `<div class="sq-fg"><label>Tender</label><select id="bdTender">${tenderOpts}</select></div>`;
+      h += `<div class="sq-fg"><label>Margin %</label><input type="number" id="bdMargin" value="${b.margin_pct||15}" min="0" step="0.1" onchange="recalcBid()"></div>`;
+      h += '</div><div>';
+      h += `<div class="sq-fg"><label>Status</label><select id="bdStatus">
+        <option value="draft" ${b.status==='draft'?'selected':''}>Draft</option>
+        <option value="submitted" ${b.status==='submitted'?'selected':''}>Submitted</option>
+        <option value="won" ${b.status==='won'?'selected':''}>Won</option>
+        <option value="lost" ${b.status==='lost'?'selected':''}>Lost</option>
+      </select></div>`;
+      h += `<div class="sq-fg"><label>Remarks</label><textarea id="bdRemarks" style="min-height:60px;resize:vertical;width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;box-sizing:border-box;">${b.remarks||''}</textarea></div>`;
+      h += '</div></div>';
+
+      // Cost Items Section
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">';
+      h += '<h4 style="font-size:13px;font-weight:700;margin:0;">Cost Breakdown</h4>';
+      h += '<div style="display:flex;gap:6px;">';
+      h += '<button class="btn-sm" onclick="importFromPR()" style="font-size:11px;">Import from PR</button>';
+      h += '<button class="btn-sm btn-primary" onclick="addCostItem()" style="font-size:11px;">+ Add Item</button>';
+      h += '</div></div>';
+
+      h += '<table class="sq-items-table"><thead><tr><th>Category</th><th>Description</th><th>Qty</th><th class="amt">Unit Cost</th><th class="amt">Total</th><th></th></tr></thead><tbody id="costItemsBody"></tbody></table>';
+
+      // Totals
+      h += '<div class="sq-totals" id="bidTotals"></div>';
+
+      document.getElementById('modalBody').innerHTML = h;
+      renderCostItems();
+      recalcBid();
+
+      let f = '';
+      f += `<button class="btn-sm btn-primary" onclick="saveBid(${isNew})">${isNew?'Create':'Save'}</button>`;
+      f += '<button class="btn-sm" onclick="closeModal()">Cancel</button>';
+      document.getElementById('modalFooter').innerHTML = f;
+    }
+
+    function addCostItem() {
+      editCostItems.push({ category:'material', description:'', qty:1, unit_cost:0, total:0 });
+      renderCostItems();
+    }
+
+    function removeCostItem(i) {
+      editCostItems.splice(i,1);
+      renderCostItems();
+      recalcBid();
+    }
+
+    function updateCostItem(i, field, value) {
+      editCostItems[i][field] = field==='description'||field==='category' ? value : (parseFloat(value)||0);
+      if (field==='qty'||field==='unit_cost') {
+        editCostItems[i].total = (parseFloat(editCostItems[i].qty)||0) * (parseFloat(editCostItems[i].unit_cost)||0);
+      }
+      renderCostItems();
+      recalcBid();
+    }
+
+    function renderCostItems() {
+      const tbody = document.getElementById('costItemsBody');
+      if (!tbody) return;
+      tbody.innerHTML = editCostItems.map((it,i) =>
+        `<tr>
+          <td><select onchange="updateCostItem(${i},'category',this.value)">
+            <option value="material" ${it.category==='material'?'selected':''}>Material</option>
+            <option value="labor" ${it.category==='labor'?'selected':''}>Labor</option>
+            <option value="overhead" ${it.category==='overhead'?'selected':''}>Overhead</option>
+            <option value="other" ${it.category==='other'?'selected':''}>Other</option>
+          </select></td>
+          <td><input type="text" value="${it.description||''}" onchange="updateCostItem(${i},'description',this.value)" style="width:100%"></td>
+          <td><input type="number" value="${it.qty||0}" min="0" onchange="updateCostItem(${i},'qty',this.value)"></td>
+          <td class="amt"><input type="number" value="${it.unit_cost||0}" min="0" onchange="updateCostItem(${i},'unit_cost',this.value)"></td>
+          <td class="amt" style="font-weight:600">${fmtNum(it.total||0)}</td>
+          <td><button class="del-btn" onclick="removeCostItem(${i})">x</button></td></tr>`
+      ).join('');
+    }
+
+    function recalcBid() {
+      const totalCost = editCostItems.reduce((s,it)=>s+parseFloat(it.total||0),0);
+      const marginPct = parseFloat(document.getElementById('bdMargin')?.value)||0;
+      const bidPrice = Math.round(totalCost * (1 + marginPct/100) * 100)/100;
+      const marginAmt = bidPrice - totalCost;
+
+      // Breakdown by category
+      const cats = {};
+      editCostItems.forEach(it => {
+        const cat = it.category||'other';
+        cats[cat] = (cats[cat]||0) + parseFloat(it.total||0);
+      });
+
+      const el = document.getElementById('bidTotals');
+      if (!el) return;
+      let h = '';
+      if (cats.material) h += `<div class="trow"><span>Material</span><span>${fmtNum(cats.material)}</span></div>`;
+      if (cats.labor) h += `<div class="trow"><span>Labor</span><span>${fmtNum(cats.labor)}</span></div>`;
+      if (cats.overhead) h += `<div class="trow"><span>Overhead</span><span>${fmtNum(cats.overhead)}</span></div>`;
+      if (cats.other) h += `<div class="trow"><span>Other</span><span>${fmtNum(cats.other)}</span></div>`;
+      h += `<div class="trow" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;font-weight:700"><span>Total Cost</span><span>${fmtNum(totalCost)}</span></div>`;
+      h += `<div class="trow highlight"><span>Margin (${marginPct}%)</span><span>+${fmtNum(marginAmt)}</span></div>`;
+      h += `<div class="trow grand"><span>Bid Price</span><span>${fmtNum(bidPrice)}</span></div>`;
+      el.innerHTML = h;
+    }
+
+    async function importFromPR() {
+      try {
+        const prs = await API.get('/purchase-requisitions?status=approved');
+        const prList = Array.isArray(prs) ? prs : [];
+        if (!prList.length) {
+          typeof showToast==='function' && showToast('No approved PRs found','warning');
+          return;
+        }
+        // Show simple picker
+        let opts = prList.map(pr=>`<option value="${pr.id}">${pr.pr_number||pr.id} — ${pr.project_code||''}</option>`).join('');
+        const html = `<div class="sq-fg"><label>Select Purchase Requisition</label><select id="prPicker">${opts}</select></div>`;
+        const existing = document.querySelector('.pr-import-row');
+        if (existing) existing.remove();
+
+        const div = document.createElement('div');
+        div.className = 'pr-import-row';
+        div.style.cssText = 'background:var(--bg-light);padding:12px;border-radius:var(--radius);margin-bottom:12px;display:flex;gap:8px;align-items:flex-end;';
+        div.innerHTML = html + '<button class="btn-sm btn-primary" onclick="loadPRItems()">Import</button>';
+        document.getElementById('costItemsBody').closest('table').before(div);
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function loadPRItems() {
+      const prId = document.getElementById('prPicker').value;
+      if (!prId) return;
+      try {
+        const pr = await API.get('/purchase-requisitions/'+prId);
+        const items = pr.items || [];
+        items.forEach(it => {
+          editCostItems.push({
+            category: 'material',
+            description: (it.item_code||'') + ' ' + (it.item_name||it.description||''),
+            qty: parseFloat(it.qty)||1,
+            unit_cost: parseFloat(it.unit_price||it.estimated_price)||0,
+            total: (parseFloat(it.qty)||1) * (parseFloat(it.unit_price||it.estimated_price)||0),
+          });
+        });
+        renderCostItems();
+        recalcBid();
+        typeof showToast==='function' && showToast(`Imported ${items.length} items from PR`,'success');
+        const importRow = document.querySelector('.pr-import-row');
+        if (importRow) importRow.remove();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function saveBid(isNew) {
+      const totalCost = editCostItems.reduce((s,it)=>s+parseFloat(it.total||0),0);
+      const marginPct = parseFloat(document.getElementById('bdMargin').value)||0;
+      const bidPrice = Math.round(totalCost * (1 + marginPct/100) * 100)/100;
+
+      const tenderSel = document.getElementById('bdTender');
+      const tenderOpt = tenderSel?.selectedOptions?.[0];
+
+      const data = {
+        project_id: document.getElementById('bdProject').value||null,
+        tender_id: tenderSel.value||null,
+        tender_no: tenderOpt?.dataset?.no||null,
+        status: document.getElementById('bdStatus').value||'draft',
+        margin_pct: marginPct,
+        total_cost: totalCost,
+        bid_price: bidPrice,
+        remarks: document.getElementById('bdRemarks').value||null,
+        cost_items: editCostItems,
+      };
+
+      try {
+        if (isNew) {
+          await API.post('/bids', data);
+          typeof showToast==='function' && showToast('Bid created successfully','success');
+        } else {
+          await API.put('/bids/'+editBid.id, data);
+          typeof showToast==='function' && showToast('Bid updated successfully','success');
+        }
+        closeModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function deleteBid(id) {
+      if (!confirm('Are you sure you want to delete this bid?')) return;
+      try {
+        await API.delete('/bids/'+id);
+        typeof showToast==='function' && showToast('Bid deleted','success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeModal() { document.getElementById('bidModal').classList.remove('show'); }
+
+    function exportBids() {
+      if (!filteredBids.length) { typeof showToast==='function' && showToast('No data to export','warning'); return; }
+      const headers = ['Bid No.','Project','Tender','Total Cost','Margin %','Bid Price','Status','Remarks'];
+      const rows = filteredBids.map(b => {
+        const proj = projects.find(p=>p.id===b.project_id);
+        return [
+          b.bid_no||'', proj?proj.project_code||proj.project_name:'',
+          b.tender_no||'', parseFloat(b.total_cost||0), parseFloat(b.margin_pct||0),
+          parseFloat(b.bid_price||0), b.status||'', b.remarks||''
+        ];
+      });
+      exportToExcel(headers, rows, 'Bids', 'bid-preparation.xlsx');
+    }
+
+    // Init
+    if (API.requireAuth()) {
+      loadData();
+      if (typeof I!=='undefined') document.getElementById('pgIcon').innerHTML = I.dollarSign+' Bid Preparation';
+      else document.getElementById('pgIcon').textContent = 'Bid Preparation';
+    }
+  </script>
+</body>
+</html>

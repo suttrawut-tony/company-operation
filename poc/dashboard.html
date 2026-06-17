@@ -431,6 +431,8 @@
           <div class="kpi-change up">&#9650; +12% from Apr</div>
         </div>
       </div>
+      <!-- Pre-Sales KPIs -->
+      <div class="kpi-grid" id="presales-kpis" style="margin-top:12px;"></div>
     </div>
 
     <!-- Two-Column Content -->
@@ -1748,8 +1750,29 @@
       } catch(e) { console.error('Budget chart error:', e); }
     }
 
+    // Pre-Sales KPIs
+    async function loadPresalesKPIs() {
+      try {
+        const [tenders, contracts, guarantees, disputes] = await Promise.all([
+          API.get('/tenders').catch(()=>[]), API.get('/contracts').catch(()=>[]),
+          API.get('/guarantees').catch(()=>[]), API.get('/disputes').catch(()=>[])
+        ]);
+        const el = document.getElementById('presales-kpis');
+        if (!el) return;
+        const activeTenders = (Array.isArray(tenders)?tenders:[]).filter(t=>['published','evaluating'].includes(t.status)).length;
+        const activeContracts = (Array.isArray(contracts)?contracts:[]).filter(c=>c.status==='active').length;
+        const expiringG = (Array.isArray(guarantees)?guarantees:[]).filter(g=>g.is_expiring).length;
+        const openDisputes = (Array.isArray(disputes)?disputes:[]).filter(d=>['open','investigating'].includes(d.status)).length;
+        el.innerHTML = `
+          <div class="kpi-card" onclick="window.location='tenders.html'"><div class="kpi-value" style="color:var(--primary);">${activeTenders}</div><div class="kpi-label">Active Tenders</div></div>
+          <div class="kpi-card" onclick="window.location='contracts.html'"><div class="kpi-value" style="color:var(--success);">${activeContracts}</div><div class="kpi-label">Active Contracts</div></div>
+          <div class="kpi-card" onclick="window.location='guarantees.html'"><div class="kpi-value" style="color:${expiringG>0?'var(--danger)':'var(--warning)'};">${expiringG}</div><div class="kpi-label">Expiring Guarantees</div></div>
+          <div class="kpi-card" onclick="window.location='disputes.html'"><div class="kpi-value" style="color:${openDisputes>0?'var(--danger)':'var(--text-muted)'};">${openDisputes}</div><div class="kpi-label">Open Disputes</div></div>`;
+      } catch(e) { console.warn('Pre-sales KPIs failed:', e); }
+    }
+
     // Load everything
-    Promise.all([loadConfigFromServer(), loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks(), loadPendingConvert(), loadExpenseChart(), loadBudgetChart()])
+    Promise.all([loadConfigFromServer(), loadDashboard(), loadApprovals(), loadBudgetSummary(), loadAlerts(), loadMyTasks(), loadPendingConvert(), loadExpenseChart(), loadBudgetChart(), loadPresalesKPIs()])
       .then(() => { applyConfig(loadConfig()); I18N.applyTranslations(); });
 
     // Real-time: auto-refresh on changes

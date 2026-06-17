@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Contract Management</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .sq-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    .sq-stat { background: var(--bg-white); border:1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; text-align: center; }
+    .sq-stat .val { font-size: 22px; font-weight: 800; }
+    .sq-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .sq-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sq-table th { background:var(--bg-light); padding:10px 14px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-table td { padding:10px 14px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .sq-table tr:hover td { background:var(--bg-hover); }
+    .sq-table tr { cursor:pointer; }
+    .sq-badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; }
+    .sq-amount { font-weight:700; font-family:monospace; }
+    .sq-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; }
+    .sq-modal-overlay.show { display:flex; }
+    .sq-modal { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .sq-modal-header { padding:16px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
+    .sq-modal-header h3 { font-size:16px; font-weight:700; }
+    .sq-modal-body { padding:20px; }
+    .sq-modal-footer { padding:12px 20px; border-top:1px solid var(--border-light); display:flex; gap:8px; justify-content:flex-end; }
+    .sq-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .sq-fg { margin-bottom:10px; }
+    .sq-fg label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    .sq-fg input, .sq-fg select, .sq-fg textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; background:var(--bg-white); }
+    .sq-fg input:focus, .sq-fg select:focus, .sq-fg textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-muted); line-height:1; }
+    .close-btn:hover { color:var(--text-primary); }
+    .btn-sm { font-size:12px; padding:6px 14px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); color:var(--text-primary); }
+    .btn-sm:hover { background:var(--bg-hover); }
+    .btn-primary { background:var(--primary); color:white; border-color:var(--primary); }
+    .btn-primary:hover { filter:brightness(0.9); }
+    .btn-danger { background:var(--danger); color:white; border-color:var(--danger); }
+    .btn-success { background:var(--success); color:white; border-color:var(--success); }
+    .btn-warning { background:var(--warning); color:white; border-color:var(--warning); }
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .filter-bar select { font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-white); }
+    /* Timeline */
+    .timeline { position:relative; padding-left:24px; margin-top:16px; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:var(--border); }
+    .timeline-item { position:relative; margin-bottom:16px; }
+    .timeline-dot { position:absolute; left:-20px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--primary); border:2px solid var(--bg-white); }
+    .timeline-content { background:var(--bg-light); border:1px solid var(--border-light); border-radius:var(--radius); padding:10px 14px; }
+    .timeline-content .ts { font-size:10px; color:var(--text-muted); }
+    .timeline-content .desc { font-size:12px; margin-top:4px; }
+    @media (max-width:768px) { .sq-stats { grid-template-columns: repeat(2,1fr); } .sq-info-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1 id="pgIcon">Contract Management</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportContracts()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Contract</button>
+      </div>
+    </div>
+    <div class="sq-stats" id="stats"></div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Contract List</h2>
+        <div class="filter-bar">
+          <select id="filterProject" onchange="loadData()"><option value="">All Projects</option></select>
+          <select id="filterStatus" onchange="loadData()">
+            <option value="">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="terminated">Terminated</option>
+          </select>
+          <select id="filterType" onchange="loadData()">
+            <option value="">All Types</option>
+            <option value="main">Main Contract</option>
+            <option value="subcontract">Subcontract</option>
+            <option value="purchase_agreement">Purchase Agreement</option>
+          </select>
+        </div>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="sq-modal-overlay" id="contractModal" onclick="if(event.target===this)closeModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="modalTitle"></h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="modalBody"></div>
+      <div class="sq-modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Amendment Modal -->
+  <div class="sq-modal-overlay" id="amendModal" onclick="if(event.target===this)closeAmendModal()">
+    <div class="sq-modal" style="width:600px;">
+      <div class="sq-modal-header">
+        <h3>Contract Amendment</h3>
+        <button class="close-btn" onclick="closeAmendModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="amendBody"></div>
+      <div class="sq-modal-footer" id="amendFooter"></div>
+    </div>
+  </div>
+
+  <!-- Detail Modal (with amendment history) -->
+  <div class="sq-modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetailModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="detailTitle"></h3>
+        <button class="close-btn" onclick="closeDetailModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="detailBody"></div>
+      <div class="sq-modal-footer">
+        <button class="btn-sm" onclick="closeDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/excel-export.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allContracts = [];
+    let editContract = null;
+    let projects = [];
+
+    async function loadProjects() {
+      try {
+        const res = await API.get('/projects');
+        projects = Array.isArray(res) ? res : (res.projects || []);
+        const sel = document.getElementById('filterProject');
+        projects.forEach(p => {
+          const o = document.createElement('option');
+          o.value = p.id;
+          o.textContent = p.project_code ? (p.project_code + ' - ' + (p.project_name||'')) : (p.project_name||p.id);
+          sel.appendChild(o);
+        });
+      } catch(e) { projects = []; }
+    }
+
+    async function loadData() {
+      try {
+        const params = new URLSearchParams();
+        const status = document.getElementById('filterStatus').value;
+        const type = document.getElementById('filterType').value;
+        const project = document.getElementById('filterProject').value;
+        if (status) params.set('status', status);
+        if (type) params.set('type', type);
+        if (project) params.set('project_id', project);
+        const q = params.toString();
+        allContracts = await API.get('/contracts' + (q ? '?' + q : ''));
+        if (!Array.isArray(allContracts)) allContracts = [];
+      } catch(e) { allContracts = []; }
+      renderStats();
+      renderTable();
+    }
+
+    function renderStats() {
+      const t = allContracts.length;
+      const active = allContracts.filter(c => c.status === 'active').length;
+      const pending = allContracts.filter(c => c.status === 'pending_review').length;
+      const completed = allContracts.filter(c => c.status === 'completed').length;
+      document.getElementById('stats').innerHTML = `
+        <div class="sq-stat"><div class="val">${t}</div><div class="lbl">Total Contracts</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success)">${active}</div><div class="lbl">Active</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--warning)">${pending}</div><div class="lbl">Pending Review</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--primary)">${completed}</div><div class="lbl">Completed</div></div>`;
+    }
+
+    function statusStyle(s) {
+      return {
+        draft:'background:#e2e3e5;color:#383d41',
+        pending_review:'background:var(--warning-bg);color:#92400e',
+        active:'background:var(--success-bg);color:#065f46',
+        completed:'background:var(--info-bg);color:#1e40af',
+        terminated:'background:var(--danger-bg);color:#991b1b'
+      }[s] || 'background:#e2e3e5;color:#383d41';
+    }
+
+    function typeLabel(t) {
+      return { main:'Main Contract', subcontract:'Subcontract', purchase_agreement:'Purchase Agreement' }[t] || t || '-';
+    }
+
+    function renderTable() {
+      if (!allContracts.length) {
+        document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No contracts found</div>';
+        return;
+      }
+      let h = '<table class="sq-table"><thead><tr><th>Contract No.</th><th>Project</th><th>Counterparty</th><th>Type</th><th>Amount</th><th>Start</th><th>End</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      allContracts.forEach(c => {
+        h += `<tr onclick="showDetail('${c.id}')">
+          <td style="font-weight:600;color:var(--primary)">${c.contract_number || '-'}</td>
+          <td>${c.project_name || c.project_code || '-'}</td>
+          <td>${c.counterparty_name || '-'}</td>
+          <td>${typeLabel(c.type)}</td>
+          <td class="sq-amount">${fmtNum(c.amount || 0)}</td>
+          <td>${fmtDateShort(c.start_date)}</td>
+          <td>${fmtDateShort(c.end_date)}</td>
+          <td><span class="sq-badge" style="${statusStyle(c.status)}">${(c.status||'draft').replace(/_/g,' ')}</span></td>
+          <td onclick="event.stopPropagation()">
+            ${c.status === 'draft' ? `<button class="btn-sm btn-success" onclick="activateContract('${c.id}')">Activate</button>` : ''}
+            ${c.status === 'active' ? `<button class="btn-sm btn-warning" onclick="openAmendModal('${c.id}')">Amend</button>` : ''}
+            <button class="btn-sm" onclick="openEditModal('${c.id}')">Edit</button>
+          </td>
+        </tr>`;
+      });
+      h += '</tbody></table>';
+      document.getElementById('tableWrap').innerHTML = h;
+    }
+
+    // ═══════════════════════════════════
+    //  CREATE / EDIT MODAL
+    // ═══════════════════════════════════
+    function fg(label, type, id, val, extra='') {
+      return `<div class="sq-fg"><label>${label}</label><input type="${type}" id="${id}" value="${val||''}" ${extra}></div>`;
+    }
+
+    function openCreateModal() {
+      editContract = null;
+      renderFormModal(true);
+      document.getElementById('contractModal').classList.add('show');
+    }
+
+    async function openEditModal(id) {
+      try {
+        editContract = await API.get('/contracts/' + id);
+        renderFormModal(false);
+        document.getElementById('contractModal').classList.add('show');
+      } catch(e) { typeof showToast==='function' && showToast(e.message, 'error'); }
+    }
+
+    function renderFormModal(isNew) {
+      const c = editContract || {};
+      document.getElementById('modalTitle').textContent = isNew ? 'New Contract' : 'Edit Contract — ' + (c.contract_number||'');
+
+      const projectOpts = projects.map(p =>
+        `<option value="${p.id}" ${c.project_id==p.id?'selected':''}>${p.project_code||''} - ${p.project_name||''}</option>`
+      ).join('');
+
+      let h = '<div class="sq-info-grid"><div>';
+      h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
+      h += fg('Tender Reference', 'text', 'fTender', c.tender_ref);
+      h += `<div class="sq-fg"><label>Type</label><select id="fType">
+        <option value="main" ${c.type==='main'?'selected':''}>Main Contract</option>
+        <option value="subcontract" ${c.type==='subcontract'?'selected':''}>Subcontract</option>
+        <option value="purchase_agreement" ${c.type==='purchase_agreement'?'selected':''}>Purchase Agreement</option>
+      </select></div>`;
+      h += fg('Counterparty Code', 'text', 'fCpCode', c.counterparty_code);
+      h += '</div><div>';
+      h += fg('Counterparty Name', 'text', 'fCpName', c.counterparty_name);
+      h += fg('Amount', 'number', 'fAmount', c.amount, 'step="0.01"');
+      h += fg('Start Date', 'date', 'fStart', c.start_date ? c.start_date.substring(0,10) : '');
+      h += fg('End Date', 'date', 'fEnd', c.end_date ? c.end_date.substring(0,10) : '');
+      h += '</div></div>';
+      h += `<div class="sq-fg"><label>Remarks</label><textarea id="fRemarks" rows="3">${c.remarks||''}</textarea></div>`;
+      document.getElementById('modalBody').innerHTML = h;
+
+      let f = `<button class="btn-sm btn-primary" onclick="saveContract(${isNew})">${isNew ? 'Create' : 'Save'}</button>`;
+      f += '<button class="btn-sm" onclick="closeModal()">Cancel</button>';
+      document.getElementById('modalFooter').innerHTML = f;
+    }
+
+    async function saveContract(isNew) {
+      const data = {
+        project_id: document.getElementById('fProject').value || null,
+        tender_ref: document.getElementById('fTender').value || null,
+        type: document.getElementById('fType').value,
+        counterparty_code: document.getElementById('fCpCode').value || null,
+        counterparty_name: document.getElementById('fCpName').value || null,
+        amount: parseFloat(document.getElementById('fAmount').value) || 0,
+        start_date: document.getElementById('fStart').value || null,
+        end_date: document.getElementById('fEnd').value || null,
+        remarks: document.getElementById('fRemarks').value || null,
+      };
+      try {
+        if (isNew) {
+          await API.post('/contracts', data);
+          typeof showToast==='function' && showToast('Contract created','success');
+        } else {
+          await API.put('/contracts/' + editContract.id, data);
+          typeof showToast==='function' && showToast('Contract updated','success');
+        }
+        closeModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function activateContract(id) {
+      if (!confirm('Activate this contract?')) return;
+      try {
+        await API.post('/contracts/' + id + '/activate');
+        typeof showToast==='function' && showToast('Contract activated','success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeModal() { document.getElementById('contractModal').classList.remove('show'); }
+
+    // ═══════════════════════════════════
+    //  AMENDMENT MODAL
+    // ═══════════════════════════════════
+    let amendContractId = null;
+
+    function openAmendModal(id) {
+      amendContractId = id;
+      const c = allContracts.find(x => x.id == id) || {};
+      let h = '';
+      h += fg('Amendment Description', 'text', 'aDesc', '');
+      h += fg('New Amount', 'number', 'aAmount', c.amount, 'step="0.01"');
+      h += fg('New End Date', 'date', 'aEndDate', c.end_date ? c.end_date.substring(0,10) : '');
+      h += `<div class="sq-fg"><label>Reason</label><textarea id="aReason" rows="3" placeholder="Reason for amendment..."></textarea></div>`;
+      document.getElementById('amendBody').innerHTML = h;
+      document.getElementById('amendFooter').innerHTML =
+        '<button class="btn-sm btn-primary" onclick="submitAmendment()">Submit Amendment</button>' +
+        '<button class="btn-sm" onclick="closeAmendModal()">Cancel</button>';
+      document.getElementById('amendModal').classList.add('show');
+    }
+
+    async function submitAmendment() {
+      const data = {
+        description: document.getElementById('aDesc').value || null,
+        new_amount: parseFloat(document.getElementById('aAmount').value) || null,
+        new_end_date: document.getElementById('aEndDate').value || null,
+        reason: document.getElementById('aReason').value || null,
+      };
+      if (!data.description && !data.reason) {
+        typeof showToast==='function' && showToast('Please provide description or reason','warning');
+        return;
+      }
+      try {
+        await API.post('/contracts/' + amendContractId + '/amendments', data);
+        typeof showToast==='function' && showToast('Amendment submitted','success');
+        closeAmendModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeAmendModal() { document.getElementById('amendModal').classList.remove('show'); }
+
+    // ═══════════════════════════════════
+    //  DETAIL + AMENDMENT HISTORY
+    // ═══════════════════════════════════
+    async function showDetail(id) {
+      try {
+        const c = await API.get('/contracts/' + id);
+        let amendments = [];
+        try { amendments = await API.get('/contracts/' + id + '/amendments'); if (!Array.isArray(amendments)) amendments = []; } catch(e) { amendments = []; }
+
+        document.getElementById('detailTitle').textContent = (c.contract_number || 'Contract') + ' — Detail';
+
+        let h = '<div class="sq-info-grid"><div>';
+        h += `<p><strong>Contract No.:</strong> ${c.contract_number||'-'}</p>`;
+        h += `<p><strong>Project:</strong> ${c.project_name||c.project_code||'-'}</p>`;
+        h += `<p><strong>Type:</strong> ${typeLabel(c.type)}</p>`;
+        h += `<p><strong>Status:</strong> <span class="sq-badge" style="${statusStyle(c.status)}">${(c.status||'draft').replace(/_/g,' ')}</span></p>`;
+        h += '</div><div>';
+        h += `<p><strong>Counterparty:</strong> ${c.counterparty_name||'-'} ${c.counterparty_code?'('+c.counterparty_code+')':''}</p>`;
+        h += `<p><strong>Amount:</strong> <span class="sq-amount">${moneyBaht(c.amount||0)}</span></p>`;
+        h += `<p><strong>Start:</strong> ${fmtDate(c.start_date)}</p>`;
+        h += `<p><strong>End:</strong> ${fmtDate(c.end_date)}</p>`;
+        h += '</div></div>';
+        if (c.remarks) h += `<p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;"><strong>Remarks:</strong> ${c.remarks}</p>`;
+
+        // Amendment History Timeline
+        h += '<h4 style="font-size:14px;font-weight:700;margin-top:20px;margin-bottom:4px;">Amendment History</h4>';
+        if (amendments.length === 0) {
+          h += '<p style="font-size:12px;color:var(--text-muted);padding:12px 0;">No amendments recorded.</p>';
+        } else {
+          h += '<div class="timeline">';
+          amendments.forEach(a => {
+            h += `<div class="timeline-item">
+              <div class="timeline-dot" style="background:${a.status==='approved'?'var(--success)':a.status==='rejected'?'var(--danger)':'var(--warning)'}"></div>
+              <div class="timeline-content">
+                <div class="ts">${fmtDate(a.created_at)} ${a.created_by ? '&mdash; ' + a.created_by : ''}</div>
+                <div class="desc"><strong>${a.description||'Amendment'}</strong></div>
+                ${a.new_amount ? '<div class="desc">New Amount: <span class="sq-amount">' + moneyBaht(a.new_amount) + '</span></div>' : ''}
+                ${a.new_end_date ? '<div class="desc">New End Date: ' + fmtDate(a.new_end_date) + '</div>' : ''}
+                ${a.reason ? '<div class="desc" style="color:var(--text-muted);font-style:italic;">Reason: ' + a.reason + '</div>' : ''}
+              </div>
+            </div>`;
+          });
+          h += '</div>';
+        }
+
+        document.getElementById('detailBody').innerHTML = h;
+        document.getElementById('detailModal').classList.add('show');
+      } catch(e) { typeof showToast==='function' && showToast(e.message, 'error'); }
+    }
+
+    function closeDetailModal() { document.getElementById('detailModal').classList.remove('show'); }
+
+    // ═══════════════════════════════════
+    //  EXPORT
+    // ═══════════════════════════════════
+    function exportContracts() {
+      if (!allContracts.length) { typeof showToast==='function' && showToast('No data to export','warning'); return; }
+      const headers = ['Contract No.','Project','Counterparty','Type','Amount','Start Date','End Date','Status','Remarks'];
+      const rows = allContracts.map(c => [
+        c.contract_number||'', c.project_name||c.project_code||'', c.counterparty_name||'',
+        typeLabel(c.type), parseFloat(c.amount||0),
+        c.start_date ? new Date(c.start_date).toLocaleDateString('en-GB') : '',
+        c.end_date ? new Date(c.end_date).toLocaleDateString('en-GB') : '',
+        (c.status||'').replace(/_/g,' '), c.remarks||''
+      ]);
+      exportToExcel(headers, rows, 'Contracts', 'contracts.xlsx');
+    }
+
+    // ═══════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════
+    if (API.requireAuth()) {
+      loadProjects();
+      loadData();
+      if (typeof I !== 'undefined') document.getElementById('pgIcon').innerHTML = I.fileText + ' Contract Management';
+    }
+  </script>
+</body>
+</html>

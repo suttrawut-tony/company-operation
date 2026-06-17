@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Dispute Management</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .sq-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    .sq-stat { background: var(--bg-white); border:1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; text-align: center; }
+    .sq-stat .val { font-size: 22px; font-weight: 800; }
+    .sq-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .sq-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sq-table th { background:var(--bg-light); padding:10px 14px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-table td { padding:10px 14px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .sq-table tr:hover td { background:var(--bg-hover); }
+    .sq-table tr { cursor:pointer; }
+    .sq-badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; display:inline-block; }
+    .sq-amount { font-weight:700; font-family:monospace; }
+    .sq-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; }
+    .sq-modal-overlay.show { display:flex; }
+    .sq-modal { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .sq-modal-header { padding:16px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
+    .sq-modal-header h3 { font-size:16px; font-weight:700; }
+    .sq-modal-body { padding:20px; }
+    .sq-modal-footer { padding:12px 20px; border-top:1px solid var(--border-light); display:flex; gap:8px; justify-content:flex-end; }
+    .sq-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .sq-fg { margin-bottom:10px; }
+    .sq-fg label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    .sq-fg input, .sq-fg select, .sq-fg textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; background:var(--bg-white); }
+    .sq-fg input:focus, .sq-fg select:focus, .sq-fg textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-muted); line-height:1; }
+    .close-btn:hover { color:var(--text-primary); }
+    .btn-sm { font-size:12px; padding:6px 14px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); color:var(--text-primary); }
+    .btn-sm:hover { background:var(--bg-hover); }
+    .btn-primary { background:var(--primary); color:white; border-color:var(--primary); }
+    .btn-primary:hover { filter:brightness(0.9); }
+    .btn-danger { background:var(--danger); color:white; border-color:var(--danger); }
+    .btn-success { background:var(--success); color:white; border-color:var(--success); }
+    .btn-warning { background:var(--warning); color:white; border-color:var(--warning); }
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .filter-bar select { font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-white); }
+    /* Priority badges */
+    .priority-critical { background:var(--danger-bg); color:#991b1b; }
+    .priority-high { background:#fff7ed; color:#c2410c; }
+    .priority-medium { background:var(--warning-bg); color:#92400e; }
+    .priority-low { background:var(--bg-light); color:var(--text-muted); }
+    /* Activity timeline */
+    .activity-timeline { position:relative; padding-left:32px; margin-top:16px; }
+    .activity-timeline::before { content:''; position:absolute; left:12px; top:0; bottom:0; width:2px; background:var(--border); }
+    .activity-item { position:relative; margin-bottom:16px; }
+    .activity-icon { position:absolute; left:-26px; top:2px; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid var(--bg-white); }
+    .activity-icon.comment { background:var(--info-bg); color:var(--info); }
+    .activity-icon.status_change { background:var(--warning-bg); color:var(--warning); }
+    .activity-icon.assigned { background:var(--purple-bg); color:var(--purple); }
+    .activity-icon.resolved { background:var(--success-bg); color:var(--success); }
+    .activity-content { background:var(--bg-light); border:1px solid var(--border-light); border-radius:var(--radius); padding:10px 14px; }
+    .activity-content .meta { font-size:10px; color:var(--text-muted); display:flex; gap:8px; align-items:center; }
+    .activity-content .meta .user { font-weight:600; color:var(--text-secondary); }
+    .activity-content .body { font-size:12px; margin-top:4px; }
+    /* Info card in detail */
+    .info-card { background:var(--bg-light); border:1px solid var(--border-light); border-radius:var(--radius); padding:16px; margin-bottom:16px; }
+    .info-card p { margin:4px 0; font-size:13px; }
+    .info-card p strong { color:var(--text-secondary); }
+    .comment-box { display:flex; gap:8px; margin-top:16px; }
+    .comment-box textarea { flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; resize:vertical; min-height:60px; }
+    .comment-box textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    @media (max-width:768px) { .sq-stats { grid-template-columns: repeat(2,1fr); } .sq-info-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1 id="pgIcon">Dispute Management</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Dispute</button>
+      </div>
+    </div>
+    <div class="sq-stats" id="stats"></div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Dispute List</h2>
+        <div class="filter-bar">
+          <select id="filterProject" onchange="loadData()"><option value="">All Projects</option></select>
+          <select id="filterStatus" onchange="loadData()">
+            <option value="">All Status</option>
+            <option value="open">Open</option>
+            <option value="investigating">Investigating</option>
+            <option value="negotiating">Negotiating</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+          <select id="filterPriority" onchange="loadData()">
+            <option value="">All Priority</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+          <select id="filterType" onchange="loadData()">
+            <option value="">All Types</option>
+            <option value="payment">Payment</option>
+            <option value="quality">Quality</option>
+            <option value="delay">Delay</option>
+            <option value="scope">Scope</option>
+            <option value="safety">Safety</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Create Modal -->
+  <div class="sq-modal-overlay" id="disputeModal" onclick="if(event.target===this)closeModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="modalTitle"></h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="modalBody"></div>
+      <div class="sq-modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="sq-modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetailModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="detailTitle"></h3>
+        <button class="close-btn" onclick="closeDetailModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="detailBody"></div>
+      <div class="sq-modal-footer" id="detailFooter"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allDisputes = [];
+    let editDispute = null;
+    let currentDetailId = null;
+    let projects = [];
+
+    async function loadProjects() {
+      try {
+        const res = await API.get('/projects');
+        projects = Array.isArray(res) ? res : (res.projects || []);
+        const sel = document.getElementById('filterProject');
+        projects.forEach(p => {
+          const o = document.createElement('option');
+          o.value = p.id;
+          o.textContent = p.project_code ? (p.project_code + ' - ' + (p.project_name||'')) : (p.project_name||p.id);
+          sel.appendChild(o);
+        });
+      } catch(e) { projects = []; }
+    }
+
+    async function loadData() {
+      try {
+        const params = new URLSearchParams();
+        const status = document.getElementById('filterStatus').value;
+        const priority = document.getElementById('filterPriority').value;
+        const type = document.getElementById('filterType').value;
+        const project = document.getElementById('filterProject').value;
+        if (status) params.set('status', status);
+        if (priority) params.set('priority', priority);
+        if (type) params.set('type', type);
+        if (project) params.set('project_id', project);
+        const q = params.toString();
+        allDisputes = await API.get('/disputes' + (q ? '?' + q : ''));
+        if (!Array.isArray(allDisputes)) allDisputes = [];
+      } catch(e) { allDisputes = []; }
+      renderStats();
+      renderTable();
+    }
+
+    function renderStats() {
+      const open = allDisputes.filter(d => d.status === 'open').length;
+      const investigating = allDisputes.filter(d => d.status === 'investigating').length;
+      const resolved = allDisputes.filter(d => d.status === 'resolved' || d.status === 'closed').length;
+      const critical = allDisputes.filter(d => d.priority === 'critical').length;
+      document.getElementById('stats').innerHTML = `
+        <div class="sq-stat"><div class="val" style="color:var(--warning)">${open}</div><div class="lbl">Total Open</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--info)">${investigating}</div><div class="lbl">Investigating</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success)">${resolved}</div><div class="lbl">Resolved</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--danger)">${critical}${critical > 0 ? '<span style="font-size:12px;margin-left:4px;">!</span>' : ''}</div><div class="lbl">Critical</div></div>`;
+    }
+
+    function statusStyle(s) {
+      return {
+        open:'background:var(--warning-bg);color:#92400e',
+        investigating:'background:var(--info-bg);color:#1e40af',
+        negotiating:'background:var(--purple-bg);color:#6d28d9',
+        resolved:'background:var(--success-bg);color:#065f46',
+        closed:'background:#e2e3e5;color:#383d41'
+      }[s] || 'background:#e2e3e5;color:#383d41';
+    }
+
+    function priorityClass(p) {
+      return { critical:'priority-critical', high:'priority-high', medium:'priority-medium', low:'priority-low' }[p] || 'priority-low';
+    }
+
+    function renderTable() {
+      if (!allDisputes.length) {
+        document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No disputes found</div>';
+        return;
+      }
+      let h = '<table class="sq-table"><thead><tr><th>Dispute No.</th><th>Project</th><th>Type</th><th>Priority</th><th>Title</th><th>Raised By</th><th>Assigned To</th><th>Amount Claimed</th><th>Status</th><th>Deadline</th><th>Actions</th></tr></thead><tbody>';
+      allDisputes.forEach(d => {
+        const isOverdue = d.deadline && new Date(d.deadline) < new Date() && d.status !== 'resolved' && d.status !== 'closed';
+        h += `<tr onclick="showDetail('${d.id}')">
+          <td style="font-weight:600;color:var(--primary)">${d.dispute_number || '-'}</td>
+          <td>${d.project_name || d.project_code || '-'}</td>
+          <td>${d.type ? d.type.charAt(0).toUpperCase() + d.type.slice(1) : '-'}</td>
+          <td><span class="sq-badge ${priorityClass(d.priority)}">${(d.priority||'low').toUpperCase()}</span></td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.title || '-'}</td>
+          <td>${d.raised_by || '-'}</td>
+          <td>${d.assigned_to || '-'}</td>
+          <td class="sq-amount">${d.amount_claimed ? fmtNum(d.amount_claimed) : '-'}</td>
+          <td><span class="sq-badge" style="${statusStyle(d.status)}">${(d.status||'open').replace(/_/g,' ')}</span></td>
+          <td style="${isOverdue ? 'color:var(--danger);font-weight:600' : ''}">${fmtDateShort(d.deadline)}${isOverdue ? ' (overdue)' : ''}</td>
+          <td onclick="event.stopPropagation()">
+            <button class="btn-sm" onclick="showDetail('${d.id}')">View</button>
+          </td>
+        </tr>`;
+      });
+      h += '</tbody></table>';
+      document.getElementById('tableWrap').innerHTML = h;
+    }
+
+    // ═══════════════════════════════════
+    //  CREATE MODAL
+    // ═══════════════════════════════════
+    function fg(label, type, id, val, extra='') {
+      return `<div class="sq-fg"><label>${label}</label><input type="${type}" id="${id}" value="${val||''}" ${extra}></div>`;
+    }
+
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'New Dispute';
+
+      const projectOpts = projects.map(p =>
+        `<option value="${p.id}">${p.project_code||''} - ${p.project_name||''}</option>`
+      ).join('');
+
+      let h = '<div class="sq-info-grid"><div>';
+      h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
+      h += fg('Tender Reference', 'text', 'fTender', '');
+      h += fg('Contract Reference', 'text', 'fContract', '');
+      h += `<div class="sq-fg"><label>Type</label><select id="fType">
+        <option value="payment">Payment</option>
+        <option value="quality">Quality</option>
+        <option value="delay">Delay</option>
+        <option value="scope">Scope</option>
+        <option value="safety">Safety</option>
+        <option value="other">Other</option>
+      </select></div>`;
+      h += `<div class="sq-fg"><label>Priority</label><select id="fPriority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+        <option value="critical">Critical</option>
+      </select></div>`;
+      h += '</div><div>';
+      h += fg('Title', 'text', 'fTitle', '');
+      h += `<div class="sq-fg"><label>Description</label><textarea id="fDesc" rows="4" placeholder="Describe the dispute..."></textarea></div>`;
+      h += fg('Assigned To', 'text', 'fAssigned', '');
+      h += fg('Amount Claimed', 'number', 'fAmount', '', 'step="0.01"');
+      h += fg('Deadline', 'date', 'fDeadline', '');
+      h += '</div></div>';
+      document.getElementById('modalBody').innerHTML = h;
+
+      document.getElementById('modalFooter').innerHTML =
+        '<button class="btn-sm btn-primary" onclick="saveDispute()">Create Dispute</button>' +
+        '<button class="btn-sm" onclick="closeModal()">Cancel</button>';
+      document.getElementById('disputeModal').classList.add('show');
+    }
+
+    async function saveDispute() {
+      const title = document.getElementById('fTitle').value;
+      if (!title) { typeof showToast==='function' && showToast('Title is required','warning'); return; }
+      const data = {
+        project_id: document.getElementById('fProject').value || null,
+        tender_ref: document.getElementById('fTender').value || null,
+        contract_ref: document.getElementById('fContract').value || null,
+        type: document.getElementById('fType').value,
+        priority: document.getElementById('fPriority').value,
+        title: title,
+        description: document.getElementById('fDesc').value || null,
+        assigned_to: document.getElementById('fAssigned').value || null,
+        amount_claimed: parseFloat(document.getElementById('fAmount').value) || null,
+        deadline: document.getElementById('fDeadline').value || null,
+      };
+      try {
+        await API.post('/disputes', data);
+        typeof showToast==='function' && showToast('Dispute created','success');
+        closeModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeModal() { document.getElementById('disputeModal').classList.remove('show'); }
+
+    // ═══════════════════════════════════
+    //  DETAIL MODAL (info + activity + comment + resolve)
+    // ═══════════════════════════════════
+    async function showDetail(id) {
+      currentDetailId = id;
+      try {
+        const d = await API.get('/disputes/' + id);
+        let activities = [];
+        try { activities = await API.get('/disputes/' + id + '/activities'); if (!Array.isArray(activities)) activities = []; } catch(e) { activities = []; }
+
+        document.getElementById('detailTitle').textContent = (d.dispute_number || 'Dispute') + ' — ' + (d.title || 'Detail');
+
+        let h = '';
+        // Info card
+        h += '<div class="info-card"><div class="sq-info-grid"><div>';
+        h += `<p><strong>Dispute No.:</strong> ${d.dispute_number||'-'}</p>`;
+        h += `<p><strong>Project:</strong> ${d.project_name||d.project_code||'-'}</p>`;
+        h += `<p><strong>Type:</strong> ${d.type ? d.type.charAt(0).toUpperCase()+d.type.slice(1) : '-'}</p>`;
+        h += `<p><strong>Priority:</strong> <span class="sq-badge ${priorityClass(d.priority)}">${(d.priority||'low').toUpperCase()}</span></p>`;
+        h += `<p><strong>Status:</strong> <span class="sq-badge" style="${statusStyle(d.status)}">${(d.status||'open').replace(/_/g,' ')}</span></p>`;
+        h += '</div><div>';
+        h += `<p><strong>Raised By:</strong> ${d.raised_by||'-'}</p>`;
+        h += `<p><strong>Assigned To:</strong> ${d.assigned_to||'-'}</p>`;
+        h += `<p><strong>Amount Claimed:</strong> <span class="sq-amount">${d.amount_claimed ? moneyBaht(d.amount_claimed) : '-'}</span></p>`;
+        h += `<p><strong>Deadline:</strong> ${fmtDate(d.deadline)}</p>`;
+        h += `<p><strong>Created:</strong> ${fmtDate(d.created_at)}</p>`;
+        h += '</div></div>';
+        if (d.description) h += `<p style="margin-top:8px;font-size:12px;"><strong>Description:</strong> ${d.description}</p>`;
+        h += '</div>';
+
+        // Activity Timeline
+        h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:4px;">Activity Timeline</h4>';
+        if (activities.length === 0) {
+          h += '<p style="font-size:12px;color:var(--text-muted);padding:8px 0;">No activity recorded yet.</p>';
+        } else {
+          h += '<div class="activity-timeline">';
+          activities.forEach(a => {
+            const iconClass = a.type === 'comment' ? 'comment' : a.type === 'status_change' ? 'status_change' : a.type === 'resolved' ? 'resolved' : 'assigned';
+            const iconSymbol = a.type === 'comment' ? '&#9993;' : a.type === 'status_change' ? '&#8634;' : a.type === 'resolved' ? '&#10003;' : '&#10148;';
+            h += `<div class="activity-item">
+              <div class="activity-icon ${iconClass}">${iconSymbol}</div>
+              <div class="activity-content">
+                <div class="meta"><span class="user">${a.user||'System'}</span><span>${timeAgo(a.created_at)}</span><span style="color:var(--text-muted)">${fmtDate(a.created_at)}</span></div>
+                <div class="body">${a.description||''}</div>
+              </div>
+            </div>`;
+          });
+          h += '</div>';
+        }
+
+        // Add Comment
+        if (d.status !== 'resolved' && d.status !== 'closed') {
+          h += '<div class="comment-box"><textarea id="commentText" placeholder="Add a comment..."></textarea><button class="btn-sm btn-primary" onclick="addComment()" style="align-self:flex-end;">Comment</button></div>';
+        }
+
+        document.getElementById('detailBody').innerHTML = h;
+
+        // Footer with Resolve button
+        let f = '';
+        if (d.status !== 'resolved' && d.status !== 'closed') {
+          f += `<button class="btn-sm btn-success" onclick="resolveDispute('${d.id}')">Resolve</button>`;
+        }
+        f += '<button class="btn-sm" onclick="closeDetailModal()">Close</button>';
+        document.getElementById('detailFooter').innerHTML = f;
+
+        document.getElementById('detailModal').classList.add('show');
+      } catch(e) { typeof showToast==='function' && showToast(e.message, 'error'); }
+    }
+
+    async function addComment() {
+      const text = document.getElementById('commentText').value.trim();
+      if (!text) { typeof showToast==='function' && showToast('Please enter a comment','warning'); return; }
+      try {
+        await API.post('/disputes/' + currentDetailId + '/activities', { type: 'comment', description: text });
+        typeof showToast==='function' && showToast('Comment added','success');
+        showDetail(currentDetailId); // refresh
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function resolveDispute(id) {
+      if (!confirm('Mark this dispute as resolved?')) return;
+      try {
+        await API.put('/disputes/' + id, { status: 'resolved' });
+        typeof showToast==='function' && showToast('Dispute resolved','success');
+        closeDetailModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeDetailModal() { document.getElementById('detailModal').classList.remove('show'); currentDetailId = null; }
+
+    // ═══════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════
+    if (API.requireAuth()) {
+      loadProjects();
+      loadData();
+      if (typeof I !== 'undefined') document.getElementById('pgIcon').innerHTML = I.alertTriangle + ' Dispute Management';
+    }
+  </script>
+</body>
+</html>

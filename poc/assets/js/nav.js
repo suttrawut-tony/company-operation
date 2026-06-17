@@ -69,6 +69,13 @@ const NAV_GROUPS_FALLBACK = [
     { id: 'phases', label: 'Plan Project', icon: ICONS.phases, href: 'phases.html' },
     { id: 'taskboard', label: 'Taskboard', icon: ICONS.taskboard, href: 'taskboard.html' },
   ]},
+  { label: 'Pre-Sales', collapsible: true, iconColor: 'icon-purple', items: [
+    { id: 'tenders', label: 'Tenders', icon: icon('<path d="M16 2v4"/><path d="M8 2v4"/><path d="M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="m9 14 2 2 4-4"/>'), href: 'tenders.html' },
+    { id: 'bid-preparation', label: 'Bid Preparation', icon: icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/>'), href: 'bid-preparation.html' },
+    { id: 'contracts', label: 'Contracts', icon: icon('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 12h4"/><path d="M10 16h4"/>'), href: 'contracts.html' },
+    { id: 'guarantees', label: 'Guarantees', icon: icon('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>'), href: 'guarantees.html' },
+    { id: 'disputes', label: 'Disputes', icon: icon('<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>'), href: 'disputes.html' },
+  ]},
   { label: 'Document', collapsible: true, iconColor: 'icon-green', items: [
     { id: 'budget', label: 'Budget', icon: ICONS.budget, href: 'budget.html' },
     { id: 'pr-po', label: 'PR / PO', icon: ICONS.prpo, href: 'pr-po.html' },
@@ -166,7 +173,8 @@ function checkModuleAccess() {
     'journal-entries.html', 'vehicle-project.html',
     'pricing.html', 'sow-template.html', 'sow-generator.html',
     'sow-v2.html', 'sow-v2-generator.html', 'sq-detail.html',
-    'item-detail.html', 'warehouse.html', 'po-create.html'
+    'item-detail.html', 'warehouse.html', 'po-create.html',
+    'tender-detail.html'
   ];
   if (!page || whitelist.includes(page)) return;
   if (!_enabledHrefs.has(page)) {
@@ -202,7 +210,7 @@ function renderSidebar() {
 
   el.className = 'sidebar' + (collapsed ? ' collapsed' : '');
   // Map sidebar group labels to i18n keys
-  const groupI18nKeys = { Main: 'nav_main', Project: 'nav_project', Document: 'nav_document', Resource: 'nav_resource', System: 'nav_system' };
+  const groupI18nKeys = { Main: 'nav_main', Project: 'nav_project', 'Pre-Sales': 'nav_presales', Document: 'nav_document', Resource: 'nav_resource', System: 'nav_system' };
   // Map sidebar item IDs to i18n keys
   const itemI18nKeys = {
     dashboard: 'dashboard', 'my-tasks': 'my_tasks', projects: 'projects',
@@ -213,7 +221,9 @@ function renderSidebar() {
     warehouse: 'warehouse', ot: 'holiday_ot', items: 'item_master',
     bp: 'bp_master', 'number-running': 'number_running', reports: 'reports',
     permissions: 'user_permission', setup: 'setup', changelog: 'changelog',
-    help: 'user_guide'
+    help: 'user_guide',
+    tenders: 'tenders', 'bid-preparation': 'bid_preparation',
+    contracts: 'contracts', guarantees: 'guarantees', disputes: 'disputes'
   };
 
   el.innerHTML = `

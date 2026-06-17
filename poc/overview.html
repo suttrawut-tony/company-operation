@@ -144,7 +144,29 @@
       </div>
     </div>
 
-    <!-- Row 5: Activity + Discussion -->
+    <!-- Row 5: Pre-Sales (Tenders, Contracts, Guarantees, Disputes) -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>Tenders</h2><a href="tenders.html" class="btn btn-ghost btn-sm">View All</a></div>
+        <div class="card-body" id="presales-tenders">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Contracts</h2><a href="contracts.html" class="btn btn-ghost btn-sm">View All</a></div>
+        <div class="card-body" id="presales-contracts">Loading...</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>Guarantees</h2><a href="guarantees.html" class="btn btn-ghost btn-sm">View All</a></div>
+        <div class="card-body" id="presales-guarantees">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Disputes</h2><a href="disputes.html" class="btn btn-ghost btn-sm">View All</a></div>
+        <div class="card-body" id="presales-disputes">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Row 6: Activity + Discussion -->
     <div class="two-col">
       <div class="card">
         <div class="card-header"><h2 data-i18n="overview_section_activity">Activity Log</h2></div>
@@ -473,6 +495,30 @@
               <span style="color:var(--text-muted);min-width:60px;font-size:11px;">${timeAgo(a.created_at)}</span>
               <span><strong>${a.first_name_th||a.first_name||'-'}</strong> ${a.description||a.action}</span>
             </div>`).join('');
+        });
+
+        // ── Pre-Sales Sections ──
+        load('/tenders?project_id='+projectId, 'presales-tenders', items => {
+          if (!items.length) return '<div style="color:var(--text-muted);padding:8px;">No tenders</div>';
+          return items.slice(0,5).map(t => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;"><div><strong style="color:var(--primary);">${t.tender_number}</strong> ${t.title||''}</div><div>${statusBadge(t.status)}</div></div>`).join('');
+        });
+        load('/contracts?project_id='+projectId, 'presales-contracts', items => {
+          if (!items.length) return '<div style="color:var(--text-muted);padding:8px;">No contracts</div>';
+          return items.slice(0,5).map(c => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;"><div><strong style="color:var(--primary);">${c.contract_number}</strong> ${c.counterparty_name||''}</div><div>${statusBadge(c.status)} <span style="font-weight:600;">฿${Number(c.contract_amount||0).toLocaleString()}</span></div></div>`).join('');
+        });
+        load('/guarantees?project_id='+projectId, 'presales-guarantees', items => {
+          if (!items.length) return '<div style="color:var(--text-muted);padding:8px;">No guarantees</div>';
+          return items.slice(0,5).map(g => {
+            const days = g.days_until_expiry; const color = days < 30 ? 'var(--danger)' : days < 60 ? 'var(--warning)' : 'var(--success)';
+            return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;"><div><strong>${g.guarantee_number||g.guarantee_type}</strong> ${g.bank_name||''}</div><div>${statusBadge(g.status)} <span style="color:${color};font-weight:600;">${days!=null?days+'d':'—'}</span></div></div>`;
+          }).join('');
+        });
+        load('/disputes?project_id='+projectId, 'presales-disputes', items => {
+          if (!items.length) return '<div style="color:var(--text-muted);padding:8px;">No disputes</div>';
+          return items.slice(0,5).map(d => {
+            const pColor = {critical:'var(--danger)',high:'#f97316',medium:'var(--warning)',low:'var(--text-muted)'}[d.priority]||'var(--text-muted)';
+            return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;"><div><strong style="color:${pColor};">${d.dispute_number}</strong> ${d.title||''}</div><div>${statusBadge(d.status)}</div></div>`;
+          }).join('');
         });
 
         // ── Discussion Threads ──

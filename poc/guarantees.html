@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Guarantee Management</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .sq-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    .sq-stat { background: var(--bg-white); border:1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; text-align: center; }
+    .sq-stat .val { font-size: 22px; font-weight: 800; }
+    .sq-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .sq-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sq-table th { background:var(--bg-light); padding:10px 14px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-table td { padding:10px 14px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .sq-table tr:hover td { background:var(--bg-hover); }
+    .sq-table tr { cursor:pointer; }
+    .sq-badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; display:inline-block; }
+    .sq-amount { font-weight:700; font-family:monospace; }
+    .sq-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; }
+    .sq-modal-overlay.show { display:flex; }
+    .sq-modal { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .sq-modal-header { padding:16px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
+    .sq-modal-header h3 { font-size:16px; font-weight:700; }
+    .sq-modal-body { padding:20px; }
+    .sq-modal-footer { padding:12px 20px; border-top:1px solid var(--border-light); display:flex; gap:8px; justify-content:flex-end; }
+    .sq-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .sq-fg { margin-bottom:10px; }
+    .sq-fg label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    .sq-fg input, .sq-fg select, .sq-fg textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; background:var(--bg-white); }
+    .sq-fg input:focus, .sq-fg select:focus, .sq-fg textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-muted); line-height:1; }
+    .close-btn:hover { color:var(--text-primary); }
+    .btn-sm { font-size:12px; padding:6px 14px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); color:var(--text-primary); }
+    .btn-sm:hover { background:var(--bg-hover); }
+    .btn-primary { background:var(--primary); color:white; border-color:var(--primary); }
+    .btn-primary:hover { filter:brightness(0.9); }
+    .btn-danger { background:var(--danger); color:white; border-color:var(--danger); }
+    .btn-success { background:var(--success); color:white; border-color:var(--success); }
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .filter-bar select { font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-white); }
+    .days-badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:700; }
+    .days-red { background:var(--danger-bg); color:#991b1b; }
+    .days-yellow { background:var(--warning-bg); color:#92400e; }
+    .days-green { background:var(--success-bg); color:#065f46; }
+    .expiring-count { background:var(--danger); color:white; font-size:10px; padding:1px 6px; border-radius:var(--radius-full); font-weight:700; margin-left:4px; }
+    @media (max-width:768px) { .sq-stats { grid-template-columns: repeat(2,1fr); } .sq-info-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1 id="pgIcon">Guarantee Management</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportGuarantees()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Guarantee</button>
+      </div>
+    </div>
+    <div class="sq-stats" id="stats"></div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Guarantee List</h2>
+        <div class="filter-bar">
+          <select id="filterProject" onchange="loadData()"><option value="">All Projects</option></select>
+          <select id="filterStatus" onchange="loadData()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="expiring">Expiring Soon</option>
+            <option value="expired">Expired</option>
+            <option value="released">Released</option>
+          </select>
+          <select id="filterType" onchange="loadData()">
+            <option value="">All Types</option>
+            <option value="bid_bond">Bid Bond</option>
+            <option value="performance_bond">Performance Bond</option>
+            <option value="advance_payment">Advance Payment</option>
+            <option value="retention_bond">Retention Bond</option>
+          </select>
+        </div>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="sq-modal-overlay" id="guaranteeModal" onclick="if(event.target===this)closeModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="modalTitle"></h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="modalBody"></div>
+      <div class="sq-modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/excel-export.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allGuarantees = [];
+    let editGuarantee = null;
+    let projects = [];
+
+    async function loadProjects() {
+      try {
+        const res = await API.get('/projects');
+        projects = Array.isArray(res) ? res : (res.projects || []);
+        const sel = document.getElementById('filterProject');
+        projects.forEach(p => {
+          const o = document.createElement('option');
+          o.value = p.id;
+          o.textContent = p.project_code ? (p.project_code + ' - ' + (p.project_name||'')) : (p.project_name||p.id);
+          sel.appendChild(o);
+        });
+      } catch(e) { projects = []; }
+    }
+
+    async function loadData() {
+      try {
+        const params = new URLSearchParams();
+        const status = document.getElementById('filterStatus').value;
+        const type = document.getElementById('filterType').value;
+        const project = document.getElementById('filterProject').value;
+        if (status) params.set('status', status);
+        if (type) params.set('type', type);
+        if (project) params.set('project_id', project);
+        const q = params.toString();
+        allGuarantees = await API.get('/guarantees' + (q ? '?' + q : ''));
+        if (!Array.isArray(allGuarantees)) allGuarantees = [];
+      } catch(e) { allGuarantees = []; }
+      renderStats();
+      renderTable();
+    }
+
+    function calcDaysLeft(expiryDate) {
+      if (!expiryDate) return null;
+      const diff = new Date(expiryDate) - new Date();
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    }
+
+    function daysLeftBadge(days) {
+      if (days === null) return '<span class="days-badge" style="background:var(--bg-light);color:var(--text-muted)">N/A</span>';
+      if (days < 0) return `<span class="days-badge days-red">Expired</span>`;
+      if (days < 30) return `<span class="days-badge days-red">${days}d</span>`;
+      if (days < 60) return `<span class="days-badge days-yellow">${days}d</span>`;
+      return `<span class="days-badge days-green">${days}d</span>`;
+    }
+
+    function renderStats() {
+      const t = allGuarantees.length;
+      const active = allGuarantees.filter(g => g.status === 'active').length;
+      const expiring = allGuarantees.filter(g => {
+        if (g.status === 'released') return false;
+        const d = calcDaysLeft(g.expiry_date);
+        return d !== null && d >= 0 && d < 60;
+      }).length;
+      const released = allGuarantees.filter(g => g.status === 'released').length;
+      document.getElementById('stats').innerHTML = `
+        <div class="sq-stat"><div class="val">${t}</div><div class="lbl">Total Guarantees</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success)">${active}</div><div class="lbl">Active</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--danger)">${expiring}${expiring > 0 ? '<span class="expiring-count">!</span>' : ''}</div><div class="lbl">Expiring Soon</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--text-muted)">${released}</div><div class="lbl">Released</div></div>`;
+    }
+
+    function statusStyle(s) {
+      return {
+        active:'background:var(--success-bg);color:#065f46',
+        expired:'background:var(--danger-bg);color:#991b1b',
+        released:'background:#e2e3e5;color:#383d41',
+        expiring:'background:var(--warning-bg);color:#92400e'
+      }[s] || 'background:#e2e3e5;color:#383d41';
+    }
+
+    function typeLabel(t) {
+      return { bid_bond:'Bid Bond', performance_bond:'Performance Bond', advance_payment:'Advance Payment', retention_bond:'Retention Bond' }[t] || t || '-';
+    }
+
+    function getEffectiveStatus(g) {
+      if (g.status === 'released') return 'released';
+      const d = calcDaysLeft(g.expiry_date);
+      if (d !== null && d < 0) return 'expired';
+      if (d !== null && d < 60) return 'expiring';
+      return g.status || 'active';
+    }
+
+    function renderTable() {
+      if (!allGuarantees.length) {
+        document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No guarantees found</div>';
+        return;
+      }
+      let h = '<table class="sq-table"><thead><tr><th>Guarantee No.</th><th>Project</th><th>Contract</th><th>Type</th><th>Bank</th><th>Amount</th><th>Issue Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      allGuarantees.forEach(g => {
+        const days = calcDaysLeft(g.expiry_date);
+        const effStatus = getEffectiveStatus(g);
+        h += `<tr>
+          <td style="font-weight:600;color:var(--primary)">${g.guarantee_number || '-'}</td>
+          <td>${g.project_name || g.project_code || '-'}</td>
+          <td>${g.contract_number || '-'}</td>
+          <td>${typeLabel(g.type)}</td>
+          <td>${g.bank_name || '-'}</td>
+          <td class="sq-amount">${fmtNum(g.amount || 0)}</td>
+          <td>${fmtDateShort(g.issue_date)}</td>
+          <td>${fmtDateShort(g.expiry_date)}</td>
+          <td>${daysLeftBadge(g.status === 'released' ? null : days)}</td>
+          <td><span class="sq-badge" style="${statusStyle(effStatus)}">${effStatus.replace(/_/g,' ')}</span></td>
+          <td onclick="event.stopPropagation()">
+            ${g.status !== 'released' ? `<button class="btn-sm btn-danger" onclick="releaseGuarantee('${g.id}')">Release</button>` : ''}
+            <button class="btn-sm" onclick="openEditModal('${g.id}')">Edit</button>
+          </td>
+        </tr>`;
+      });
+      h += '</tbody></table>';
+      document.getElementById('tableWrap').innerHTML = h;
+    }
+
+    // ═══════════════════════════════════
+    //  CREATE / EDIT MODAL
+    // ═══════════════════════════════════
+    function fg(label, type, id, val, extra='') {
+      return `<div class="sq-fg"><label>${label}</label><input type="${type}" id="${id}" value="${val||''}" ${extra}></div>`;
+    }
+
+    function openCreateModal() {
+      editGuarantee = null;
+      renderFormModal(true);
+      document.getElementById('guaranteeModal').classList.add('show');
+    }
+
+    async function openEditModal(id) {
+      try {
+        editGuarantee = await API.get('/guarantees/' + id);
+        renderFormModal(false);
+        document.getElementById('guaranteeModal').classList.add('show');
+      } catch(e) { typeof showToast==='function' && showToast(e.message, 'error'); }
+    }
+
+    function renderFormModal(isNew) {
+      const g = editGuarantee || {};
+      document.getElementById('modalTitle').textContent = isNew ? 'New Guarantee' : 'Edit Guarantee — ' + (g.guarantee_number||'');
+
+      const projectOpts = projects.map(p =>
+        `<option value="${p.id}" ${g.project_id==p.id?'selected':''}>${p.project_code||''} - ${p.project_name||''}</option>`
+      ).join('');
+
+      let h = '<div class="sq-info-grid"><div>';
+      h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
+      h += fg('Contract Reference', 'text', 'fContract', g.contract_number || g.contract_ref);
+      h += `<div class="sq-fg"><label>Type</label><select id="fType">
+        <option value="bid_bond" ${g.type==='bid_bond'?'selected':''}>Bid Bond</option>
+        <option value="performance_bond" ${g.type==='performance_bond'?'selected':''}>Performance Bond</option>
+        <option value="advance_payment" ${g.type==='advance_payment'?'selected':''}>Advance Payment</option>
+        <option value="retention_bond" ${g.type==='retention_bond'?'selected':''}>Retention Bond</option>
+      </select></div>`;
+      h += fg('Guarantee Number', 'text', 'fGNumber', g.guarantee_number);
+      h += fg('Bank Name', 'text', 'fBankName', g.bank_name);
+      h += '</div><div>';
+      h += fg('Bank Branch', 'text', 'fBankBranch', g.bank_branch);
+      h += fg('Amount', 'number', 'fAmount', g.amount, 'step="0.01"');
+      h += fg('Issue Date', 'date', 'fIssue', g.issue_date ? g.issue_date.substring(0,10) : '');
+      h += fg('Expiry Date', 'date', 'fExpiry', g.expiry_date ? g.expiry_date.substring(0,10) : '');
+      h += fg('Premium Rate (%)', 'number', 'fPremiumRate', g.premium_rate, 'step="0.01"');
+      h += '</div></div>';
+      h += '<div class="sq-info-grid"><div>';
+      h += fg('Premium Amount', 'number', 'fPremiumAmt', g.premium_amount, 'step="0.01"');
+      h += '</div><div></div></div>';
+      h += `<div class="sq-fg"><label>Remarks</label><textarea id="fRemarks" rows="3">${g.remarks||''}</textarea></div>`;
+      document.getElementById('modalBody').innerHTML = h;
+
+      let f = `<button class="btn-sm btn-primary" onclick="saveGuarantee(${isNew})">${isNew ? 'Create' : 'Save'}</button>`;
+      f += '<button class="btn-sm" onclick="closeModal()">Cancel</button>';
+      document.getElementById('modalFooter').innerHTML = f;
+    }
+
+    async function saveGuarantee(isNew) {
+      const data = {
+        project_id: document.getElementById('fProject').value || null,
+        contract_ref: document.getElementById('fContract').value || null,
+        type: document.getElementById('fType').value,
+        guarantee_number: document.getElementById('fGNumber').value || null,
+        bank_name: document.getElementById('fBankName').value || null,
+        bank_branch: document.getElementById('fBankBranch').value || null,
+        amount: parseFloat(document.getElementById('fAmount').value) || 0,
+        issue_date: document.getElementById('fIssue').value || null,
+        expiry_date: document.getElementById('fExpiry').value || null,
+        premium_rate: parseFloat(document.getElementById('fPremiumRate').value) || null,
+        premium_amount: parseFloat(document.getElementById('fPremiumAmt').value) || null,
+        remarks: document.getElementById('fRemarks').value || null,
+      };
+      try {
+        if (isNew) {
+          await API.post('/guarantees', data);
+          typeof showToast==='function' && showToast('Guarantee created','success');
+        } else {
+          await API.put('/guarantees/' + editGuarantee.id, data);
+          typeof showToast==='function' && showToast('Guarantee updated','success');
+        }
+        closeModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function releaseGuarantee(id) {
+      if (!confirm('Release this guarantee? This action cannot be undone.')) return;
+      try {
+        await API.post('/guarantees/' + id + '/release');
+        typeof showToast==='function' && showToast('Guarantee released','success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeModal() { document.getElementById('guaranteeModal').classList.remove('show'); }
+
+    // ═══════════════════════════════════
+    //  EXPORT
+    // ═══════════════════════════════════
+    function exportGuarantees() {
+      if (!allGuarantees.length) { typeof showToast==='function' && showToast('No data to export','warning'); return; }
+      const headers = ['Guarantee No.','Project','Contract','Type','Bank','Branch','Amount','Issue Date','Expiry Date','Days Left','Premium Rate','Premium Amount','Status','Remarks'];
+      const rows = allGuarantees.map(g => {
+        const days = calcDaysLeft(g.expiry_date);
+        return [
+          g.guarantee_number||'', g.project_name||g.project_code||'', g.contract_number||'',
+          typeLabel(g.type), g.bank_name||'', g.bank_branch||'',
+          parseFloat(g.amount||0),
+          g.issue_date ? new Date(g.issue_date).toLocaleDateString('en-GB') : '',
+          g.expiry_date ? new Date(g.expiry_date).toLocaleDateString('en-GB') : '',
+          days !== null ? days : '',
+          g.premium_rate||'', parseFloat(g.premium_amount||0),
+          (getEffectiveStatus(g)).replace(/_/g,' '), g.remarks||''
+        ];
+      });
+      exportToExcel(headers, rows, 'Guarantees', 'guarantees.xlsx');
+    }
+
+    // ═══════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════
+    if (API.requireAuth()) {
+      loadProjects();
+      loadData();
+      if (typeof I !== 'undefined') document.getElementById('pgIcon').innerHTML = I.shield + ' Guarantee Management';
+    }
+  </script>
+</body>
+</html>

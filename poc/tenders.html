@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Tender Management</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .sq-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    .sq-stat { background: var(--bg-white); border:1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; text-align: center; }
+    .sq-stat .val { font-size: 22px; font-weight: 800; }
+    .sq-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .sq-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sq-table th { background:var(--bg-light); padding:10px 14px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .sq-table td { padding:10px 14px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .sq-table tr:hover td { background:var(--bg-hover); }
+    .sq-table tr { cursor:pointer; }
+    .sq-badge { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; }
+    .sq-amount { font-weight:700; font-family:monospace; }
+    .sq-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; }
+    .sq-modal-overlay.show { display:flex; }
+    .sq-modal { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .sq-modal-header { padding:16px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
+    .sq-modal-header h3 { font-size:16px; font-weight:700; }
+    .sq-modal-body { padding:20px; }
+    .sq-modal-footer { padding:12px 20px; border-top:1px solid var(--border-light); display:flex; gap:8px; justify-content:flex-end; }
+    .sq-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .sq-fg { margin-bottom:10px; }
+    .sq-fg label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    .sq-fg input, .sq-fg select, .sq-fg textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; background:var(--bg-white); }
+    .sq-fg input:focus, .sq-fg select:focus, .sq-fg textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .sq-fg textarea { min-height:60px; resize:vertical; }
+    .filter-bar { display:flex; gap:10px; margin-bottom:16px; align-items:center; flex-wrap:wrap; }
+    .filter-bar select, .filter-bar input { padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; background:var(--bg-white); }
+    .filter-bar input[type="search"] { min-width:200px; }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-muted); line-height:1; }
+    .close-btn:hover { color:var(--text-primary); }
+    .btn-sm { font-size:12px; padding:6px 14px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); color:var(--text-primary); }
+    .btn-sm:hover { background:var(--bg-hover); }
+    .btn-primary { background:var(--primary); color:white; border-color:var(--primary); }
+    .btn-primary:hover { filter:brightness(0.9); }
+    .btn-danger { background:var(--danger); color:white; border-color:var(--danger); }
+    .btn-success { background:var(--success,#0f9d58); color:white; border-color:var(--success,#0f9d58); }
+    .btn-warning { background:#f59e0b; color:white; border-color:#f59e0b; }
+    .del-btn { border:none; background:none; color:var(--danger); cursor:pointer; font-size:16px; }
+    .action-btns { display:flex; gap:4px; }
+    .action-btns button { font-size:11px; padding:3px 8px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); white-space:nowrap; }
+    .action-btns button:hover { background:var(--bg-hover); }
+    @media (max-width:768px) { .sq-stats { grid-template-columns: repeat(2,1fr); } .sq-info-grid { grid-template-columns:1fr; } .filter-bar { flex-direction:column; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1 id="pgIcon">Tender Management</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportTenders()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Tender</button>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <select id="filterProject" onchange="applyFilters()">
+        <option value="">All Projects</option>
+      </select>
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="draft">Draft</option>
+        <option value="published">Published</option>
+        <option value="closed">Closed</option>
+        <option value="awarded">Awarded</option>
+      </select>
+      <select id="filterType" onchange="applyFilters()">
+        <option value="">All Types</option>
+        <option value="direct_purchase">Direct Purchase</option>
+        <option value="price_comparison">Price Comparison</option>
+        <option value="bidding">Bidding</option>
+      </select>
+      <input type="search" id="filterSearch" placeholder="Search tenders..." oninput="applyFilters()">
+    </div>
+
+    <div class="sq-stats" id="stats"></div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Tender List</h2>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="sq-modal-overlay" id="tenderModal" onclick="if(event.target===this)closeModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="modalTitle"></h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="modalBody"></div>
+      <div class="sq-modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/excel-export.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allTenders = [];
+    let filteredTenders = [];
+    let editTender = null;
+    let projects = [];
+
+    async function loadData() {
+      try {
+        allTenders = await API.get('/tenders');
+        if (!Array.isArray(allTenders)) allTenders = [];
+      } catch(e) { allTenders = []; }
+      try {
+        const res = await API.get('/projects');
+        projects = Array.isArray(res) ? res : (res.projects || []);
+        renderProjectFilter();
+      } catch(e) { projects = []; }
+      applyFilters();
+    }
+
+    function renderProjectFilter() {
+      const sel = document.getElementById('filterProject');
+      let opts = '<option value="">All Projects</option>';
+      projects.forEach(p => { opts += `<option value="${p.id}">${p.project_code||''} — ${p.project_name||''}</option>`; });
+      sel.innerHTML = opts;
+    }
+
+    function applyFilters() {
+      const status = document.getElementById('filterStatus').value;
+      const type = document.getElementById('filterType').value;
+      const project = document.getElementById('filterProject').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+      filteredTenders = allTenders.filter(t => {
+        if (status && t.status !== status) return false;
+        if (type && t.tender_type !== type) return false;
+        if (project && String(t.project_id) !== project) return false;
+        if (search && !(t.tender_no||'').toLowerCase().includes(search) && !(t.title||'').toLowerCase().includes(search)) return false;
+        return true;
+      });
+      renderStats();
+      renderTable();
+    }
+
+    function renderStats() {
+      const t = filteredTenders.length;
+      const pub = filteredTenders.filter(x=>x.status==='published').length;
+      const evl = filteredTenders.filter(x=>x.status==='closed').length;
+      const awd = filteredTenders.filter(x=>x.status==='awarded').length;
+      document.getElementById('stats').innerHTML = `
+        <div class="sq-stat"><div class="val">${t}</div><div class="lbl">Total Tenders</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--primary)">${pub}</div><div class="lbl">Published</div></div>
+        <div class="sq-stat"><div class="val" style="color:#f59e0b">${evl}</div><div class="lbl">Evaluating</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success,#0f9d58)">${awd}</div><div class="lbl">Awarded</div></div>`;
+    }
+
+    function statusStyle(s) {
+      return ({
+        draft:'background:#e2e3e5;color:#383d41',
+        published:'background:#dbeafe;color:#1d4ed8',
+        closed:'background:#fef3c7;color:#92400e',
+        awarded:'background:#d4edda;color:#155724'
+      }[s]||'background:#e2e3e5;color:#383d41');
+    }
+
+    function typeLabel(t) {
+      return ({direct_purchase:'Direct Purchase',price_comparison:'Price Comparison',bidding:'Bidding'}[t]||t||'-');
+    }
+
+    function renderTable() {
+      if (!filteredTenders.length) {
+        document.getElementById('tableWrap').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No tenders found</div>';
+        return;
+      }
+      let h='<table class="sq-table"><thead><tr><th>Tender No.</th><th>Title</th><th>Project</th><th>Type</th><th>Budget</th><th>Status</th><th>Close Date</th><th>Actions</th></tr></thead><tbody>';
+      filteredTenders.forEach(t=>{
+        const projName = projects.find(p=>p.id===t.project_id);
+        h+=`<tr onclick="window.location='tender-detail.html?id=${t.id}'">
+          <td style="font-weight:600;color:var(--primary)">${t.tender_no||'-'}</td>
+          <td>${t.title||'-'}</td>
+          <td>${projName?projName.project_code||projName.project_name:'-'}</td>
+          <td>${typeLabel(t.tender_type)}</td>
+          <td class="sq-amount">${fmtNum(t.budget||0)}</td>
+          <td><span class="sq-badge" style="${statusStyle(t.status)}">${t.status||'-'}</span></td>
+          <td>${t.close_date?new Date(t.close_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-'}</td>
+          <td onclick="event.stopPropagation()">
+            <div class="action-btns">
+              <button onclick="openEditModal('${t.id}')">Edit</button>
+              ${t.status==='draft'?`<button class="btn-primary" style="color:white" onclick="changeStatus('${t.id}','published')">Publish</button>`:''}
+              ${t.status==='published'?`<button class="btn-warning" style="color:white" onclick="changeStatus('${t.id}','closed')">Close</button>`:''}
+              ${t.status==='closed'?`<button class="btn-success" style="color:white" onclick="changeStatus('${t.id}','awarded')">Award</button>`:''}
+              <button class="btn-danger" style="color:white" onclick="deleteTender('${t.id}')">Delete</button>
+            </div>
+          </td></tr>`;
+      });
+      h+='</tbody></table>';
+      document.getElementById('tableWrap').innerHTML=h;
+    }
+
+    // ════════════════════════════════
+    //  MODAL: CREATE / EDIT
+    // ════════════════════════════════
+    function openCreateModal() {
+      editTender = { status:'draft', tender_type:'direct_purchase' };
+      renderModal(true);
+      document.getElementById('tenderModal').classList.add('show');
+    }
+
+    async function openEditModal(id) {
+      try {
+        editTender = await API.get('/tenders/'+id);
+        renderModal(false);
+        document.getElementById('tenderModal').classList.add('show');
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function renderModal(isNew) {
+      const t = editTender;
+      document.getElementById('modalTitle').textContent = isNew ? 'Create New Tender' : 'Edit Tender — '+(t.tender_no||'');
+
+      let projOpts = '<option value="">-- Select Project --</option>';
+      projects.forEach(p => { projOpts += `<option value="${p.id}" ${p.id===t.project_id?'selected':''}>${p.project_code||''} — ${p.project_name||''}</option>`; });
+
+      let h = '<div class="sq-info-grid"><div>';
+      h += fg('Title', 'text', 'tdTitle', t.title||'');
+      h += `<div class="sq-fg"><label>Project</label><select id="tdProject">${projOpts}</select></div>`;
+      h += `<div class="sq-fg"><label>Tender Type</label><select id="tdType">
+        <option value="direct_purchase" ${t.tender_type==='direct_purchase'?'selected':''}>Direct Purchase</option>
+        <option value="price_comparison" ${t.tender_type==='price_comparison'?'selected':''}>Price Comparison</option>
+        <option value="bidding" ${t.tender_type==='bidding'?'selected':''}>Bidding</option>
+      </select></div>`;
+      h += fg('Budget', 'number', 'tdBudget', t.budget||'');
+      h += '</div><div>';
+      h += fg('Open Date', 'date', 'tdOpenDate', t.open_date?t.open_date.substring(0,10):'');
+      h += fg('Close Date', 'date', 'tdCloseDate', t.close_date?t.close_date.substring(0,10):'');
+      h += fg('Evaluation Criteria', 'text', 'tdCriteria', t.evaluation_criteria||'');
+      h += `<div class="sq-fg"><label>Remarks</label><textarea id="tdRemarks">${t.remarks||''}</textarea></div>`;
+      h += '</div></div>';
+
+      document.getElementById('modalBody').innerHTML = h;
+
+      let f = '';
+      f += `<button class="btn-sm btn-primary" onclick="saveTender(${isNew})">${isNew?'Create':'Save'}</button>`;
+      f += '<button class="btn-sm" onclick="closeModal()">Cancel</button>';
+      document.getElementById('modalFooter').innerHTML = f;
+    }
+
+    function fg(label, type, id, val, extra='') {
+      return `<div class="sq-fg"><label>${label}</label><input type="${type}" id="${id}" value="${val||''}" ${extra}></div>`;
+    }
+
+    async function saveTender(isNew) {
+      const data = {
+        title: document.getElementById('tdTitle').value||null,
+        project_id: document.getElementById('tdProject').value||null,
+        tender_type: document.getElementById('tdType').value||null,
+        budget: parseFloat(document.getElementById('tdBudget').value)||0,
+        open_date: document.getElementById('tdOpenDate').value||null,
+        close_date: document.getElementById('tdCloseDate').value||null,
+        evaluation_criteria: document.getElementById('tdCriteria').value||null,
+        remarks: document.getElementById('tdRemarks').value||null,
+      };
+      try {
+        if (isNew) {
+          await API.post('/tenders', data);
+          typeof showToast==='function' && showToast('Tender created successfully','success');
+        } else {
+          await API.put('/tenders/'+editTender.id, data);
+          typeof showToast==='function' && showToast('Tender updated successfully','success');
+        }
+        closeModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function changeStatus(id, status) {
+      if (!confirm(`Change status to "${status}"?`)) return;
+      try {
+        await API.put('/tenders/'+id, { status });
+        typeof showToast==='function' && showToast('Status updated','success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function deleteTender(id) {
+      if (!confirm('Are you sure you want to delete this tender?')) return;
+      try {
+        await API.delete('/tenders/'+id);
+        typeof showToast==='function' && showToast('Tender deleted','success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeModal() { document.getElementById('tenderModal').classList.remove('show'); }
+
+    function exportTenders() {
+      if (!filteredTenders.length) { typeof showToast==='function' && showToast('No data to export','warning'); return; }
+      const headers = ['Tender No.','Title','Project','Type','Budget','Status','Open Date','Close Date','Evaluation Criteria','Remarks'];
+      const rows = filteredTenders.map(t => {
+        const proj = projects.find(p=>p.id===t.project_id);
+        return [
+          t.tender_no||'', t.title||'', proj?proj.project_code||proj.project_name:'',
+          typeLabel(t.tender_type), parseFloat(t.budget||0), t.status||'',
+          t.open_date?new Date(t.open_date).toLocaleDateString('th-TH'):'',
+          t.close_date?new Date(t.close_date).toLocaleDateString('th-TH'):'',
+          t.evaluation_criteria||'', t.remarks||''
+        ];
+      });
+      exportToExcel(headers, rows, 'Tenders', 'tenders.xlsx');
+    }
+
+    // Init
+    if (API.requireAuth()) {
+      loadData();
+      if (typeof I!=='undefined') document.getElementById('pgIcon').innerHTML = I.clipboard+' Tender Management';
+      else document.getElementById('pgIcon').textContent = 'Tender Management';
+    }
+  </script>
+</body>
+</html>
