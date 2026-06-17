@@ -368,7 +368,7 @@
                   '<div style="display:flex;align-items:center;gap:6px;">' +
                     (retDue ? '<span style="color:var(--text-muted);">ครบ '+retDue.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})+'</span>' : '') +
                     '<span class="badge badge-'+(retStatus==='released'?'success':isOverdue?'danger':isNearDue?'warning':'primary')+'" style="font-size:10px;">'+retLabel+'</span>' +
-                    '<button class="btn-ret-edit" onclick="openRetModal(\''+p.id+'\')">&#9998;</button>' +
+                    '<button class="btn-ret-edit" onclick="openRetModal(\''+p.id+'\')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>' +
                   '</div></div>';
               } else {
                 return '<div style="margin-top:12px;text-align:center;" onclick="event.stopPropagation();"><button class="btn-ret-edit" onclick="openRetModal(\''+p.id+'\')" style="padding:6px 14px;border:1px dashed var(--border);background:var(--bg-light);border-radius:8px;width:100%;">+ ตั้งค่าประกันผลงาน</button></div>';
@@ -383,8 +383,8 @@
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
               <div class="proj-dates">${p.start_date ? new Date(p.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''} — ${p.end_date ? new Date(p.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
-              ${(['executive','manager','admin','owner','pm','finance'].includes(userRole) || String(p.pm_user_id) === String(userId)) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();openEditProject(\''+p.id+'\')" title="Edit">&#9998; แก้ไข</button>' : ''}
-              ${['executive','admin','owner'].includes(userRole) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();deleteProject(\''+p.id+'\',\''+p.code+'\')" title="Delete" style="color:var(--danger);">&#128465; ลบ</button>' : ''}
+              ${(['executive','manager','admin','owner','pm','finance'].includes(userRole) || String(p.pm_user_id) === String(userId)) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();openEditProject(\''+p.id+'\')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> แก้ไข</button>' : ''}
+              ${['executive','admin','owner'].includes(userRole) ? '<button class="btn-ret-edit" onclick="event.stopPropagation();deleteProject(\''+p.id+'\',\''+p.code+'\')" title="Delete" style="color:var(--danger);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> ลบ</button>' : ''}
             </div>
           </div>
         </div>`;

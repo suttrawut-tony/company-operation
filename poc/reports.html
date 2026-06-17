@@ -1133,7 +1133,7 @@
           <table class="rpt-table">
             <thead><tr><th>JE#</th><th>Source</th><th>Type</th><th>Date</th><th>Description</th><th>GL Account</th><th>Account Name</th><th class="r">Debit (฿)</th><th class="r">Credit (฿)</th><th>Status</th></tr></thead>
             <tbody>${rows.join('')}</tbody>
-            <tfoot><tr><td colspan="7" class="r">Grand Total</td><td class="r" style="color:var(--primary);">${money(tDr)}</td><td class="r" style="color:var(--success);">${money(tCr)}</td><td><span style="font-size:var(--text-xs);color:${balanced?'var(--success)':'var(--danger)'};">${balanced?'✓ Balanced':'⚠ Diff: '+money(Math.abs(tDr-tCr))}</span></td></tr></tfoot>
+            <tfoot><tr><td colspan="7" class="r">Grand Total</td><td class="r" style="color:var(--primary);">${money(tDr)}</td><td class="r" style="color:var(--success);">${money(tCr)}</td><td><span style="font-size:var(--text-xs);color:${balanced?'var(--success)':'var(--danger)'};">${balanced?'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg> Balanced':'⚠ Diff: '+money(Math.abs(tDr-tCr))}</span></td></tr></tfoot>
           </table>`;
       },
 

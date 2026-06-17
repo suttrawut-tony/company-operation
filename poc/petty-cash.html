@@ -340,7 +340,7 @@
               <button class="btn btn-primary btn-sm" onclick="openDisbModal('${f.id}','${f.fund_name}',${bal})">+ Disburse</button>
               <button class="btn btn-secondary btn-sm" onclick="openReplModal('${f.id}',${limit},${bal})">Replenish</button>
               <button class="btn btn-secondary btn-sm" onclick="openCountModal('${f.id}',${bal})">Cash Count</button>
-              ${['finance','executive','admin'].includes(userRole) ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editFund('${f.id}')">&#9998; Edit Fund</button>` : ''}
+              ${['finance','executive','admin'].includes(userRole) ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editFund('${f.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> Edit Fund</button>` : ''}
             </div>
             <div id="detail-${f.id}"><div style="color:var(--text-muted);font-size:12px;">Loading...</div></div>
           </div>
@@ -369,14 +369,14 @@
         if (data.disbursements && data.disbursements.length) {
           data.disbursements.forEach(d => {
             const dotColor = d.status === 'approved' ? 'var(--success)' : d.receipt_status === 'submitted' ? 'var(--warning)' : 'var(--text-muted)';
-            const receiptLabel = d.receipt_status === 'approved' ? '<span style="color:var(--success);font-size:10px;">&#10003; Receipt approved</span>'
+            const receiptLabel = d.receipt_status === 'approved' ? '<span style="color:var(--success);font-size:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Receipt approved</span>'
               : d.receipt_status === 'submitted' ? '<span style="color:var(--warning);font-size:10px;">Receipt pending</span>'
               : '<a href="#" onclick="event.preventDefault();openReceiptModal(\''+d.id+'\','+parseFloat(d.amount)+',\''+d.description+'\',\''+d.category+'\')" style="font-size:10px;">Submit Receipt</a>';
             const approveBtn = d.receipt_status === 'submitted' && ['finance','executive'].includes(userRole)
               ? ' <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.preventDefault();approveDisb(\''+d.id+'\')">Approve</button>'
               : '';
             const canDeleteDisb = ['draft','disbursed'].includes(d.status) && (d.created_by === userId || ['finance','executive','admin'].includes(userRole));
-            const deleteDisbBtn = canDeleteDisb ? ` <button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.stopPropagation();deleteDisb('${d.id}','${id}')">&#10005; Delete</button>` : '';
+            const deleteDisbBtn = canDeleteDisb ? ` <button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.stopPropagation();deleteDisb('${d.id}','${id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Delete</button>` : '';
             html += `<div class="pc-item">
               <div class="dot" style="background:${dotColor};"></div>
               <div class="info">
@@ -414,7 +414,7 @@
           html += '<div class="section-title">Cash Counts</div>';
           data.counts.forEach(c => {
             const diff = parseFloat(c.difference);
-            const diffLabel = diff === 0 ? '<span style="color:var(--success);">Match &#10003;</span>'
+            const diffLabel = diff === 0 ? '<span style="color:var(--success);">Match <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg></span>'
               : diff > 0 ? '<span style="color:var(--info);">Overage +฿'+fmtNum(diff)+'</span>'
               : '<span style="color:var(--danger);">Shortage ฿'+fmtNum(diff)+'</span>';
             html += `<div class="pc-item">
@@ -650,7 +650,7 @@
       const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
       const diff = actual - system;
       const el = document.getElementById('cc-diff');
-      if (diff === 0) { el.style.display = 'block'; el.style.background = 'var(--success-bg)'; el.style.color = 'var(--success)'; el.textContent = '✓ Match — no adjustment needed'; }
+      if (diff === 0) { el.style.display = 'block'; el.style.background = 'var(--success-bg)'; el.style.color = 'var(--success)'; el.innerHTML = '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"vertical-align:middle;display:inline;\"><polyline points=\"20 6 9 17 4 12\"/></svg> Match — no adjustment needed'; }
       else if (diff > 0) { el.style.display = 'block'; el.style.background = 'var(--info-bg,#e0f2fe)'; el.style.color = 'var(--info)'; el.innerHTML = 'Overage: +฿'+fmtNum(diff)+'<br><span style="font-size:10px;font-weight:400;">GL: Dr. 111101 Petty Cash / Cr. 411901 Cash Overage</span>'; }
       else { el.style.display = 'block'; el.style.background = 'var(--danger-bg)'; el.style.color = 'var(--danger)'; el.innerHTML = 'Shortage: ฿'+fmtNum(diff)+'<br><span style="font-size:10px;font-weight:400;">GL: Dr. 522709 Cash Shortage / Cr. 111101 Petty Cash</span>'; }
     }

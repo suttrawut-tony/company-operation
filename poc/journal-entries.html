@@ -199,7 +199,7 @@
         <div class="je-stat"><div class="label">Posted</div><div class="value" style="color:var(--success);">${posted.length}</div><div class="sub">${new Set(posted.map(e=>e.sourceDoc)).size} docs</div></div>
         <div class="je-stat"><div class="label">Pending</div><div class="value" style="color:var(--warning);">${pending.length}</div><div class="sub">${new Set(pending.map(e=>e.sourceDoc)).size} docs</div></div>
         <div class="je-stat"><div class="label">Total Debit</div><div class="value" style="color:var(--primary);">${fmtMoney(totalDr)}</div></div>
-        <div class="je-stat"><div class="label">Total Credit</div><div class="value" style="color:var(--success);">${fmtMoney(totalCr)}</div><div class="sub" style="color:${balanced?'var(--success)':'var(--danger)'};">${balanced?'✓ Balanced':'⚠ Not balanced'}</div></div>
+        <div class="je-stat"><div class="label">Total Credit</div><div class="value" style="color:var(--success);">${fmtMoney(totalCr)}</div><div class="sub" style="color:${balanced?'var(--success)':'var(--danger)'};">${balanced?'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg> Balanced':'⚠ Not balanced'}</div></div>
       `;
     }
 
@@ -258,7 +258,7 @@
           <td colspan="7" style="text-align:right;">Grand Total</td>
           <td class="r dr">${money(totalDr)}</td>
           <td class="r cr">${money(totalCr)}</td>
-          <td><span style="font-size:var(--text-xs);color:${Math.abs(totalDr-totalCr)<0.01?'var(--success)':'var(--danger)'};">${Math.abs(totalDr-totalCr)<0.01?'✓ Balanced':'⚠ Diff: '+money(Math.abs(totalDr-totalCr))}</span></td>
+          <td><span style="font-size:var(--text-xs);color:${Math.abs(totalDr-totalCr)<0.01?'var(--success)':'var(--danger)'};">${Math.abs(totalDr-totalCr)<0.01?'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg> Balanced':'⚠ Diff: '+money(Math.abs(totalDr-totalCr))}</span></td>
         </tr>`;
     }
 

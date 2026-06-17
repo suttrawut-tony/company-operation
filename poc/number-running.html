@@ -100,7 +100,7 @@
       try {
         const series = await API.getNumberSeries();
         const synced = series.filter(s => s.sap_synced);
-        document.getElementById('sync-status').innerHTML = synced.length > 0 ? '&#10003; ERP Synced' : 'Web Only';
+        document.getElementById('sync-status').innerHTML = synced.length > 0 ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg> ERP Synced' : 'Web Only';
         document.getElementById('sync-status').className = 'badge badge-' + (synced.length > 0 ? 'success' : 'gray') + ' badge-dot';
 
         // Format breakdown from first series
@@ -120,7 +120,7 @@
             <td><strong>${DOC_NAMES[s.doc_type] || s.doc_type}</strong></td>
             <td><span class="nr-format">${s.prefix}-YYMM-####</span></td>
             <td><span class="nr-current">${current}</span></td>
-            <td>${s.sap_synced ? '<span class="sap-sync">&#10003; Synced</span>' : '<span style="font-size:var(--text-2xs);color:var(--text-muted);">Web only</span>'}</td>
+            <td>${s.sap_synced ? '<span class="sap-sync"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg> Synced</span>' : '<span style="font-size:var(--text-2xs);color:var(--text-muted);">Web only</span>'}</td>
           </tr>`;
         }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No series configured</td></tr>';
 

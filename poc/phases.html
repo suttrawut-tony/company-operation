@@ -343,7 +343,7 @@
 
       let checkHtml, nameHtml, badgeHtml;
       if (isDone) {
-        checkHtml = `<div class="step-check done" onclick="event.stopPropagation();toggleStepStatus('${phaseId}','${step.id}','${nextStatus}')" style="cursor:pointer;" title="Click to reset">&#10003;</div>`;
+        checkHtml = `<div class="step-check done" onclick="event.stopPropagation();toggleStepStatus('${phaseId}','${step.id}','${nextStatus}')" style="cursor:pointer;" title="Click to reset"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
         nameHtml = `<div class="step-name done-text">${step.name || '-'}</div>`;
         badgeHtml = '<span class="badge badge-success" style="font-size:10px;">Done</span>';
       } else if (isActive) {
@@ -366,7 +366,7 @@
         const subActive = sub.status === 'active';
         const subNext = subDone ? 'pending' : subActive ? 'done' : 'active';
         const subCheckClass = subDone ? 'sub-check done' : subActive ? 'sub-check active' : 'sub-check';
-        const subCheckIcon = subDone ? '&#10003;' : subActive ? '&#9679;' : '';
+        const subCheckIcon = subDone ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : subActive ? '&#9679;' : '';
         const subNameStyle = subDone ? 'text-decoration:line-through;color:var(--text-muted);' : '';
         const subAssignee = sub.first_name_th || sub.first_name || '';
         return `<div class="sub-row" data-step-subs="${step.id}">
@@ -423,7 +423,7 @@
 
         let numberHtml;
         if (sc === 'done') {
-          numberHtml = `<div class="phase-number done">&#10003;</div>`;
+          numberHtml = `<div class="phase-number done"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
         } else if (sc === 'active') {
           numberHtml = `<div class="phase-number active">${i + 1}</div>`;
         } else {
@@ -593,7 +593,7 @@
         <div class="form-group" style="margin:0;">
           <input type="date" class="form-input" data-step-end>
         </div>
-        <button class="btn-remove-step" onclick="this.parentElement.remove()">&times;</button>
+        <button class="btn-remove-step" onclick="this.parentElement.remove()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       `;
       container.appendChild(row);
     }

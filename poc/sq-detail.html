@@ -256,7 +256,7 @@
               '<td><input value="' + (l.unit||l.uom||'EA') + '" data-field="uom" style="width:60px"></td>' +
               '<td class="num"><input type="number" value="' + (l.unit_price||0) + '" step="0.01" data-field="price" onchange="updateLineField(' + i + ',\'price\',this.value)"></td>' +
               '<td class="num" style="font-weight:700" data-cell="total">' + money(total) + '</td>' +
-              '<td class="row-action"><button onclick="removeLine(' + i + ')">&times;</button></td>' +
+              '<td class="row-action"><button onclick="removeLine(' + i + ')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></td>' +
               '</tr>';
           } else {
             return '<tr>' +

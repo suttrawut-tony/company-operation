@@ -207,7 +207,7 @@
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
               <label class="form-label" style="margin:0;" data-i18n="budget_label_group_budgets">Group Budgets</label>
               <div style="display:flex;gap:6px;">
-                <button class="btn btn-ghost btn-sm" onclick="addDefaultCategories()" style="font-size:11px;">📋 หมวดมาตรฐาน</button>
+                <button class="btn btn-ghost btn-sm" onclick="addDefaultCategories()" style="font-size:11px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> หมวดมาตรฐาน</button>
                 <button class="btn btn-secondary btn-sm" onclick="addLineRow()" style="font-size:11px;" data-i18n="budget_btn_add_line">+ Add Line</button>
               </div>
             </div>
@@ -828,7 +828,7 @@
         <input type="text" class="form-input" placeholder="รายการ e.g. Material" data-ln-name>
         <input type="number" class="form-input" placeholder="TOR" data-ln-tor oninput="updateLineTotal()">
         <input type="number" class="form-input" placeholder="Budget" data-ln-bud oninput="updateLineTotal()">
-        <button class="btn-remove-line" onclick="this.parentElement.remove();updateLineTotal()">&times;</button>`;
+        <button class="btn-remove-line" onclick="this.parentElement.remove();updateLineTotal()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>`;
       c.appendChild(row);
       if (defaultName) row.querySelector('[data-ln-name]').value = defaultName;
       if (defaultTor) row.querySelector('[data-ln-tor]').value = defaultTor;

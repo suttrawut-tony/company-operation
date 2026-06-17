@@ -167,7 +167,7 @@
     <div class="modal" style="max-width:640px;">
       <div class="modal-header">
         <h2 data-i18n="travel_modal_title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> New Travel Request</h2>
-        <button class="btn btn-ghost" onclick="closeTravelModal()" style="font-size:18px;">&#10005;</button>
+        <button class="btn btn-ghost" onclick="closeTravelModal()" style="font-size:18px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -331,7 +331,7 @@
     function renderTeamTags() {
       const el = document.getElementById('trv-team-tags');
       el.innerHTML = selectedMembers.map(m =>
-        `<span class="team-tag">${m.name}${m.is_lead ? ' <span class="lead-label">(Lead)</span>' : ''} <span class="remove" onclick="removeMember(${m.user_id})">&#10005;</span></span>`
+        `<span class="team-tag">${m.name}${m.is_lead ? ' <span class="lead-label">(Lead)</span>' : ''} <span class="remove" onclick="removeMember(${m.user_id})"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span></span>`
       ).join('');
     }
 
@@ -483,7 +483,7 @@
           ${avatarSm(m.name || (m.first_name + ' ' + (m.last_name || '')))}
           <span>${m.name || (m.first_name + ' ' + (m.last_name || ''))}</span>
           ${m.is_lead ? '<span class="lead-badge">Lead</span>' : ''}
-          ${m.confirmed ? '<span class="check">&#10003; Confirmed</span>' : '<span class="pending">&#9679; Pending</span>'}
+          ${m.confirmed ? '<span class="check"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Confirmed</span>' : '<span class="pending">&#9679; Pending</span>'}
         </div>`
       ).join('')}</div>`;
     }
@@ -506,8 +506,8 @@
       let btns = '';
 
       if (st === 'draft' && canManage) {
-        btns += `<button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editTravel(${r.id})" title="แก้ไข">&#9998; Edit</button>`;
-        btns += `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteTravel(${r.id})" title="ยกเลิก">&#10005; Delete</button>`;
+        btns += `<button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editTravel(${r.id})" title="แก้ไข"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> Edit</button>`;
+        btns += `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteTravel(${r.id})" title="ยกเลิก"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Delete</button>`;
       }
       if (st === 'draft') {
         btns += `<button class="btn btn-sm btn-primary" onclick="submitTravelRequest(${r.id})">Submit</button>`;

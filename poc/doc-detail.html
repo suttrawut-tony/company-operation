@@ -533,7 +533,7 @@
                 <td><select data-field="account" style="min-width:75px;"><option value="114101" ${(l.sap_account||'114101')==='114101'?'selected':''}>114101</option><option value="511102" ${l.sap_account==='511102'?'selected':''}>511102</option><option value="511120" ${l.sap_account==='511120'?'selected':''}>511120</option><option value="522709" ${l.sap_account==='522709'?'selected':''}>522709</option></select></td>
                 <td><select style="min-width:65px;"><option value="HQ01" ${(l.warehouse||'HQ01')==='HQ01'?'selected':''}>HQ01</option><option value="PJ00" ${l.warehouse==='PJ00'?'selected':''}>PJ00</option><option value="PJ01" ${l.warehouse==='PJ01'?'selected':''}>PJ01</option><option value="AS01" ${l.warehouse==='AS01'?'selected':''}>AS01</option></select></td>
                 <td class="num" style="font-weight:700;">${money(total)}</td>
-                <td class="row-action"><button onclick="removeLine(${i})">&times;</button></td>
+                <td class="row-action"><button onclick="removeLine(${i})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></td>
               </tr>`;
             }
           }).join('');
@@ -595,7 +595,7 @@
         <!-- Approval -->
         <div class="erp-tab-panel" id="btab-approval">
           <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Amount ${fmtMoney(amount)} → ${amount<=10000?'Tier 1: Manager':amount<=100000?'Tier 2: Manager + Finance':'Tier 3: Manager + Finance + Executive'}</div>
-          ${steps.map(s => `<div class="atl-item"><div class="atl-dot ${s.st}">${s.st==='done'?'&#10003;':s.st==='current'?'&#9203;':'&bull;'}</div><div class="atl-info"><h4>${s.label}</h4><div class="sub">${s.sub||''}</div></div></div>`).join('')}
+          ${steps.map(s => `<div class="atl-item"><div class="atl-dot ${s.st}">${s.st==='done'?'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':s.st==='current'?'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>':'&bull;'}</div><div class="atl-info"><h4>${s.label}</h4><div class="sub">${s.sub||''}</div></div></div>`).join('')}
         </div>
 
         <!-- Remarks -->
@@ -1229,7 +1229,7 @@
         document.getElementById('copyToPO-title').textContent = 'Copy To PO — Complete';
         const created = result.created || result.pos || [];
         let html = '<div style="text-align:center;padding:20px;">';
-        html += '<div style="font-size:48px;color:var(--success);margin-bottom:12px;">&#10003;</div>';
+        html += '<div style="color:var(--success);margin-bottom:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>';
         html += '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">PO Created Successfully!</div>';
 
         if (created.length) {
@@ -1277,7 +1277,7 @@
 
       function flowNode(label, docNum, status, type, isCurrent) {
         const isDone = status && doneStatuses.includes(status);
-        const checkMark = isDone ? '<span style="color:var(--success);font-size:14px;margin-left:4px;">&#10003;</span>' : '';
+        const checkMark = isDone ? '<span style="color:var(--success);margin-left:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg></span>' : '';
 
         if (docNum) {
           const link = `doc-detail.html?type=${type}&doc=${docNum}`;
@@ -1308,7 +1308,7 @@
         if (sapDocNum) {
           const border = isDone ? 'border:2px solid #059669;background:#ecfdf5;' : 'border:2px solid #3b82f6;background:#e0f2fe;';
           return `<div style="${nodeStyle}${border}">
-            <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">${label}${isDone ? '<span style="color:var(--success);font-size:14px;margin-left:4px;">&#10003;</span>' : ''}</div>
+            <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">${label}${isDone ? '<span style="color:var(--success);margin-left:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg></span>' : ''}</div>
             <div style="font-weight:700;margin:4px 0;color:#0369a1;">ERP #${sapDocNum}</div>
             ${objectType ? '<div style="font-size:10px;color:var(--text-muted);">'+objectType+'</div>' : ''}
           </div>`;
@@ -1327,7 +1327,7 @@
         const isSent = ['sent_to_erp','received'].includes(status);
         if (isSent) {
           return `<div style="${nodeStyle}border:2px solid #059669;background:#ecfdf5;">
-            <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Sent to ERP<span style="color:#059669;font-size:14px;margin-left:4px;">&#10003;</span></div>
+            <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Sent to ERP<span style="color:#059669;margin-left:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline;"><polyline points="20 6 9 17 4 12"/></svg></span></div>
             <div style="font-weight:600;margin-top:4px;color:#059669;">Sent</div>
           </div>`;
         }
