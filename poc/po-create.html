@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<!--
+  po-create.html — Create Purchase Order
+  Supports two modes:
+    1. Manual PO creation (fill form directly)
+    2. Copy From PR — select approved PR lines, auto-fill or create multi-vendor POs
+  Design pattern follows pr-create.html.
+  Backend endpoints:
+    GET  /api/pr/open           → approved PRs with open_line_count
+    GET  /api/pr/:id/open-lines → PR header + lines (open_qty, vendor_quotes)
+    POST /api/po/from-pr        → create PO(s) from selected PR lines (grouped by vendor)
+    POST /api/po                → create PO manually
+    POST /api/po/:id/submit     → submit PO for approval
+-->
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Create Purchase Order</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .form-section {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 20px; box-shadow: var(--shadow-xs);
+    }
+    .form-section-header {
+      padding: 16px 24px; border-bottom: 1px solid var(--border-light);
+      font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-body { padding: 24px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .form-full { grid-column: 1 / -1; }
+
+    /* Line Items */
+    .lines-editor { overflow-x: auto; }
+    .lines-editor table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+    .lines-editor th {
+      padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600;
+      color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
+      background: var(--bg-light); border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .lines-editor td { padding: 6px 6px; vertical-align: top; }
+    .lines-editor input, .lines-editor select {
+      width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font);
+      color: var(--text-primary); outline: none;
+    }
+    .lines-editor input:focus, .lines-editor select:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 2px rgba(79,110,247,0.1);
+    }
+    .lines-editor .num-input { text-align: right; }
+    .lines-editor .line-total {
+      font-weight: 700; font-size: 13px; padding: 8px 10px;
+      text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .lines-editor .remove-btn {
+      background: none; border: none; color: var(--text-muted); cursor: pointer;
+      font-size: 16px; padding: 6px;
+    }
+    .lines-editor .remove-btn:hover { color: var(--danger); }
+
+    .add-line-btn {
+      padding: 10px 16px; border: 1px dashed var(--border); border-radius: var(--radius);
+      background: none; width: 100%; font-size: 13px; color: var(--primary);
+      cursor: pointer; font-family: var(--font); font-weight: 500; margin-top: 8px;
+      transition: all 0.15s;
+    }
+    .add-line-btn:hover { background: var(--primary-50); border-color: var(--primary); }
+
+    /* Summary */
+    .summary-box {
+      background: var(--bg-light); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 16px 20px; margin-top: 16px;
+      max-width: 350px; margin-left: auto;
+    }
+    .summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+    .summary-row.total {
+      font-weight: 700; font-size: 16px; border-top: 2px solid var(--border);
+      padding-top: 8px; margin-top: 4px;
+    }
+
+    /* Sticky Footer */
+    .form-footer {
+      position: sticky; bottom: 0; background: var(--bg-white);
+      border-top: 1px solid var(--border); padding: 16px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 50;
+    }
+    .form-footer .total-display { font-size: 18px; font-weight: 800; }
+
+    /* Copy From PR button */
+    .copy-from-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; background: var(--success-bg); border: 1px solid rgba(16,185,129,0.3);
+      border-radius: var(--radius); color: #059669; font-weight: 600; font-size: 13px;
+      cursor: pointer; font-family: var(--font); transition: all 0.15s;
+    }
+    .copy-from-btn:hover { background: #d1fae5; border-color: #059669; }
+
+    /* Modal — Copy From PR */
+    .cfpr-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 999; align-items: center; justify-content: center;
+    }
+    .cfpr-overlay.open { display: flex; }
+    .cfpr-modal {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 90%; max-width: 900px;
+      max-height: 85vh; display: flex; flex-direction: column;
+    }
+    .cfpr-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .cfpr-header h3 { font-size: 16px; font-weight: 700; margin: 0; }
+    .cfpr-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .cfpr-footer {
+      padding: 16px 24px; border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .cfpr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .cfpr-table th {
+      padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600;
+      color: var(--text-secondary); text-transform: uppercase; background: var(--bg-light);
+      border-bottom: 1px solid var(--border);
+    }
+    .cfpr-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-light); }
+    .cfpr-table tr.selectable { cursor: pointer; transition: background 0.1s; }
+    .cfpr-table tr.selectable:hover { background: var(--bg-hover); }
+    .cfpr-step { display: none; }
+    .cfpr-step.active { display: block; }
+
+    /* Multi-PO preview cards */
+    .multi-po-card {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 16px; margin-bottom: 10px; background: var(--bg-light);
+    }
+    .multi-po-card h4 { font-size: 13px; font-weight: 700; margin: 0 0 8px; }
+    .multi-po-card .line-item { font-size: 12px; color: var(--text-secondary); padding: 2px 0; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+
+    <div class="page-header">
+      <div>
+        <h1>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/></svg>
+          <span data-i18n="pocreate_title">New Purchase Order</span>
+        </h1>
+        <div class="subtitle">สร้างใบสั่งซื้อ &bull; Auto Number: <strong style="color:var(--primary);" id="next-number">PO26XXXXXX</strong></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button type="button" class="copy-from-btn" onclick="openCopyFromPR()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          Copy From &larr; Purchase Request
+        </button>
+        <a href="pr-po.html" class="btn btn-secondary" data-i18n="back">&larr; Back</a>
+      </div>
+    </div>
+
+    <form onsubmit="event.preventDefault(); submitPO();">
+
+      <!-- Section 1: Document Header -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+          <span data-i18n="pocreate_section_header">Document Header</span>
+        </div>
+        <div class="form-section-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">PO Number</label>
+              <input class="form-input" id="po-number" readonly style="background:var(--bg-light);color:var(--text-muted);">
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span data-i18n="document_date">Document Date</span> <span style="color:var(--danger);">*</span></label>
+              <input class="form-input" type="date" id="po-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span>Vendor Code</span> <span style="color:var(--danger);">*</span></label>
+              <select class="form-select searchable" id="po-vendor" onchange="onVendorChange()">
+                <option value="">-- Select Vendor --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vendor Name</label>
+              <input class="form-input" id="po-vendor-name" readonly style="background:var(--bg-light);color:var(--text-muted);" placeholder="Auto-fill from vendor">
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span data-i18n="project">Project</span> <span style="color:var(--danger);">*</span></label>
+              <select class="form-select" id="po-project">
+                <option value="">-- Select Project --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" data-i18n="payment_terms">Payment Terms</label>
+              <select class="form-select" id="po-terms">
+                <option value="cash">Cash</option>
+                <option value="7">Credit 7 Days</option>
+                <option value="15">Credit 15 Days</option>
+                <option value="30" selected>Credit 30 Days</option>
+                <option value="60">Credit 60 Days</option>
+                <option value="90">Credit 90 Days</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Line Items -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+          <span data-i18n="pocreate_section_lines">Line Items</span>
+        </div>
+        <div class="form-section-body" style="padding:16px;">
+          <div class="lines-editor">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th style="width:100px;">Item Code</th>
+                  <th style="min-width:200px;">Description *</th>
+                  <th style="width:70px;">Qty *</th>
+                  <th style="width:70px;">UoM</th>
+                  <th style="width:110px;">Unit Price *</th>
+                  <th style="width:90px;">Tax Code</th>
+                  <th style="width:90px;">GL Account</th>
+                  <th style="width:110px;text-align:right;">Total</th>
+                  <th style="width:30px;"></th>
+                </tr>
+              </thead>
+              <tbody id="line-items">
+                <tr data-line="1">
+                  <td style="color:var(--text-muted);padding:10px;font-weight:600;">1</td>
+                  <td><select class="searchable item-code-select" style="min-width:120px;" onchange="onItemSelect(this);calcLine(this);"></select></td>
+                  <td><input placeholder="Item description..." data-field="item_name" required></td>
+                  <td><input type="number" class="num-input" value="1" min="1" onchange="calcLine(this)"></td>
+                  <td><select>
+                    <option>EA</option><option>Set</option><option>Unit</option><option>Job</option>
+                    <option>Month</option><option>Day</option><option>System</option><option>Roll</option>
+                  </select></td>
+                  <td><input type="number" class="num-input" data-field="price" placeholder="0.00" step="0.01" onchange="calcLine(this)"></td>
+                  <td><select>
+                    <option value="IG07">IG07 (7%)</option>
+                    <option value="IG00">IG00 (0%)</option>
+                    <option value="IS07">IS07 (7%)</option>
+                    <option value="IS00">IS00 (0%)</option>
+                  </select></td>
+                  <td><select>
+                    <option value="114101">114101 Inventory</option>
+                    <option value="511102">511102 Domestic Purchase</option>
+                    <option value="511103">511103 Import Purchase</option>
+                    <option value="511120">511120 Material</option>
+                    <option value="522709">522709 Misc Expense</option>
+                  </select></td>
+                  <td class="line-total">&#3647;0.00</td>
+                  <td><button type="button" class="remove-btn" onclick="removeLine(this)">&times;</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button type="button" class="add-line-btn" onclick="addLine()">+ Add Line Item</button>
+
+          <!-- Summary -->
+          <div class="summary-box">
+            <div class="summary-row"><span style="color:var(--text-secondary);">Subtotal</span><span id="subtotal">&#3647;0.00</span></div>
+            <div class="summary-row"><span style="color:var(--text-secondary);">VAT 7%</span><span id="vat-amount">&#3647;0.00</span></div>
+            <div class="summary-row total"><span>Grand Total</span><span id="grand-total" style="color:var(--primary);">&#3647;0.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Remarks -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/></svg>
+          <span data-i18n="pocreate_section_remarks">Remarks</span>
+        </div>
+        <div class="form-section-body">
+          <div class="form-group">
+            <label class="form-label">Remarks / Notes</label>
+            <textarea class="form-textarea" id="po-remarks" rows="3" placeholder="หมายเหตุ เช่น เงื่อนไขส่งมอบ, ข้อตกลงพิเศษ"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </form>
+
+    <!-- Sticky Footer -->
+    <div class="form-footer">
+      <div>
+        <div style="font-size:12px;color:var(--text-secondary);">Grand Total</div>
+        <div class="total-display" id="footer-total">&#3647;0.00</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="pr-po.html" class="btn btn-secondary" data-i18n="cancel">Cancel</a>
+        <button class="btn btn-secondary" onclick="savePO()">Save as Draft</button>
+        <button class="btn btn-primary" onclick="submitPO()">Submit for Approval</button>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <!-- ═══ Copy From PR Modal ═══ -->
+  <div class="cfpr-overlay" id="cfpr-overlay" onclick="if(event.target===this)closeCopyFromPR();">
+    <div class="cfpr-modal">
+      <div class="cfpr-header">
+        <h3 id="cfpr-title">Copy From Purchase Request</h3>
+        <button style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);" onclick="closeCopyFromPR()">&times;</button>
+      </div>
+      <div class="cfpr-body">
+
+        <!-- Step A: Select PR -->
+        <div class="cfpr-step active" id="cfpr-step-a">
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Select an approved Purchase Request with open (unfulfilled) lines:</p>
+          <div id="cfpr-pr-list">
+            <div style="text-align:center;padding:30px;color:var(--text-muted);">Loading approved PRs...</div>
+          </div>
+        </div>
+
+        <!-- Step B: Select Lines -->
+        <div class="cfpr-step" id="cfpr-step-b">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div>
+              <strong id="cfpr-pr-number" style="color:var(--primary);"></strong>
+              <span id="cfpr-pr-project" style="font-size:12px;color:var(--text-secondary);margin-left:8px;"></span>
+            </div>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+              <input type="checkbox" id="cfpr-select-all" onchange="toggleSelectAllLines(this.checked)"> Select All
+            </label>
+          </div>
+          <div id="cfpr-lines-list">
+            <div style="text-align:center;padding:30px;color:var(--text-muted);">Loading lines...</div>
+          </div>
+        </div>
+
+        <!-- Step C: Confirm / Multi-PO -->
+        <div class="cfpr-step" id="cfpr-step-c">
+          <div id="cfpr-confirm-content"></div>
+        </div>
+
+      </div>
+      <div class="cfpr-footer" id="cfpr-footer">
+        <!-- Buttons injected dynamically per step -->
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/item-picker.js"></script>
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // State
+    // ═══════════════════════════════════════════════════════════════
+    let lineCount = 1;
+    let _copiedFromPR = null; // PR reference when using Copy From PR
+    let _cfprPRData = null;   // PR data from Step A selection
+    let _cfprSelectedLines = []; // selected lines from Step B
+
+    // ═══════════════════════════════════════════════════════════════
+    // Init
+    // ═══════════════════════════════════════════════════════════════
+    document.getElementById('po-date').value = new Date().toISOString().slice(0, 10);
+
+    if (API.requireAuth()) { loadDropdowns(); }
+
+    async function loadDropdowns() {
+      try {
+        const [projects] = await Promise.all([
+          API.getProjects(),
+          loadMasterItems(),
+          loadMasterVendors()
+        ]);
+
+        // Projects
+        const pSel = document.getElementById('po-project');
+        (Array.isArray(projects) ? projects : (projects.data || [])).forEach(p => {
+          pSel.innerHTML += '<option value="' + p.id + '">' + (p.code || '') + ' — ' + (p.name || '') + '</option>';
+        });
+
+        // Vendor dropdown
+        const vSel = document.getElementById('po-vendor');
+        vSel.innerHTML = buildVendorOptions('');
+        if (typeof makeSearchable === 'function') makeSearchable(vSel);
+
+        // Item picker options
+        document.querySelectorAll('.item-code-select').forEach(sel => {
+          sel.innerHTML = buildItemOptions('');
+          if (typeof makeSearchable === 'function') makeSearchable(sel);
+        });
+      } catch (e) {
+        console.warn('Failed to load dropdowns', e);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Vendor auto-fill
+    // ═══════════════════════════════════════════════════════════════
+    function onVendorChange() {
+      const sel = document.getElementById('po-vendor');
+      const opt = sel.options[sel.selectedIndex];
+      const nameField = document.getElementById('po-vendor-name');
+      if (opt && opt.value) {
+        nameField.value = opt.getAttribute('data-name') || opt.textContent.split(' — ')[1] || '';
+        // Auto-set payment terms if vendor has default
+        const terms = opt.getAttribute('data-terms');
+        if (terms) {
+          const termsSel = document.getElementById('po-terms');
+          if (termsSel) {
+            for (let i = 0; i < termsSel.options.length; i++) {
+              if (termsSel.options[i].value === terms) { termsSel.selectedIndex = i; break; }
+            }
+          }
+        }
+      } else {
+        nameField.value = '';
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Line Items
+    // ═══════════════════════════════════════════════════════════════
+    function addLine() {
+      lineCount++;
+      const tbody = document.getElementById('line-items');
+      const firstRow = tbody.querySelector('tr[data-line]');
+      const row = firstRow.cloneNode(true);
+      row.dataset.line = lineCount;
+      row.querySelector('td:first-child').textContent = lineCount;
+      row.querySelectorAll('input').forEach(inp => { inp.value = ''; });
+      row.querySelector('.num-input').value = '1';
+      row.querySelector('.line-total').textContent = '\u0E3F0.00';
+      // Reset item picker and remove old searchable wrapper
+      const oldWrapper = row.querySelector('.ss-wrapper');
+      if (oldWrapper) {
+        const sel = oldWrapper.querySelector('select');
+        if (sel) {
+          sel.style.display = '';
+          sel.dataset.searchable = '';
+          sel.value = '';
+          oldWrapper.parentNode.insertBefore(sel, oldWrapper);
+        }
+        oldWrapper.remove();
+      }
+      tbody.appendChild(row);
+      // Re-init searchable on new row's select
+      const newSel = row.querySelector('.item-code-select');
+      if (newSel) initItemPicker(newSel);
+    }
+
+    function removeLine(btn) {
+      const tbody = document.getElementById('line-items');
+      if (tbody.querySelectorAll('tr[data-line]').length <= 1) return;
+      btn.closest('tr').remove();
+      recalcAll();
+    }
+
+    function calcLine(input) {
+      const row = input.closest('tr');
+      const qty = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+      const price = parseFloat(row.querySelectorAll('input[type="number"]')[1]?.value) || 0;
+      const total = qty * price;
+      const selects = row.querySelectorAll('select');
+      const taxCode = selects[2]?.value || '';
+      const taxRate = taxCode.includes('07') ? 0.07 : 0;
+      const totalWithTax = total * (1 + taxRate);
+      row.querySelector('.line-total').textContent = '\u0E3F' + totalWithTax.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+      recalcAll();
+    }
+
+    function recalcAll() {
+      let subtotal = 0;
+      let vatTotal = 0;
+      document.querySelectorAll('#line-items tr[data-line]').forEach(row => {
+        const qty = parseFloat(row.querySelector('input[type="number"]')?.value) || 0;
+        const price = parseFloat(row.querySelectorAll('input[type="number"]')[1]?.value) || 0;
+        const lineTotal = qty * price;
+        const selects = row.querySelectorAll('select');
+        const taxCode = selects[2]?.value || '';
+        const taxRate = taxCode.includes('07') ? 0.07 : 0;
+        subtotal += lineTotal;
+        vatTotal += lineTotal * taxRate;
+      });
+      const grand = subtotal + vatTotal;
+      document.getElementById('subtotal').textContent = '\u0E3F' + subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+      document.getElementById('vat-amount').textContent = '\u0E3F' + vatTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+      document.getElementById('grand-total').textContent = '\u0E3F' + grand.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+      document.getElementById('footer-total').textContent = '\u0E3F' + grand.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Collect PO Data
+    // ═══════════════════════════════════════════════════════════════
+    function collectPOData() {
+      const vendor_code = document.getElementById('po-vendor').value;
+      if (!vendor_code) { showToast('Please select a Vendor', 'error'); return null; }
+      const project_id = document.getElementById('po-project').value;
+      if (!project_id) { showToast('Please select a Project', 'error'); return null; }
+
+      const vendorSel = document.getElementById('po-vendor');
+      const vendorOpt = vendorSel.options[vendorSel.selectedIndex];
+      const vendor_name = vendorOpt ? (vendorOpt.getAttribute('data-name') || vendorOpt.textContent.split(' — ')[1] || '') : '';
+
+      const lines = [];
+      document.querySelectorAll('#line-items tr[data-line]').forEach(row => {
+        const selects = row.querySelectorAll('select');
+        const inputs = row.querySelectorAll('input');
+        if (selects.length < 1 || inputs.length < 2) return;
+        const item_code = selects[0]?.value || '';
+        const item_name = inputs[0]?.value || '';
+        const quantity = parseFloat(inputs[1]?.value) || 1;
+        const uom = selects[1]?.value || 'EA';
+        const unit_price = parseFloat(inputs[2]?.value) || 0;
+        const tax_code = selects[2]?.value || 'IG07';
+        const sap_account = selects[3]?.value || '';
+        const total_price = quantity * unit_price;
+        if (!item_code && !item_name) return;
+        lines.push({ item_code, description: item_name, quantity, uom, unit_price, tax_code, sap_account, total_price });
+      });
+
+      if (lines.length === 0) { showToast('Please add at least one line item', 'error'); return null; }
+
+      return {
+        project_id,
+        vendor_code,
+        vendor_name,
+        po_date: document.getElementById('po-date').value,
+        payment_terms: document.getElementById('po-terms').value || '30',
+        remarks: document.getElementById('po-remarks')?.value || '',
+        source_pr_id: _copiedFromPR || null,
+        lines,
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Save / Submit
+    // ═══════════════════════════════════════════════════════════════
+    async function savePO() {
+      const data = collectPOData();
+      if (!data) return;
+      data.status = 'draft';
+      try {
+        await API.post('/po', data);
+        showToast('PO saved as draft', 'success');
+        window.location = 'pr-po.html';
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function submitPO() {
+      const data = collectPOData();
+      if (!data) return;
+      try {
+        const po = await API.post('/po', data);
+        await API.post('/po/' + po.id + '/submit');
+        showToast('PO submitted for approval', 'success');
+        window.location = 'pr-po.html';
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Copy From PR — Modal Logic
+    // ═══════════════════════════════════════════════════════════════
+    function openCopyFromPR() {
+      document.getElementById('cfpr-overlay').classList.add('open');
+      showStep('a');
+      loadOpenPRs();
+    }
+
+    function closeCopyFromPR() {
+      document.getElementById('cfpr-overlay').classList.remove('open');
+      _cfprPRData = null;
+      _cfprSelectedLines = [];
+    }
+
+    function showStep(step) {
+      document.querySelectorAll('.cfpr-step').forEach(el => el.classList.remove('active'));
+      document.getElementById('cfpr-step-' + step).classList.add('active');
+      updateStepFooter(step);
+    }
+
+    function updateStepFooter(step) {
+      const footer = document.getElementById('cfpr-footer');
+      if (step === 'a') {
+        footer.innerHTML = '<button class="btn btn-secondary" onclick="closeCopyFromPR()">Cancel</button>';
+      } else if (step === 'b') {
+        footer.innerHTML = '<button class="btn btn-secondary" onclick="showStep(\'a\')">Back</button>'
+          + '<button class="btn btn-primary" onclick="confirmCopyFrom()">Next</button>';
+      } else if (step === 'c') {
+        // Footer set by confirmCopyFrom()
+      }
+    }
+
+    // Step A — Load open PRs
+    async function loadOpenPRs() {
+      const container = document.getElementById('cfpr-pr-list');
+      container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Loading...</div>';
+      try {
+        const prs = await API.get('/pr/open');
+        const list = Array.isArray(prs) ? prs : (prs.data || []);
+        if (list.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">No approved PRs with open lines found.</div>';
+          return;
+        }
+        container.innerHTML = '<table class="cfpr-table"><thead><tr>'
+          + '<th>PR Number</th><th>Project</th><th>Date</th><th style="text-align:right;">Total</th><th style="text-align:right;">Open Items</th>'
+          + '</tr></thead><tbody>'
+          + list.map(pr => '<tr class="selectable" onclick="selectPRForCopy(\'' + pr.id + '\')">'
+            + '<td style="font-weight:600;color:var(--primary);">' + (pr.doc_number || pr.pr_number || '-') + '</td>'
+            + '<td>' + (pr.project_code || pr.project_name || '-') + '</td>'
+            + '<td>' + fmtDateShort(pr.doc_date || pr.pr_date || pr.created_at) + '</td>'
+            + '<td style="text-align:right;font-weight:600;">' + fmtMoney(pr.total_amount || 0) + '</td>'
+            + '<td style="text-align:right;">' + (pr.open_line_count || 0) + ' lines</td>'
+            + '</tr>').join('')
+          + '</tbody></table>';
+      } catch (e) {
+        container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);">Error: ' + e.message + '</div>';
+      }
+    }
+
+    // Step B — Load lines for selected PR
+    async function selectPRForCopy(prId) {
+      showStep('b');
+      const container = document.getElementById('cfpr-lines-list');
+      container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Loading lines...</div>';
+      document.getElementById('cfpr-select-all').checked = false;
+
+      try {
+        const data = await API.get('/pr/' + prId + '/open-lines');
+        _cfprPRData = data;
+
+        // Display PR header info
+        const pr = data.pr || data;
+        document.getElementById('cfpr-pr-number').textContent = pr.doc_number || pr.pr_number || '';
+        document.getElementById('cfpr-pr-project').textContent = pr.project_code || pr.project_name || '';
+
+        const lines = data.lines || [];
+        if (lines.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">No open lines for this PR.</div>';
+          return;
+        }
+
+        container.innerHTML = '<table class="cfpr-table"><thead><tr>'
+          + '<th style="width:30px;"></th><th>#</th><th>Item Code</th><th>Description</th>'
+          + '<th style="text-align:right;">PR Qty</th><th style="text-align:right;">Open Qty</th>'
+          + '<th style="width:80px;text-align:right;">Copy Qty</th><th>Vendor</th>'
+          + '</tr></thead><tbody>'
+          + lines.map((ln, idx) => {
+            const openQty = ln.open_qty != null ? ln.open_qty : ln.quantity;
+            const quotes = ln.vendor_quotes || [];
+            // Build vendor dropdown for this line
+            let vendorHtml = '<select class="cfpr-vendor-select" data-line-idx="' + idx + '" style="width:100%;font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;">';
+            vendorHtml += '<option value="">-- Select --</option>';
+            if (quotes.length > 0) {
+              quotes.forEach((q, qi) => {
+                vendorHtml += '<option value="' + (q.bp_code || q.vendor_code || '') + '" data-name="' + (q.bp_name || q.vendor_name || '').replace(/"/g, '&quot;') + '"'
+                  + (qi === 0 ? ' selected' : '') + '>'
+                  + (q.bp_code || q.vendor_code || '') + ' — ' + (q.bp_name || q.vendor_name || '').substring(0, 30)
+                  + (q.qty ? ' (' + q.qty + ')' : '') + '</option>';
+              });
+            } else {
+              // Fall back to full vendor list
+              window._masterVendors.forEach(v => {
+                vendorHtml += '<option value="' + (v.bp_code || '') + '" data-name="' + (v.bp_name || '').replace(/"/g, '&quot;') + '">'
+                  + (v.bp_code || '') + ' — ' + (v.bp_name || '').substring(0, 30) + '</option>';
+              });
+            }
+            vendorHtml += '</select>';
+            // Vendor quote summary
+            let quoteSummary = '';
+            if (quotes.length > 0) {
+              quoteSummary = '<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">'
+                + quotes.map((q, qi) => 'V' + (qi + 1) + ': ' + (q.bp_name || q.vendor_name || '?').substring(0, 20) + (q.qty ? ' (' + q.qty + ')' : '')).join(', ')
+                + '</div>';
+            }
+
+            return '<tr data-line-idx="' + idx + '">'
+              + '<td><input type="checkbox" class="cfpr-line-check" data-idx="' + idx + '" onchange="onLineCheckChange()"></td>'
+              + '<td>' + (idx + 1) + '</td>'
+              + '<td style="font-weight:600;">' + (ln.item_code || '-') + '</td>'
+              + '<td>' + (ln.description || ln.item_name || '-') + '</td>'
+              + '<td style="text-align:right;">' + (ln.quantity || 0) + '</td>'
+              + '<td style="text-align:right;font-weight:600;color:var(--primary);">' + openQty + '</td>'
+              + '<td><input type="number" class="cfpr-copy-qty num-input" data-idx="' + idx + '" value="' + openQty + '" min="0" max="' + openQty + '" step="1" style="width:70px;font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;text-align:right;"></td>'
+              + '<td>' + vendorHtml + quoteSummary + '</td>'
+              + '</tr>';
+          }).join('')
+          + '</tbody></table>';
+
+      } catch (e) {
+        container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);">Error: ' + e.message + '</div>';
+      }
+    }
+
+    function toggleSelectAllLines(checked) {
+      document.querySelectorAll('.cfpr-line-check').forEach(cb => { cb.checked = checked; });
+    }
+
+    function onLineCheckChange() {
+      const all = document.querySelectorAll('.cfpr-line-check');
+      const checked = document.querySelectorAll('.cfpr-line-check:checked');
+      document.getElementById('cfpr-select-all').checked = all.length > 0 && all.length === checked.length;
+    }
+
+    // Step C — Confirm
+    function confirmCopyFrom() {
+      if (!_cfprPRData) return;
+      const lines = _cfprPRData.lines || [];
+      const pr = _cfprPRData.pr || _cfprPRData;
+
+      // Gather selected lines
+      const selectedLines = [];
+      document.querySelectorAll('.cfpr-line-check:checked').forEach(cb => {
+        const idx = parseInt(cb.dataset.idx);
+        const ln = lines[idx];
+        if (!ln) return;
+        const qtyInput = document.querySelector('.cfpr-copy-qty[data-idx="' + idx + '"]');
+        const vendorSelect = document.querySelector('.cfpr-vendor-select[data-line-idx="' + idx + '"]');
+        const copyQty = parseFloat(qtyInput?.value) || 0;
+        if (copyQty <= 0) return;
+
+        const vendorOpt = vendorSelect?.options[vendorSelect.selectedIndex];
+        const vendorCode = vendorSelect?.value || '';
+        const vendorName = vendorOpt?.getAttribute('data-name') || vendorOpt?.textContent?.split(' — ')[1] || '';
+
+        selectedLines.push({
+          ...ln,
+          copy_qty: copyQty,
+          vendor_code: vendorCode,
+          vendor_name: vendorName,
+        });
+      });
+
+      if (selectedLines.length === 0) {
+        showToast('Please select at least one line to copy', 'warning');
+        return;
+      }
+
+      _cfprSelectedLines = selectedLines;
+
+      // Group by vendor
+      const vendorGroups = {};
+      selectedLines.forEach(ln => {
+        const key = ln.vendor_code || '__no_vendor__';
+        if (!vendorGroups[key]) vendorGroups[key] = { vendor_code: ln.vendor_code, vendor_name: ln.vendor_name, lines: [] };
+        vendorGroups[key].lines.push(ln);
+      });
+
+      const vendorKeys = Object.keys(vendorGroups);
+      const hasNoVendor = vendorGroups['__no_vendor__'];
+
+      if (hasNoVendor) {
+        showToast('Some lines have no vendor selected. Please select a vendor for all lines.', 'warning');
+        return;
+      }
+
+      showStep('c');
+      const content = document.getElementById('cfpr-confirm-content');
+      const footer = document.getElementById('cfpr-footer');
+
+      if (vendorKeys.length === 1) {
+        // Single vendor — fill form directly
+        const group = vendorGroups[vendorKeys[0]];
+        content.innerHTML = '<div style="text-align:center;padding:20px;">'
+          + '<div style="font-size:48px;margin-bottom:12px;">&#9989;</div>'
+          + '<h3 style="margin:0 0 8px;">Ready to fill PO form</h3>'
+          + '<p style="color:var(--text-secondary);font-size:13px;">Vendor: <strong>' + (group.vendor_code || '-') + ' — ' + (group.vendor_name || '-') + '</strong></p>'
+          + '<p style="color:var(--text-secondary);font-size:13px;">' + group.lines.length + ' line(s) from PR <strong>' + (pr.doc_number || '') + '</strong></p>'
+          + '</div>';
+        footer.innerHTML = '<button class="btn btn-secondary" onclick="showStep(\'b\')">Back</button>'
+          + '<button class="btn btn-primary" onclick="fillPOFromPR()">Fill PO Form</button>';
+      } else {
+        // Multiple vendors — show multi-PO preview
+        content.innerHTML = '<div style="background:var(--warning-bg);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;">'
+          + '<strong style="color:#d97706;">Multiple Vendors Detected</strong>'
+          + '<p style="font-size:12px;color:var(--text-secondary);margin:4px 0 0;">Lines have ' + vendorKeys.length + ' different vendors. This will create <strong>' + vendorKeys.length + ' separate POs</strong>.</p>'
+          + '</div>'
+          + vendorKeys.map(key => {
+            const g = vendorGroups[key];
+            const lineTotal = g.lines.reduce((sum, ln) => sum + (ln.copy_qty * (ln.unit_price || 0)), 0);
+            return '<div class="multi-po-card">'
+              + '<h4>' + (g.vendor_code || '-') + ' — ' + (g.vendor_name || '-') + '</h4>'
+              + '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">' + g.lines.length + ' line(s) | Est. ' + fmtMoney(lineTotal) + '</div>'
+              + g.lines.map(ln => '<div class="line-item">' + (ln.item_code || '-') + ' — ' + (ln.description || ln.item_name || '-') + ' x ' + ln.copy_qty + '</div>').join('')
+              + '</div>';
+          }).join('');
+        footer.innerHTML = '<button class="btn btn-secondary" onclick="showStep(\'b\')">Back</button>'
+          + '<button class="btn btn-primary" onclick="createMultiPO()">Create ' + vendorKeys.length + ' POs</button>';
+      }
+    }
+
+    // Fill the PO form with single-vendor lines
+    function fillPOFromPR() {
+      if (!_cfprSelectedLines.length) return;
+      const pr = _cfprPRData?.pr || _cfprPRData || {};
+      const vendor = _cfprSelectedLines[0];
+
+      // Set vendor
+      const vSel = document.getElementById('po-vendor');
+      setSelectValue(vSel, vendor.vendor_code);
+      onVendorChange();
+
+      // Set project from PR
+      if (pr.project_id) setSelectValue(document.getElementById('po-project'), pr.project_id);
+
+      // Set source reference
+      _copiedFromPR = pr.id || null;
+
+      // Clear existing lines and populate
+      const tbody = document.getElementById('line-items');
+      tbody.innerHTML = '';
+      lineCount = 0;
+
+      _cfprSelectedLines.forEach((ln, idx) => {
+        lineCount = idx + 1;
+        const row = createLineRow(lineCount, ln);
+        tbody.appendChild(row);
+      });
+
+      // Init searchable selects
+      tbody.querySelectorAll('.item-code-select').forEach(sel => {
+        if (typeof initItemPicker === 'function') initItemPicker(sel);
+      });
+
+      recalcAll();
+      closeCopyFromPR();
+      showToast('Copied ' + _cfprSelectedLines.length + ' line(s) from PR ' + (pr.doc_number || ''), 'success');
+    }
+
+    // Create a line row element from line data
+    function createLineRow(num, ln) {
+      const tr = document.createElement('tr');
+      tr.dataset.line = num;
+      tr.innerHTML =
+        '<td style="color:var(--text-muted);padding:10px;font-weight:600;">' + num + '</td>'
+        + '<td><select class="searchable item-code-select" style="min-width:120px;" onchange="onItemSelect(this);calcLine(this);"></select></td>'
+        + '<td><input placeholder="Item description..." data-field="item_name" value="' + (ln.description || ln.item_name || '').replace(/"/g, '&quot;') + '" required></td>'
+        + '<td><input type="number" class="num-input" value="' + (ln.copy_qty || ln.quantity || 1) + '" min="1" onchange="calcLine(this)"></td>'
+        + '<td><select>'
+        + '<option' + (ln.uom === 'EA' ? ' selected' : '') + '>EA</option>'
+        + '<option' + (ln.uom === 'Set' ? ' selected' : '') + '>Set</option>'
+        + '<option' + (ln.uom === 'Unit' ? ' selected' : '') + '>Unit</option>'
+        + '<option' + (ln.uom === 'Job' ? ' selected' : '') + '>Job</option>'
+        + '<option' + (ln.uom === 'Month' ? ' selected' : '') + '>Month</option>'
+        + '<option' + (ln.uom === 'Day' ? ' selected' : '') + '>Day</option>'
+        + '<option' + (ln.uom === 'System' ? ' selected' : '') + '>System</option>'
+        + '<option' + (ln.uom === 'Roll' ? ' selected' : '') + '>Roll</option>'
+        + '</select></td>'
+        + '<td><input type="number" class="num-input" data-field="price" placeholder="0.00" step="0.01" value="' + (ln.unit_price || 0) + '" onchange="calcLine(this)"></td>'
+        + '<td><select>'
+        + '<option value="IG07"' + ((ln.tax_code || 'IG07') === 'IG07' ? ' selected' : '') + '>IG07 (7%)</option>'
+        + '<option value="IG00"' + (ln.tax_code === 'IG00' ? ' selected' : '') + '>IG00 (0%)</option>'
+        + '<option value="IS07"' + (ln.tax_code === 'IS07' ? ' selected' : '') + '>IS07 (7%)</option>'
+        + '<option value="IS00"' + (ln.tax_code === 'IS00' ? ' selected' : '') + '>IS00 (0%)</option>'
+        + '</select></td>'
+        + '<td><select>'
+        + '<option value="114101"' + ((ln.sap_account || '114101') === '114101' ? ' selected' : '') + '>114101 Inventory</option>'
+        + '<option value="511102"' + (ln.sap_account === '511102' ? ' selected' : '') + '>511102 Domestic</option>'
+        + '<option value="511103"' + (ln.sap_account === '511103' ? ' selected' : '') + '>511103 Import</option>'
+        + '<option value="511120"' + (ln.sap_account === '511120' ? ' selected' : '') + '>511120 Material</option>'
+        + '<option value="522709"' + (ln.sap_account === '522709' ? ' selected' : '') + '>522709 Misc</option>'
+        + '</select></td>'
+        + '<td class="line-total">\u0E3F0.00</td>'
+        + '<td><button type="button" class="remove-btn" onclick="removeLine(this)">&times;</button></td>';
+
+      // Set item code select value after building options
+      const itemSel = tr.querySelector('.item-code-select');
+      if (itemSel) {
+        itemSel.innerHTML = buildItemOptions(ln.item_code || '');
+      }
+
+      // Calculate line total
+      const qty = ln.copy_qty || ln.quantity || 0;
+      const price = ln.unit_price || 0;
+      const taxCode = ln.tax_code || 'IG07';
+      const taxRate = taxCode.includes('07') ? 0.07 : 0;
+      const total = qty * price * (1 + taxRate);
+      tr.querySelector('.line-total').textContent = '\u0E3F' + total.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+
+      return tr;
+    }
+
+    // Multi-PO creation via /api/po/from-pr
+    async function createMultiPO() {
+      if (!_cfprSelectedLines.length || !_cfprPRData) return;
+      const pr = _cfprPRData.pr || _cfprPRData;
+
+      const payload = {
+        pr_id: pr.id,
+        project_id: pr.project_id,
+        po_date: document.getElementById('po-date').value,
+        payment_terms: document.getElementById('po-terms').value || '30',
+        remarks: document.getElementById('po-remarks')?.value || '',
+        lines: _cfprSelectedLines.map(ln => ({
+          pr_line_id: ln.id || ln.line_id,
+          item_code: ln.item_code,
+          description: ln.description || ln.item_name,
+          quantity: ln.copy_qty,
+          uom: ln.uom || 'EA',
+          unit_price: ln.unit_price || 0,
+          tax_code: ln.tax_code || 'IG07',
+          sap_account: ln.sap_account || '',
+          vendor_code: ln.vendor_code,
+          vendor_name: ln.vendor_name,
+        })),
+      };
+
+      try {
+        const result = await API.post('/po/from-pr', payload);
+        const created = result.created || result.pos || [];
+        const count = Array.isArray(created) ? created.length : 1;
+        closeCopyFromPR();
+        showToast('Created ' + count + ' PO(s) from PR ' + (pr.doc_number || ''), 'success');
+        setTimeout(() => { window.location = 'pr-po.html'; }, 1200);
+      } catch (e) {
+        showToast('Error creating POs: ' + e.message, 'error');
+      }
+    }
+
+    // Utility: set a <select> value programmatically
+    function setSelectValue(sel, value) {
+      if (!sel || !value) return;
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === value || sel.options[i].value === String(value)) {
+          sel.selectedIndex = i;
+          return;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

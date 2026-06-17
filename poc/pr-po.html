@@ -138,7 +138,7 @@
           <button class="btn btn-primary" id="btn-new-main" onclick="newDocClick()" data-i18n="btn_new_pr">+ New PR</button>
           <div id="new-doc-dropdown" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:160px;z-index:100;">
             <a href="doc-detail.html?type=pr&mode=new" style="display:block;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-primary);text-decoration:none;border-bottom:1px solid var(--border-light);" data-i18n="btn_new_pr">+ New PR</a>
-            <a href="doc-detail.html?type=po&mode=new" style="display:block;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-primary);text-decoration:none;" data-i18n="btn_new_po">+ New PO</a>
+            <a href="po-create.html" style="display:block;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-primary);text-decoration:none;" data-i18n="btn_new_po">+ New PO</a>
           </div>
         </div>
       </div>
@@ -395,6 +395,8 @@
         // Show dropdown
         const dd = document.getElementById('new-doc-dropdown');
         dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+      } else if (docType === 'po') {
+        window.location = 'po-create.html';
       } else {
         window.location = 'doc-detail.html?type=' + docType + '&mode=new';
       }

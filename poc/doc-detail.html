@@ -260,6 +260,20 @@
     <div class="erp-bottom-tabs" id="bottom-tabs"></div>
     <div class="erp-bottom-content" id="bottom-content"></div>
 
+    <!-- Copy To PO Modal -->
+    <div class="modal-overlay" id="copyToPOModal" style="display:none;" onclick="if(event.target===this)closeCopyToPO()">
+      <div class="modal" style="max-width:900px;width:95%;">
+        <div class="modal-header">
+          <h2 id="copyToPO-title">Copy To Purchase Order</h2>
+          <button onclick="closeCopyToPO()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-muted);">&times;</button>
+        </div>
+        <div class="modal-body" id="copyToPO-body" style="min-height:300px;">
+          <div style="text-align:center;color:var(--text-muted);padding:40px;">Loading...</div>
+        </div>
+        <div class="modal-footer" id="copyToPO-footer"></div>
+      </div>
+    </div>
+
   </main>
   </div>
 
@@ -973,14 +987,274 @@
       window.location = 'doc-detail.html?type=' + docType + '&mode=new';
     }
 
-    function copyToPO() {
-      if (!confirm('Copy this PR to a new Purchase Order?')) return;
-      sessionStorage.setItem('copyFromPR', JSON.stringify({
-        pr_id: doc.id, project_id: doc.project_id,
-        vendor_code: doc.vendor_code, vendor_name: doc.vendor_name,
-        lines: lines
-      }));
-      window.location = 'doc-detail.html?type=po&mode=new&from_pr=1';
+    // ═══ Copy To PO Modal (3-step) ═══
+    let _cpoLines = [];   // open lines from API
+    let _cpoStep = 'A';   // current step: A, B, C
+
+    function closeCopyToPO() {
+      document.getElementById('copyToPOModal').style.display = 'none';
+    }
+
+    async function copyToPO() {
+      document.getElementById('copyToPOModal').style.display = 'flex';
+      _cpoStep = 'A';
+      const body = document.getElementById('copyToPO-body');
+      const footer = document.getElementById('copyToPO-footer');
+      body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">Loading open lines...</div>';
+      footer.innerHTML = '';
+
+      try {
+        const res = await API.get('/pr/' + doc.id + '/open-lines');
+        _cpoLines = (res.lines || []).map(l => {
+          const vqs = (l.vendor_quotes || []).map(vq => ({
+            bp_code: vq.bp_code || '', bp_name: vq.bp_name || '',
+            qty: vq.qty || vq.price || 0
+          }));
+          // Default vendor = highest qty vendor
+          let defaultVendor = '';
+          if (vqs.length) {
+            let maxQ = -1;
+            vqs.forEach(vq => { if (vq.qty > maxQ) { maxQ = vq.qty; defaultVendor = vq.bp_code; } });
+          }
+          return {
+            ...l,
+            _vqs: vqs,
+            _selected: parseFloat(l.open_qty) > 0,
+            _copy_qty: parseFloat(l.open_qty) || 0,
+            _vendor_code: defaultVendor,
+            _vendor_name: (vqs.find(v => v.bp_code === defaultVendor) || {}).bp_name || ''
+          };
+        });
+        if (!_cpoLines.length) {
+          body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">No open lines available for this PR.</div>';
+          footer.innerHTML = '<button class="erp-btn" onclick="closeCopyToPO()">Close</button>';
+          return;
+        }
+        renderCPOStepA();
+      } catch(e) {
+        body.innerHTML = '<div style="text-align:center;color:var(--danger);padding:40px;">Error: ' + e.message + '</div>';
+        footer.innerHTML = '<button class="erp-btn" onclick="closeCopyToPO()">Close</button>';
+      }
+    }
+
+    function renderCPOStepA() {
+      _cpoStep = 'A';
+      document.getElementById('copyToPO-title').textContent = 'Copy To PO — Step 1: Select Lines';
+      const body = document.getElementById('copyToPO-body');
+      const footer = document.getElementById('copyToPO-footer');
+
+      let html = '<div style="margin-bottom:10px;font-size:13px;color:var(--text-secondary);">Select lines and choose vendor for each. Lines are grouped by vendor in the next step.</div>';
+      html += '<div style="overflow-x:auto;"><table class="erp-grid" style="font-size:13px;">';
+      html += '<thead><tr>';
+      html += '<th style="width:36px;"><input type="checkbox" id="cpo-select-all" onchange="cpoToggleAll(this.checked)" checked></th>';
+      html += '<th style="width:36px;">#</th>';
+      html += '<th style="min-width:90px;">Item Code</th>';
+      html += '<th style="min-width:160px;">Description</th>';
+      html += '<th class="num" style="width:70px;">PR Qty</th>';
+      html += '<th class="num" style="width:70px;">Open Qty</th>';
+      html += '<th class="num" style="width:90px;">Copy Qty</th>';
+      html += '<th style="min-width:180px;">Vendor</th>';
+      html += '</tr></thead><tbody>';
+
+      _cpoLines.forEach((l, i) => {
+        const disabled = l._copy_qty <= 0 ? 'disabled' : '';
+        // Vendor quotes display
+        const vqDisplay = l._vqs.length
+          ? l._vqs.map((vq, vi) => 'V' + (vi+1) + ': ' + (vq.bp_name || vq.bp_code || '-') + ' (' + vq.qty + ')').join(' | ')
+          : '<span style="color:var(--text-muted);">No quotes</span>';
+
+        // Vendor select options
+        let vendorOpts = '<option value="">-- Select Vendor --</option>';
+        l._vqs.forEach(vq => {
+          vendorOpts += '<option value="' + vq.bp_code + '" ' + (vq.bp_code === l._vendor_code ? 'selected' : '') + '>' + (vq.bp_code ? vq.bp_code + ' — ' : '') + vq.bp_name + '</option>';
+        });
+        // Also add master vendors if available
+        if (window._masterVendors) {
+          window._masterVendors.forEach(mv => {
+            const code = mv.bp_code || mv.id;
+            if (!l._vqs.find(vq => vq.bp_code === code)) {
+              vendorOpts += '<option value="' + code + '" ' + (code === l._vendor_code ? 'selected' : '') + '>' + code + ' — ' + (mv.bp_name || '') + '</option>';
+            }
+          });
+        }
+
+        html += '<tr data-cpo-idx="' + i + '">';
+        html += '<td style="text-align:center;"><input type="checkbox" class="cpo-line-chk" data-idx="' + i + '" ' + (l._selected ? 'checked' : '') + ' ' + disabled + ' onchange="cpoToggleLine(' + i + ', this.checked)"></td>';
+        html += '<td class="row-num">' + (i+1) + '</td>';
+        html += '<td style="font-family:var(--font-mono);font-weight:600;color:var(--primary);">' + (l.item_code || '-') + '</td>';
+        html += '<td>' + (l.item_name || '-') + '</td>';
+        html += '<td class="num">' + parseFloat(l.quantity || 0).toLocaleString() + '</td>';
+        html += '<td class="num" style="font-weight:600;">' + parseFloat(l.open_qty || 0).toLocaleString() + '</td>';
+        html += '<td class="num"><input type="number" class="cpo-copy-qty" data-idx="' + i + '" value="' + l._copy_qty + '" min="0" max="' + (l.open_qty || 0) + '" step="1" style="width:80px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;text-align:right;" onchange="cpoUpdateQty(' + i + ', this.value)" ' + disabled + '></td>';
+        html += '<td><select class="cpo-vendor-sel" data-idx="' + i + '" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;" onchange="cpoUpdateVendor(' + i + ', this.value, this.options[this.selectedIndex].text)">' + vendorOpts + '</select></td>';
+        html += '</tr>';
+        // Vendor quotes sub-row
+        html += '<tr><td></td><td colspan="7" style="padding:2px 16px 8px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border-light);">' + vqDisplay + '</td></tr>';
+      });
+
+      html += '</tbody></table></div>';
+      body.innerHTML = html;
+      footer.innerHTML = '<button class="erp-btn" onclick="closeCopyToPO()">Cancel</button><button class="erp-btn primary" onclick="cpoGoToStepB()">Next &rarr;</button>';
+    }
+
+    function cpoToggleAll(checked) {
+      _cpoLines.forEach((l, i) => {
+        if (parseFloat(l.open_qty) > 0) {
+          l._selected = checked;
+          const chk = document.querySelector('.cpo-line-chk[data-idx="' + i + '"]');
+          if (chk) chk.checked = checked;
+        }
+      });
+    }
+
+    function cpoToggleLine(idx, checked) {
+      _cpoLines[idx]._selected = checked;
+    }
+
+    function cpoUpdateQty(idx, val) {
+      const max = parseFloat(_cpoLines[idx].open_qty) || 0;
+      let v = parseFloat(val) || 0;
+      if (v < 0) v = 0;
+      if (v > max) v = max;
+      _cpoLines[idx]._copy_qty = v;
+      const inp = document.querySelector('.cpo-copy-qty[data-idx="' + idx + '"]');
+      if (inp) inp.value = v;
+    }
+
+    function cpoUpdateVendor(idx, code, text) {
+      _cpoLines[idx]._vendor_code = code;
+      _cpoLines[idx]._vendor_name = text.replace(/^.*—\s*/, '').trim();
+    }
+
+    function cpoGoToStepB() {
+      // Validate: at least one selected line with qty > 0 and vendor
+      const selected = _cpoLines.filter(l => l._selected && l._copy_qty > 0);
+      if (!selected.length) {
+        showToast('Please select at least one line with Copy Qty > 0', 'error');
+        return;
+      }
+      const noVendor = selected.filter(l => !l._vendor_code);
+      if (noVendor.length) {
+        showToast('Please select a vendor for all selected lines', 'error');
+        return;
+      }
+      renderCPOStepB(selected);
+    }
+
+    function renderCPOStepB(selected) {
+      _cpoStep = 'B';
+      document.getElementById('copyToPO-title').textContent = 'Copy To PO — Step 2: Preview';
+      const body = document.getElementById('copyToPO-body');
+      const footer = document.getElementById('copyToPO-footer');
+
+      // Group by vendor
+      const groups = {};
+      selected.forEach(l => {
+        const key = l._vendor_code;
+        if (!groups[key]) groups[key] = { vendor_code: l._vendor_code, vendor_name: l._vendor_name, lines: [] };
+        groups[key].lines.push(l);
+      });
+      const vendorGroups = Object.values(groups);
+
+      let html = '<div style="margin-bottom:14px;font-size:15px;font-weight:700;color:var(--primary);">สร้าง PO จำนวน ' + vendorGroups.length + ' ใบ:</div>';
+
+      vendorGroups.forEach((g, gi) => {
+        let groupTotal = 0;
+        html += '<div style="border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:14px;overflow:hidden;">';
+        html += '<div style="padding:12px 16px;background:var(--bg-light);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">';
+        html += '<div><span style="font-weight:700;font-size:14px;">PO #' + (gi+1) + '</span> &mdash; <span style="color:var(--primary);font-weight:600;">' + g.vendor_code + '</span> ' + g.vendor_name + '</div>';
+        html += '</div>';
+        html += '<table class="erp-grid" style="font-size:13px;"><thead><tr><th>#</th><th>Item Code</th><th>Description</th><th class="num">Qty</th><th>UoM</th><th class="num">Unit Price</th><th class="num">Total</th></tr></thead><tbody>';
+        g.lines.forEach((l, li) => {
+          const price = parseFloat(l.unit_price) || 0;
+          const total = l._copy_qty * price;
+          groupTotal += total;
+          html += '<tr>';
+          html += '<td class="row-num">' + (li+1) + '</td>';
+          html += '<td style="font-family:var(--font-mono);font-weight:600;color:var(--primary);">' + (l.item_code || '-') + '</td>';
+          html += '<td>' + (l.item_name || '-') + '</td>';
+          html += '<td class="num">' + l._copy_qty.toLocaleString() + '</td>';
+          html += '<td>' + (l.uom || 'EA') + '</td>';
+          html += '<td class="num">' + money(price) + '</td>';
+          html += '<td class="num" style="font-weight:700;">' + money(total) + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody><tfoot><tr class="grand-total"><td colspan="6" style="text-align:right;padding-right:16px;">Total</td><td class="num">' + money(groupTotal) + '</td></tr></tfoot></table>';
+        html += '</div>';
+      });
+
+      body.innerHTML = html;
+      // Store groups for step C
+      body._vendorGroups = vendorGroups;
+      footer.innerHTML = '<button class="erp-btn" onclick="renderCPOStepA()">&larr; Back</button><button class="erp-btn primary" onclick="cpoConfirm()">Confirm</button>';
+    }
+
+    async function cpoConfirm() {
+      _cpoStep = 'C';
+      document.getElementById('copyToPO-title').textContent = 'Copy To PO — Creating...';
+      const body = document.getElementById('copyToPO-body');
+      const footer = document.getElementById('copyToPO-footer');
+      const vendorGroups = body._vendorGroups;
+
+      body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Creating POs...</div>';
+      footer.innerHTML = '';
+
+      try {
+        // Build payload: one line per selected item, the backend groups by vendor
+        const payloadLines = [];
+        vendorGroups.forEach(g => {
+          g.lines.forEach(l => {
+            payloadLines.push({
+              pr_line_id: l.id,
+              item_code: l.item_code || '',
+              item_name: l.item_name || '',
+              copy_qty: l._copy_qty,
+              unit_price: parseFloat(l.unit_price) || 0,
+              uom: l.uom || 'EA',
+              tax_code: l.tax_code || 'IG07',
+              sap_account: l.sap_account || '114101',
+              vendor_code: g.vendor_code,
+              vendor_name: g.vendor_name
+            });
+          });
+        });
+
+        const result = await API.post('/po/from-pr', {
+          pr_id: doc.id,
+          project_id: doc.project_id,
+          lines: payloadLines
+        });
+
+        // Show result
+        document.getElementById('copyToPO-title').textContent = 'Copy To PO — Complete';
+        const created = result.created || result.pos || [];
+        let html = '<div style="text-align:center;padding:20px;">';
+        html += '<div style="font-size:48px;color:var(--success);margin-bottom:12px;">&#10003;</div>';
+        html += '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">PO Created Successfully!</div>';
+
+        if (created.length) {
+          html += '<div style="display:flex;flex-direction:column;gap:8px;align-items:center;">';
+          created.forEach(po => {
+            const poNum = po.doc_number || po.docNumber || ('PO-' + (po.id || ''));
+            html += '<a href="doc-detail.html?type=po&doc=' + poNum + '" class="erp-btn primary" style="text-decoration:none;display:inline-flex;">' + poNum + ' &rarr;</a>';
+          });
+          html += '</div>';
+        } else if (result.doc_number) {
+          // Single PO result
+          html += '<a href="doc-detail.html?type=po&doc=' + result.doc_number + '" class="erp-btn primary" style="text-decoration:none;display:inline-flex;">' + result.doc_number + ' &rarr;</a>';
+        }
+
+        if (result.pr_closed || result.pr_status === 'closed') {
+          html += '<div style="margin-top:16px;padding:10px 16px;background:var(--warning-bg);border-radius:var(--radius);font-size:13px;color:var(--warning);font-weight:600;">PR has been auto-closed (all lines fully copied)</div>';
+        }
+
+        html += '</div>';
+        body.innerHTML = html;
+        footer.innerHTML = '<button class="erp-btn primary" onclick="closeCopyToPO();location.reload();">Close</button>';
+      } catch(e) {
+        body.innerHTML = '<div style="text-align:center;padding:40px;"><div style="font-size:48px;color:var(--danger);margin-bottom:12px;">&#10007;</div><div style="color:var(--danger);font-weight:600;">Error: ' + e.message + '</div></div>';
+        footer.innerHTML = '<button class="erp-btn" onclick="renderCPOStepA()">&larr; Back</button><button class="erp-btn" onclick="closeCopyToPO()">Close</button>';
+      }
     }
 
     async function cancelDoc() {

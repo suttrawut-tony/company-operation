@@ -21,7 +21,7 @@
 
     /* Line Items */
     .lines-editor { overflow-x: auto; }
-    .lines-editor table { width: 100%; border-collapse: collapse; min-width: 1400px; }
+    .lines-editor table { width: 100%; border-collapse: collapse; min-width: 1100px; }
     .lines-editor th {
       padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600;
       color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
@@ -49,14 +49,17 @@
     .lines-editor .remove-btn:hover { color: var(--danger); }
 
     /* Vendor Quotes */
-    .vendor-quotes-cell { padding: 4px 6px !important; }
+    .vq-grid { display: flex; flex-direction: column; gap: 4px; }
+    .vq-row { display: flex; gap: 8px; align-items: center; }
+    .vq-toggle { background: none; border: none; cursor: pointer; font-size: 10px; color: var(--text-muted); padding: 2px 4px; }
+    .vq-toggle:hover { color: var(--primary); }
     .vendor-quote-row { display: flex; gap: 4px; align-items: center; margin-bottom: 3px; }
     .vendor-quote-row:last-child { margin-bottom: 0; }
     .vendor-quote-row select { flex: 1; min-width: 100px; font-size: 11px; padding: 5px 6px; }
     .vendor-quote-row input { width: 90px; font-size: 11px; padding: 5px 6px; text-align: right; }
     .vendor-quote-label { font-size: 10px; color: var(--text-muted); font-weight: 600; width: 16px; text-align: center; flex-shrink: 0; }
-    .vendor-quote-row.lowest-price input { background: #ecfdf5; border-color: #059669; }
-    .vendor-quote-row.lowest-price select { background: #ecfdf5; border-color: #059669; }
+    .vendor-quote-row.best-vendor input { background: #ecfdf5; border-color: #059669; }
+    .vendor-quote-row.best-vendor select { background: #ecfdf5; border-color: #059669; }
 
     .add-line-btn {
       padding: 10px 16px; border: 1px dashed var(--border); border-radius: var(--radius);
@@ -213,7 +216,7 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width:30px;">#</th>
+                  <th style="width:50px;">#</th>
                   <th style="width:100px;">Item Code</th>
                   <th style="min-width:200px;">Description *</th>
                   <th style="width:70px;">Qty *</th>
@@ -223,13 +226,12 @@
                   <th style="width:90px;">GL Account</th>
                   <th style="width:100px;">Budget Line</th>
                   <th style="width:110px;text-align:right;">Total</th>
-                  <th style="min-width:280px;">Vendor Quotes (เปรียบเทียบราคา)</th>
                   <th style="width:30px;"></th>
                 </tr>
               </thead>
               <tbody id="line-items">
                 <tr data-line="1">
-                  <td style="color:var(--text-muted);padding:10px;font-weight:600;">1</td>
+                  <td style="color:var(--text-muted);padding:10px;font-weight:600;">1 <button class="vq-toggle" onclick="toggleVQ(this)" title="Vendor Quotes">&#9654;</button></td>
                   <td><select class="searchable item-code-select" style="min-width:120px;" onchange="onItemSelect(this);calcLine(this);"></select></td>
                   <td><input placeholder="Item description..." data-field="item_name" required></td>
                   <td><input type="number" class="num-input" value="1" min="1" onchange="calcLine(this)"></td>
@@ -259,24 +261,29 @@
                     <option value="misc">Misc</option>
                   </select></td>
                   <td class="line-total">&#3647;0.00</td>
-                  <td class="vendor-quotes-cell">
-                    <div class="vendor-quote-row" data-vq="1">
-                      <span class="vendor-quote-label">1</span>
-                      <select class="vq-vendor" onchange="highlightLowest(this)"><option value="">-- Vendor --</option></select>
-                      <input type="number" class="vq-price num-input" placeholder="Price" step="0.01" onchange="highlightLowest(this)">
-                    </div>
-                    <div class="vendor-quote-row" data-vq="2">
-                      <span class="vendor-quote-label">2</span>
-                      <select class="vq-vendor" onchange="highlightLowest(this)"><option value="">-- Vendor --</option></select>
-                      <input type="number" class="vq-price num-input" placeholder="Price" step="0.01" onchange="highlightLowest(this)">
-                    </div>
-                    <div class="vendor-quote-row" data-vq="3">
-                      <span class="vendor-quote-label">3</span>
-                      <select class="vq-vendor" onchange="highlightLowest(this)"><option value="">-- Vendor --</option></select>
-                      <input type="number" class="vq-price num-input" placeholder="Price" step="0.01" onchange="highlightLowest(this)">
+                  <td><button type="button" class="remove-btn" onclick="removeLine(this)">&times;</button></td>
+                </tr>
+                <tr class="vq-subrow" style="display:none;">
+                  <td colspan="11" style="padding:8px 12px 12px 40px;background:#f8fafc;border-bottom:2px solid var(--border-light);">
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Vendor Quotes (เปรียบเทียบราคา)</div>
+                    <div class="vq-grid">
+                      <div class="vendor-quote-row" data-vq="1">
+                        <span class="vendor-quote-label">1</span>
+                        <select class="vq-vendor" onchange="highlightBestVendor(this)"><option value="">-- Vendor --</option></select>
+                        <input type="number" class="vq-qty num-input" placeholder="จำนวน" step="1" min="0" onchange="highlightBestVendor(this)">
+                      </div>
+                      <div class="vendor-quote-row" data-vq="2">
+                        <span class="vendor-quote-label">2</span>
+                        <select class="vq-vendor" onchange="highlightBestVendor(this)"><option value="">-- Vendor --</option></select>
+                        <input type="number" class="vq-qty num-input" placeholder="จำนวน" step="1" min="0" onchange="highlightBestVendor(this)">
+                      </div>
+                      <div class="vendor-quote-row" data-vq="3">
+                        <span class="vendor-quote-label">3</span>
+                        <select class="vq-vendor" onchange="highlightBestVendor(this)"><option value="">-- Vendor --</option></select>
+                        <input type="number" class="vq-qty num-input" placeholder="จำนวน" step="1" min="0" onchange="highlightBestVendor(this)">
+                      </div>
                     </div>
                   </td>
-                  <td><button type="button" class="remove-btn" onclick="removeLine(this)">&times;</button></td>
                 </tr>
               </tbody>
             </table>
@@ -385,56 +392,61 @@
   <script>
     let lineCount = 1;
 
+    // Toggle vendor quotes sub-row visibility
+    function toggleVQ(btn) {
+      const row = btn.closest('tr');
+      const subrow = row.nextElementSibling;
+      if (subrow && subrow.classList.contains('vq-subrow')) {
+        const show = subrow.style.display === 'none';
+        subrow.style.display = show ? '' : 'none';
+        btn.textContent = show ? '\u25BC' : '\u25B6';
+      }
+    }
+
     // Populate all .vq-vendor selects with vendor options from master
     function populateVendorQuoteSelects() {
       const optionsHtml = buildVendorOptions('');
-      document.querySelectorAll('.vq-vendor').forEach(sel => {
+      document.querySelectorAll('.vq-subrow .vq-vendor').forEach(sel => {
         sel.innerHTML = optionsHtml;
       });
     }
 
     // Highlight the lowest price vendor quote row per line item
-    function highlightLowest(el) {
-      const row = el.closest('tr');
+    // Highlight vendor with highest qty (best vendor for this item)
+    function highlightBestVendor(el) {
+      const row = el.closest('tr.vq-subrow') || el.closest('tr');
       if (!row) return;
       const quoteRows = row.querySelectorAll('.vendor-quote-row');
-      let lowestPrice = Infinity;
-      let lowestIdx = -1;
+      let bestQty = 0;
+      let bestIdx = -1;
+      let validCount = 0;
       quoteRows.forEach((qr, idx) => {
-        qr.classList.remove('lowest-price');
+        qr.classList.remove('best-vendor');
         const vendor = qr.querySelector('.vq-vendor')?.value;
-        const price = parseFloat(qr.querySelector('.vq-price')?.value) || 0;
-        if (vendor && price > 0 && price < lowestPrice) {
-          lowestPrice = price;
-          lowestIdx = idx;
+        const qty = parseFloat(qr.querySelector('.vq-qty')?.value) || 0;
+        if (vendor && qty > 0) {
+          validCount++;
+          if (qty > bestQty) { bestQty = qty; bestIdx = idx; }
         }
       });
-      // Count how many valid quotes exist
-      let validCount = 0;
-      quoteRows.forEach(qr => {
-        const v = qr.querySelector('.vq-vendor')?.value;
-        const p = parseFloat(qr.querySelector('.vq-price')?.value) || 0;
-        if (v && p > 0) validCount++;
-      });
-      // Only highlight if at least 2 valid quotes for comparison
-      if (lowestIdx >= 0 && validCount >= 2) {
-        quoteRows[lowestIdx].classList.add('lowest-price');
+      if (bestIdx >= 0 && validCount >= 2) {
+        quoteRows[bestIdx].classList.add('best-vendor');
       }
     }
 
     function addLine() {
       lineCount++;
       const tbody = document.getElementById('line-items');
-      const row = tbody.querySelector('tr').cloneNode(true);
+      // Clone the first main row (tr[data-line])
+      const firstRow = tbody.querySelector('tr[data-line]');
+      const row = firstRow.cloneNode(true);
       row.dataset.line = lineCount;
-      row.querySelector('td:first-child').textContent = lineCount;
+      // Update # cell with toggle button
+      const firstTd = row.querySelector('td:first-child');
+      firstTd.innerHTML = lineCount + ' <button class="vq-toggle" onclick="toggleVQ(this)" title="Vendor Quotes">&#9654;</button>';
       row.querySelectorAll('input').forEach(inp => { inp.value = ''; });
       row.querySelector('.num-input').value = '1';
       row.querySelector('.line-total').textContent = '฿0.00';
-      // Reset vendor quote fields
-      row.querySelectorAll('.vq-vendor').forEach(sel => sel.value = '');
-      row.querySelectorAll('.vq-price').forEach(inp => inp.value = '');
-      row.querySelectorAll('.vendor-quote-row').forEach(qr => qr.classList.remove('lowest-price'));
       // Reset item picker and remove old searchable wrapper
       const oldWrapper = row.querySelector('.ss-wrapper');
       if (oldWrapper) {
@@ -447,7 +459,16 @@
         }
         oldWrapper.remove();
       }
+      // Clone the first sub-row
+      const firstSubrow = tbody.querySelector('tr.vq-subrow');
+      const subrow = firstSubrow.cloneNode(true);
+      subrow.style.display = 'none';
+      // Reset vendor quote fields in sub-row
+      subrow.querySelectorAll('.vq-vendor').forEach(sel => sel.value = '');
+      subrow.querySelectorAll('.vq-qty').forEach(inp => inp.value = '');
+      subrow.querySelectorAll('.vendor-quote-row').forEach(qr => qr.classList.remove('best-vendor'));
       tbody.appendChild(row);
+      tbody.appendChild(subrow);
       // Re-init searchable on new row's select
       const newSel = row.querySelector('.item-code-select');
       if (newSel) initItemPicker(newSel);
@@ -455,8 +476,14 @@
 
     function removeLine(btn) {
       const tbody = document.getElementById('line-items');
-      if (tbody.querySelectorAll('tr').length <= 1) return;
-      btn.closest('tr').remove();
+      if (tbody.querySelectorAll('tr[data-line]').length <= 1) return;
+      const mainRow = btn.closest('tr');
+      const nextRow = mainRow.nextElementSibling;
+      // Remove the associated sub-row if present
+      if (nextRow && nextRow.classList.contains('vq-subrow')) {
+        nextRow.remove();
+      }
+      mainRow.remove();
       recalcAll();
     }
 
@@ -476,7 +503,7 @@
     function recalcAll() {
       let subtotal = 0;
       let vatTotal = 0;
-      document.querySelectorAll('#line-items tr').forEach(row => {
+      document.querySelectorAll('#line-items tr[data-line]').forEach(row => {
         const qty = parseFloat(row.querySelector('input[type="number"]')?.value) || 0;
         const price = parseFloat(row.querySelectorAll('input[type="number"]')[1]?.value) || 0;
         const lineTotal = qty * price;
@@ -568,7 +595,7 @@
       if (!project_id) { showToast('กรุณาเลือก Project', 'error'); return null; }
       // Collect line items from table — read input/select values, not textContent
       const lines = [];
-      document.querySelectorAll('#line-items tr').forEach(row => {
+      document.querySelectorAll('#line-items tr[data-line]').forEach(row => {
         const selects = row.querySelectorAll('select');
         const inputs = row.querySelectorAll('input');
         if (selects.length < 1 || inputs.length < 2) return;
@@ -581,17 +608,20 @@
         const sap_account = selects[3]?.value || '';
         const total_price = quantity * unit_price;
         if (!item_code && !item_name) return; // skip empty rows
-        // Collect vendor quotes (up to 3)
+        // Collect vendor quotes from the next sibling sub-row
         const vendor_quotes = [];
-        row.querySelectorAll('.vendor-quote-row').forEach(qr => {
-          const vSel = qr.querySelector('.vq-vendor');
-          const bp_code = vSel?.value || '';
-          const bp_name = vSel?.selectedOptions[0]?.textContent?.trim() || '';
-          const price = parseFloat(qr.querySelector('.vq-price')?.value) || 0;
-          if (bp_code && price > 0) {
-            vendor_quotes.push({ bp_code, bp_name, price });
-          }
-        });
+        const subrow = row.nextElementSibling;
+        if (subrow && subrow.classList.contains('vq-subrow')) {
+          subrow.querySelectorAll('.vendor-quote-row').forEach(qr => {
+            const vSel = qr.querySelector('.vq-vendor');
+            const bp_code = vSel?.value || '';
+            const bp_name = vSel?.selectedOptions[0]?.textContent?.trim() || '';
+            const qty = parseFloat(qr.querySelector('.vq-qty')?.value) || 0;
+            if (bp_code && qty > 0) {
+              vendor_quotes.push({ bp_code, bp_name, qty, price: qty }); // price kept for backward compat
+            }
+          });
+        }
         lines.push({ item_code, description: item_name, quantity, uom, unit_price, tax_code, sap_account, total_price, vendor_quotes });
       });
       // Collect vendor_name from selected option text
@@ -622,8 +652,8 @@
         const el = document.getElementById(id);
         if (el) el.disabled = !hasProject;
       });
-      // Line item inputs and selects (including vendor quote fields)
-      document.querySelectorAll('#line-items input, #line-items select, .vq-vendor, .vq-price').forEach(el => {
+      // Line item inputs and selects (including vendor quote fields in sub-rows)
+      document.querySelectorAll('#line-items input, #line-items select').forEach(el => {
         el.disabled = !hasProject;
       });
       // Add line / remove line buttons

@@ -229,4 +229,97 @@ router.delete('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// POST /api/po/from-pr — Create PO(s) from approved PR lines, grouped by vendor
+// Uses transaction: validate → group by vendor → create POs → update pr_lines.copied_qty → auto-close PR
+router.post('/from-pr', async (req, res) => {
+  const client = await db.pool.connect();
+  try {
+    const { pr_id, project_id, lines } = req.body;
+    if (!pr_id || !lines || !lines.length) return res.status(400).json({ error: 'pr_id and lines required' });
+
+    // Validate PR exists and is approved
+    const { rows: [pr] } = await client.query(
+      'SELECT * FROM purchase_requests WHERE id=$1 AND company_id=$2 AND status=$3',
+      [pr_id, req.user.company_id, 'approved']);
+    if (!pr) return res.status(400).json({ error: 'PR not found or not approved' });
+
+    // Validate each line's copy_qty <= open_qty
+    for (const line of lines) {
+      const { rows: [pl] } = await client.query(
+        'SELECT quantity, COALESCE(copied_qty,0) AS copied_qty FROM pr_lines WHERE id=$1 AND pr_id=$2',
+        [line.pr_line_id, pr_id]);
+      if (!pl) return res.status(400).json({ error: 'PR line ' + line.pr_line_id + ' not found' });
+      const openQty = parseFloat(pl.quantity) - parseFloat(pl.copied_qty);
+      if (parseFloat(line.copy_qty) > openQty) {
+        return res.status(400).json({ error: 'Copy qty (' + line.copy_qty + ') exceeds open qty (' + openQty + ') for line ' + line.pr_line_id });
+      }
+    }
+
+    // Group lines by vendor_code
+    const vendorGroups = {};
+    for (const line of lines) {
+      const vk = line.vendor_code || 'NO_VENDOR';
+      if (!vendorGroups[vk]) vendorGroups[vk] = { vendor_code: line.vendor_code, vendor_name: line.vendor_name, lines: [] };
+      vendorGroups[vk].lines.push(line);
+    }
+
+    await client.query('BEGIN');
+
+    const createdPOs = [];
+    for (const [vk, group] of Object.entries(vendorGroups)) {
+      // Generate PO number
+      const { rows: [series] } = await client.query(
+        `INSERT INTO number_series (company_id, doc_type, prefix, year_month, current_number)
+         VALUES ($1, 'PO', 'PO', to_char(NOW(), 'YYMM'), 1)
+         ON CONFLICT (company_id, doc_type, year_month) DO UPDATE SET current_number = number_series.current_number + 1
+         RETURNING *`, [req.user.company_id]);
+      const docNumber = 'PO' + series.year_month + String(series.current_number).padStart(4, '0');
+
+      const totalAmount = group.lines.reduce((s, l) => s + (parseFloat(l.copy_qty) * parseFloat(l.unit_price || 0)), 0);
+
+      // Create PO header
+      const { rows: [po] } = await client.query(
+        `INSERT INTO purchase_orders (company_id, project_id, pr_id, doc_number, vendor_code, vendor_name, total_amount, remarks, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [req.user.company_id, project_id || pr.project_id, pr_id, docNumber,
+         group.vendor_code, group.vendor_name, totalAmount,
+         'Created from ' + pr.doc_number, req.user.id]);
+
+      // Create PO lines
+      for (let i = 0; i < group.lines.length; i++) {
+        const l = group.lines[i];
+        await client.query(
+          `INSERT INTO po_lines (po_id, line_num, item_code, item_name, quantity, uom, unit_price, total_price, sap_account, tax_code, pr_line_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          [po.id, i + 1, l.item_code, l.item_name, l.copy_qty, l.uom || 'EA',
+           l.unit_price, parseFloat(l.copy_qty) * parseFloat(l.unit_price || 0),
+           l.sap_account, l.tax_code, l.pr_line_id]);
+
+        // Update pr_lines.copied_qty
+        await client.query(
+          'UPDATE pr_lines SET copied_qty = COALESCE(copied_qty,0) + $1 WHERE id = $2',
+          [l.copy_qty, l.pr_line_id]);
+      }
+
+      createdPOs.push({ po_id: po.id, po_number: docNumber, vendor: group.vendor_name, lines_count: group.lines.length, total: totalAmount });
+    }
+
+    // Check if all PR lines are fully copied → auto-close PR
+    const { rows: [openCheck] } = await client.query(
+      'SELECT COUNT(*) AS open_count FROM pr_lines WHERE pr_id=$1 AND quantity - COALESCE(copied_qty,0) > 0', [pr_id]);
+    if (parseInt(openCheck.open_count) === 0) {
+      await client.query("UPDATE purchase_requests SET status='closed', updated_at=NOW() WHERE id=$1", [pr_id]);
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ created: createdPOs, pr_closed: parseInt(openCheck.open_count) === 0 });
+    req.broadcast('po_created', { from_pr: pr.doc_number, count: createdPOs.length });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;
