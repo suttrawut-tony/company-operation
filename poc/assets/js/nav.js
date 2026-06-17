@@ -288,6 +288,12 @@ function renderSidebar() {
       </div>
     </div>
   `;
+
+  // Scroll active item into view (prevent sidebar resetting to top)
+  requestAnimationFrame(() => {
+    const activeItem = el.querySelector('.sidebar-item.active');
+    if (activeItem) activeItem.scrollIntoView({ block: 'center', behavior: 'instant' });
+  });
 }
 
 // ═══ Render Top Bar (slimmer, no tabs) ═══
