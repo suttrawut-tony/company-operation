@@ -546,7 +546,7 @@
     }
 
     function openEditUser(userId) {
-      const u = allUsers.find(x => x.id === userId);
+      const u = allUsers.find(x => String(x.id) === String(userId));
       if (!u) return;
       document.getElementById('user-modal-title').textContent = 'Edit User';
       document.getElementById('um-id').value = u.id;
@@ -655,7 +655,7 @@
       try {
         await API.post('/projects/' + projectId + '/members', { user_id: userId, role: 'member' });
         // Update local cache
-        const proj = allProjectsList.find(p => p.id === projectId);
+        const proj = allProjectsList.find(p => String(p.id) === String(projectId));
         if (!userProjectsMap[userId]) userProjectsMap[userId] = [];
         userProjectsMap[userId].push({ code: proj?.code||'', name: proj?.name||'', id: projectId, role: 'member' });
         renderUserProjectsInModal(userId);
@@ -666,7 +666,7 @@
       if (!confirm('Remove from this project?')) return;
       try {
         await API.del('/projects/' + projectId + '/members/' + userId);
-        userProjectsMap[userId] = (userProjectsMap[userId] || []).filter(p => p.id !== projectId);
+        userProjectsMap[userId] = (userProjectsMap[userId] || []).filter(p => String(p.id) !== String(projectId));
         renderUserProjectsInModal(userId);
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }

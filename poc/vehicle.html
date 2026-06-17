@@ -765,7 +765,7 @@
 
     // ═══ Vehicle Detail Modal ═══
     async function openVehicleDetail(vid) {
-      const v = allVehicles.find(x => x.id === vid);
+      const v = allVehicles.find(x => String(x.id) === String(vid));
       if (!v) return;
       let modal = document.getElementById('vehicle-detail-modal');
       if (!modal) {
@@ -843,7 +843,7 @@
     }
 
     function openEditVehicleModal(vid) {
-      const v = allVehicles.find(x => x.id === vid);
+      const v = allVehicles.find(x => String(x.id) === String(vid));
       if (!v) return;
       document.getElementById('vehicle-detail-modal').classList.add('hidden');
       openAddVehicleModal();

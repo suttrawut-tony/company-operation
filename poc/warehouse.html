@@ -152,7 +152,7 @@
       if (s) list = list.filter(w => (w.code + w.name + (w.location || '')).toLowerCase().includes(s));
 
       document.getElementById('wh-list').innerHTML = list.map(w => `
-        <div class="wh-card${w.id === selectedWhId ? ' active' : ''}" onclick="selectWarehouse('${w.id}')">
+        <div class="wh-card${String(w.id) === String(selectedWhId) ? ' active' : ''}" onclick="selectWarehouse('${w.id}')">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <span class="wh-card-code">${w.code}</span>
             <span class="wh-card-status ${w.status}">${w.status === 'active' ? 'Active' : 'Inactive'}</span>
@@ -174,7 +174,7 @@
     async function selectWarehouse(id) {
       selectedWhId = id;
       renderWhList();
-      const wh = allWarehouses.find(w => w.id === id);
+      const wh = allWarehouses.find(w => String(w.id) === String(id));
       document.getElementById('stock-title').textContent = wh ? wh.code + ' — ' + wh.name : '';
       document.getElementById('stock-subtitle').textContent = wh?.location || '';
       document.getElementById('add-stock-btn').style.display = '';
@@ -224,7 +224,7 @@
     }
 
     function openEditWh(id) {
-      const w = allWarehouses.find(x => x.id === id);
+      const w = allWarehouses.find(x => String(x.id) === String(id));
       if (!w) return;
       document.getElementById('wh-edit-id').value = id;
       document.getElementById('wh-code').value = w.code;

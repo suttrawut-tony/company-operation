@@ -1683,7 +1683,7 @@
       const prefix = type === 'vehicle' ? 'veh' : type === 'solar' ? 'solar' : 'flight';
       const joId = document.getElementById(prefix + 'JobOrder').value;
       if (!joId) return;
-      const jo = approvedJobOrders.find(j => j.id === joId);
+      const jo = approvedJobOrders.find(j => String(j.id) === String(joId));
       if (!jo) return;
 
       if (type === 'vehicle') {
@@ -2108,7 +2108,7 @@
       const box = document.getElementById('vehInfo');
       if (!box) return;
       const id = document.getElementById('vehSelect').value;
-      const v = vehicles.find(x => x.id === id);
+      const v = vehicles.find(x => String(x.id) === String(id));
       if (!v) { box.style.display = 'none'; box.innerHTML = ''; return; }
       const fmtNum = n => (n == null || n === '') ? '-' : Number(n).toLocaleString();
       // Status reflects real availability for the SELECTED booking dates, not the
@@ -2579,7 +2579,7 @@
     //  EVENT POPUP
     // ══════════════════════════════════
     function showEventPopup(id) {
-      const ev = allBookings.find(e => e.id === id);
+      const ev = allBookings.find(e => String(e.id) === String(id));
       if (!ev) return;
       document.getElementById('popupTitle').textContent = (TYPE_ICONS[ev.booking_type] || '') + ' ' + (ev.title || 'Booking #' + ev.id);
 
@@ -3372,7 +3372,7 @@
         typeof showToast === 'function' && showToast('อัปเดตสถานะสำเร็จ', 'success');
         const res = await API.get('/bookings?start_date=2020-01-01&end_date=2030-12-31');
         allBookings = normalizeBookings(res.bookings || res || []);
-        const ev = allBookings.find(b => b.id === editingId);
+        const ev = allBookings.find(b => String(b.id) === String(editingId));
         if (ev) {
           showSolarSections(newStatus);
           if (['survey_completed','confirmed'].includes(newStatus)) loadBookingItems(editingId);
@@ -3540,7 +3540,7 @@
       if (e) e.stopPropagation();
       closeQuickPopup();
       closePopup();
-      const ev = allBookings.find(b => b.id === id);
+      const ev = allBookings.find(b => String(b.id) === String(id));
       if (!ev) return;
 
       const c = evColor(ev);

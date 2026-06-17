@@ -296,7 +296,7 @@
             </div>
             <span class="count">${items.length}</span>
           </div>
-          <div class="kanban-body">
+          <div class="kanban-body" data-drop-status="${col.dropStatus}" ondragover="onKanbanDragOver(event)" ondragleave="onKanbanDragLeave(event)" ondrop="onKanbanDrop(event)">
             ${items.length ? items.map(d => renderCard(d)).join('') : '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">No items</div>'}
           </div>
         </div>`;
@@ -309,6 +309,7 @@
       const statusLabel = d.status.replace(/_/g,' ').replace('pending ','');
       return `
       <div class="kanban-card" data-pr-id="${d.id}" data-pr-status="${d.status}"
+           draggable="true" ondragstart="onCardDragStart(event)" ondragend="onCardDragEnd(event)"
            onclick="window.location='doc-detail.html?type=${docType==='all'?(d.doc_number.startsWith('PO')?'po':'pr'):docType}&doc=${d.doc_number}'"
            style="cursor:pointer;${border}">
         <div class="kanban-card-header">
@@ -411,7 +412,7 @@
       document.getElementById('view-kanban').classList.toggle('hidden', view !== 'kanban');
       document.getElementById('view-list').classList.toggle('hidden', view !== 'list');
       document.querySelectorAll('.view-switch button').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+      event.target.closest('button').classList.add('active');
     }
 
     /* ── Drag & Drop ── */
@@ -464,13 +465,25 @@
       const oldStatus = item.status;
       const endpoint = pr ? '/pr/' : '/po/';
 
+      // Determine the correct action endpoint based on status transition
+      // Status changes must go through /submit or /approve endpoints, not PUT
+      let actionPath = null;
+      if (newStatus === 'pending_manager' && oldStatus === 'draft') {
+        actionPath = endpoint + draggedCardId + '/submit';
+      } else if (['approved','pending_finance','pending_executive'].includes(newStatus) && oldStatus.includes('pending')) {
+        actionPath = endpoint + draggedCardId + '/approve';
+      } else {
+        showToast('Cannot move card to this column', 'warning');
+        return;
+      }
+
       // Optimistic update — move card instantly
       item.status = newStatus;
       refresh();
 
-      // Save to server in background
+      // Save to server using proper action endpoint
       try {
-        await API.put(endpoint + draggedCardId, { status: newStatus });
+        await API.post(actionPath);
       } catch (err) {
         // Rollback on failure
         item.status = oldStatus;

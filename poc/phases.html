@@ -712,8 +712,8 @@
       // Find step data from currentPhases
       let stepData = null;
       for (const ph of currentPhases) {
-        if (ph.id === phaseId && ph.steps) {
-          stepData = ph.steps.find(s => s.id === stepId);
+        if (String(ph.id) === String(phaseId) && ph.steps) {
+          stepData = ph.steps.find(s => String(s.id) === String(stepId));
           break;
         }
       }
@@ -772,7 +772,7 @@
       let subData = null;
       for (const ph of currentPhases) {
         for (const st of (ph.steps||[])) {
-          const found = (st.subtasks||[]).find(s => s.id === subId);
+          const found = (st.subtasks||[]).find(s => String(s.id) === String(subId));
           if (found) { subData = found; break; }
         }
         if (subData) break;

@@ -295,7 +295,7 @@
         <div class="summary-item"><div class="s-label">Total TOR</div><div class="s-value">${fmtMoney(totTor)}</div></div>
         <div class="summary-item"><div class="s-label">Total Budget</div><div class="s-value" style="color:var(--primary);">${fmtMoney(totBudget)}</div></div>
         <div class="summary-item"><div class="s-label">Total Actual</div><div class="s-value" style="color:var(--warning);">${fmtMoney(totActual)}</div></div>
-        <div class="summary-item"><div class="s-label">Variance</div><div class="s-value" style="color:${varColor};">${variance >= 0 ? '-' : '+'}${fmtMoney(Math.abs(variance))}</div></div>`;
+        <div class="summary-item"><div class="s-label">Variance</div><div class="s-value" style="color:${varColor};">${variance >= 0 ? '' : '-'}${fmtMoney(Math.abs(variance))}</div></div>`;
     }
 
     // ═══ Tab Switching ═══

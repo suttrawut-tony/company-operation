@@ -42,6 +42,25 @@ router.get('/wht', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/pr/open — list approved PRs with open (un-copied) lines
+// IMPORTANT: Must be before /:id to avoid "open" matching as :id param
+router.get('/open', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT pr.*, u.first_name || ' ' || u.last_name AS requester_name,
+              p.code AS project_code, p.name AS project_name,
+              (SELECT COUNT(*) FROM pr_lines pl WHERE pl.pr_id = pr.id AND pl.quantity - COALESCE(pl.copied_qty,0) > 0) AS open_line_count
+       FROM purchase_requests pr
+       LEFT JOIN users u ON pr.created_by = u.id
+       LEFT JOIN projects p ON pr.project_id = p.id
+       WHERE pr.company_id = $1 AND pr.status = 'approved'
+         AND (SELECT COUNT(*) FROM pr_lines pl WHERE pl.pr_id = pr.id AND pl.quantity - COALESCE(pl.copied_qty,0) > 0) > 0
+       ORDER BY pr.doc_date DESC`,
+      [req.user.company_id]);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const projectIds = await getUserProjectIds(req.user);
@@ -188,23 +207,7 @@ router.post('/:id/approve', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// GET /api/pr/open — list approved PRs with open (un-copied) lines
-router.get('/open', async (req, res) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT pr.*, u.first_name || ' ' || u.last_name AS requester_name,
-              p.code AS project_code, p.name AS project_name,
-              (SELECT COUNT(*) FROM pr_lines pl WHERE pl.pr_id = pr.id AND pl.quantity - COALESCE(pl.copied_qty,0) > 0) AS open_line_count
-       FROM purchase_requests pr
-       LEFT JOIN users u ON pr.created_by = u.id
-       LEFT JOIN projects p ON pr.project_id = p.id
-       WHERE pr.company_id = $1 AND pr.status = 'approved'
-       HAVING (SELECT COUNT(*) FROM pr_lines pl WHERE pl.pr_id = pr.id AND pl.quantity - COALESCE(pl.copied_qty,0) > 0) > 0
-       ORDER BY pr.doc_date DESC`,
-      [req.user.company_id]);
-    res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
+// GET /api/pr/open — moved above /:id to prevent route shadowing
 
 // GET /api/pr/:id/open-lines — lines with open qty > 0 including vendor_quotes
 router.get('/:id/open-lines', async (req, res) => {

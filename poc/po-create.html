@@ -375,6 +375,8 @@
     // ═══════════════════════════════════════════════════════════════
     document.getElementById('po-date').value = new Date().toISOString().slice(0, 10);
 
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCopyFromPR(); });
+
     if (API.requireAuth()) { loadDropdowns(); }
 
     async function loadDropdowns() {

@@ -444,7 +444,7 @@
     let retCurrentProject = null;
 
     function openRetModal(projectId) {
-      retCurrentProject = allProjects.find(p => p.id === projectId);
+      retCurrentProject = allProjects.find(p => String(p.id) === String(projectId));
       if (!retCurrentProject) return;
 
       document.getElementById('ret-project-id').value = projectId;
@@ -519,7 +519,7 @@
 
     // ═══ Edit Project ═══
     async function openEditProject(projectId) {
-      const p = allProjects.find(x => x.id === projectId);
+      const p = allProjects.find(x => String(x.id) === String(projectId));
       if (!p) return;
       editingProjectId = projectId;
       document.querySelector('#proj-modal .modal-header h3').textContent = 'แก้ไข Project — ' + p.code;

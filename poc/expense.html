@@ -499,6 +499,7 @@
       if (expFilter === 'reimbursement') list = list.filter(e => e.expense_type === 'reimbursement');
       else if (expFilter === 'advance') list = list.filter(e => e.expense_type === 'advance' || e.expense_type === 'advance_clear');
       else if (expFilter === 'pending') list = list.filter(e => e.status.includes('pending'));
+      else if (expFilter === 'approved') list = list.filter(e => e.status === 'approved' || e.status === 'paid');
 
       if (statusFilter) {
         if (statusFilter === 'pending') list = list.filter(e => e.status.includes('pending'));
@@ -734,6 +735,8 @@
         await loadExpenses();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeScanModal(); closeExpenseModal(); } });
 
     // FIXED: Auth guard
     if (!API.requireAuth()) throw new Error('Not authenticated');

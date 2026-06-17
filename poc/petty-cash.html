@@ -687,6 +687,8 @@
       exportToExcel(rows, 'Petty_Cash_Funds');
     }
 
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeFundModal(); closeDisbModal(); closeReceiptModal(); closeReplModal(); closeCountModal(); closeApproveReplModal(); } });
+
     if (!API.requireAuth()) throw new Error('Not authenticated');
     loadData();
     API.onRealtime(msg => { if (msg.type.startsWith('pc_')) loadData(); });

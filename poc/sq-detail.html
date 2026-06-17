@@ -111,7 +111,7 @@
         } else if (docId) {
           doc = await API.get('/quotations/' + docId);
           lines = (doc.items || []).map(function(it) { return Object.assign({}, it); });
-          currentIdx = allDocs.findIndex(function(d) { return d.id === docId; });
+          currentIdx = allDocs.findIndex(function(d) { return String(d.id) === String(docId); });
           if (currentIdx < 0) currentIdx = 0;
         } else if (allDocs.length) {
           await loadDocByIdx(0);

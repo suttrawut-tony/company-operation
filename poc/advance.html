@@ -1055,7 +1055,7 @@
       });
     }
 
-    document.addEventListener('keydown', e => { if (e.key==='Escape') { closeNewModal(); closePayModal(); closeSettleModal(); } });
+    document.addEventListener('keydown', e => { if (e.key==='Escape') { closeNewModal(); closePayModal(); closeSettleModal(); closeReturnModal(); } });
 
     // FIXED: Auth guard
     if (!API.requireAuth()) throw new Error('Not authenticated');

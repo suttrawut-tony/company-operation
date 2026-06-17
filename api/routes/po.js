@@ -56,7 +56,7 @@ router.post('/', async (req, res) => {
         await db.query(
           `INSERT INTO po_lines (po_id, line_num, item_code, item_name, quantity, uom, unit_price, total_price, sap_account, tax_code, received_qty, open_qty)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-          [po.id, i + 1, line.item_code, line.item_name, line.quantity, line.uom || 'EA', line.unit_price, line.total_price, line.sap_account, line.tax_code, 0, line.quantity]
+          [po.id, i + 1, line.item_code, line.item_name || line.description, line.quantity, line.uom || 'EA', line.unit_price, line.total_price, line.sap_account, line.tax_code, 0, line.quantity]
         );
       }
     }
@@ -291,7 +291,7 @@ router.post('/from-pr', async (req, res) => {
         await client.query(
           `INSERT INTO po_lines (po_id, line_num, item_code, item_name, quantity, uom, unit_price, total_price, sap_account, tax_code, pr_line_id)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-          [po.id, i + 1, l.item_code, l.item_name, l.copy_qty, l.uom || 'EA',
+          [po.id, i + 1, l.item_code, l.item_name || l.description, l.copy_qty, l.uom || 'EA',
            l.unit_price, parseFloat(l.copy_qty) * parseFloat(l.unit_price || 0),
            l.sap_account, l.tax_code, l.pr_line_id]);
 

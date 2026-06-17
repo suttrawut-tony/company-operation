@@ -569,7 +569,7 @@
       const newStatus = e.currentTarget.dataset.colStatus;
       if (!draggedTaskId || !currentProjectId) return;
 
-      const task = allTasks.find(t => t.id === draggedTaskId);
+      const task = allTasks.find(t => String(t.id) === String(draggedTaskId));
       if (!task || task.status === newStatus) return;
 
       // Optimistic: move card instantly
@@ -649,7 +649,7 @@
     }
 
     async function openEditTask(taskId) {
-      const t = allTasks.find(x => x.id === taskId);
+      const t = allTasks.find(x => String(x.id) === String(taskId));
       if (!t) return;
       document.getElementById('task-modal-title').textContent = 'แก้ไข Task';
       document.getElementById('task-edit-id').value = taskId;

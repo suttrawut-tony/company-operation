@@ -180,10 +180,10 @@
         const allProjects = await API.getProjects();
         const select = document.getElementById('project-select');
         select.innerHTML = allProjects.map(p =>
-          `<option value="${p.id}" ${p.id===projectId?'selected':''}>${p.code} — ${p.name}</option>`
+          `<option value="${p.id}" ${String(p.id)===String(projectId)?'selected':''}>${p.code} — ${p.name}</option>`
         ).join('');
 
-        if (!projectId && allProjects.length) projectId = allProjects[0].id;
+        if (!projectId && allProjects.length) projectId = String(allProjects[0].id);
         if (!projectId) { document.getElementById('banner').innerHTML='<div>No projects</div>'; return; }
 
         const p = await API.getProject(projectId);
@@ -422,7 +422,7 @@
 
         // ── OT ──
         load('/ot', 'ot-section', items => {
-          const filtered = items.filter(o => o.project_id === projectId);
+          const filtered = items.filter(o => String(o.project_id) === String(projectId));
           if (!filtered.length) return empty('No OT records');
           const totalHrs = filtered.reduce((s,o) => s + parseFloat(o.hours||0), 0);
           const totalComp = filtered.reduce((s,o) => s + parseFloat(o.compensation||0), 0);
@@ -784,7 +784,9 @@
 
     // FIXED: Auth guard
     if (!API.requireAuth()) throw new Error('Not authenticated');
-    var _initProjectId = restorePageState('project') || new URLSearchParams(window.location.search).get('id');
+    // BUG FIX: projects.html navigates with ?id=, but restorePageState looks for ?project=
+    // Prioritize ?id= param (from projects.html click) over stale localStorage value
+    var _initProjectId = new URLSearchParams(window.location.search).get('id') || restorePageState('project');
     loadProject(_initProjectId);
   </script>
 </body>
