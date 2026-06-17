@@ -51,14 +51,13 @@ router.post('/', async (req, res) => {
 
     const { rows: [dispute] } = await db.query(
       `INSERT INTO disputes (company_id, dispute_number, project_id, contract_id,
-        dispute_type, priority, subject, description, claimed_amount,
-        counterparty_name, remarks, status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        dispute_type, priority, title, description, amount_claimed,
+        status, raised_by, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW())
        RETURNING *`,
       [req.user.company_id, disputeNumber, b.project_id || null, b.contract_id || null,
-       b.dispute_type || null, b.priority || 'medium', b.subject || null,
-       b.description || null, b.claimed_amount || 0,
-       b.counterparty_name || null, b.remarks || null,
+       b.dispute_type || null, b.priority || 'medium', b.subject || b.title || null,
+       b.description || null, b.claimed_amount || b.amount_claimed || 0,
        b.status || 'open', req.user.id]);
 
     // Auto-insert opening activity
@@ -80,8 +79,8 @@ router.put('/:id', async (req, res) => {
     if (!['open', 'investigating'].includes(existing.status))
       return res.status(400).json({ error: 'Can only update open or investigating disputes' });
 
-    const allowed = ['project_id','contract_id','dispute_type','priority','subject',
-      'description','claimed_amount','counterparty_name','remarks','status'];
+    const allowed = ['project_id','contract_id','dispute_type','priority','title',
+      'description','amount_claimed','status'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) {
       if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); }

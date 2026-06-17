@@ -146,7 +146,7 @@
         if (status && t.status !== status) return false;
         if (type && t.tender_type !== type) return false;
         if (project && String(t.project_id) !== project) return false;
-        if (search && !(t.tender_no||'').toLowerCase().includes(search) && !(t.title||'').toLowerCase().includes(search)) return false;
+        if (search && !(t.tender_number||'').toLowerCase().includes(search) && !(t.title||'').toLowerCase().includes(search)) return false;
         return true;
       });
       renderStats();
@@ -187,11 +187,11 @@
       filteredTenders.forEach(t=>{
         const projName = projects.find(p=>p.id===t.project_id);
         h+=`<tr onclick="window.location='tender-detail.html?id=${t.id}'">
-          <td style="font-weight:600;color:var(--primary)">${t.tender_no||'-'}</td>
+          <td style="font-weight:600;color:var(--primary)">${t.tender_number||'-'}</td>
           <td>${t.title||'-'}</td>
           <td>${projName?projName.project_code||projName.project_name:'-'}</td>
           <td>${typeLabel(t.tender_type)}</td>
-          <td class="sq-amount">${fmtNum(t.budget||0)}</td>
+          <td class="sq-amount">${fmtNum(t.budget_amount||0)}</td>
           <td><span class="sq-badge" style="${statusStyle(t.status)}">${t.status||'-'}</span></td>
           <td>${t.close_date?new Date(t.close_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-'}</td>
           <td onclick="event.stopPropagation()">
@@ -227,7 +227,7 @@
 
     function renderModal(isNew) {
       const t = editTender;
-      document.getElementById('modalTitle').textContent = isNew ? 'Create New Tender' : 'Edit Tender — '+(t.tender_no||'');
+      document.getElementById('modalTitle').textContent = isNew ? 'Create New Tender' : 'Edit Tender — '+(t.tender_number||'');
 
       let projOpts = '<option value="">-- Select Project --</option>';
       projects.forEach(p => { projOpts += `<option value="${p.id}" ${p.id===t.project_id?'selected':''}>${p.project_code||''} — ${p.project_name||''}</option>`; });
@@ -240,9 +240,9 @@
         <option value="price_comparison" ${t.tender_type==='price_comparison'?'selected':''}>Price Comparison</option>
         <option value="bidding" ${t.tender_type==='bidding'?'selected':''}>Bidding</option>
       </select></div>`;
-      h += fg('Budget', 'number', 'tdBudget', t.budget||'');
+      h += fg('Budget', 'number', 'tdBudget', t.budget_amount||'');
       h += '</div><div>';
-      h += fg('Open Date', 'date', 'tdOpenDate', t.open_date?t.open_date.substring(0,10):'');
+      h += fg('Open Date', 'date', 'tdOpenDate', t.opening_date?t.opening_date.substring(0,10):'');
       h += fg('Close Date', 'date', 'tdCloseDate', t.close_date?t.close_date.substring(0,10):'');
       h += fg('Evaluation Criteria', 'text', 'tdCriteria', t.evaluation_criteria||'');
       h += `<div class="sq-fg"><label>Remarks</label><textarea id="tdRemarks">${t.remarks||''}</textarea></div>`;
@@ -265,8 +265,8 @@
         title: document.getElementById('tdTitle').value||null,
         project_id: document.getElementById('tdProject').value||null,
         tender_type: document.getElementById('tdType').value||null,
-        budget: parseFloat(document.getElementById('tdBudget').value)||0,
-        open_date: document.getElementById('tdOpenDate').value||null,
+        budget_amount: parseFloat(document.getElementById('tdBudget').value)||0,
+        opening_date: document.getElementById('tdOpenDate').value||null,
         close_date: document.getElementById('tdCloseDate').value||null,
         evaluation_criteria: document.getElementById('tdCriteria').value||null,
         remarks: document.getElementById('tdRemarks').value||null,
@@ -286,7 +286,13 @@
     async function changeStatus(id, status) {
       if (!confirm(`Change status to "${status}"?`)) return;
       try {
-        await API.put('/tenders/'+id, { status });
+        const endpointMap = { published: 'publish', closed: 'close' };
+        const endpoint = endpointMap[status];
+        if (endpoint) {
+          await API.post('/tenders/'+id+'/'+endpoint);
+        } else {
+          await API.put('/tenders/'+id, { status });
+        }
         typeof showToast==='function' && showToast('Status updated','success');
         loadData();
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
@@ -309,9 +315,9 @@
       const rows = filteredTenders.map(t => {
         const proj = projects.find(p=>p.id===t.project_id);
         return [
-          t.tender_no||'', t.title||'', proj?proj.project_code||proj.project_name:'',
-          typeLabel(t.tender_type), parseFloat(t.budget||0), t.status||'',
-          t.open_date?new Date(t.open_date).toLocaleDateString('th-TH'):'',
+          t.tender_number||'', t.title||'', proj?proj.project_code||proj.project_name:'',
+          typeLabel(t.tender_type), parseFloat(t.budget_amount||0), t.status||'',
+          t.opening_date?new Date(t.opening_date).toLocaleDateString('th-TH'):'',
           t.close_date?new Date(t.close_date).toLocaleDateString('th-TH'):'',
           t.evaluation_criteria||'', t.remarks||''
         ];

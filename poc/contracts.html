@@ -160,7 +160,7 @@
         const type = document.getElementById('filterType').value;
         const project = document.getElementById('filterProject').value;
         if (status) params.set('status', status);
-        if (type) params.set('type', type);
+        if (type) params.set('contract_type', type);
         if (project) params.set('project_id', project);
         const q = params.toString();
         allContracts = await API.get('/contracts' + (q ? '?' + q : ''));
@@ -207,8 +207,8 @@
           <td style="font-weight:600;color:var(--primary)">${c.contract_number || '-'}</td>
           <td>${c.project_name || c.project_code || '-'}</td>
           <td>${c.counterparty_name || '-'}</td>
-          <td>${typeLabel(c.type)}</td>
-          <td class="sq-amount">${fmtNum(c.amount || 0)}</td>
+          <td>${typeLabel(c.contract_type)}</td>
+          <td class="sq-amount">${fmtNum(c.contract_amount || 0)}</td>
           <td>${fmtDateShort(c.start_date)}</td>
           <td>${fmtDateShort(c.end_date)}</td>
           <td><span class="sq-badge" style="${statusStyle(c.status)}">${(c.status||'draft').replace(/_/g,' ')}</span></td>
@@ -254,16 +254,16 @@
 
       let h = '<div class="sq-info-grid"><div>';
       h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
-      h += fg('Tender Reference', 'text', 'fTender', c.tender_ref);
+      h += fg('Tender Reference', 'text', 'fTender', c.tender_id);
       h += `<div class="sq-fg"><label>Type</label><select id="fType">
-        <option value="main" ${c.type==='main'?'selected':''}>Main Contract</option>
-        <option value="subcontract" ${c.type==='subcontract'?'selected':''}>Subcontract</option>
-        <option value="purchase_agreement" ${c.type==='purchase_agreement'?'selected':''}>Purchase Agreement</option>
+        <option value="main" ${c.contract_type==='main'?'selected':''}>Main Contract</option>
+        <option value="subcontract" ${c.contract_type==='subcontract'?'selected':''}>Subcontract</option>
+        <option value="purchase_agreement" ${c.contract_type==='purchase_agreement'?'selected':''}>Purchase Agreement</option>
       </select></div>`;
       h += fg('Counterparty Code', 'text', 'fCpCode', c.counterparty_code);
       h += '</div><div>';
       h += fg('Counterparty Name', 'text', 'fCpName', c.counterparty_name);
-      h += fg('Amount', 'number', 'fAmount', c.amount, 'step="0.01"');
+      h += fg('Amount', 'number', 'fAmount', c.contract_amount, 'step="0.01"');
       h += fg('Start Date', 'date', 'fStart', c.start_date ? c.start_date.substring(0,10) : '');
       h += fg('End Date', 'date', 'fEnd', c.end_date ? c.end_date.substring(0,10) : '');
       h += '</div></div>';
@@ -278,11 +278,11 @@
     async function saveContract(isNew) {
       const data = {
         project_id: document.getElementById('fProject').value || null,
-        tender_ref: document.getElementById('fTender').value || null,
-        type: document.getElementById('fType').value,
+        tender_id: document.getElementById('fTender').value || null,
+        contract_type: document.getElementById('fType').value,
         counterparty_code: document.getElementById('fCpCode').value || null,
         counterparty_name: document.getElementById('fCpName').value || null,
-        amount: parseFloat(document.getElementById('fAmount').value) || 0,
+        contract_amount: parseFloat(document.getElementById('fAmount').value) || 0,
         start_date: document.getElementById('fStart').value || null,
         end_date: document.getElementById('fEnd').value || null,
         remarks: document.getElementById('fRemarks').value || null,
@@ -320,7 +320,7 @@
       const c = allContracts.find(x => x.id == id) || {};
       let h = '';
       h += fg('Amendment Description', 'text', 'aDesc', '');
-      h += fg('New Amount', 'number', 'aAmount', c.amount, 'step="0.01"');
+      h += fg('New Amount', 'number', 'aAmount', c.contract_amount, 'step="0.01"');
       h += fg('New End Date', 'date', 'aEndDate', c.end_date ? c.end_date.substring(0,10) : '');
       h += `<div class="sq-fg"><label>Reason</label><textarea id="aReason" rows="3" placeholder="Reason for amendment..."></textarea></div>`;
       document.getElementById('amendBody').innerHTML = h;
@@ -342,7 +342,7 @@
         return;
       }
       try {
-        await API.post('/contracts/' + amendContractId + '/amendments', data);
+        await API.post('/contracts/' + amendContractId + '/amend', data);
         typeof showToast==='function' && showToast('Amendment submitted','success');
         closeAmendModal(); loadData();
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
@@ -356,19 +356,19 @@
     async function showDetail(id) {
       try {
         const c = await API.get('/contracts/' + id);
-        let amendments = [];
-        try { amendments = await API.get('/contracts/' + id + '/amendments'); if (!Array.isArray(amendments)) amendments = []; } catch(e) { amendments = []; }
+        let amendments = c.amendments || [];
+        if (!Array.isArray(amendments)) amendments = [];
 
         document.getElementById('detailTitle').textContent = (c.contract_number || 'Contract') + ' — Detail';
 
         let h = '<div class="sq-info-grid"><div>';
         h += `<p><strong>Contract No.:</strong> ${c.contract_number||'-'}</p>`;
         h += `<p><strong>Project:</strong> ${c.project_name||c.project_code||'-'}</p>`;
-        h += `<p><strong>Type:</strong> ${typeLabel(c.type)}</p>`;
+        h += `<p><strong>Type:</strong> ${typeLabel(c.contract_type)}</p>`;
         h += `<p><strong>Status:</strong> <span class="sq-badge" style="${statusStyle(c.status)}">${(c.status||'draft').replace(/_/g,' ')}</span></p>`;
         h += '</div><div>';
         h += `<p><strong>Counterparty:</strong> ${c.counterparty_name||'-'} ${c.counterparty_code?'('+c.counterparty_code+')':''}</p>`;
-        h += `<p><strong>Amount:</strong> <span class="sq-amount">${moneyBaht(c.amount||0)}</span></p>`;
+        h += `<p><strong>Amount:</strong> <span class="sq-amount">${moneyBaht(c.contract_amount||0)}</span></p>`;
         h += `<p><strong>Start:</strong> ${fmtDate(c.start_date)}</p>`;
         h += `<p><strong>End:</strong> ${fmtDate(c.end_date)}</p>`;
         h += '</div></div>';
@@ -410,7 +410,7 @@
       const headers = ['Contract No.','Project','Counterparty','Type','Amount','Start Date','End Date','Status','Remarks'];
       const rows = allContracts.map(c => [
         c.contract_number||'', c.project_name||c.project_code||'', c.counterparty_name||'',
-        typeLabel(c.type), parseFloat(c.amount||0),
+        typeLabel(c.contract_type), parseFloat(c.contract_amount||0),
         c.start_date ? new Date(c.start_date).toLocaleDateString('en-GB') : '',
         c.end_date ? new Date(c.end_date).toLocaleDateString('en-GB') : '',
         (c.status||'').replace(/_/g,' '), c.remarks||''

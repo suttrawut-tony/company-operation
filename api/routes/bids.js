@@ -64,13 +64,13 @@ router.post('/', async (req, res) => {
     const bidPrice = totalCost + marginAmount;
 
     const { rows: [bid] } = await db.query(
-      `INSERT INTO bid_preparations (company_id, bid_number, project_id, tender_id, title,
-        material_cost, labor_cost, overhead_cost, other_cost, total_cost,
+      `INSERT INTO bid_preparations (company_id, bid_number, project_id, tender_id,
+        cost_material, cost_labor, cost_overhead, cost_other, total_cost,
         margin_percent, margin_amount, bid_price, remarks, status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'draft',$15)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'draft',$14)
        RETURNING *`,
       [req.user.company_id, bidNumber, b.project_id || null, b.tender_id || null,
-       b.title || null, materialCost, laborCost, overheadCost, otherCost, totalCost,
+       materialCost, laborCost, overheadCost, otherCost, totalCost,
        marginPercent, marginAmount, bidPrice, b.remarks || null, req.user.id]);
 
     // Insert cost items
@@ -78,11 +78,11 @@ router.post('/', async (req, res) => {
       for (let i = 0; i < b.cost_items.length; i++) {
         const it = b.cost_items[i];
         await db.query(
-          `INSERT INTO bid_cost_items (bid_id, category, item_code, item_name, description,
-            quantity, unit, unit_cost, total_cost, sort_order)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-          [bid.id, it.category || 'material', it.item_code || null, it.item_name,
-           it.description || null, it.quantity || 1, it.unit || 'ea',
+          `INSERT INTO bid_cost_items (bid_id, category, description,
+            quantity, unit_cost, total_cost, sort_order)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [bid.id, it.category || 'material',
+           it.description || it.item_name || null, it.quantity || 1,
            it.unit_cost || 0, it.total_cost || 0, i]);
       }
     }
@@ -102,25 +102,25 @@ router.put('/:id', async (req, res) => {
     const b = req.body;
 
     // Recalculate costs
-    const materialCost = b.material_cost !== undefined ? parseFloat(b.material_cost) : parseFloat(existing.material_cost);
-    const laborCost = b.labor_cost !== undefined ? parseFloat(b.labor_cost) : parseFloat(existing.labor_cost);
-    const overheadCost = b.overhead_cost !== undefined ? parseFloat(b.overhead_cost) : parseFloat(existing.overhead_cost);
-    const otherCost = b.other_cost !== undefined ? parseFloat(b.other_cost) : parseFloat(existing.other_cost);
+    const materialCost = b.material_cost !== undefined ? parseFloat(b.material_cost) : parseFloat(existing.cost_material);
+    const laborCost = b.labor_cost !== undefined ? parseFloat(b.labor_cost) : parseFloat(existing.cost_labor);
+    const overheadCost = b.overhead_cost !== undefined ? parseFloat(b.overhead_cost) : parseFloat(existing.cost_overhead);
+    const otherCost = b.other_cost !== undefined ? parseFloat(b.other_cost) : parseFloat(existing.cost_other);
     const totalCost = materialCost + laborCost + overheadCost + otherCost;
     const marginPercent = b.margin_percent !== undefined ? parseFloat(b.margin_percent) : parseFloat(existing.margin_percent);
     const marginAmount = totalCost * marginPercent / 100;
     const bidPrice = totalCost + marginAmount;
 
-    const allowed = ['title','tender_id','remarks'];
+    const allowed = ['tender_id','remarks'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) {
       if (b[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(b[f]); }
     }
     // Always update calculated fields
-    sets.push(`material_cost = $${idx++}`); params.push(materialCost);
-    sets.push(`labor_cost = $${idx++}`); params.push(laborCost);
-    sets.push(`overhead_cost = $${idx++}`); params.push(overheadCost);
-    sets.push(`other_cost = $${idx++}`); params.push(otherCost);
+    sets.push(`cost_material = $${idx++}`); params.push(materialCost);
+    sets.push(`cost_labor = $${idx++}`); params.push(laborCost);
+    sets.push(`cost_overhead = $${idx++}`); params.push(overheadCost);
+    sets.push(`cost_other = $${idx++}`); params.push(otherCost);
     sets.push(`total_cost = $${idx++}`); params.push(totalCost);
     sets.push(`margin_percent = $${idx++}`); params.push(marginPercent);
     sets.push(`margin_amount = $${idx++}`); params.push(marginAmount);
@@ -136,11 +136,11 @@ router.put('/:id', async (req, res) => {
       for (let i = 0; i < b.cost_items.length; i++) {
         const it = b.cost_items[i];
         await db.query(
-          `INSERT INTO bid_cost_items (bid_id, category, item_code, item_name, description,
-            quantity, unit, unit_cost, total_cost, sort_order)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-          [req.params.id, it.category || 'material', it.item_code || null, it.item_name,
-           it.description || null, it.quantity || 1, it.unit || 'ea',
+          `INSERT INTO bid_cost_items (bid_id, category, description,
+            quantity, unit_cost, total_cost, sort_order)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [req.params.id, it.category || 'material',
+           it.description || it.item_name || null, it.quantity || 1,
            it.unit_cost || 0, it.total_cost || 0, i]);
       }
     }
@@ -171,7 +171,7 @@ router.post('/:id/submit', async (req, res) => {
     if (!bid) return res.status(404).json({ error: 'Not found' });
     if (bid.status !== 'draft') return res.status(400).json({ error: 'Only draft bids can be submitted' });
     const { rows } = await db.query(
-      "UPDATE bid_preparations SET status='submitted', submitted_at=NOW(), updated_at=NOW() WHERE id=$1 RETURNING *",
+      "UPDATE bid_preparations SET status='submitted', updated_at=NOW() WHERE id=$1 RETURNING *",
       [req.params.id]);
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -206,13 +206,13 @@ router.post('/:id/import-pr', async (req, res) => {
 
     const inserted = [];
     for (const line of prLines) {
+      const desc = [line.item_code, line.item_name || line.description].filter(Boolean).join(' ');
       const { rows: [item] } = await db.query(
-        `INSERT INTO bid_cost_items (bid_id, category, item_code, item_name, description,
-          quantity, unit, unit_cost, total_cost, sort_order, pr_line_id)
-         VALUES ($1,'material',$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        `INSERT INTO bid_cost_items (bid_id, category, description,
+          quantity, unit_cost, total_cost, sort_order, pr_line_id)
+         VALUES ($1,'material',$2,$3,$4,$5,$6,$7)
          RETURNING *`,
-        [bid.id, line.item_code || null, line.item_name || line.description,
-         line.description || null, line.quantity || 1, line.uom || 'ea',
+        [bid.id, desc || null, line.quantity || 1,
          line.unit_price || 0, line.total_price || 0, sortOrder++, line.id]);
       inserted.push(item);
     }

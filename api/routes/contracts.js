@@ -128,7 +128,7 @@ router.post('/:id/amend', async (req, res) => {
     // Insert amendment record
     const { rows: [amendment] } = await db.query(
       `INSERT INTO contract_amendments (contract_id, amendment_number, description,
-        previous_amount, new_amount, previous_end_date, new_end_date, reason, created_by)
+        old_amount, new_amount, old_end_date, new_end_date, reason, approved_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING *`,
       [contract.id, amendmentNumber, b.description || null,

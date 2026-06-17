@@ -174,7 +174,7 @@
         const project = document.getElementById('filterProject').value;
         if (status) params.set('status', status);
         if (priority) params.set('priority', priority);
-        if (type) params.set('type', type);
+        if (type) params.set('dispute_type', type);
         if (project) params.set('project_id', project);
         const q = params.toString();
         allDisputes = await API.get('/disputes' + (q ? '?' + q : ''));
@@ -221,7 +221,7 @@
         h += `<tr onclick="showDetail('${d.id}')">
           <td style="font-weight:600;color:var(--primary)">${d.dispute_number || '-'}</td>
           <td>${d.project_name || d.project_code || '-'}</td>
-          <td>${d.type ? d.type.charAt(0).toUpperCase() + d.type.slice(1) : '-'}</td>
+          <td>${d.dispute_type ? d.dispute_type.charAt(0).toUpperCase() + d.dispute_type.slice(1) : '-'}</td>
           <td><span class="sq-badge ${priorityClass(d.priority)}">${(d.priority||'low').toUpperCase()}</span></td>
           <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.title || '-'}</td>
           <td>${d.raised_by || '-'}</td>
@@ -290,15 +290,12 @@
       if (!title) { typeof showToast==='function' && showToast('Title is required','warning'); return; }
       const data = {
         project_id: document.getElementById('fProject').value || null,
-        tender_ref: document.getElementById('fTender').value || null,
-        contract_ref: document.getElementById('fContract').value || null,
-        type: document.getElementById('fType').value,
+        contract_id: document.getElementById('fContract').value || null,
+        dispute_type: document.getElementById('fType').value,
         priority: document.getElementById('fPriority').value,
         title: title,
         description: document.getElementById('fDesc').value || null,
-        assigned_to: document.getElementById('fAssigned').value || null,
         amount_claimed: parseFloat(document.getElementById('fAmount').value) || null,
-        deadline: document.getElementById('fDeadline').value || null,
       };
       try {
         await API.post('/disputes', data);
@@ -316,8 +313,8 @@
       currentDetailId = id;
       try {
         const d = await API.get('/disputes/' + id);
-        let activities = [];
-        try { activities = await API.get('/disputes/' + id + '/activities'); if (!Array.isArray(activities)) activities = []; } catch(e) { activities = []; }
+        let activities = d.activities || [];
+        if (!Array.isArray(activities)) activities = [];
 
         document.getElementById('detailTitle').textContent = (d.dispute_number || 'Dispute') + ' — ' + (d.title || 'Detail');
 
@@ -326,7 +323,7 @@
         h += '<div class="info-card"><div class="sq-info-grid"><div>';
         h += `<p><strong>Dispute No.:</strong> ${d.dispute_number||'-'}</p>`;
         h += `<p><strong>Project:</strong> ${d.project_name||d.project_code||'-'}</p>`;
-        h += `<p><strong>Type:</strong> ${d.type ? d.type.charAt(0).toUpperCase()+d.type.slice(1) : '-'}</p>`;
+        h += `<p><strong>Type:</strong> ${d.dispute_type ? d.dispute_type.charAt(0).toUpperCase()+d.dispute_type.slice(1) : '-'}</p>`;
         h += `<p><strong>Priority:</strong> <span class="sq-badge ${priorityClass(d.priority)}">${(d.priority||'low').toUpperCase()}</span></p>`;
         h += `<p><strong>Status:</strong> <span class="sq-badge" style="${statusStyle(d.status)}">${(d.status||'open').replace(/_/g,' ')}</span></p>`;
         h += '</div><div>';
@@ -346,8 +343,8 @@
         } else {
           h += '<div class="activity-timeline">';
           activities.forEach(a => {
-            const iconClass = a.type === 'comment' ? 'comment' : a.type === 'status_change' ? 'status_change' : a.type === 'resolved' ? 'resolved' : 'assigned';
-            const iconSymbol = a.type === 'comment' ? '&#9993;' : a.type === 'status_change' ? '&#8634;' : a.type === 'resolved' ? '&#10003;' : '&#10148;';
+            const iconClass = a.action === 'comment' ? 'comment' : a.action === 'status_change' ? 'status_change' : a.action === 'resolved' ? 'resolved' : 'assigned';
+            const iconSymbol = a.action === 'comment' ? '&#9993;' : a.action === 'status_change' ? '&#8634;' : a.action === 'resolved' ? '&#10003;' : '&#10148;';
             h += `<div class="activity-item">
               <div class="activity-icon ${iconClass}">${iconSymbol}</div>
               <div class="activity-content">
@@ -382,7 +379,7 @@
       const text = document.getElementById('commentText').value.trim();
       if (!text) { typeof showToast==='function' && showToast('Please enter a comment','warning'); return; }
       try {
-        await API.post('/disputes/' + currentDetailId + '/activities', { type: 'comment', description: text });
+        await API.post('/disputes/' + currentDetailId + '/activity', { action: 'comment', description: text });
         typeof showToast==='function' && showToast('Comment added','success');
         showDetail(currentDetailId); // refresh
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
@@ -391,7 +388,7 @@
     async function resolveDispute(id) {
       if (!confirm('Mark this dispute as resolved?')) return;
       try {
-        await API.put('/disputes/' + id, { status: 'resolved' });
+        await API.post('/disputes/' + id + '/resolve', {});
         typeof showToast==='function' && showToast('Dispute resolved','success');
         closeDetailModal(); loadData();
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }

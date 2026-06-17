@@ -53,12 +53,12 @@ router.post('/', async (req, res) => {
 
     const { rows: [tender] } = await db.query(
       `INSERT INTO tenders (company_id, tender_number, project_id, title, tender_type,
-        budget_amount, submission_deadline, opening_date, evaluation_criteria, remarks, status, created_by)
+        budget_amount, close_date, opening_date, evaluation_criteria, remarks, status, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'draft',$11)
        RETURNING *`,
       [req.user.company_id, tenderNumber, b.project_id || null, b.title,
        b.tender_type || 'open', b.budget_amount || 0,
-       b.submission_deadline || null, b.opening_date || null,
+       b.close_date || null, b.opening_date || null,
        b.evaluation_criteria || null, b.remarks || null, req.user.id]);
 
     // Insert items
@@ -66,10 +66,10 @@ router.post('/', async (req, res) => {
       for (let i = 0; i < b.items.length; i++) {
         const it = b.items[i];
         await db.query(
-          `INSERT INTO tender_items (tender_id, item_code, item_name, description, quantity, unit, estimated_price, sort_order)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-          [tender.id, it.item_code || null, it.item_name, it.description || null,
-           it.quantity || 1, it.unit || 'ea', it.estimated_price || 0, i]);
+          `INSERT INTO tender_items (tender_id, item_code, item_name, quantity, uom, estimated_price, sort_order)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [tender.id, it.item_code || null, it.item_name,
+           it.quantity || 1, it.uom || 'EA', it.estimated_price || 0, i]);
       }
     }
 
@@ -77,10 +77,9 @@ router.post('/', async (req, res) => {
     if (b.vendors && b.vendors.length) {
       for (const v of b.vendors) {
         await db.query(
-          `INSERT INTO tender_vendors (tender_id, vendor_code, vendor_name, contact_person, email, phone)
-           VALUES ($1,$2,$3,$4,$5,$6)`,
-          [tender.id, v.vendor_code || null, v.vendor_name, v.contact_person || null,
-           v.email || null, v.phone || null]);
+          `INSERT INTO tender_vendors (tender_id, vendor_code, vendor_name, invited_date, status)
+           VALUES ($1,$2,$3,NOW(),'invited')`,
+          [tender.id, v.vendor_code || null, v.vendor_name]);
       }
     }
 
@@ -96,7 +95,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
     if (existing.status !== 'draft') return res.status(400).json({ error: 'Only draft tenders can be updated' });
 
-    const allowed = ['title','tender_type','budget_amount','submission_deadline','opening_date',
+    const allowed = ['title','tender_type','budget_amount','close_date','opening_date',
       'evaluation_criteria','remarks'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) {
@@ -166,10 +165,10 @@ router.post('/:id/evaluate', async (req, res) => {
 
     for (const v of vendors) {
       await db.query(
-        `UPDATE tender_vendors SET technical_score=$1, price_score=$2, total_score=$3,
-          evaluation_notes=$4, updated_at=NOW()
-         WHERE id=$5 AND tender_id=$6`,
-        [v.technical_score || 0, v.price_score || 0, v.total_score || 0,
+        `UPDATE tender_vendors SET evaluation_score=$1,
+          evaluation_notes=$2
+         WHERE id=$3 AND tender_id=$4`,
+        [v.total_score || v.evaluation_score || 0,
          v.evaluation_notes || null, v.id, tender.id]);
     }
 
@@ -177,7 +176,7 @@ router.post('/:id/evaluate', async (req, res) => {
       "UPDATE tenders SET status='evaluated', updated_at=NOW() WHERE id=$1", [tender.id]);
 
     const { rows: updatedVendors } = await db.query(
-      'SELECT * FROM tender_vendors WHERE tender_id = $1 ORDER BY total_score DESC', [tender.id]);
+      'SELECT * FROM tender_vendors WHERE tender_id = $1 ORDER BY evaluation_score DESC', [tender.id]);
     res.json({ status: 'evaluated', vendors: updatedVendors });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -202,8 +201,8 @@ router.post('/:id/award', async (req, res) => {
 
     // Update tender status
     await db.query(
-      "UPDATE tenders SET status='awarded', awarded_vendor_id=$1, updated_at=NOW() WHERE id=$2",
-      [vendor_id, tender.id]);
+      "UPDATE tenders SET status='awarded', awarded_vendor_code=$1, awarded_vendor_name=$2, awarded_amount=$3, updated_at=NOW() WHERE id=$4",
+      [vendor.vendor_code, vendor.vendor_name, vendor.total_price || tender.budget_amount, tender.id]);
 
     // Auto-generate contract number
     const { rows: [cSeries] } = await db.query(
@@ -216,11 +215,11 @@ router.post('/:id/award', async (req, res) => {
     // Auto-create draft contract
     const { rows: [contract] } = await db.query(
       `INSERT INTO contracts (company_id, contract_number, tender_id, project_id,
-        vendor_code, vendor_name, contract_amount, status, created_by)
+        counterparty_code, counterparty_name, contract_amount, status, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8)
        RETURNING *`,
       [req.user.company_id, contractNumber, tender.id, tender.project_id,
-       vendor.vendor_code, vendor.vendor_name, tender.budget_amount, req.user.id]);
+       vendor.vendor_code, vendor.vendor_name, vendor.total_price || tender.budget_amount, req.user.id]);
 
     res.json({ tender_status: 'awarded', awarded_vendor: vendor, contract });
   } catch (err) { res.status(500).json({ error: err.message }); }

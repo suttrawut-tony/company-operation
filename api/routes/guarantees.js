@@ -56,13 +56,13 @@ router.post('/', async (req, res) => {
 
     const { rows: [guarantee] } = await db.query(
       `INSERT INTO guarantees (company_id, guarantee_number, project_id, contract_id,
-        guarantee_type, bank_name, bank_branch, guarantee_amount, issue_date, expiry_date,
+        guarantee_type, bank_name, bank_branch, amount, issue_date, expiry_date,
         premium_amount, premium_rate, remarks, status, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        RETURNING *`,
       [req.user.company_id, guaranteeNumber, b.project_id || null, b.contract_id || null,
        b.guarantee_type || null, b.bank_name || null, b.bank_branch || null,
-       b.guarantee_amount || 0, b.issue_date || null, b.expiry_date || null,
+       b.guarantee_amount || b.amount || 0, b.issue_date || null, b.expiry_date || null,
        b.premium_amount || 0, b.premium_rate || 0,
        b.remarks || null, b.status || 'pending', req.user.id]);
     res.status(201).json(guarantee);
@@ -77,7 +77,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     const allowed = ['project_id','contract_id','guarantee_type','bank_name','bank_branch',
-      'guarantee_amount','issue_date','expiry_date','premium_amount','premium_rate','remarks','status'];
+      'amount','issue_date','expiry_date','premium_amount','premium_rate','remarks','status'];
     const sets = []; const params = []; let idx = 1;
     for (const f of allowed) {
       if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); }

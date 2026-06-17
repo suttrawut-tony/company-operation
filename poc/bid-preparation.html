@@ -149,7 +149,7 @@
       filteredBids = allBids.filter(b => {
         if (status && b.status !== status) return false;
         if (project && String(b.project_id) !== project) return false;
-        if (search && !(b.bid_no||'').toLowerCase().includes(search) && !(b.tender_no||'').toLowerCase().includes(search)) return false;
+        if (search && !(b.bid_number||'').toLowerCase().includes(search) && !(b.tender_number||'').toLowerCase().includes(search)) return false;
         return true;
       });
       renderStats();
@@ -186,11 +186,11 @@
       filteredBids.forEach(b=>{
         const proj = projects.find(p=>p.id===b.project_id);
         h+=`<tr>
-          <td style="font-weight:600;color:var(--primary)">${b.bid_no||'-'}</td>
+          <td style="font-weight:600;color:var(--primary)">${b.bid_number||'-'}</td>
           <td>${proj?proj.project_code||proj.project_name:'-'}</td>
-          <td>${b.tender_no||'-'}</td>
+          <td>${b.tender_number||'-'}</td>
           <td class="sq-amount">${fmtNum(b.total_cost||0)}</td>
-          <td style="font-weight:600;color:${(b.margin_pct||0)>=0?'var(--success,#0f9d58)':'var(--danger)'}">${(b.margin_pct||0).toFixed(1)}%</td>
+          <td style="font-weight:600;color:${(b.margin_percent||0)>=0?'var(--success,#0f9d58)':'var(--danger)'}">${(b.margin_percent||0).toFixed(1)}%</td>
           <td class="sq-amount" style="font-weight:800">${fmtNum(b.bid_price||0)}</td>
           <td><span class="sq-badge" style="${statusStyle(b.status)}">${b.status||'-'}</span></td>
           <td onclick="event.stopPropagation()">
@@ -225,7 +225,7 @@
 
     function renderModal(isNew) {
       const b = editBid;
-      document.getElementById('modalTitle').textContent = isNew ? 'Create New Bid' : 'Edit Bid — '+(b.bid_no||'');
+      document.getElementById('modalTitle').textContent = isNew ? 'Create New Bid' : 'Edit Bid — '+(b.bid_number||'');
 
       let projOpts = '<option value="">-- Select Project --</option>';
       projects.forEach(p => { projOpts += `<option value="${p.id}" ${p.id===b.project_id?'selected':''}>${p.project_code||''} — ${p.project_name||''}</option>`; });
@@ -236,7 +236,7 @@
       let h = '<div class="sq-info-grid"><div>';
       h += `<div class="sq-fg"><label>Project</label><select id="bdProject">${projOpts}</select></div>`;
       h += `<div class="sq-fg"><label>Tender</label><select id="bdTender">${tenderOpts}</select></div>`;
-      h += `<div class="sq-fg"><label>Margin %</label><input type="number" id="bdMargin" value="${b.margin_pct||15}" min="0" step="0.1" onchange="recalcBid()"></div>`;
+      h += `<div class="sq-fg"><label>Margin %</label><input type="number" id="bdMargin" value="${b.margin_percent||15}" min="0" step="0.1" onchange="recalcBid()"></div>`;
       h += '</div><div>';
       h += `<div class="sq-fg"><label>Status</label><select id="bdStatus">
         <option value="draft" ${b.status==='draft'?'selected':''}>Draft</option>
@@ -391,13 +391,13 @@
       const data = {
         project_id: document.getElementById('bdProject').value||null,
         tender_id: tenderSel.value||null,
-        tender_no: tenderOpt?.dataset?.no||null,
-        status: document.getElementById('bdStatus').value||'draft',
-        margin_pct: marginPct,
-        total_cost: totalCost,
-        bid_price: bidPrice,
+        margin_percent: marginPct,
+        material_cost: editCostItems.filter(i=>i.category==='material').reduce((s,i)=>s+parseFloat(i.total||0),0),
+        labor_cost: editCostItems.filter(i=>i.category==='labor').reduce((s,i)=>s+parseFloat(i.total||0),0),
+        overhead_cost: editCostItems.filter(i=>i.category==='overhead').reduce((s,i)=>s+parseFloat(i.total||0),0),
+        other_cost: editCostItems.filter(i=>i.category==='other').reduce((s,i)=>s+parseFloat(i.total||0),0),
         remarks: document.getElementById('bdRemarks').value||null,
-        cost_items: editCostItems,
+        cost_items: editCostItems.map(it=>({category:it.category,description:it.description,quantity:it.qty||it.quantity||1,unit_cost:it.unit_cost||0,total_cost:it.total||0})),
       };
 
       try {
@@ -429,8 +429,8 @@
       const rows = filteredBids.map(b => {
         const proj = projects.find(p=>p.id===b.project_id);
         return [
-          b.bid_no||'', proj?proj.project_code||proj.project_name:'',
-          b.tender_no||'', parseFloat(b.total_cost||0), parseFloat(b.margin_pct||0),
+          b.bid_number||'', proj?proj.project_code||proj.project_name:'',
+          b.tender_number||'', parseFloat(b.total_cost||0), parseFloat(b.margin_percent||0),
           parseFloat(b.bid_price||0), b.status||'', b.remarks||''
         ];
       });

@@ -130,7 +130,7 @@
         const type = document.getElementById('filterType').value;
         const project = document.getElementById('filterProject').value;
         if (status) params.set('status', status);
-        if (type) params.set('type', type);
+        if (type) params.set('guarantee_type', type);
         if (project) params.set('project_id', project);
         const q = params.toString();
         allGuarantees = await API.get('/guarantees' + (q ? '?' + q : ''));
@@ -204,7 +204,7 @@
           <td style="font-weight:600;color:var(--primary)">${g.guarantee_number || '-'}</td>
           <td>${g.project_name || g.project_code || '-'}</td>
           <td>${g.contract_number || '-'}</td>
-          <td>${typeLabel(g.type)}</td>
+          <td>${typeLabel(g.guarantee_type)}</td>
           <td>${g.bank_name || '-'}</td>
           <td class="sq-amount">${fmtNum(g.amount || 0)}</td>
           <td>${fmtDateShort(g.issue_date)}</td>
@@ -254,10 +254,10 @@
       h += `<div class="sq-fg"><label>Project</label><select id="fProject"><option value="">-- Select --</option>${projectOpts}</select></div>`;
       h += fg('Contract Reference', 'text', 'fContract', g.contract_number || g.contract_ref);
       h += `<div class="sq-fg"><label>Type</label><select id="fType">
-        <option value="bid_bond" ${g.type==='bid_bond'?'selected':''}>Bid Bond</option>
-        <option value="performance_bond" ${g.type==='performance_bond'?'selected':''}>Performance Bond</option>
-        <option value="advance_payment" ${g.type==='advance_payment'?'selected':''}>Advance Payment</option>
-        <option value="retention_bond" ${g.type==='retention_bond'?'selected':''}>Retention Bond</option>
+        <option value="bid_bond" ${g.guarantee_type==='bid_bond'?'selected':''}>Bid Bond</option>
+        <option value="performance_bond" ${g.guarantee_type==='performance_bond'?'selected':''}>Performance Bond</option>
+        <option value="advance_payment" ${g.guarantee_type==='advance_payment'?'selected':''}>Advance Payment</option>
+        <option value="retention_bond" ${g.guarantee_type==='retention_bond'?'selected':''}>Retention Bond</option>
       </select></div>`;
       h += fg('Guarantee Number', 'text', 'fGNumber', g.guarantee_number);
       h += fg('Bank Name', 'text', 'fBankName', g.bank_name);
@@ -282,12 +282,12 @@
     async function saveGuarantee(isNew) {
       const data = {
         project_id: document.getElementById('fProject').value || null,
-        contract_ref: document.getElementById('fContract').value || null,
-        type: document.getElementById('fType').value,
+        contract_id: document.getElementById('fContract').value || null,
+        guarantee_type: document.getElementById('fType').value,
         guarantee_number: document.getElementById('fGNumber').value || null,
         bank_name: document.getElementById('fBankName').value || null,
         bank_branch: document.getElementById('fBankBranch').value || null,
-        amount: parseFloat(document.getElementById('fAmount').value) || 0,
+        guarantee_amount: parseFloat(document.getElementById('fAmount').value) || 0,
         issue_date: document.getElementById('fIssue').value || null,
         expiry_date: document.getElementById('fExpiry').value || null,
         premium_rate: parseFloat(document.getElementById('fPremiumRate').value) || null,
@@ -327,7 +327,7 @@
         const days = calcDaysLeft(g.expiry_date);
         return [
           g.guarantee_number||'', g.project_name||g.project_code||'', g.contract_number||'',
-          typeLabel(g.type), g.bank_name||'', g.bank_branch||'',
+          typeLabel(g.guarantee_type), g.bank_name||'', g.bank_branch||'',
           parseFloat(g.amount||0),
           g.issue_date ? new Date(g.issue_date).toLocaleDateString('en-GB') : '',
           g.expiry_date ? new Date(g.expiry_date).toLocaleDateString('en-GB') : '',
