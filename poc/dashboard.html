@@ -250,6 +250,69 @@
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* ─── Portlet Menu (NetSuite-style) ─── */
+    .portlet-menu-wrap { position: relative; }
+    .portlet-menu-btn {
+      border: none; background: none; cursor: pointer; padding: 4px 6px;
+      border-radius: var(--radius); font-size: 18px; line-height: 1;
+      color: var(--text-muted); transition: all 0.15s; letter-spacing: 2px;
+    }
+    .portlet-menu-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .portlet-menu {
+      display: none; position: absolute; top: 100%; right: 0; z-index: 100;
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow-md);
+      min-width: 200px; padding: 4px 0; animation: fadeIn 0.15s;
+    }
+    .portlet-menu.show { display: block; }
+    .portlet-menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; font-size: 13px; color: var(--text-primary);
+      cursor: pointer; transition: background 0.1s; border: none;
+      background: none; width: 100%; text-align: left; font-family: inherit;
+    }
+    .portlet-menu-item:hover { background: var(--bg-hover); }
+    .portlet-menu-item svg { width: 15px; height: 15px; color: var(--text-muted); flex-shrink: 0; }
+    .portlet-menu-item.danger { color: var(--danger); }
+    .portlet-menu-item.danger svg { color: var(--danger); }
+    .portlet-menu-sep { height: 1px; background: var(--border-light); margin: 4px 0; }
+
+    /* Setup modal */
+    .setup-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.4); align-items: center; justify-content: center;
+    }
+    .setup-overlay.show { display: flex; }
+    .setup-modal {
+      background: var(--bg-white); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 480px; max-width: 90vw;
+      max-height: 85vh; overflow-y: auto; animation: fadeIn 0.2s;
+    }
+    .setup-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+    }
+    .setup-modal-header h3 { font-size: 15px; font-weight: 700; }
+    .setup-modal-body { padding: 20px; }
+    .setup-modal-footer {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 12px 20px; border-top: 1px solid var(--border-light);
+    }
+    .setup-field { margin-bottom: 16px; }
+    .setup-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+    .setup-field select, .setup-field input {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 13px; font-family: inherit;
+    }
+    .setup-field .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .setup-field .color-swatch {
+      width: 32px; height: 32px; border-radius: var(--radius); cursor: pointer;
+      border: 2px solid transparent; transition: all 0.15s;
+    }
+    .setup-field .color-swatch:hover, .setup-field .color-swatch.active {
+      border-color: var(--text-primary); transform: scale(1.1);
+    }
+
     /* Smooth transitions for all cards */
     .card { transition: box-shadow 0.2s, border-color 0.2s; }
     .card:hover { box-shadow: var(--shadow-sm); }
@@ -543,6 +606,22 @@
         </div>
     </div>
   </main>
+
+  <!-- ═══ Widget Setup Modal ═══ -->
+  <div class="setup-overlay" id="setup-overlay" onclick="if(event.target===this)closeSetup()">
+    <div class="setup-modal">
+      <div class="setup-modal-header">
+        <h3 id="setup-title">Set Up</h3>
+        <button onclick="closeSetup()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--text-muted);">&times;</button>
+      </div>
+      <div class="setup-modal-body" id="setup-body"></div>
+      <div class="setup-modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="closeSetup()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSetup()">Save</button>
+      </div>
+    </div>
+  </div>
+
   </div><!-- end main-wrapper -->
   <script src="assets/js/api.js"></script>
   <script src="assets/js/helpers.js"></script>
@@ -1204,12 +1283,278 @@
       }
     }
 
+    // ═══ Portlet Menu (NetSuite-style per-widget setup) ═══
+    const WIDGET_SETUP_DEFS = {
+      expenseChart: {
+        title: 'Expense Trend — Set Up',
+        fields: [
+          { key: 'chartType', label: 'Chart Type', type: 'select', options: [
+            { value: 'bar', label: 'Bar Chart' },
+            { value: 'line', label: 'Line Chart' },
+            { value: 'bar+line', label: 'Bar + Line (Combo)' }
+          ]},
+          { key: 'colorScheme', label: 'Color Scheme', type: 'color', options: [
+            { value: 'blue', colors: ['#4f6ef7','#7c3aed'] },
+            { value: 'green', colors: ['#10b981','#06b6d4'] },
+            { value: 'warm', colors: ['#f59e0b','#ef4444'] },
+            { value: 'rainbow', colors: ['#4f6ef7','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'] },
+          ]},
+          { key: 'months', label: 'Period (months)', type: 'select', options: [
+            { value: '3', label: 'Last 3 months' },
+            { value: '6', label: 'Last 6 months' },
+            { value: '12', label: 'Last 12 months' }
+          ]},
+          { key: 'showValues', label: 'Show values on bars', type: 'select', options: [
+            { value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }
+          ]}
+        ],
+        defaults: { chartType: 'bar', colorScheme: 'rainbow', months: '6', showValues: 'no' }
+      },
+      budgetChart: {
+        title: 'Budget by Project — Set Up',
+        fields: [
+          { key: 'orientation', label: 'Orientation', type: 'select', options: [
+            { value: 'horizontal', label: 'Horizontal' }, { value: 'vertical', label: 'Vertical' }
+          ]},
+          { key: 'colorScheme', label: 'Color Scheme', type: 'color', options: [
+            { value: 'blue', colors: ['#4f6ef7','#7c3aed'] },
+            { value: 'green', colors: ['#10b981','#06b6d4'] },
+            { value: 'warm', colors: ['#f59e0b','#ef4444'] },
+          ]},
+          { key: 'limit', label: 'Max Projects', type: 'select', options: [
+            { value: '5', label: '5' }, { value: '8', label: '8' }, { value: '12', label: '12' }
+          ]},
+          { key: 'showLegend', label: 'Show Legend', type: 'select', options: [
+            { value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }
+          ]}
+        ],
+        defaults: { orientation: 'horizontal', colorScheme: 'blue', limit: '8', showLegend: 'yes' }
+      },
+      budget: {
+        title: 'Budget Summary — Set Up',
+        fields: [
+          { key: 'donutColor', label: 'Donut Color', type: 'color', options: [
+            { value: 'blue', colors: ['#4f6ef7','#7c3aed'] },
+            { value: 'green', colors: ['#10b981','#06b6d4'] },
+            { value: 'warm', colors: ['#f59e0b','#f97316'] },
+          ]},
+          { key: 'showRemaining', label: 'Show Remaining', type: 'select', options: [
+            { value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }
+          ]}
+        ],
+        defaults: { donutColor: 'blue', showRemaining: 'yes' }
+      },
+      projects: {
+        title: 'Project Status — Set Up',
+        fields: [
+          { key: 'maxItems', label: 'Max Projects to Show', type: 'select', options: [
+            { value: '5', label: '5' }, { value: '10', label: '10' }, { value: '15', label: '15' }
+          ]},
+          { key: 'sortBy', label: 'Sort By', type: 'select', options: [
+            { value: 'progress_desc', label: 'Progress (High → Low)' },
+            { value: 'progress_asc', label: 'Progress (Low → High)' },
+            { value: 'name', label: 'Name A-Z' }
+          ]}
+        ],
+        defaults: { maxItems: '10', sortBy: 'progress_desc' }
+      },
+      alerts: {
+        title: 'AI Alerts — Set Up',
+        fields: [
+          { key: 'maxAlerts', label: 'Max Alerts', type: 'select', options: [
+            { value: '5', label: '5' }, { value: '10', label: '10' }, { value: '20', label: 'All' }
+          ]},
+          { key: 'showLevel', label: 'Show Level', type: 'select', options: [
+            { value: 'all', label: 'All' }, { value: 'critical', label: 'Critical only' },
+            { value: 'warning', label: 'Warning + Critical' }
+          ]}
+        ],
+        defaults: { maxAlerts: '10', showLevel: 'all' }
+      },
+      mytasks: {
+        title: 'My Tasks — Set Up',
+        fields: [
+          { key: 'maxTasks', label: 'Max Tasks', type: 'select', options: [
+            { value: '5', label: '5' }, { value: '10', label: '10' }, { value: '20', label: '20' }
+          ]}
+        ],
+        defaults: { maxTasks: '10' }
+      }
+    };
+
+    let _activeSetupWidget = null;
+
+    function portletMenuHtml(widgetId) {
+      const hasDef = !!WIDGET_SETUP_DEFS[widgetId];
+      return `<div class="portlet-menu-wrap">
+        <button class="portlet-menu-btn" onclick="togglePortletMenu(event,'pm-${widgetId}')" title="Options">&#8942;</button>
+        <div class="portlet-menu" id="pm-${widgetId}">
+          ${hasDef ? `<button class="portlet-menu-item" onclick="openSetup('${widgetId}')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            Set Up</button>` : ''}
+          <button class="portlet-menu-item" onclick="refreshWidget('${widgetId}')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            Refresh</button>
+          <div class="portlet-menu-sep"></div>
+          <button class="portlet-menu-item" onclick="maximizeWidget('${widgetId}')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            Expand</button>
+          <button class="portlet-menu-item" onclick="collapseWidget('${widgetId}')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></svg>
+            Collapse</button>
+          <div class="portlet-menu-sep"></div>
+          <button class="portlet-menu-item danger" onclick="toggleWidget('${widgetId}');closeAllMenus()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Remove</button>
+        </div>
+      </div>`;
+    }
+
+    function togglePortletMenu(e, menuId) {
+      e.stopPropagation();
+      const menu = document.getElementById(menuId);
+      const wasOpen = menu.classList.contains('show');
+      closeAllMenus();
+      if (!wasOpen) menu.classList.add('show');
+    }
+
+    function closeAllMenus() {
+      document.querySelectorAll('.portlet-menu.show').forEach(m => m.classList.remove('show'));
+    }
+    document.addEventListener('click', closeAllMenus);
+
+    function refreshWidget(id) {
+      closeAllMenus();
+      const map = {
+        alerts: loadAlerts, mytasks: loadMyTasks, projects: loadDashboard,
+        budget: loadBudgetSummary, approvals: loadApprovals, pendingConvert: loadPendingConvert,
+        expenseChart: loadExpenseChart, budgetChart: loadBudgetChart
+      };
+      if (map[id]) map[id]();
+    }
+
+    function maximizeWidget(id) {
+      closeAllMenus();
+      const w = document.querySelector(`[data-widget="${id}"] .card`);
+      if (!w) return;
+      if (w.style.position === 'fixed') { // restore
+        w.style = '';
+        return;
+      }
+      w.style.cssText = 'position:fixed;inset:60px 20px 20px;z-index:400;overflow-y:auto;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);';
+    }
+
+    function collapseWidget(id) {
+      closeAllMenus();
+      const body = document.querySelector(`[data-widget="${id}"] .card-body`);
+      const extra = document.querySelector(`[data-widget="${id}"] .budget-summary`);
+      const target = body || extra;
+      if (!target) return;
+      target.style.display = target.style.display === 'none' ? '' : 'none';
+    }
+
+    // ─── Setup Modal ───
+    function openSetup(widgetId) {
+      closeAllMenus();
+      const def = WIDGET_SETUP_DEFS[widgetId];
+      if (!def) return;
+      _activeSetupWidget = widgetId;
+      document.getElementById('setup-title').textContent = def.title;
+
+      // Load current settings from config
+      const config = loadConfig();
+      const wSettings = (config.widgets[widgetId] && config.widgets[widgetId].settings) || {};
+
+      const body = document.getElementById('setup-body');
+      body.innerHTML = def.fields.map(f => {
+        const val = wSettings[f.key] || def.defaults[f.key];
+        if (f.type === 'select') {
+          return `<div class="setup-field">
+            <label>${f.label}</label>
+            <select data-setup-key="${f.key}">
+              ${f.options.map(o => `<option value="${o.value}" ${o.value===val?'selected':''}>${o.label}</option>`).join('')}
+            </select>
+          </div>`;
+        }
+        if (f.type === 'color') {
+          return `<div class="setup-field">
+            <label>${f.label}</label>
+            <div class="color-row">
+              ${f.options.map(o => `<div class="color-swatch ${o.value===val?'active':''}" data-setup-key="${f.key}" data-value="${o.value}"
+                style="background:linear-gradient(135deg,${o.colors.join(',')});"
+                onclick="this.parentElement.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));this.classList.add('active')"></div>`).join('')}
+            </div>
+          </div>`;
+        }
+        return '';
+      }).join('');
+
+      document.getElementById('setup-overlay').classList.add('show');
+    }
+
+    function closeSetup() {
+      document.getElementById('setup-overlay').classList.remove('show');
+      _activeSetupWidget = null;
+    }
+
+    function saveSetup() {
+      if (!_activeSetupWidget) return;
+      const config = loadConfig();
+      if (!config.widgets[_activeSetupWidget]) return;
+      const settings = {};
+
+      // Collect select values
+      document.querySelectorAll('#setup-body select[data-setup-key]').forEach(el => {
+        settings[el.dataset.setupKey] = el.value;
+      });
+      // Collect color swatch values
+      document.querySelectorAll('#setup-body .color-swatch.active').forEach(el => {
+        settings[el.dataset.setupKey] = el.dataset.value;
+      });
+
+      config.widgets[_activeSetupWidget].settings = settings;
+      saveConfig(config);
+      closeSetup();
+
+      // Re-render affected widget
+      refreshWidget(_activeSetupWidget);
+    }
+
+    // Get widget settings helper
+    function getWidgetSettings(widgetId) {
+      const config = loadConfig();
+      const def = WIDGET_SETUP_DEFS[widgetId];
+      const saved = (config.widgets[widgetId] && config.widgets[widgetId].settings) || {};
+      return { ...(def ? def.defaults : {}), ...saved };
+    }
+
+    // Inject portlet menus into all widget card-headers
+    function injectPortletMenus() {
+      document.querySelectorAll('.widget[data-widget]').forEach(w => {
+        const id = w.dataset.widget;
+        if (id === 'kpi') return; // KPI cards don't have card-header
+        const header = w.querySelector('.card-header');
+        if (!header || header.querySelector('.portlet-menu-wrap')) return;
+        // Insert menu before existing action button or at end
+        header.insertAdjacentHTML('beforeend', portletMenuHtml(id));
+      });
+    }
+    injectPortletMenus();
+
     // ═══ Charts ═══
     let expenseChartInstance = null;
     let budgetChartInstance = null;
 
+    const COLOR_SCHEMES = {
+      blue:    ['rgba(79,110,247,0.8)','rgba(124,58,237,0.8)','rgba(79,110,247,0.6)','rgba(124,58,237,0.6)','rgba(79,110,247,0.4)','rgba(124,58,237,0.4)'],
+      green:   ['rgba(16,185,129,0.8)','rgba(6,182,212,0.8)','rgba(16,185,129,0.6)','rgba(6,182,212,0.6)','rgba(16,185,129,0.4)','rgba(6,182,212,0.4)'],
+      warm:    ['rgba(245,158,11,0.8)','rgba(239,68,68,0.8)','rgba(245,158,11,0.6)','rgba(239,68,68,0.6)','rgba(245,158,11,0.4)','rgba(239,68,68,0.4)'],
+      rainbow: ['rgba(79,110,247,0.8)','rgba(124,58,237,0.8)','rgba(59,130,246,0.8)','rgba(16,185,129,0.8)','rgba(245,158,11,0.8)','rgba(239,68,68,0.8)'],
+    };
+
     async function loadExpenseChart() {
       try {
+        const s = getWidgetSettings('expenseChart');
         const data = await API.get('/dashboard/expense-trend');
         const ctx = document.getElementById('expense-chart');
         const emptyEl = document.getElementById('expense-chart-empty');
@@ -1223,62 +1568,66 @@
         if (emptyEl) emptyEl.style.display = 'none';
         if (expenseChartInstance) expenseChartInstance.destroy();
 
-        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
-        gradient.addColorStop(0, 'rgba(79, 110, 247, 0.3)');
-        gradient.addColorStop(1, 'rgba(79, 110, 247, 0.02)');
+        // Apply settings
+        const months = parseInt(s.months) || 6;
+        const chartData = data.slice(-months);
+        const palette = COLOR_SCHEMES[s.colorScheme] || COLOR_SCHEMES.rainbow;
+        const chartType = s.chartType === 'bar+line' ? 'bar' : (s.chartType || 'bar');
+
+        const datasets = [{
+          label: 'Expense',
+          data: chartData.map(d => parseFloat(d.total)),
+          backgroundColor: chartData.map((_, i) => palette[i % palette.length]),
+          borderColor: s.chartType === 'line' ? palette[0] : undefined,
+          borderWidth: s.chartType === 'line' ? 2 : 0,
+          borderRadius: s.chartType === 'line' ? 0 : 8,
+          borderSkipped: false,
+          barPercentage: 0.6,
+          fill: s.chartType === 'line',
+          tension: 0.3,
+          pointRadius: s.chartType === 'line' ? 4 : 0,
+          pointBackgroundColor: palette[0],
+          type: chartType,
+        }];
+
+        // Combo: add line overlay
+        if (s.chartType === 'bar+line') {
+          datasets.push({
+            label: 'Trend',
+            data: chartData.map(d => parseFloat(d.total)),
+            type: 'line',
+            borderColor: palette[1] || palette[0],
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: palette[1] || palette[0],
+            fill: false,
+            tension: 0.3,
+          });
+        }
 
         expenseChartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: data.map(d => d.label),
-            datasets: [{
-              label: 'Expense',
-              data: data.map(d => parseFloat(d.total)),
-              backgroundColor: data.map((_, i) => {
-                const colors = [
-                  'rgba(79, 110, 247, 0.8)',
-                  'rgba(124, 58, 237, 0.8)',
-                  'rgba(59, 130, 246, 0.8)',
-                  'rgba(16, 185, 129, 0.8)',
-                  'rgba(245, 158, 11, 0.8)',
-                  'rgba(239, 68, 68, 0.8)'
-                ];
-                return colors[i % colors.length];
-              }),
-              borderRadius: 8,
-              borderSkipped: false,
-              barPercentage: 0.6,
-            }]
-          },
+          type: chartType,
+          data: { labels: chartData.map(d => d.label), datasets },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              legend: { display: false },
+              legend: { display: s.chartType === 'bar+line' },
               tooltip: {
                 backgroundColor: '#1a1a2e',
                 titleFont: { size: 12, weight: '600' },
                 bodyFont: { size: 12 },
-                padding: 12,
-                cornerRadius: 8,
-                callbacks: {
-                  label: ctx => '฿' + Number(ctx.raw).toLocaleString('th-TH')
-                }
+                padding: 12, cornerRadius: 8,
+                callbacks: { label: ctx => '฿' + Number(ctx.raw).toLocaleString('th-TH') }
               }
             },
             scales: {
               y: {
                 beginAtZero: true,
                 grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                ticks: {
-                  font: { size: 11 },
-                  callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v
-                }
+                ticks: { font: { size: 11 }, callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v }
               },
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 11, weight: '500' } }
-              }
+              x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' } } }
             }
           }
         });
@@ -1287,6 +1636,7 @@
 
     async function loadBudgetChart() {
       try {
+        const s = getWidgetSettings('budgetChart');
         const data = await API.get('/dashboard/budget-by-project');
         const ctx = document.getElementById('budget-chart');
         const emptyEl = document.getElementById('budget-chart-empty');
@@ -1300,68 +1650,59 @@
         if (emptyEl) emptyEl.style.display = 'none';
         if (budgetChartInstance) budgetChartInstance.destroy();
 
+        const limit = parseInt(s.limit) || 8;
+        const chartData = data.slice(0, limit);
+        const isHorizontal = s.orientation !== 'vertical';
+        const palette = COLOR_SCHEMES[s.colorScheme] || COLOR_SCHEMES.blue;
+        const showLegend = s.showLegend !== 'no';
+
         budgetChartInstance = new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: data.map(d => d.code || d.name),
+            labels: chartData.map(d => d.code || d.name),
             datasets: [
               {
                 label: 'Budget',
-                data: data.map(d => parseFloat(d.budget)),
-                backgroundColor: 'rgba(79, 110, 247, 0.15)',
-                borderColor: 'rgba(79, 110, 247, 0.6)',
-                borderWidth: 1.5,
-                borderRadius: 6,
-                barPercentage: 0.7,
+                data: chartData.map(d => parseFloat(d.budget)),
+                backgroundColor: palette[0].replace('0.8','0.15'),
+                borderColor: palette[0].replace('0.8','0.6'),
+                borderWidth: 1.5, borderRadius: 6, barPercentage: 0.7,
               },
               {
                 label: 'Actual',
-                data: data.map(d => parseFloat(d.actual)),
-                backgroundColor: data.map(d => {
+                data: chartData.map(d => parseFloat(d.actual)),
+                backgroundColor: chartData.map(d => {
                   const pct = d.budget > 0 ? d.actual / d.budget : 0;
-                  if (pct > 1) return 'rgba(239, 68, 68, 0.7)';
-                  if (pct > 0.85) return 'rgba(245, 158, 11, 0.7)';
-                  return 'rgba(16, 185, 129, 0.7)';
+                  if (pct > 1) return 'rgba(239,68,68,0.7)';
+                  if (pct > 0.85) return 'rgba(245,158,11,0.7)';
+                  return 'rgba(16,185,129,0.7)';
                 }),
-                borderRadius: 6,
-                barPercentage: 0.7,
+                borderRadius: 6, barPercentage: 0.7,
               }
             ]
           },
           options: {
-            indexAxis: 'y',
+            indexAxis: isHorizontal ? 'y' : 'x',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
               legend: {
-                position: 'top',
-                align: 'end',
+                display: showLegend, position: 'top', align: 'end',
                 labels: { boxWidth: 12, boxHeight: 12, borderRadius: 3, useBorderRadius: true, font: { size: 11 }, padding: 16 }
               },
               tooltip: {
-                backgroundColor: '#1a1a2e',
-                titleFont: { size: 12, weight: '600' },
-                bodyFont: { size: 12 },
-                padding: 12,
-                cornerRadius: 8,
-                callbacks: {
-                  label: ctx => ctx.dataset.label + ': ฿' + Number(ctx.raw).toLocaleString('th-TH')
-                }
+                backgroundColor: '#1a1a2e', titleFont: { size: 12, weight: '600' },
+                bodyFont: { size: 12 }, padding: 12, cornerRadius: 8,
+                callbacks: { label: ctx => ctx.dataset.label + ': ฿' + Number(ctx.raw).toLocaleString('th-TH') }
               }
             },
             scales: {
               x: {
                 beginAtZero: true,
                 grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                ticks: {
-                  font: { size: 11 },
-                  callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v
-                }
+                ticks: { font: { size: 11 }, callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v }
               },
-              y: {
-                grid: { display: false },
-                ticks: { font: { size: 11, weight: '500' } }
-              }
+              y: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' } } }
             }
           }
         });
