@@ -108,8 +108,8 @@ let _enabledHrefs = null; // set after API load
 
 // Build NAV_GROUPS from API modules
 function buildNavFromModules(modules) {
-  const groupLabels = { main: 'Main', project: 'Project', document: 'Document', resource: 'Resource', system: 'System' };
-  const groupIconColors = { main: 'icon-blue', project: 'icon-purple', document: 'icon-green', resource: 'icon-amber', system: 'icon-rose' };
+  const groupLabels = { main: 'Main', project: 'Project', presales: 'Pre-Sales', document: 'Document', resource: 'Resource', system: 'System' };
+  const groupIconColors = { main: 'icon-blue', project: 'icon-purple', presales: 'icon-purple', document: 'icon-green', resource: 'icon-amber', system: 'icon-rose' };
   // Fix legacy icon keys from DB that cause duplicates
   const iconKeyFix = { booking:'booking', 'my-tasks':'myTasks' };
   const iconOverrides = {
@@ -124,7 +124,7 @@ function buildNavFromModules(modules) {
     const fixedIcon = iconOverrides[m.module_id] || m.icon;
     groups[g].items.push({ id: m.module_id, label: m.module_name, icon: ICONS[fixedIcon] || ICONS[m.icon] || ICONS.reports, href: m.href });
   }
-  const order = ['main','project','document','resource','system'];
+  const order = ['main','project','presales','document','resource','system'];
   const result = order.filter(g => groups[g]).map(g => groups[g]);
   // Add any extra groups
   Object.keys(groups).filter(g => !order.includes(g)).forEach(g => result.push(groups[g]));

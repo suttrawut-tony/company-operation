@@ -337,7 +337,7 @@
 
     async function importFromPR() {
       try {
-        const prs = await API.get('/purchase-requisitions?status=approved');
+        const prs = await API.get('/pr?status=approved');
         const prList = Array.isArray(prs) ? prs : [];
         if (!prList.length) {
           typeof showToast==='function' && showToast('No approved PRs found','warning');
@@ -361,7 +361,7 @@
       const prId = document.getElementById('prPicker').value;
       if (!prId) return;
       try {
-        const pr = await API.get('/purchase-requisitions/'+prId);
+        const pr = await API.get('/pr/'+prId);
         const items = pr.items || [];
         items.forEach(it => {
           editCostItems.push({
@@ -391,6 +391,7 @@
       const data = {
         project_id: document.getElementById('bdProject').value||null,
         tender_id: tenderSel.value||null,
+        status: document.getElementById('bdStatus').value||'draft',
         margin_percent: marginPct,
         material_cost: editCostItems.filter(i=>i.category==='material').reduce((s,i)=>s+parseFloat(i.total||0),0),
         labor_cost: editCostItems.filter(i=>i.category==='labor').reduce((s,i)=>s+parseFloat(i.total||0),0),
@@ -415,7 +416,7 @@
     async function deleteBid(id) {
       if (!confirm('Are you sure you want to delete this bid?')) return;
       try {
-        await API.delete('/bids/'+id);
+        await API.del('/bids/'+id);
         typeof showToast==='function' && showToast('Bid deleted','success');
         loadData();
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }

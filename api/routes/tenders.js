@@ -87,7 +87,7 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/tenders/:id — update draft only
+// PUT /api/tenders/:id — update draft only (header fields + items/vendors)
 router.put('/:id', async (req, res) => {
   try {
     const { rows: [existing] } = await db.query(
@@ -101,12 +101,48 @@ router.put('/:id', async (req, res) => {
     for (const f of allowed) {
       if (req.body[f] !== undefined) { sets.push(`${f} = $${idx++}`); params.push(req.body[f]); }
     }
-    if (!sets.length) return res.status(400).json({ error: 'No fields' });
-    sets.push('updated_at = NOW()');
-    params.push(req.params.id);
-    const { rows } = await db.query(
-      `UPDATE tenders SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, params);
-    res.json(rows[0]);
+    if (sets.length) {
+      sets.push('updated_at = NOW()');
+      params.push(req.params.id);
+      await db.query(
+        `UPDATE tenders SET ${sets.join(', ')} WHERE id = $${idx}`, params);
+    }
+
+    // Replace items if provided
+    if (req.body.items && Array.isArray(req.body.items)) {
+      await db.query('DELETE FROM tender_items WHERE tender_id = $1', [req.params.id]);
+      for (let i = 0; i < req.body.items.length; i++) {
+        const it = req.body.items[i];
+        await db.query(
+          `INSERT INTO tender_items (tender_id, item_code, item_name, quantity, uom, estimated_price, sort_order)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [req.params.id, it.item_code || null, it.item_name,
+           it.quantity || 1, it.uom || 'EA', it.estimated_price || 0, i]);
+      }
+    }
+
+    // Replace vendors if provided
+    if (req.body.vendors && Array.isArray(req.body.vendors)) {
+      await db.query('DELETE FROM tender_vendors WHERE tender_id = $1', [req.params.id]);
+      for (const v of req.body.vendors) {
+        await db.query(
+          `INSERT INTO tender_vendors (tender_id, vendor_code, vendor_name, contact, status, total_price, scores, evaluation_score, invited_date)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())`,
+          [req.params.id, v.vendor_code || null, v.vendor_name || null,
+           v.contact || null, v.status || 'invited',
+           v.total_price || null, v.scores ? JSON.stringify(v.scores) : null,
+           v.evaluation_score || v.score || null]);
+      }
+    }
+
+    // Return updated tender with items and vendors
+    const { rows: [tender] } = await db.query(
+      'SELECT * FROM tenders WHERE id = $1', [req.params.id]);
+    const { rows: items } = await db.query(
+      'SELECT * FROM tender_items WHERE tender_id = $1 ORDER BY sort_order, id', [req.params.id]);
+    const { rows: vendors } = await db.query(
+      'SELECT * FROM tender_vendors WHERE tender_id = $1 ORDER BY created_at', [req.params.id]);
+    res.json({ ...tender, items, vendors });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -173,11 +209,11 @@ router.post('/:id/evaluate', async (req, res) => {
     }
 
     await db.query(
-      "UPDATE tenders SET status='evaluated', updated_at=NOW() WHERE id=$1", [tender.id]);
+      "UPDATE tenders SET status='evaluating', updated_at=NOW() WHERE id=$1", [tender.id]);
 
     const { rows: updatedVendors } = await db.query(
       'SELECT * FROM tender_vendors WHERE tender_id = $1 ORDER BY evaluation_score DESC', [tender.id]);
-    res.json({ status: 'evaluated', vendors: updatedVendors });
+    res.json({ status: 'evaluating', vendors: updatedVendors });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -187,8 +223,8 @@ router.post('/:id/award', async (req, res) => {
     const { rows: [tender] } = await db.query(
       'SELECT * FROM tenders WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!tender) return res.status(404).json({ error: 'Not found' });
-    if (tender.status !== 'evaluated' && tender.status !== 'closed') {
-      return res.status(400).json({ error: 'Tender must be evaluated or closed before awarding' });
+    if (tender.status !== 'evaluating' && tender.status !== 'closed') {
+      return res.status(400).json({ error: 'Tender must be evaluating or closed before awarding' });
     }
 
     const { vendor_id } = req.body;

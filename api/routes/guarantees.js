@@ -76,6 +76,10 @@ router.put('/:id', async (req, res) => {
       'SELECT * FROM guarantees WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
+    // Accept guarantee_amount as alias for amount (frontend sends guarantee_amount)
+    if (req.body.guarantee_amount !== undefined && req.body.amount === undefined) {
+      req.body.amount = req.body.guarantee_amount;
+    }
     const allowed = ['project_id','contract_id','guarantee_type','bank_name','bank_branch',
       'amount','issue_date','expiry_date','premium_amount','premium_rate','remarks','status'];
     const sets = []; const params = []; let idx = 1;

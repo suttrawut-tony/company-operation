@@ -199,7 +199,7 @@
               <button onclick="openEditModal('${t.id}')">Edit</button>
               ${t.status==='draft'?`<button class="btn-primary" style="color:white" onclick="changeStatus('${t.id}','published')">Publish</button>`:''}
               ${t.status==='published'?`<button class="btn-warning" style="color:white" onclick="changeStatus('${t.id}','closed')">Close</button>`:''}
-              ${t.status==='closed'?`<button class="btn-success" style="color:white" onclick="changeStatus('${t.id}','awarded')">Award</button>`:''}
+              ${t.status==='closed'?`<button class="btn-success" style="color:white" onclick="window.location='tender-detail.html?id=${t.id}'">Award</button>`:''}
               <button class="btn-danger" style="color:white" onclick="deleteTender('${t.id}')">Delete</button>
             </div>
           </td></tr>`;
@@ -301,7 +301,7 @@
     async function deleteTender(id) {
       if (!confirm('Are you sure you want to delete this tender?')) return;
       try {
-        await API.delete('/tenders/'+id);
+        await API.del('/tenders/'+id);
         typeof showToast==='function' && showToast('Tender deleted','success');
         loadData();
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }

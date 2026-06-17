@@ -290,12 +290,15 @@
       if (!title) { typeof showToast==='function' && showToast('Title is required','warning'); return; }
       const data = {
         project_id: document.getElementById('fProject').value || null,
+        tender_id: document.getElementById('fTender').value || null,
         contract_id: document.getElementById('fContract').value || null,
         dispute_type: document.getElementById('fType').value,
         priority: document.getElementById('fPriority').value,
         title: title,
         description: document.getElementById('fDesc').value || null,
+        assigned_to: document.getElementById('fAssigned').value || null,
         amount_claimed: parseFloat(document.getElementById('fAmount').value) || null,
+        deadline: document.getElementById('fDeadline').value || null,
       };
       try {
         await API.post('/disputes', data);

@@ -1260,8 +1260,8 @@
     async function cancelDoc() {
       if (!confirm('Cancel this document? This cannot be undone.')) return;
       try {
-        if (docType === 'pr') await API.put('/pr/' + doc.id, { status: 'cancelled' });
-        else if (docType === 'po') await API.put('/po/' + doc.id, { status: 'cancelled' });
+        if (docType === 'pr') await API.del('/pr/' + doc.id);
+        else if (docType === 'po') await API.del('/po/' + doc.id);
         doc.status = 'cancelled';
         render();
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
