@@ -289,11 +289,14 @@ function renderSidebar() {
     </div>
   `;
 
-  // Scroll active item into view (prevent sidebar resetting to top)
-  requestAnimationFrame(() => {
-    const activeItem = el.querySelector('.sidebar-item.active');
-    if (activeItem) activeItem.scrollIntoView({ block: 'center', behavior: 'instant' });
-  });
+  // Scroll active item into view — only on first render (page load)
+  if (!window._sidebarScrolled) {
+    window._sidebarScrolled = true;
+    requestAnimationFrame(() => {
+      const activeItem = el.querySelector('.sidebar-item.active');
+      if (activeItem) activeItem.scrollIntoView({ block: 'center', behavior: 'instant' });
+    });
+  }
 }
 
 // ═══ Render Top Bar (slimmer, no tabs) ═══
