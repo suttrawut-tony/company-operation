@@ -74,11 +74,11 @@ router.get('/:id', requireProjectAccess, async (req, res) => {
 // POST /api/projects
 router.post('/', async (req, res) => {
   try {
-    const { code, name, description, start_date, end_date, pm_user_id, tor_amount } = req.body;
+    const { code, name, description, start_date, end_date, pm_user_id, tor_amount, status } = req.body;
     const { rows } = await db.query(
-      `INSERT INTO projects (company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [req.user.company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount || 0, req.user.id]
+      `INSERT INTO projects (company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount, status, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9,'planning'),$10) RETURNING *`,
+      [req.user.company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount || 0, status, req.user.id]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
