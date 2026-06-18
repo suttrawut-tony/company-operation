@@ -297,7 +297,7 @@
     let currentProjectId = null;
     let currentPhases = [];
     const _user = API.getUser() || {};
-    const canEditPlan = ['pm','executive','admin'].includes(_user.role);
+    const canEditPlan = ['pm','executive','admin','owner','finance'].includes(_user.role);
 
     function phaseStatusClass(status) {
       const s = (status || '').toLowerCase();
