@@ -546,19 +546,57 @@
     }
 
     async function awardTender() {
-      // Find vendor with highest score
-      const scored = tenderVendors.filter(v=>v.evaluation_score||v.score).sort((a,b)=>(b.evaluation_score||b.score||0)-(a.evaluation_score||a.score||0));
-      if (!scored.length) {
-        typeof showToast==='function' && showToast('No scored vendors to award','warning');
-        return;
-      }
-      const winner = scored[0];
-      if (!confirm(`Award tender to "${winner.vendor_name}" (Score: ${winner.evaluation_score||winner.score})?`)) return;
+      // Show modal to select vendor
+      const vendors = tenderVendors.filter(v=>v.status==='submitted'||v.total_price);
+      if (!vendors.length) { showToast('No vendors to award','warning'); return; }
+
+      // Sort by score descending
+      vendors.sort((a,b)=>(b.evaluation_score||0)-(a.evaluation_score||0));
+
+      let opts = vendors.map(v =>
+        `<option value="${v.id}" ${v===vendors[0]?'selected':''}>${v.vendor_name} — ฿${fmtNum(v.total_price||0)} (Score: ${v.evaluation_score||'-'})</option>`
+      ).join('');
+
+      // Use a simple modal approach with confirm
+      const html = `<div style="padding:20px;">
+        <h3 style="margin-bottom:12px;">เลือก Vendor ที่ชนะประมูล</h3>
+        <select id="awardVendorSelect" style="width:100%;padding:8px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);">
+          ${opts}
+        </select>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn-sm" onclick="closeAwardModal()">Cancel</button>
+          <button class="btn-sm btn-success" onclick="confirmAward()">Award Tender</button>
+        </div>
+      </div>`;
+
+      // Create overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'awardOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      const modal = document.createElement('div');
+      modal.style.cssText = 'background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-width:500px;width:90%;';
+      modal.innerHTML = html;
+      overlay.appendChild(modal);
+      overlay.onclick = (e) => { if(e.target===overlay) closeAwardModal(); };
+      document.body.appendChild(overlay);
+    }
+
+    function closeAwardModal() {
+      const el = document.getElementById('awardOverlay');
+      if (el) el.remove();
+    }
+
+    async function confirmAward() {
+      const vendorId = document.getElementById('awardVendorSelect').value;
+      if (!vendorId) { showToast('เลือก Vendor ก่อน','warning'); return; }
+      const vendorName = document.getElementById('awardVendorSelect').selectedOptions[0]?.textContent || '';
+      if (!confirm('ยืนยัน Award ให้ ' + vendorName + ' ?')) return;
       try {
-        await API.post('/tenders/'+tenderId+'/award', { vendor_id: winner.id });
-        typeof showToast==='function' && showToast('Tender awarded to '+winner.vendor_name,'success');
-        loadData();
-      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+        const result = await API.post('/tenders/'+tenderId+'/award', { vendor_id: vendorId });
+        closeAwardModal();
+        showToast('Tender awarded! Contract ' + (result.contract?.contract_number||'') + ' created', 'success');
+        await loadData();
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     // ════════════════════════════════
