@@ -55,10 +55,10 @@ pre{background:#1e293b;color:#e2e8f0;padding:16px 20px;border-radius:10px;font-s
 <body style="background:var(--bg-body)">
 
 <div class="bar">
-  <h1>SOW v2.0 -- Company Operation</h1>
+  <h1 data-i18n="sow_v2_title">SOW v2.0 -- Company Operation</h1>
   <div class="acts">
-    <button class="btn" onclick="window.print()">Print / PDF</button>
-    <button class="btn btn-p" onclick="document.querySelectorAll('.ph').forEach(e=>{e.style.outline=e.style.outline?'':'2px solid #f59e0b'})">Highlight {{}}</button>
+    <button class="btn" onclick="window.print()" data-i18n="sow_btn_print_pdf">Print / PDF</button>
+    <button class="btn btn-p" onclick="document.querySelectorAll('.ph').forEach(e=>{e.style.outline=e.style.outline?'':'2px solid #f59e0b'})" data-i18n="sow_btn_highlight">Highlight {{}}</button>
   </div>
 </div>
 

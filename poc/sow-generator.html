@@ -73,46 +73,46 @@
 
   <div class="gen-container">
     <div class="top-bar">
-      <h1>SOW Generator</h1>
+      <h1 data-i18n="sow_generator_title">SOW Generator</h1>
       <div class="actions">
-        <button class="btn" onclick="loadSample()">Load ตัวอย่าง</button>
-        <button class="btn" onclick="exportJSON()">Export JSON</button>
-        <button class="btn" onclick="importJSON()">Import JSON</button>
+        <button class="btn" onclick="loadSample()" data-i18n="sow_load_sample">Load ตัวอย่าง</button>
+        <button class="btn" onclick="exportJSON()" data-i18n="sow_export_json">Export JSON</button>
+        <button class="btn" onclick="importJSON()" data-i18n="sow_import_json">Import JSON</button>
         <input type="file" id="jsonFile" accept=".json" style="display:none" onchange="handleImport(event)">
       </div>
     </div>
 
     <!-- Steps -->
     <div class="steps">
-      <div class="step-item active" onclick="goStep(0)"><span class="step-num">1</span>ข้อมูลโครงการ</div>
-      <div class="step-item" onclick="goStep(1)"><span class="step-num">2</span>ขอบเขตงาน</div>
-      <div class="step-item" onclick="goStep(2)"><span class="step-num">3</span>Timeline &amp; ทีมงาน</div>
-      <div class="step-item" onclick="goStep(3)"><span class="step-num">4</span>เงื่อนไข &amp; ค่าบริการ</div>
-      <div class="step-item" onclick="goStep(4)"><span class="step-num">5</span>Preview &amp; Export</div>
+      <div class="step-item active" onclick="goStep(0)"><span class="step-num">1</span><span data-i18n="sow_step_project_info">ข้อมูลโครงการ</span></div>
+      <div class="step-item" onclick="goStep(1)"><span class="step-num">2</span><span data-i18n="sow_step_scope">ขอบเขตงาน</span></div>
+      <div class="step-item" onclick="goStep(2)"><span class="step-num">3</span><span data-i18n="sow_step_timeline_team">Timeline & ทีมงาน</span></div>
+      <div class="step-item" onclick="goStep(3)"><span class="step-num">4</span><span data-i18n="sow_step_terms">เงื่อนไข & ค่าบริการ</span></div>
+      <div class="step-item" onclick="goStep(4)"><span class="step-num">5</span><span data-i18n="sow_step_preview">Preview & Export</span></div>
     </div>
 
     <!-- ═══ Step 1: Project Info ═══ -->
     <div class="form-panel">
       <div class="form-section active" id="step0">
-        <h2>1. ข้อมูลโครงการ (Project Info)</h2>
-        <p class="desc">กรอกข้อมูลทั่วไปของโครงการ — จะไปแสดงในปกเอกสารและ Executive Summary</p>
+        <h2 data-i18n="sow_h2_project_info">1. ข้อมูลโครงการ (Project Info)</h2>
+        <p class="desc" data-i18n="sow_desc_project_info">กรอกข้อมูลทั่วไปของโครงการ — จะไปแสดงในปกเอกสารและ Executive Summary</p>
 
         <div class="field-row">
           <div class="field">
-            <label>เลขที่เอกสาร <span class="req">*</span></label>
-            <input id="f_docNo" placeholder="เช่น SLD-SOW-2026-001">
+            <label><span data-i18n="sow_label_doc_no">เลขที่เอกสาร</span> <span class="req">*</span></label>
+            <input id="f_docNo" data-i18n-placeholder="sow_ph_doc_no" placeholder="เช่น SLD-SOW-2026-001">
           </div>
           <div class="field">
-            <label>วันที่ออกเอกสาร <span class="req">*</span></label>
+            <label><span data-i18n="sow_label_doc_date">วันที่ออกเอกสาร</span> <span class="req">*</span></label>
             <input id="f_docDate" type="date">
           </div>
         </div>
         <div class="field">
-          <label>ชื่อโครงการ <span class="req">*</span></label>
-          <input id="f_projectName" placeholder="เช่น SAP Business One Implementation">
+          <label><span data-i18n="sow_label_project_name">ชื่อโครงการ</span> <span class="req">*</span></label>
+          <input id="f_projectName" data-i18n-placeholder="sow_ph_project_name" placeholder="เช่น SAP Business One Implementation">
         </div>
         <div class="field">
-          <label>ระบบ ERP <span class="req">*</span></label>
+          <label><span data-i18n="sow_label_erp">ระบบ ERP</span> <span class="req">*</span></label>
           <select id="f_erp">
             <option value="">-- เลือก --</option>
             <option value="SAP Business One (HANA)">SAP Business One (HANA)</option>
@@ -122,28 +122,28 @@
         </div>
 
         <hr style="margin:24px 0;border:0;border-top:1px solid var(--border);">
-        <h3 style="font-size:15px;margin-bottom:12px;">ข้อมูลลูกค้า</h3>
+        <h3 style="font-size:15px;margin-bottom:12px;" data-i18n="sow_h3_customer_info">ข้อมูลลูกค้า</h3>
 
         <div class="field-row">
           <div class="field">
-            <label>ชื่อบริษัทลูกค้า (ไทย) <span class="req">*</span></label>
+            <label><span data-i18n="sow_label_cust_name_th">ชื่อบริษัทลูกค้า (ไทย)</span> <span class="req">*</span></label>
             <input id="f_custNameTH" placeholder="เช่น บริษัท เอบีซี จำกัด">
           </div>
           <div class="field">
-            <label>ชื่อบริษัทลูกค้า (อังกฤษ)</label>
+            <label data-i18n="sow_label_cust_name_en">ชื่อบริษัทลูกค้า (อังกฤษ)</label>
             <input id="f_custNameEN" placeholder="เช่น ABC Company Limited">
           </div>
         </div>
         <div class="field">
-          <label>ที่อยู่ลูกค้า</label>
+          <label data-i18n="sow_label_cust_addr">ที่อยู่ลูกค้า</label>
           <textarea id="f_custAddr" rows="2" placeholder="เช่น 123 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110"></textarea>
         </div>
 
         <hr style="margin:24px 0;border:0;border-top:1px solid var(--border);">
-        <h3 style="font-size:15px;margin-bottom:12px;">บทสรุปผู้บริหาร &amp; วัตถุประสงค์</h3>
+        <h3 style="font-size:15px;margin-bottom:12px;" data-i18n="sow_h3_exec_summary">บทสรุปผู้บริหาร & วัตถุประสงค์</h3>
 
         <div class="field">
-          <label>สรุปเป้าหมายหลัก (Executive Summary)</label>
+          <label data-i18n="sow_label_exec_summary">สรุปเป้าหมายหลัก (Executive Summary)</label>
           <textarea id="f_execSummary" rows="3" placeholder="เช่น ยกระดับระบบ ERP ให้ครบวงจร ครอบคลุมงานบัญชี-การเงิน จัดซื้อ ขาย และคลังสินค้า"></textarea>
         </div>
         <div class="field">
@@ -169,14 +169,14 @@
 
         <div class="nav-btns">
           <div></div>
-          <button class="btn btn-primary" onclick="goStep(1)">ถัดไป &rarr;</button>
+          <button class="btn btn-primary" onclick="goStep(1)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 2: Scope ═══ -->
       <div class="form-section" id="step1">
-        <h2>2. ขอบเขตงาน (Scope of Work)</h2>
-        <p class="desc">เลือก Module ที่รวมในโครงการ และระบุรายละเอียดเพิ่มเติม</p>
+        <h2 data-i18n="sow_h2_scope">2. ขอบเขตงาน (Scope of Work)</h2>
+        <p class="desc" data-i18n="sow_desc_scope">เลือก Module ที่รวมในโครงการ และระบุรายละเอียดเพิ่มเติม</p>
 
         <h3 style="font-size:14px;margin-bottom:10px;">In-Scope Modules (เลือกที่ต้องการ)</h3>
         <div class="mod-grid" id="modGrid">
@@ -244,15 +244,15 @@
         </div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(0)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-primary" onclick="goStep(2)">ถัดไป &rarr;</button>
+          <button class="btn" onclick="goStep(0)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(2)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 3: Timeline & Team ═══ -->
       <div class="form-section" id="step2">
-        <h2>3. Timeline &amp; ทีมงาน</h2>
-        <p class="desc">กำหนดระยะเวลาแต่ละ Phase และรายชื่อทีมงาน</p>
+        <h2 data-i18n="sow_h2_timeline_team">3. Timeline & ทีมงาน</h2>
+        <p class="desc" data-i18n="sow_desc_timeline_team">กำหนดระยะเวลาแต่ละ Phase และรายชื่อทีมงาน</p>
 
         <h3 style="font-size:14px;margin-bottom:10px;">Project Timeline</h3>
         <div class="field-row">
@@ -300,15 +300,15 @@
         </div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(1)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-primary" onclick="goStep(3)">ถัดไป &rarr;</button>
+          <button class="btn" onclick="goStep(1)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(3)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 4: Terms ═══ -->
       <div class="form-section" id="step3">
-        <h2>4. เงื่อนไขและค่าบริการ</h2>
-        <p class="desc">Assumptions, Change Management และ Commercial Terms</p>
+        <h2 data-i18n="sow_h2_terms">4. เงื่อนไขและค่าบริการ</h2>
+        <p class="desc" data-i18n="sow_desc_terms">Assumptions, Change Management และ Commercial Terms</p>
 
         <h3 style="font-size:14px;margin-bottom:10px;">ค่าบริการ</h3>
         <div class="field-row-3">
@@ -340,8 +340,8 @@
         </div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(2)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-success" onclick="goStep(4)">Preview SOW &rarr;</button>
+          <button class="btn" onclick="goStep(2)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-success" onclick="goStep(4)" data-i18n="sow_btn_preview">Preview SOW</button>
         </div>
       </div>
 
@@ -349,20 +349,20 @@
       <div class="form-section" id="step4">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <div>
-            <h2 style="margin:0;">5. Preview SOW</h2>
-            <p class="desc" style="margin:4px 0 0;">ตรวจสอบข้อมูลก่อน Export — ช่องที่ยังไม่กรอกจะแสดงเป็นสีเหลือง</p>
+            <h2 style="margin:0;" data-i18n="sow_h2_preview">5. Preview SOW</h2>
+            <p class="desc" style="margin:4px 0 0;" data-i18n="sow_desc_preview">ตรวจสอบข้อมูลก่อน Export — ช่องที่ยังไม่กรอกจะแสดงเป็นสีเหลือง</p>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn" onclick="window.open('about:blank').document.write(document.getElementById('preview').innerHTML)">เปิดหน้าต่างใหม่</button>
-            <button class="btn btn-primary" onclick="printPreview()">Print / PDF</button>
+            <button class="btn" onclick="window.open('about:blank').document.write(document.getElementById('preview').innerHTML)" data-i18n="sow_btn_new_window">เปิดหน้าต่างใหม่</button>
+            <button class="btn btn-primary" onclick="printPreview()" data-i18n="sow_btn_print_pdf">Print / PDF</button>
           </div>
         </div>
 
         <div id="preview" style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;"></div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(3)">&larr; แก้ไขข้อมูล</button>
-          <button class="btn btn-success" onclick="printPreview()">Print / Save as PDF</button>
+          <button class="btn" onclick="goStep(3)" data-i18n="sow_btn_edit_data">แก้ไขข้อมูล</button>
+          <button class="btn btn-success" onclick="printPreview()" data-i18n="sow_btn_print_save_pdf">Print / Save as PDF</button>
         </div>
       </div>
     </div>

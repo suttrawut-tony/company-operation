@@ -194,32 +194,32 @@
 
   <div class="gen-container">
     <div class="top-bar">
-      <h1 id="pageTitle" contenteditable="true" style="cursor:text;outline:none;border-bottom:2px dashed transparent;" onfocus="this.style.borderBottomColor='var(--primary)'" onblur="this.style.borderBottomColor='transparent'">SOW Generator</h1>
+      <h1 id="pageTitle" contenteditable="true" style="cursor:text;outline:none;border-bottom:2px dashed transparent;" onfocus="this.style.borderBottomColor='var(--primary)'" onblur="this.style.borderBottomColor='transparent'" data-i18n="sow_v2_generator_title">SOW Generator</h1>
       <div class="actions">
-        <button class="btn" onclick="loadSample()">Load ตัวอย่าง</button>
-        <button class="btn" onclick="exportJSON()">Export JSON</button>
-        <button class="btn" onclick="importJSON()">Import JSON</button>
+        <button class="btn" onclick="loadSample()" data-i18n="sow_load_sample">Load ตัวอย่าง</button>
+        <button class="btn" onclick="exportJSON()" data-i18n="sow_export_json">Export JSON</button>
+        <button class="btn" onclick="importJSON()" data-i18n="sow_import_json">Import JSON</button>
         <input type="file" id="jsonFile" accept=".json" style="display:none" onchange="handleImport(event)">
       </div>
     </div>
 
     <!-- Steps -->
     <div class="steps">
-      <div class="step-item active" onclick="goStep(0)"><span class="step-num">1</span>ข้อมูลโครงการ</div>
-      <div class="step-item" onclick="goStep(1)"><span class="step-num">2</span>ขอบเขตงาน</div>
-      <div class="step-item" onclick="goStep(2)"><span class="step-num">3</span>Technical</div>
-      <div class="step-item" onclick="goStep(3)"><span class="step-num">4</span>Timeline &amp; Team</div>
-      <div class="step-item" onclick="goStep(4)"><span class="step-num">5</span>เงื่อนไข &amp; SLA</div>
-      <div class="step-item" onclick="goStep(5)"><span class="step-num">6</span>Legal &amp; PDPA</div>
-      <div class="step-item" onclick="goStep(6)"><span class="step-num">7</span>Preview</div>
+      <div class="step-item active" onclick="goStep(0)"><span class="step-num">1</span><span data-i18n="sow_step_project_info">ข้อมูลโครงการ</span></div>
+      <div class="step-item" onclick="goStep(1)"><span class="step-num">2</span><span data-i18n="sow_step_scope">ขอบเขตงาน</span></div>
+      <div class="step-item" onclick="goStep(2)"><span class="step-num">3</span><span data-i18n="sow_v2_step_technical">Technical</span></div>
+      <div class="step-item" onclick="goStep(3)"><span class="step-num">4</span><span data-i18n="sow_v2_step_timeline_team">Timeline & Team</span></div>
+      <div class="step-item" onclick="goStep(4)"><span class="step-num">5</span><span data-i18n="sow_v2_step_conditions">เงื่อนไข & SLA</span></div>
+      <div class="step-item" onclick="goStep(5)"><span class="step-num">6</span><span data-i18n="sow_v2_step_legal">Legal & PDPA</span></div>
+      <div class="step-item" onclick="goStep(6)"><span class="step-num">7</span><span data-i18n="sow_v2_step_preview">Preview</span></div>
     </div>
 
     <div class="form-panel">
 
       <!-- ═══ Step 1: Project Info + Document Control + Exec Summary ═══ -->
       <div class="form-section active" id="step0">
-        <h2>1. ข้อมูลโครงการ (Cover + Document Control + Executive Summary)</h2>
-        <p class="desc">ข้อมูลปกเอกสาร, revision history, distribution list และบทสรุปผู้บริหาร</p>
+        <h2 data-i18n="sow_v2_h2_project_info">1. ข้อมูลโครงการ (Cover + Document Control + Executive Summary)</h2>
+        <p class="desc" data-i18n="sow_v2_desc_project_info">ข้อมูลปกเอกสาร, revision history, distribution list และบทสรุปผู้บริหาร</p>
 
         <div class="field">
           <label>ชื่อโครงการ (แสดงบนปก SOW) <span class="req">*</span></label>
@@ -307,14 +307,14 @@
 
         <div class="nav-btns">
           <div></div>
-          <button class="btn btn-primary" onclick="goStep(1)">ถัดไป &rarr;</button>
+          <button class="btn btn-primary" onclick="goStep(1)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 2: Scope ═══ -->
       <div class="form-section" id="step1">
-        <h2>2. ขอบเขตงาน (Scope -- 37 Modules)</h2>
-        <p class="desc">เลือก modules ที่อยู่ใน scope (default: ทั้งหมด) และกำหนด out of scope items</p>
+        <h2 data-i18n="sow_v2_h2_scope">2. ขอบเขตงาน (Scope -- 37 Modules)</h2>
+        <p class="desc" data-i18n="sow_v2_desc_scope">เลือก modules ที่อยู่ใน scope (default: ทั้งหมด) และกำหนด out of scope items</p>
 
         <div class="mod-grid" id="modGrid"></div>
 
@@ -336,15 +336,15 @@
         </div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(0)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-primary" onclick="goStep(2)">ถัดไป &rarr;</button>
+          <button class="btn" onclick="goStep(0)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(2)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 3: Technical & Architecture ═══ -->
       <div class="form-section" id="step2">
-        <h2>3. Technical &amp; Architecture</h2>
-        <p class="desc">Tech Stack, Security Features, UX Features, Browser Support</p>
+        <h2 data-i18n="sow_v2_h2_technical">3. Technical & Architecture</h2>
+        <p class="desc" data-i18n="sow_v2_desc_technical">Tech Stack, Security Features, UX Features, Browser Support</p>
 
         <h3 style="font-size:15px;margin-bottom:12px;">Tech Stack</h3>
         <div class="field">
@@ -375,15 +375,15 @@ Safari 14+</textarea>
         </div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(1)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-primary" onclick="goStep(3)">ถัดไป &rarr;</button>
+          <button class="btn" onclick="goStep(1)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(3)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 4: Timeline, Team & Deliverables ═══ -->
       <div class="form-section" id="step3">
-        <h2>4. Timeline, Team &amp; Deliverables</h2>
-        <p class="desc">แผนงาน 6 Phases, ทีมงาน, สิ่งส่งมอบ</p>
+        <h2 data-i18n="sow_v2_h2_timeline">4. Timeline, Team & Deliverables</h2>
+        <p class="desc" data-i18n="sow_v2_desc_timeline">แผนงาน 6 Phases, ทีมงาน, สิ่งส่งมอบ</p>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <h3 style="font-size:15px;margin:0;">Project Timeline</h3>
@@ -435,15 +435,15 @@ Safari 14+</textarea>
         <p style="margin-top:20px;font-size:13px;color:var(--text-secondary);">Deliverables (10 รายการ) จะแสดงใน Preview อัตโนมัติ: Source Code, Deployed System, API Documentation, User Manual, Admin Guide, Database Schema, UAT Test Cases, UAT Sign-off, Security Audit, Training</p>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(2)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-primary" onclick="goStep(4)">ถัดไป &rarr;</button>
+          <button class="btn" onclick="goStep(2)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(4)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 5: Conditions (Assumptions, SLA, Commercial, Change Mgmt) ═══ -->
       <div class="form-section" id="step4">
-        <h2>5. เงื่อนไข (Assumptions, SLA, Commercial, Change Mgmt)</h2>
-        <p class="desc">สมมติฐานโครงการ, Service Level Agreement, ค่าบริการ, งวดชำระ</p>
+        <h2 data-i18n="sow_v2_h2_conditions">5. เงื่อนไข (Assumptions, SLA, Commercial, Change Mgmt)</h2>
+        <p class="desc" data-i18n="sow_v2_desc_conditions">สมมติฐานโครงการ, Service Level Agreement, ค่าบริการ, งวดชำระ</p>
 
         <h3 style="font-size:15px;margin-bottom:12px;">Assumptions (10 ข้อ)</h3>
         <div id="assumptionsList" class="oos-list"></div>
@@ -563,15 +563,15 @@ Safari 14+</textarea>
         </div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(3)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-primary" onclick="goStep(5)">ถัดไป &rarr;</button>
+          <button class="btn" onclick="goStep(3)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-primary" onclick="goStep(5)" data-i18n="sow_btn_next">ถัดไป</button>
         </div>
       </div>
 
       <!-- ═══ Step 6: Legal & Protection ═══ -->
       <div class="form-section" id="step5">
-        <h2>6. Legal & Protection (IP, NDA, PDPA, Termination, Penalty)</h2>
-        <p class="desc">ข้อกำหนดทางกฎหมายและการคุ้มครอง -- 5 sections สำคัญที่ต้องมีก่อนลงนาม</p>
+        <h2 data-i18n="sow_v2_h2_legal">6. Legal & Protection (IP, NDA, PDPA, Termination, Penalty)</h2>
+        <p class="desc" data-i18n="sow_v2_desc_legal">ข้อกำหนดทางกฎหมายและการคุ้มครอง -- 5 sections สำคัญที่ต้องมีก่อนลงนาม</p>
 
         <h3 style="font-size:15px;margin-bottom:12px;">14. ทรัพย์สินทางปัญญา (Intellectual Property)</h3>
         <div class="field">
@@ -707,8 +707,8 @@ Safari 14+</textarea>
         </div>
 
         <div class="nav-btns">
-          <button class="btn" onclick="goStep(4)">&larr; ย้อนกลับ</button>
-          <button class="btn btn-success" onclick="goStep(6)">Preview SOW &rarr;</button>
+          <button class="btn" onclick="goStep(4)" data-i18n="sow_btn_back">ย้อนกลับ</button>
+          <button class="btn btn-success" onclick="goStep(6)" data-i18n="sow_btn_preview">Preview SOW</button>
         </div>
       </div>
 
@@ -716,12 +716,12 @@ Safari 14+</textarea>
       <div class="form-section" id="step6">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <div>
-            <h2 style="margin:0;">6. Preview SOW</h2>
-            <p class="desc" style="margin:4px 0 0;">ตรวจสอบเอกสาร SOW ทั้ง 18 sections -- ช่องที่ยังไม่กรอกจะแสดงเป็นสีเหลือง</p>
+            <h2 style="margin:0;" data-i18n="sow_v2_h2_preview">6. Preview SOW</h2>
+            <p class="desc" style="margin:4px 0 0;" data-i18n="sow_v2_desc_preview">ตรวจสอบเอกสาร SOW ทั้ง 18 sections -- ช่องที่ยังไม่กรอกจะแสดงเป็นสีเหลือง</p>
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn" onclick="openPreviewWindow()">เปิดหน้าต่างใหม่</button>
-            <button class="btn btn-primary" onclick="printPreview()">Print / PDF</button>
+            <button class="btn btn-primary" onclick="printPreview()" data-i18n="sow_btn_print_pdf">Print / PDF</button>
           </div>
         </div>
 
@@ -729,7 +729,7 @@ Safari 14+</textarea>
 
         <div class="nav-btns">
           <button class="btn" onclick="goStep(4)">&larr; แก้ไขข้อมูล</button>
-          <button class="btn btn-success" onclick="printPreview()">Print / Save as PDF</button>
+          <button class="btn btn-success" onclick="printPreview()" data-i18n="sow_btn_print_save_pdf">Print / Save as PDF</button>
         </div>
       </div>
 

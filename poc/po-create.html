@@ -160,7 +160,7 @@
       <div style="display:flex;gap:8px;align-items:center;">
         <button type="button" class="copy-from-btn" onclick="openCopyFromPR()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          Copy From &larr; Purchase Request
+          <span data-i18n="pocreate_copy_from_pr">Copy From &larr; Purchase Request</span>
         </button>
         <a href="pr-po.html" class="btn btn-secondary" data-i18n="back">&larr; Back</a>
       </div>
@@ -177,7 +177,7 @@
         <div class="form-section-body">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">PO Number</label>
+              <label class="form-label" data-i18n="pocreate_po_number">PO Number</label>
               <input class="form-input" id="po-number" readonly style="background:var(--bg-light);color:var(--text-muted);">
             </div>
             <div class="form-group">
@@ -185,13 +185,13 @@
               <input class="form-input" type="date" id="po-date">
             </div>
             <div class="form-group">
-              <label class="form-label"><span>Vendor Code</span> <span style="color:var(--danger);">*</span></label>
+              <label class="form-label"><span data-i18n="pocreate_vendor_code">Vendor Code</span> <span style="color:var(--danger);">*</span></label>
               <select class="form-select searchable" id="po-vendor" onchange="onVendorChange()">
                 <option value="">-- Select Vendor --</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Vendor Name</label>
+              <label class="form-label" data-i18n="pocreate_vendor_name">Vendor Name</label>
               <input class="form-input" id="po-vendor-name" readonly style="background:var(--bg-light);color:var(--text-muted);" placeholder="Auto-fill from vendor">
             </div>
             <div class="form-group">
@@ -227,14 +227,14 @@
               <thead>
                 <tr>
                   <th style="width:40px;">#</th>
-                  <th style="width:100px;">Item Code</th>
-                  <th style="min-width:200px;">Description *</th>
-                  <th style="width:70px;">Qty *</th>
-                  <th style="width:70px;">UoM</th>
-                  <th style="width:110px;">Unit Price *</th>
-                  <th style="width:90px;">Tax Code</th>
-                  <th style="width:90px;">GL Account</th>
-                  <th style="width:110px;text-align:right;">Total</th>
+                  <th style="width:100px;" data-i18n="pocreate_th_item_code">Item Code</th>
+                  <th style="min-width:200px;" data-i18n="pocreate_th_description">Description *</th>
+                  <th style="width:70px;" data-i18n="pocreate_th_qty">Qty *</th>
+                  <th style="width:70px;" data-i18n="pocreate_th_uom">UoM</th>
+                  <th style="width:110px;" data-i18n="pocreate_th_unit_price">Unit Price *</th>
+                  <th style="width:90px;" data-i18n="pocreate_th_tax_code">Tax Code</th>
+                  <th style="width:90px;" data-i18n="pocreate_th_gl_account">GL Account</th>
+                  <th style="width:110px;text-align:right;" data-i18n="total">Total</th>
                   <th style="width:30px;"></th>
                 </tr>
               </thead>
@@ -268,13 +268,13 @@
               </tbody>
             </table>
           </div>
-          <button type="button" class="add-line-btn" onclick="addLine()">+ Add Line Item</button>
+          <button type="button" class="add-line-btn" onclick="addLine()" data-i18n="pocreate_add_line">+ Add Line Item</button>
 
           <!-- Summary -->
           <div class="summary-box">
-            <div class="summary-row"><span style="color:var(--text-secondary);">Subtotal</span><span id="subtotal">&#3647;0.00</span></div>
-            <div class="summary-row"><span style="color:var(--text-secondary);">VAT 7%</span><span id="vat-amount">&#3647;0.00</span></div>
-            <div class="summary-row total"><span>Grand Total</span><span id="grand-total" style="color:var(--primary);">&#3647;0.00</span></div>
+            <div class="summary-row"><span style="color:var(--text-secondary);" data-i18n="pocreate_subtotal">Subtotal</span><span id="subtotal">&#3647;0.00</span></div>
+            <div class="summary-row"><span style="color:var(--text-secondary);" data-i18n="pocreate_vat">VAT 7%</span><span id="vat-amount">&#3647;0.00</span></div>
+            <div class="summary-row total"><span data-i18n="pocreate_grand_total">Grand Total</span><span id="grand-total" style="color:var(--primary);">&#3647;0.00</span></div>
           </div>
         </div>
       </div>
@@ -287,7 +287,7 @@
         </div>
         <div class="form-section-body">
           <div class="form-group">
-            <label class="form-label">Remarks / Notes</label>
+            <label class="form-label" data-i18n="pocreate_remarks_label">Remarks / Notes</label>
             <textarea class="form-textarea" id="po-remarks" rows="3" placeholder="หมายเหตุ เช่น เงื่อนไขส่งมอบ, ข้อตกลงพิเศษ"></textarea>
           </div>
         </div>
@@ -298,13 +298,13 @@
     <!-- Sticky Footer -->
     <div class="form-footer">
       <div>
-        <div style="font-size:12px;color:var(--text-secondary);">Grand Total</div>
+        <div style="font-size:12px;color:var(--text-secondary);" data-i18n="pocreate_grand_total">Grand Total</div>
         <div class="total-display" id="footer-total">&#3647;0.00</div>
       </div>
       <div style="display:flex;gap:8px;">
         <a href="pr-po.html" class="btn btn-secondary" data-i18n="cancel">Cancel</a>
-        <button class="btn btn-secondary" onclick="savePO()">Save as Draft</button>
-        <button class="btn btn-primary" onclick="submitPO()">Submit for Approval</button>
+        <button class="btn btn-secondary" onclick="savePO()" data-i18n="pocreate_save_draft">Save as Draft</button>
+        <button class="btn btn-primary" onclick="submitPO()" data-i18n="pocreate_submit">Submit for Approval</button>
       </div>
     </div>
   </main>
@@ -314,7 +314,7 @@
   <div class="cfpr-overlay" id="cfpr-overlay" onclick="if(event.target===this)closeCopyFromPR();">
     <div class="cfpr-modal">
       <div class="cfpr-header">
-        <h3 id="cfpr-title">Copy From Purchase Request</h3>
+        <h3 id="cfpr-title" data-i18n="pocreate_copy_from_pr_title">Copy From Purchase Request</h3>
         <button style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);" onclick="closeCopyFromPR()">&times;</button>
       </div>
       <div class="cfpr-body">

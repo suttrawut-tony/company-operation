@@ -62,7 +62,7 @@
   <nav id="topnav"></nav>
   <div id="tabbar"></div>
   <main class="page fade-in">
-    <a href="tenders.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back to Tenders</a>
+    <a href="tenders.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> <span data-i18n="tender_back_to_list">Back to Tenders</span></a>
 
     <div class="detail-header" id="detailHeader">
       <div>
@@ -78,7 +78,7 @@
     <!-- Remarks -->
     <div style="margin-bottom:20px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;">Remarks / หมายเหตุ</label>
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;" data-i18n="tender_remarks_label">Remarks / หมายเหตุ</label>
         <button class="btn-sm" id="saveRemarksBtn" onclick="saveRemarks()" style="font-size:11px;padding:3px 10px;display:none;">Save</button>
       </div>
       <textarea id="tenderRemarks" rows="2" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);resize:vertical;box-sizing:border-box;background:var(--bg-white);" placeholder="เพิ่มหมายเหตุ..." oninput="document.getElementById('saveRemarksBtn').style.display=''"></textarea>
@@ -86,16 +86,16 @@
 
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('items')">Items</button>
-      <button class="tab-btn" onclick="switchTab('vendors')">Vendors</button>
-      <button class="tab-btn" onclick="switchTab('evaluation')">Evaluation</button>
+      <button class="tab-btn active" onclick="switchTab('items')" data-i18n="tender_tab_items">Items</button>
+      <button class="tab-btn" onclick="switchTab('vendors')" data-i18n="tender_tab_vendors">Vendors</button>
+      <button class="tab-btn" onclick="switchTab('evaluation')" data-i18n="tender_tab_evaluation">Evaluation</button>
     </div>
 
     <!-- Items Tab -->
     <div class="tab-content active" id="tab-items">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 style="font-size:14px;font-weight:700;margin:0;">Tender Items</h3>
-        <button class="btn-sm btn-primary" id="addItemBtn" onclick="openItemModal(true)">+ Add Item</button>
+        <h3 style="font-size:14px;font-weight:700;margin:0;" data-i18n="tender_items_heading">Tender Items</h3>
+        <button class="btn-sm btn-primary" id="addItemBtn" onclick="openItemModal(true)" data-i18n="tender_btn_add_item">+ Add Item</button>
       </div>
       <div id="itemsTable"></div>
     </div>
@@ -103,8 +103,8 @@
     <!-- Vendors Tab -->
     <div class="tab-content" id="tab-vendors">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 style="font-size:14px;font-weight:700;margin:0;">Invited Vendors</h3>
-        <button class="btn-sm btn-primary" onclick="openVendorModal()">+ Invite Vendor</button>
+        <h3 style="font-size:14px;font-weight:700;margin:0;" data-i18n="tender_vendors_heading">Invited Vendors</h3>
+        <button class="btn-sm btn-primary" onclick="openVendorModal()" data-i18n="tender_btn_invite_vendor">+ Invite Vendor</button>
       </div>
       <div id="vendorsTable"></div>
     </div>
@@ -112,10 +112,10 @@
     <!-- Evaluation Tab -->
     <div class="tab-content" id="tab-evaluation">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 style="font-size:14px;font-weight:700;margin:0;">Scoring Matrix</h3>
+        <h3 style="font-size:14px;font-weight:700;margin:0;" data-i18n="tender_scoring_heading">Scoring Matrix</h3>
         <div style="display:flex;gap:8px;">
-          <button class="btn-sm btn-primary" onclick="saveScores()" id="saveScoresBtn">Save Scores</button>
-          <button class="btn-sm btn-success" onclick="awardTender()" id="awardBtn" style="display:none;">Award Tender</button>
+          <button class="btn-sm btn-primary" onclick="saveScores()" id="saveScoresBtn" data-i18n="tender_btn_save_scores">Save Scores</button>
+          <button class="btn-sm btn-success" onclick="awardTender()" id="awardBtn" style="display:none;" data-i18n="tender_btn_award">Award Tender</button>
         </div>
       </div>
       <div id="evalMatrix"></div>
@@ -127,7 +127,7 @@
   <div class="sq-modal-overlay" id="itemModal" onclick="if(event.target===this)closeItemModal()">
     <div class="sq-modal" style="width:600px;">
       <div class="sq-modal-header">
-        <h3 id="itemModalTitle">Add Item</h3>
+        <h3 id="itemModalTitle" data-i18n="tender_modal_add_item">Add Item</h3>
         <button class="close-btn" onclick="closeItemModal()">&times;</button>
       </div>
       <div class="sq-modal-body" id="itemModalBody"></div>
@@ -139,7 +139,7 @@
   <div class="sq-modal-overlay" id="vendorModal" onclick="if(event.target===this)closeVendorModal()">
     <div class="sq-modal" style="width:500px;">
       <div class="sq-modal-header">
-        <h3>Invite Vendor</h3>
+        <h3 data-i18n="tender_modal_invite_vendor">Invite Vendor</h3>
         <button class="close-btn" onclick="closeVendorModal()">&times;</button>
       </div>
       <div class="sq-modal-body" id="vendorModalBody"></div>
@@ -258,10 +258,10 @@
     function renderItems() {
       const canEdit = tender && tender.status !== 'cancelled' && tender.status !== 'awarded';
       if (!tenderItems.length) {
-        document.getElementById('itemsTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No items added yet</div>';
+        document.getElementById('itemsTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)" data-i18n="tender_items_empty">No items added yet</div>';if(typeof I18N!=='undefined')I18N.applyTranslations();
         return;
       }
-      let h='<table class="sq-table"><thead><tr><th>#</th><th>Item Code</th><th>Item Name</th><th>Qty</th><th>UOM</th><th>Estimated Price</th><th>Total</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
+      let h='<table class="sq-table"><thead><tr><th>#</th><th data-i18n="tender_th_item_code">Item Code</th><th data-i18n="tender_th_item_name">Item Name</th><th data-i18n="tender_th_qty">Qty</th><th data-i18n="tender_th_uom">UOM</th><th data-i18n="tender_th_estimated_price">Estimated Price</th><th data-i18n="tender_th_total">Total</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
       tenderItems.forEach((it,i)=>{
         const total = (parseFloat(it.quantity)||0)*(parseFloat(it.estimated_price)||0);
         h+=`<tr>
@@ -345,7 +345,7 @@
     // ════════════════════════════════
     function renderVendors() {
       if (!tenderVendors.length) {
-        document.getElementById('vendorsTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No vendors invited yet</div>';
+        document.getElementById('vendorsTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)" data-i18n="tender_vendors_empty">No vendors invited yet</div>';if(typeof I18N!=='undefined')I18N.applyTranslations();
         return;
       }
       const vendorStatusStyle = s => ({
@@ -355,7 +355,7 @@
         awarded:'background:#fef3c7;color:#92400e'
       }[s]||'background:#e2e3e5;color:#383d41');
 
-      let h='<table class="sq-table"><thead><tr><th style="width:30px">#</th><th>Vendor Name</th><th>Contact</th><th style="width:90px;text-align:center">Status</th><th>Submitted Date</th><th style="text-align:right">Total Price</th><th style="text-align:center;width:60px">Score</th><th>Notes / หมายเหตุ</th><th style="width:80px"></th></tr></thead><tbody>';
+      let h='<table class="sq-table"><thead><tr><th style="width:30px">#</th><th data-i18n="tender_th_vendor_name">Vendor Name</th><th data-i18n="tender_th_contact">Contact</th><th style="width:90px;text-align:center" data-i18n="tender_th_status">Status</th><th data-i18n="tender_th_submitted_date">Submitted Date</th><th style="text-align:right" data-i18n="tender_th_total_price">Total Price</th><th style="text-align:center;width:60px" data-i18n="tender_th_score">Score</th><th data-i18n="tender_th_notes">Notes / หมายเหตุ</th><th style="width:80px"></th></tr></thead><tbody>';
       tenderVendors.forEach((v,i)=>{
         h+=`<tr>
           <td>${i+1}</td>
@@ -504,7 +504,7 @@
       const submittedVendors = tenderVendors.filter(v=>v.status==='submitted'||v.total_price||v.status==='invited');
 
       if (!submittedVendors.length) {
-        document.getElementById('evalMatrix').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No vendor submissions to evaluate yet</div>';
+        document.getElementById('evalMatrix').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)" data-i18n="tender_eval_empty">No vendor submissions to evaluate yet</div>';if(typeof I18N!=='undefined')I18N.applyTranslations();
         return;
       }
 

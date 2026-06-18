@@ -75,40 +75,40 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1 id="pgIcon">Dispute Management</h1></div>
+      <div><h1 id="pgIcon" data-i18n="dispute_page_title">Dispute Management</h1></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" onclick="openCreateModal()">+ New Dispute</button>
+        <button class="btn btn-primary" onclick="openCreateModal()" data-i18n="dispute_btn_new">+ New Dispute</button>
       </div>
     </div>
     <div class="sq-stats" id="stats"></div>
     <div class="card">
       <div class="card-header">
-        <h2>Dispute List</h2>
+        <h2 data-i18n="dispute_list_heading">Dispute List</h2>
         <div class="filter-bar">
-          <select id="filterProject" onchange="loadData()"><option value="">All Projects</option></select>
+          <select id="filterProject" onchange="loadData()"><option value="" data-i18n="dispute_filter_all_projects">All Projects</option></select>
           <select id="filterStatus" onchange="loadData()">
-            <option value="">All Status</option>
-            <option value="open">Open</option>
-            <option value="investigating">Investigating</option>
-            <option value="escalated">Escalated</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
+            <option value="" data-i18n="dispute_filter_all_status">All Status</option>
+            <option value="open" data-i18n="dispute_status_open">Open</option>
+            <option value="investigating" data-i18n="dispute_status_investigating">Investigating</option>
+            <option value="escalated" data-i18n="dispute_status_escalated">Escalated</option>
+            <option value="resolved" data-i18n="dispute_status_resolved">Resolved</option>
+            <option value="closed" data-i18n="dispute_status_closed">Closed</option>
           </select>
           <select id="filterPriority" onchange="loadData()">
-            <option value="">All Priority</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
+            <option value="" data-i18n="dispute_filter_all_priority">All Priority</option>
+            <option value="low" data-i18n="dispute_priority_low">Low</option>
+            <option value="medium" data-i18n="dispute_priority_medium">Medium</option>
+            <option value="high" data-i18n="dispute_priority_high">High</option>
+            <option value="critical" data-i18n="dispute_priority_critical">Critical</option>
           </select>
           <select id="filterType" onchange="loadData()">
-            <option value="">All Types</option>
-            <option value="payment">Payment</option>
-            <option value="quality">Quality</option>
-            <option value="delay">Delay</option>
-            <option value="scope">Scope</option>
-            <option value="safety">Safety</option>
-            <option value="other">Other</option>
+            <option value="" data-i18n="dispute_filter_all_types">All Types</option>
+            <option value="payment" data-i18n="dispute_type_payment">Payment</option>
+            <option value="quality" data-i18n="dispute_type_quality">Quality</option>
+            <option value="delay" data-i18n="dispute_type_delay">Delay</option>
+            <option value="scope" data-i18n="dispute_type_scope">Scope</option>
+            <option value="safety" data-i18n="dispute_type_safety">Safety</option>
+            <option value="other" data-i18n="dispute_type_other">Other</option>
           </select>
         </div>
       </div>
@@ -195,10 +195,11 @@
       const resolved = allDisputes.filter(d => d.status === 'resolved' || d.status === 'closed').length;
       const critical = allDisputes.filter(d => d.priority === 'critical').length;
       document.getElementById('stats').innerHTML = `
-        <div class="sq-stat"><div class="val" style="color:var(--warning)">${open}</div><div class="lbl">Total Open</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--info)">${investigating}</div><div class="lbl">Investigating</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--success)">${resolved}</div><div class="lbl">Resolved</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--danger)">${critical}${critical > 0 ? '<span style="font-size:12px;margin-left:4px;">!</span>' : ''}</div><div class="lbl">Critical</div></div>`;
+        <div class="sq-stat"><div class="val" style="color:var(--warning)">${open}</div><div class="lbl" data-i18n="dispute_stat_open">Total Open</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--info)">${investigating}</div><div class="lbl" data-i18n="dispute_stat_investigating">Investigating</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success)">${resolved}</div><div class="lbl" data-i18n="dispute_stat_resolved">Resolved</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--danger)">${critical}${critical > 0 ? '<span style="font-size:12px;margin-left:4px;">!</span>' : ''}</div><div class="lbl" data-i18n="dispute_stat_critical">Critical</div></div>`;
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
     }
 
     function statusStyle(s) {
@@ -217,10 +218,10 @@
 
     function renderTable() {
       if (!allDisputes.length) {
-        document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No disputes found</div>';
+        document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)" data-i18n="dispute_empty">No disputes found</div>';if(typeof I18N!=='undefined')I18N.applyTranslations();
         return;
       }
-      let h = '<table class="sq-table"><thead><tr><th>Dispute No.</th><th>Project</th><th>Type</th><th>Priority</th><th>Title</th><th>Amount Claimed</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>';
+      let h = '<table class="sq-table"><thead><tr><th data-i18n="dispute_th_number">Dispute No.</th><th data-i18n="dispute_th_project">Project</th><th data-i18n="dispute_th_type">Type</th><th data-i18n="dispute_th_priority">Priority</th><th data-i18n="dispute_th_title">Title</th><th data-i18n="dispute_th_amount_claimed">Amount Claimed</th><th data-i18n="dispute_th_status">Status</th><th data-i18n="dispute_th_created">Created</th><th data-i18n="dispute_th_actions">Actions</th></tr></thead><tbody>';
       allDisputes.forEach(d => {
         h += `<tr onclick="showDetail('${d.id}')">
           <td style="font-weight:600;color:var(--primary)">${d.dispute_number || '-'}</td>
@@ -238,6 +239,7 @@
       });
       h += '</tbody></table>';
       document.getElementById('tableWrap').innerHTML = h;
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
     }
 
     // ═══════════════════════════════════
@@ -338,7 +340,7 @@
         h += '</div>';
 
         // Activity Timeline
-        h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:4px;">Activity Timeline</h4>';
+        h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:4px;" data-i18n="dispute_activity_timeline">Activity Timeline</h4>';
         if (activities.length === 0) {
           h += '<p style="font-size:12px;color:var(--text-muted);padding:8px 0;">No activity recorded yet.</p>';
         } else {

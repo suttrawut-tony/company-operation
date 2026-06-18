@@ -58,31 +58,31 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1 id="pgIcon">Contract Management</h1></div>
+      <div><h1 id="pgIcon" data-i18n="contract_page_title">Contract Management</h1></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportContracts()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
-        <button class="btn btn-primary" onclick="openCreateModal()">+ New Contract</button>
+        <button class="btn btn-secondary" onclick="exportContracts()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> <span data-i18n="contract_btn_export">Export Excel</span></button>
+        <button class="btn btn-primary" onclick="openCreateModal()" data-i18n="contract_btn_new">+ New Contract</button>
       </div>
     </div>
     <div class="sq-stats" id="stats"></div>
     <div class="card">
       <div class="card-header">
-        <h2>Contract List</h2>
+        <h2 data-i18n="contract_list_heading">Contract List</h2>
         <div class="filter-bar">
-          <select id="filterProject" onchange="loadData()"><option value="">All Projects</option></select>
+          <select id="filterProject" onchange="loadData()"><option value="" data-i18n="contract_filter_all_projects">All Projects</option></select>
           <select id="filterStatus" onchange="loadData()">
-            <option value="">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="pending_review">Pending Review</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-            <option value="terminated">Terminated</option>
+            <option value="" data-i18n="contract_filter_all_status">All Status</option>
+            <option value="draft" data-i18n="contract_status_draft">Draft</option>
+            <option value="pending_review" data-i18n="contract_status_pending_review">Pending Review</option>
+            <option value="active" data-i18n="contract_status_active">Active</option>
+            <option value="completed" data-i18n="contract_status_completed">Completed</option>
+            <option value="terminated" data-i18n="contract_status_terminated">Terminated</option>
           </select>
           <select id="filterType" onchange="loadData()">
-            <option value="">All Types</option>
-            <option value="main">Main Contract</option>
-            <option value="subcontract">Subcontract</option>
-            <option value="purchase_agreement">Purchase Agreement</option>
+            <option value="" data-i18n="contract_filter_all_types">All Types</option>
+            <option value="main" data-i18n="contract_type_main">Main Contract</option>
+            <option value="subcontract" data-i18n="contract_type_subcontract">Subcontract</option>
+            <option value="purchase_agreement" data-i18n="contract_type_purchase_agreement">Purchase Agreement</option>
           </select>
         </div>
       </div>
@@ -107,7 +107,7 @@
   <div class="sq-modal-overlay" id="amendModal" onclick="if(event.target===this)closeAmendModal()">
     <div class="sq-modal" style="width:600px;">
       <div class="sq-modal-header">
-        <h3>Contract Amendment</h3>
+        <h3 data-i18n="contract_modal_amendment">Contract Amendment</h3>
         <button class="close-btn" onclick="closeAmendModal()">&times;</button>
       </div>
       <div class="sq-modal-body" id="amendBody"></div>
@@ -124,7 +124,7 @@
       </div>
       <div class="sq-modal-body" id="detailBody"></div>
       <div class="sq-modal-footer">
-        <button class="btn-sm" onclick="closeDetailModal()">Close</button>
+        <button class="btn-sm" onclick="closeDetailModal()" data-i18n="close">Close</button>
       </div>
     </div>
   </div>
@@ -181,10 +181,11 @@
       const pending = allContracts.filter(c => c.status === 'pending_review').length;
       const completed = allContracts.filter(c => c.status === 'completed').length;
       document.getElementById('stats').innerHTML = `
-        <div class="sq-stat"><div class="val">${t}</div><div class="lbl">Total Contracts</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--success)">${active}</div><div class="lbl">Active</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--warning)">${pending}</div><div class="lbl">Pending Review</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--primary)">${completed}</div><div class="lbl">Completed</div></div>`;
+        <div class="sq-stat"><div class="val">${t}</div><div class="lbl" data-i18n="contract_stat_total">Total Contracts</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success)">${active}</div><div class="lbl" data-i18n="contract_stat_active">Active</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--warning)">${pending}</div><div class="lbl" data-i18n="contract_stat_pending">Pending Review</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--primary)">${completed}</div><div class="lbl" data-i18n="contract_stat_completed">Completed</div></div>`;
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
     }
 
     function statusStyle(s) {
@@ -203,10 +204,10 @@
 
     function renderTable() {
       if (!allContracts.length) {
-        document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No contracts found</div>';
+        document.getElementById('tableWrap').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)" data-i18n="contract_empty">No contracts found</div>';if(typeof I18N!=='undefined')I18N.applyTranslations();
         return;
       }
-      let h = '<table class="sq-table"><thead><tr><th>Contract No.</th><th>Project</th><th>Counterparty</th><th>Type</th><th>Amount</th><th>Start</th><th>End</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      let h = '<table class="sq-table"><thead><tr><th data-i18n="contract_th_number">Contract No.</th><th data-i18n="contract_th_project">Project</th><th data-i18n="contract_th_counterparty">Counterparty</th><th data-i18n="contract_th_type">Type</th><th data-i18n="contract_th_amount">Amount</th><th data-i18n="contract_th_start">Start</th><th data-i18n="contract_th_end">End</th><th data-i18n="contract_th_status">Status</th><th data-i18n="contract_th_actions">Actions</th></tr></thead><tbody>';
       allContracts.forEach(c => {
         h += `<tr onclick="showDetail('${c.id}')">
           <td style="font-weight:600;color:var(--primary)">${c.contract_number || '-'}</td>
@@ -226,6 +227,7 @@
       });
       h += '</tbody></table>';
       document.getElementById('tableWrap').innerHTML = h;
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
     }
 
     // ═══════════════════════════════════
@@ -384,7 +386,7 @@
         if (c.remarks) h += `<p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;"><strong>Remarks:</strong> ${c.remarks}</p>`;
 
         // Amendment History Timeline
-        h += '<h4 style="font-size:14px;font-weight:700;margin-top:20px;margin-bottom:4px;">Amendment History</h4>';
+        h += '<h4 style="font-size:14px;font-weight:700;margin-top:20px;margin-bottom:4px;" data-i18n="contract_amendment_history">Amendment History</h4>';
         if (amendments.length === 0) {
           h += '<p style="font-size:12px;color:var(--text-muted);padding:12px 0;">No amendments recorded.</p>';
         } else {

@@ -820,21 +820,21 @@
     <div class="gc-header">
       <div class="gc-logo">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
-        Calendar
+        <span data-i18n="booking_calendar">Calendar</span>
       </div>
-      <button class="gc-today" onclick="goToday()">วันนี้</button>
+      <button class="gc-today" onclick="goToday()" data-i18n="booking_today">วันนี้</button>
       <button class="gc-nav-btn" onclick="navPrev()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
       <button class="gc-nav-btn" onclick="navNext()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
       <span class="gc-month" id="monthLabel"></span>
       <div class="gc-right">
         <button class="btn btn-secondary" onclick="exportBookings()" style="display:flex;align-items:center;gap:6px;" data-i18n="btn_export_excel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
         <select class="gc-view-select" id="viewSelect" onchange="setView(this.value)">
-          <option value="month">เดือน</option>
-          <option value="week">สัปดาห์</option>
-          <option value="day">วัน</option>
-          <option value="list">ตาราง</option>
-          <option value="resources">ทรัพยากร</option>
-          <option value="board">บอร์ด</option>
+          <option value="month" data-i18n="booking_view_month">เดือน</option>
+          <option value="week" data-i18n="booking_view_week">สัปดาห์</option>
+          <option value="day" data-i18n="booking_view_day">วัน</option>
+          <option value="list" data-i18n="booking_view_list">ตาราง</option>
+          <option value="resources" data-i18n="booking_view_resources">ทรัพยากร</option>
+          <option value="board" data-i18n="booking_view_board">บอร์ด</option>
         </select>
       </div>
     </div>
@@ -854,12 +854,12 @@
         </button>
         <!-- Create dropdown -->
         <div class="sb-create-popup" id="gcCreateMenu">
-          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('solar')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="user" class="dd-icon"></span> จองช่าง</button>
-          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('vehicle')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="car" class="dd-icon"></span> จองรถ</button>
-          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('flight')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="plane" class="dd-icon"></span> จองเครื่องบิน</button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('solar')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="user" class="dd-icon"></span> <span data-i18n="booking_book_tech">จองช่าง</span></button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('vehicle')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="car" class="dd-icon"></span> <span data-i18n="booking_book_vehicle">จองรถ</span></button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();openModal('flight')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-icon="plane" class="dd-icon"></span> <span data-i18n="booking_book_flight">จองเครื่องบิน</span></button>
           <hr style="border:none;border-top:1px solid var(--border-light);margin:4px 0">
-          <button class="dropdown-menu-item" onclick="closeGCCreate();showAddTechPopup()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)">+ เพิ่มช่าง/พนักงาน</button>
-          <button class="dropdown-menu-item" onclick="closeGCCreate();showAddVehiclePopup()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)">+ เพิ่มรถ</button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();showAddTechPopup()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-i18n="booking_add_tech">+ เพิ่มช่าง/พนักงาน</span></button>
+          <button class="dropdown-menu-item" onclick="closeGCCreate();showAddVehiclePopup()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:13px;border-radius:var(--radius)"><span data-i18n="booking_add_vehicle">+ เพิ่มรถ</span></button>
         </div>
 
         <!-- Mini Calendar -->
@@ -882,24 +882,24 @@
 
         <!-- Add Tech Popup -->
         <div class="sb-create-popup" id="addTechPopup">
-          <h4>เพิ่มช่าง/พนักงาน</h4>
+          <h4 data-i18n="booking_add_tech">เพิ่มช่าง/พนักงาน</h4>
           <div class="sbf-row">
-            <div class="sbf"><label>ชื่อ</label><input id="atFirstName" placeholder="ชื่อ"></div>
-            <div class="sbf"><label>นามสกุล</label><input id="atLastName" placeholder="นามสกุล"></div>
+            <div class="sbf"><label data-i18n="booking_label_first_name">ชื่อ</label><input id="atFirstName" placeholder="ชื่อ"></div>
+            <div class="sbf"><label data-i18n="booking_label_last_name">นามสกุล</label><input id="atLastName" placeholder="นามสกุล"></div>
           </div>
           <div class="sbf-row">
-            <div class="sbf"><label>ชื่อเล่น</label><input id="atNickname" placeholder="ชื่อเล่น"></div>
-            <div class="sbf"><label>เบอร์โทร</label><input id="atPhone" placeholder="08x-xxx-xxxx"></div>
+            <div class="sbf"><label data-i18n="booking_label_nickname">ชื่อเล่น</label><input id="atNickname" placeholder="ชื่อเล่น"></div>
+            <div class="sbf"><label data-i18n="booking_label_phone">เบอร์โทร</label><input id="atPhone" placeholder="08x-xxx-xxxx"></div>
           </div>
           <div class="sbf-row">
-            <div class="sbf"><label>ความชำนาญ</label>
-              <select id="atSpecialization"><option value="installation">ติดตั้ง</option><option value="repair">ซ่อม</option><option value="survey">สำรวจ</option><option value="general">ทั่วไป</option></select>
+            <div class="sbf"><label data-i18n="booking_label_specialization">ความชำนาญ</label>
+              <select id="atSpecialization"><option value="installation" data-i18n="booking_opt_installation">ติดตั้ง</option><option value="repair" data-i18n="booking_opt_repair">ซ่อม</option><option value="survey" data-i18n="booking_opt_survey">สำรวจ</option><option value="general" data-i18n="booking_opt_general">ทั่วไป</option></select>
             </div>
-            <div class="sbf"><label>สี</label><input type="color" id="atColor" value="#0f9d58" style="height:32px;padding:2px"></div>
+            <div class="sbf"><label data-i18n="booking_label_color">สี</label><input type="color" id="atColor" value="#0f9d58" style="height:32px;padding:2px"></div>
           </div>
           <div class="sbf-footer">
-            <button class="btn-sm" onclick="hideAddTechPopup()">ยกเลิก</button>
-            <button class="btn-sm btn-primary" onclick="saveTechnician()">บันทึก</button>
+            <button class="btn-sm" onclick="hideAddTechPopup()" data-i18n="cancel">ยกเลิก</button>
+            <button class="btn-sm btn-primary" onclick="saveTechnician()" data-i18n="save">บันทึก</button>
           </div>
         </div>
 
@@ -919,20 +919,20 @@
 
         <!-- Add Vehicle Popup -->
         <div class="sb-create-popup" id="addVehiclePopup">
-          <h4>เพิ่มรถ</h4>
+          <h4 data-i18n="booking_add_vehicle_title">เพิ่มรถ</h4>
           <div class="sbf-row">
-            <div class="sbf"><label>ชื่อรถ</label><input id="avName" placeholder="เช่น Toyota Hilux"></div>
-            <div class="sbf"><label>ทะเบียน</label><input id="avPlate" placeholder="กก-1234 กทม"></div>
+            <div class="sbf"><label data-i18n="booking_label_vehicle_name">ชื่อรถ</label><input id="avName" placeholder="เช่น Toyota Hilux"></div>
+            <div class="sbf"><label data-i18n="booking_label_plate">ทะเบียน</label><input id="avPlate" placeholder="กก-1234 กทม"></div>
           </div>
           <div class="sbf-row">
-            <div class="sbf"><label>ประเภท</label>
+            <div class="sbf"><label data-i18n="type">ประเภท</label>
               <select id="avType"><option value="Pickup">Pickup</option><option value="Sedan">Sedan</option><option value="Van">Van</option><option value="SUV">SUV</option></select>
             </div>
-            <div class="sbf"><label>สี</label><input type="color" id="avColor" value="#4285f4" style="height:32px;padding:2px"></div>
+            <div class="sbf"><label data-i18n="booking_label_color">สี</label><input type="color" id="avColor" value="#4285f4" style="height:32px;padding:2px"></div>
           </div>
           <div class="sbf-footer">
-            <button class="btn-sm" onclick="hideAddVehiclePopup()">ยกเลิก</button>
-            <button class="btn-sm btn-primary" onclick="saveVehicle()">บันทึก</button>
+            <button class="btn-sm" onclick="hideAddVehiclePopup()" data-i18n="cancel">ยกเลิก</button>
+            <button class="btn-sm btn-primary" onclick="saveVehicle()" data-i18n="save">บันทึก</button>
           </div>
         </div>
 
@@ -951,7 +951,7 @@
             <div class="sb-flight-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#db4437" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
             </div>
-            <span>เที่ยวบินทั้งหมด</span>
+            <span data-i18n="booking_all_flights">เที่ยวบินทั้งหมด</span>
           </label>
         </div>
       </div>
@@ -966,21 +966,21 @@
   <div class="qp-backdrop" id="qpBackdrop" onclick="closeQuickPopup()"></div>
   <div class="qp qp-create" id="qpCreate" style="display:none">
     <div class="qp-header">
-      <h4>สร้าง Booking</h4>
+      <h4 data-i18n="booking_create_booking">สร้าง Booking</h4>
       <button class="qp-close" onclick="closeQuickPopup()">&times;</button>
     </div>
     <div class="qp-body">
-      <input class="qp-input" id="qpTitle" placeholder="ชื่อการจอง..." autocomplete="off">
+      <input class="qp-input" id="qpTitle" placeholder="ชื่อการจอง..." data-i18n-placeholder="booking_placeholder_name" autocomplete="off">
       <div class="qp-type-row">
-        <button class="qp-type-btn active" data-qptype="vehicle" onclick="setQPType('vehicle')"><span class="qp-type-icon" data-icon="car"></span> รถ</button>
-        <button class="qp-type-btn" data-qptype="solar" onclick="setQPType('solar')"><span class="qp-type-icon" data-icon="user"></span> ช่าง</button>
-        <button class="qp-type-btn" data-qptype="flight" onclick="setQPType('flight')"><span class="qp-type-icon" data-icon="plane"></span> บิน</button>
+        <button class="qp-type-btn active" data-qptype="vehicle" onclick="setQPType('vehicle')"><span class="qp-type-icon" data-icon="car"></span> <span data-i18n="booking_type_vehicle">รถ</span></button>
+        <button class="qp-type-btn" data-qptype="solar" onclick="setQPType('solar')"><span class="qp-type-icon" data-icon="user"></span> <span data-i18n="booking_type_tech">ช่าง</span></button>
+        <button class="qp-type-btn" data-qptype="flight" onclick="setQPType('flight')"><span class="qp-type-icon" data-icon="plane"></span> <span data-i18n="booking_type_flight">บิน</span></button>
       </div>
       <div class="qp-date-display" id="qpDateDisplay"></div>
     </div>
     <div class="qp-footer">
-      <button class="btn-sm" onclick="qpMoreOptions()">ตัวเลือกเพิ่มเติม</button>
-      <button class="btn-sm btn-primary" onclick="qpSave()">บันทึก</button>
+      <button class="btn-sm" onclick="qpMoreOptions()" data-i18n="booking_more_options">ตัวเลือกเพิ่มเติม</button>
+      <button class="btn-sm btn-primary" onclick="qpSave()" data-i18n="save">บันทึก</button>
     </div>
   </div>
 
@@ -1007,13 +1007,13 @@
   <div class="modal-overlay" id="modalVehicle" onclick="if(event.target===this)closeAllModals()">
     <div class="modal">
       <div class="modal-header">
-        <h3><span class="modal-icon" data-icon="car"></span> จองรถ</h3>
+        <h3><span class="modal-icon" data-icon="car"></span> <span data-i18n="booking_book_vehicle">จองรถ</span></h3>
         <button class="close-btn" onclick="closeAllModals()">&times;</button>
       </div>
       <div class="modal-body">
         <div class="jo-section">
           <div class="form-group" style="margin-bottom:8px">
-            <label><span class="jo-icon" data-icon="clipboardList"></span> ใบสั่งงาน (Job Order)</label>
+            <label><span class="jo-icon" data-icon="clipboardList"></span> <span data-i18n="booking_label_job_order">ใบสั่งงาน (Job Order)</span></label>
             <div class="jo-select-row">
               <select id="vehJobOrder" onchange="onJOSelect('vehicle')">
                 <option value="">-- เลือกใบสั่งงาน --</option>
@@ -1076,62 +1076,62 @@
           </div>
         </div>
         <div class="form-group">
-          <label>รถ</label>
+          <label data-i18n="booking_type_vehicle">รถ</label>
           <select id="vehSelect" onchange="renderVehInfo()"></select>
           <div id="vehInfo" style="display:none;margin-top:10px;"></div>
         </div>
         <div class="form-group">
-          <label>ชื่อการจอง</label>
+          <label data-i18n="booking_label_booking_name">ชื่อการจอง</label>
           <input type="text" id="vehTitle" placeholder="เช่น เดินทางไปหน้างาน Site A">
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>วันเริ่มต้น</label>
+            <label data-i18n="start_date">วันเริ่มต้น</label>
             <input type="date" id="vehStartDate" onchange="clampEndDate('vehStartDate','vehEndDate');renderVehInfo()">
           </div>
           <div class="form-group">
-            <label>วันสิ้นสุด</label>
+            <label data-i18n="end_date">วันสิ้นสุด</label>
             <input type="date" id="vehEndDate" onchange="renderVehInfo()">
           </div>
         </div>
         <div class="form-check">
           <input type="checkbox" id="vehAllDay" onchange="toggleVehTime()">
-          <label for="vehAllDay">ทั้งวัน</label>
+          <label for="vehAllDay" data-i18n="booking_all_day">ทั้งวัน</label>
         </div>
         <div class="form-row" id="vehTimeRow">
           <div class="form-group">
-            <label>เวลาเริ่ม</label>
+            <label data-i18n="booking_start_time">เวลาเริ่ม</label>
             <input type="time" id="vehStartTime" value="08:00">
           </div>
           <div class="form-group">
-            <label>เวลาสิ้นสุด</label>
+            <label data-i18n="booking_end_time">เวลาสิ้นสุด</label>
             <input type="time" id="vehEndTime" value="17:00">
           </div>
         </div>
         <div class="form-group">
-          <label>โปรเจกต์</label>
+          <label data-i18n="project">โปรเจกต์</label>
           <select id="vehProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
         </div>
         <div class="form-group">
-          <label>ผู้อนุมัติ</label>
+          <label data-i18n="booking_label_approver">ผู้อนุมัติ</label>
           <select id="vehApprover"><option value="">-- เลือกผู้อนุมัติ --</option></select>
         </div>
         <div class="form-group">
-          <label>วัตถุประสงค์</label>
+          <label data-i18n="booking_label_purpose">วัตถุประสงค์</label>
           <input type="text" id="vehPurpose" placeholder="ระบุวัตถุประสงค์">
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>สถานที่</label>
+            <label data-i18n="booking_label_location">สถานที่</label>
             <input type="text" id="vehLocation" placeholder="ปลายทาง">
           </div>
           <div class="form-group">
-            <label>จำนวนผู้โดยสาร</label>
+            <label data-i18n="booking_label_passengers">จำนวนผู้โดยสาร</label>
             <input type="number" id="vehPassengers" min="1" value="1">
           </div>
         </div>
         <div class="form-group">
-          <label>สี</label>
+          <label data-i18n="booking_label_color">สี</label>
           <div class="color-input">
             <input type="color" id="vehColor" value="#4285f4">
             <span style="font-size:12px;color:var(--text-muted)">สีแสดงบนปฏิทิน</span>
@@ -1139,8 +1139,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-sm" onclick="closeAllModals()">ยกเลิก</button>
-        <button class="btn-sm btn-primary" onclick="saveBooking('vehicle')">บันทึก</button>
+        <button class="btn-sm" onclick="closeAllModals()" data-i18n="cancel">ยกเลิก</button>
+        <button class="btn-sm btn-primary" onclick="saveBooking('vehicle')" data-i18n="save">บันทึก</button>
       </div>
     </div>
   </div>
@@ -1149,13 +1149,13 @@
   <div class="modal-overlay" id="modalSolar" onclick="if(event.target===this)closeAllModals()">
     <div class="modal">
       <div class="modal-header">
-        <h3><span class="modal-icon" data-icon="user"></span> จองช่าง</h3>
+        <h3><span class="modal-icon" data-icon="user"></span> <span data-i18n="booking_book_tech">จองช่าง</span></h3>
         <button class="close-btn" onclick="closeAllModals()">&times;</button>
       </div>
       <div class="modal-body">
         <div class="jo-section">
           <div class="form-group" style="margin-bottom:8px">
-            <label><span class="jo-icon" data-icon="clipboardList"></span> ใบสั่งงาน (Job Order)</label>
+            <label><span class="jo-icon" data-icon="clipboardList"></span> <span data-i18n="booking_label_job_order">ใบสั่งงาน (Job Order)</span></label>
             <div class="jo-select-row">
               <select id="solarJobOrder" onchange="onJOSelect('solar')">
                 <option value="">-- เลือกใบสั่งงาน --</option>
@@ -1220,14 +1220,14 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>ขั้นตอน</label>
+            <label data-i18n="booking_label_phase">ขั้นตอน</label>
             <select id="solarPhase" onchange="onPhaseChange()">
               <option value="survey">สำรวจ (Survey)</option>
               <option value="installation">ติดตั้ง (Installation)</option>
             </select>
           </div>
           <div class="form-group">
-            <label>ประเภทงาน</label>
+            <label data-i18n="booking_label_job_type">ประเภทงาน</label>
             <select id="solarJobType">
               <option value="survey">Survey (สำรวจ)</option>
               <option value="installation">Installation (ติดตั้ง)</option>
@@ -1239,7 +1239,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label>ทีมงาน</label>
+          <label data-i18n="booking_label_team">ทีมงาน</label>
           <div style="display:flex;gap:6px;margin-bottom:8px">
             <select id="solarTechSelect" style="flex:1"><option value="">-- เลือกช่าง/พนักงาน --</option></select>
             <button type="button" class="btn-sm btn-primary" onclick="addTeamMember()" style="white-space:nowrap;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> เพิ่ม</button>
@@ -1248,43 +1248,43 @@
         </div>
         <!-- REMOVED: solarSite, solarCapacity, solarTools, solarSafety — moved to JO form -->
         <div class="form-group">
-          <label>รายละเอียดงาน</label>
+          <label data-i18n="booking_label_work_desc">รายละเอียดงาน</label>
           <textarea id="solarDesc" placeholder="รายละเอียดงานที่ต้องทำ"></textarea>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>วันเริ่มต้น</label>
+            <label data-i18n="start_date">วันเริ่มต้น</label>
             <input type="date" id="solarStartDate" onchange="clampEndDate('solarStartDate','solarEndDate')">
           </div>
           <div class="form-group">
-            <label>วันสิ้นสุด</label>
+            <label data-i18n="end_date">วันสิ้นสุด</label>
             <input type="date" id="solarEndDate">
           </div>
         </div>
         <div class="form-check">
           <input type="checkbox" id="solarAllDay" onchange="toggleSolarTime()">
-          <label for="solarAllDay">ทั้งวัน</label>
+          <label for="solarAllDay" data-i18n="booking_all_day">ทั้งวัน</label>
         </div>
         <div class="form-row" id="solarTimeRow">
           <div class="form-group">
-            <label>เวลาเริ่ม</label>
+            <label data-i18n="booking_start_time">เวลาเริ่ม</label>
             <input type="time" id="solarStartTime" value="08:00">
           </div>
           <div class="form-group">
-            <label>เวลาสิ้นสุด</label>
+            <label data-i18n="booking_end_time">เวลาสิ้นสุด</label>
             <input type="time" id="solarEndTime" value="17:00">
           </div>
         </div>
         <div class="form-group">
-          <label>โปรเจกต์</label>
+          <label data-i18n="project">โปรเจกต์</label>
           <select id="solarProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
         </div>
         <div class="form-group">
-          <label>ผู้อนุมัติ</label>
+          <label data-i18n="booking_label_approver">ผู้อนุมัติ</label>
           <select id="solarApprover"><option value="">-- เลือกผู้อนุมัติ --</option></select>
         </div>
         <div class="form-group">
-          <label>สี</label>
+          <label data-i18n="booking_label_color">สี</label>
           <div class="color-input">
             <input type="color" id="solarColor" value="#0f9d58">
             <span style="font-size:12px;color:var(--text-muted)">สีแสดงบนปฏิทิน</span>
@@ -1293,26 +1293,26 @@
 
         <!-- Customer Info -->
         <div style="border-top:2px dashed var(--border);margin:16px 0;padding-top:16px">
-          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)">ข้อมูลลูกค้า</h4>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)" data-i18n="booking_customer_info">ข้อมูลลูกค้า</h4>
           <div class="form-row">
             <div class="form-group">
-              <label>ชื่อลูกค้า</label>
+              <label data-i18n="booking_label_cust_name">ชื่อลูกค้า</label>
               <input type="text" id="solarCustName" placeholder="ชื่อ-นามสกุล">
             </div>
             <div class="form-group">
-              <label>เบอร์โทร</label>
+              <label data-i18n="booking_label_phone">เบอร์โทร</label>
               <input type="text" id="solarCustPhone" placeholder="08x-xxx-xxxx">
             </div>
           </div>
           <div class="form-group">
-            <label>ที่อยู่</label>
+            <label data-i18n="booking_label_address">ที่อยู่</label>
             <textarea id="solarCustAddr" rows="2" placeholder="ที่อยู่ลูกค้า"></textarea>
           </div>
         </div>
 
         <!-- Survey Data (show after survey) -->
         <div id="solarSurveySection" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px">
-          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)">ข้อมูลสำรวจ</h4>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)" data-i18n="booking_survey_info">ข้อมูลสำรวจ</h4>
           <div class="form-row">
             <div class="form-group">
               <label>พื้นที่หลังคา (sqm)</label>
@@ -1362,7 +1362,7 @@
 
         <!-- Items Section (after survey_completed) -->
         <div id="solarItemsSection" style="display:none;border-top:2px dashed var(--border);margin:16px 0;padding-top:16px">
-          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)">รายการอุปกรณ์</h4>
+          <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary)" data-i18n="booking_equipment_list">รายการอุปกรณ์</h4>
           <div style="display:flex;gap:8px;margin-bottom:10px">
             <select id="solarItemSelect" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px">
               <option value="">-- เลือกอุปกรณ์ --</option>
@@ -1403,8 +1403,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-sm" onclick="closeAllModals()">ยกเลิก</button>
-        <button class="btn-sm btn-primary" onclick="saveBooking('solar')">บันทึก</button>
+        <button class="btn-sm" onclick="closeAllModals()" data-i18n="cancel">ยกเลิก</button>
+        <button class="btn-sm btn-primary" onclick="saveBooking('solar')" data-i18n="save">บันทึก</button>
       </div>
     </div>
   </div>
@@ -1413,13 +1413,13 @@
   <div class="modal-overlay" id="modalFlight" onclick="if(event.target===this)closeAllModals()">
     <div class="modal">
       <div class="modal-header">
-        <h3><span class="modal-icon" data-icon="plane"></span> จองเครื่องบิน</h3>
+        <h3><span class="modal-icon" data-icon="plane"></span> <span data-i18n="booking_book_flight">จองเครื่องบิน</span></h3>
         <button class="close-btn" onclick="closeAllModals()">&times;</button>
       </div>
       <div class="modal-body">
         <div class="jo-section">
           <div class="form-group" style="margin-bottom:8px">
-            <label><span class="jo-icon" data-icon="clipboardList"></span> ใบสั่งงาน (Job Order)</label>
+            <label><span class="jo-icon" data-icon="clipboardList"></span> <span data-i18n="booking_label_job_order">ใบสั่งงาน (Job Order)</span></label>
             <div class="jo-select-row">
               <select id="flightJobOrder" onchange="onJOSelect('flight')">
                 <option value="">-- เลือกใบสั่งงาน --</option>
@@ -1482,17 +1482,17 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>สายการบิน</label>
+            <label data-i18n="booking_label_airline">สายการบิน</label>
             <input type="text" id="flightAirline" placeholder="เช่น Thai AirAsia">
           </div>
           <div class="form-group">
-            <label>เลขที่เที่ยวบิน</label>
+            <label data-i18n="booking_label_flight_no">เลขที่เที่ยวบิน</label>
             <input type="text" id="flightNumber" placeholder="เช่น FD3030">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>สนามบินต้นทาง</label>
+            <label data-i18n="booking_label_dep_airport">สนามบินต้นทาง</label>
             <select id="flightDepAirport">
               <option value="DMK">DMK — ดอนเมือง</option>
               <option value="BKK">BKK — สุวรรณภูมิ</option>
@@ -1504,7 +1504,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label>สนามบินปลายทาง</label>
+            <label data-i18n="booking_label_arr_airport">สนามบินปลายทาง</label>
             <select id="flightArrAirport">
               <option value="DMK">DMK — ดอนเมือง</option>
               <option value="BKK">BKK — สุวรรณภูมิ</option>
@@ -1518,50 +1518,50 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>วันเวลาออกเดินทาง</label>
+            <label data-i18n="booking_label_dep_time">วันเวลาออกเดินทาง</label>
             <input type="datetime-local" id="flightDepTime">
           </div>
           <div class="form-group">
-            <label>วันเวลาถึง</label>
+            <label data-i18n="booking_label_arr_time">วันเวลาถึง</label>
             <input type="datetime-local" id="flightArrTime">
           </div>
         </div>
         <details class="optional-section">
-          <summary>เที่ยวบินกลับ (ไม่บังคับ)</summary>
+          <summary data-i18n="booking_return_flight">เที่ยวบินกลับ (ไม่บังคับ)</summary>
           <div style="margin-top:12px">
             <div class="form-group">
-              <label>เลขที่เที่ยวบินกลับ</label>
+              <label data-i18n="booking_label_return_flight_no">เลขที่เที่ยวบินกลับ</label>
               <input type="text" id="flightReturnNumber" placeholder="เช่น FD3031">
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label>วันเวลาออก (ขากลับ)</label>
+                <label data-i18n="booking_label_return_dep">วันเวลาออก (ขากลับ)</label>
                 <input type="datetime-local" id="flightReturnDep">
               </div>
               <div class="form-group">
-                <label>วันเวลาถึง (ขากลับ)</label>
+                <label data-i18n="booking_label_return_arr">วันเวลาถึง (ขากลับ)</label>
                 <input type="datetime-local" id="flightReturnArr">
               </div>
             </div>
           </div>
         </details>
         <div class="form-group" style="margin-top:14px">
-          <label>ชื่อผู้โดยสาร</label>
+          <label data-i18n="booking_label_passenger_names">ชื่อผู้โดยสาร</label>
           <input type="text" id="flightPassengers" placeholder="คั่นด้วย comma เช่น สมชาย, สมหญิง">
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>รหัสการจอง (PNR)</label>
+            <label data-i18n="booking_label_pnr">รหัสการจอง (PNR)</label>
             <input type="text" id="flightPNR" placeholder="เช่น ABC123">
           </div>
           <div class="form-group">
-            <label>ราคาตั๋ว (บาท)</label>
+            <label data-i18n="booking_label_ticket_price">ราคาตั๋ว (บาท)</label>
             <input type="number" id="flightCost" step="0.01" placeholder="0.00">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>ช่องทางจอง</label>
+            <label data-i18n="booking_label_channel">ช่องทางจอง</label>
             <select id="flightChannel">
               <option value="direct">จองตรงกับสายการบิน</option>
               <option value="agent">ผ่านตัวแทน/Travel Agent</option>
@@ -1570,7 +1570,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label>โปรเจกต์</label>
+            <label data-i18n="project">โปรเจกต์</label>
             <select id="flightProject"><option value="">-- เลือกโปรเจกต์ --</option></select>
           </div>
         </div>
@@ -1583,8 +1583,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-sm" onclick="closeAllModals()">ยกเลิก</button>
-        <button class="btn-sm btn-primary" onclick="saveBooking('flight')">บันทึก</button>
+        <button class="btn-sm" onclick="closeAllModals()" data-i18n="cancel">ยกเลิก</button>
+        <button class="btn-sm btn-primary" onclick="saveBooking('flight')" data-i18n="save">บันทึก</button>
       </div>
     </div>
   </div>

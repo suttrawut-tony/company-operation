@@ -61,33 +61,33 @@
   <div id="tabbar"></div>
   <main class="page fade-in">
     <div class="page-header">
-      <div><h1 id="pgIcon">Bid Preparation</h1></div>
+      <div><h1 id="pgIcon" data-i18n="bid_page_title">Bid Preparation</h1></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportBids()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export Excel</button>
-        <button class="btn btn-primary" onclick="openCreateModal()">+ New Bid</button>
+        <button class="btn btn-secondary" onclick="exportBids()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> <span data-i18n="bid_btn_export">Export Excel</span></button>
+        <button class="btn btn-primary" onclick="openCreateModal()" data-i18n="bid_btn_new">+ New Bid</button>
       </div>
     </div>
 
     <!-- Filter Bar -->
     <div class="filter-bar">
       <select id="filterProject" onchange="applyFilters()">
-        <option value="">All Projects</option>
+        <option value="" data-i18n="bid_filter_all_projects">All Projects</option>
       </select>
       <select id="filterStatus" onchange="applyFilters()">
-        <option value="">All Status</option>
-        <option value="draft">Draft</option>
-        <option value="submitted">Submitted</option>
-        <option value="won">Won</option>
-        <option value="lost">Lost</option>
-        <option value="cancelled">Cancelled</option>
+        <option value="" data-i18n="bid_filter_all_status">All Status</option>
+        <option value="draft" data-i18n="bid_status_draft">Draft</option>
+        <option value="submitted" data-i18n="bid_status_submitted">Submitted</option>
+        <option value="won" data-i18n="bid_status_won">Won</option>
+        <option value="lost" data-i18n="bid_status_lost">Lost</option>
+        <option value="cancelled" data-i18n="bid_status_cancelled">Cancelled</option>
       </select>
-      <input type="search" id="filterSearch" placeholder="Search bids..." oninput="applyFilters()">
+      <input type="search" id="filterSearch" data-i18n-placeholder="bid_search_placeholder" placeholder="Search bids..." oninput="applyFilters()">
     </div>
 
     <div class="sq-stats" id="stats"></div>
     <div class="card">
       <div class="card-header">
-        <h2>Bid List</h2>
+        <h2 data-i18n="bid_list_heading">Bid List</h2>
       </div>
       <div id="tableWrap"></div>
     </div>
@@ -165,10 +165,11 @@
       const submitted = filteredBids.filter(b=>b.status==='submitted').length;
       const won = filteredBids.filter(b=>b.status==='won').length;
       document.getElementById('stats').innerHTML = `
-        <div class="sq-stat"><div class="val">${total}</div><div class="lbl">Total Bids</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--text-muted)">${draft}</div><div class="lbl">Draft</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--primary)">${submitted}</div><div class="lbl">Submitted</div></div>
-        <div class="sq-stat"><div class="val" style="color:var(--success,#0f9d58)">${won}</div><div class="lbl">Won</div></div>`;
+        <div class="sq-stat"><div class="val">${total}</div><div class="lbl" data-i18n="bid_stat_total">Total Bids</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--text-muted)">${draft}</div><div class="lbl" data-i18n="bid_stat_draft">Draft</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--primary)">${submitted}</div><div class="lbl" data-i18n="bid_stat_submitted">Submitted</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success,#0f9d58)">${won}</div><div class="lbl" data-i18n="bid_stat_won">Won</div></div>`;
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
     }
 
     function statusStyle(s) {
@@ -183,10 +184,10 @@
 
     function renderTable() {
       if (!filteredBids.length) {
-        document.getElementById('tableWrap').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No bids found</div>';
+        document.getElementById('tableWrap').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)" data-i18n="bid_empty">No bids found</div>';if(typeof I18N!=='undefined')I18N.applyTranslations();
         return;
       }
-      let h='<table class="sq-table"><thead><tr><th>Bid No.</th><th>Project</th><th>Tender</th><th>Total Cost</th><th>Margin %</th><th>Bid Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      let h='<table class="sq-table"><thead><tr><th data-i18n="bid_th_number">Bid No.</th><th data-i18n="bid_th_project">Project</th><th data-i18n="bid_th_tender">Tender</th><th data-i18n="bid_th_total_cost">Total Cost</th><th data-i18n="bid_th_margin">Margin %</th><th data-i18n="bid_th_bid_price">Bid Price</th><th data-i18n="bid_th_status">Status</th><th data-i18n="bid_th_actions">Actions</th></tr></thead><tbody>';
       filteredBids.forEach(b=>{
         const proj = projects.find(p=>p.id===b.project_id);
         h+=`<tr>
@@ -207,6 +208,7 @@
       });
       h+='</tbody></table>';
       document.getElementById('tableWrap').innerHTML=h;
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
     }
 
     // ════════════════════════════════
@@ -251,7 +253,7 @@
 
       // Cost Items Section
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">';
-      h += '<h4 style="font-size:13px;font-weight:700;margin:0;">Cost Breakdown</h4>';
+      h += '<h4 style="font-size:13px;font-weight:700;margin:0;" data-i18n="bid_cost_breakdown">Cost Breakdown</h4>';
       h += '<div style="display:flex;gap:6px;">';
       h += '<button class="btn-sm" onclick="importFromPR()" style="font-size:11px;">Import from PR</button>';
       h += '<button class="btn-sm" onclick="importExcel()" style="font-size:11px;">Import Excel</button>';
