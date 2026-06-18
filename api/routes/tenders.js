@@ -133,10 +133,10 @@ router.put('/:id', async (req, res) => {
       await db.query('DELETE FROM tender_vendors WHERE tender_id = $1', [req.params.id]);
       for (const v of req.body.vendors) {
         await db.query(
-          `INSERT INTO tender_vendors (tender_id, vendor_code, vendor_name, evaluation_notes, status, total_price, evaluation_score, invited_date)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())`,
+          `INSERT INTO tender_vendors (tender_id, vendor_code, vendor_name, contact, evaluation_notes, status, total_price, evaluation_score, invited_date)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())`,
           [req.params.id, v.vendor_code || null, v.vendor_name || null,
-           v.evaluation_notes || v.contact || null, v.status || 'invited',
+           v.contact || null, v.evaluation_notes || null, v.status || 'invited',
            v.total_price || null,
            v.evaluation_score || v.score || null]);
       }
