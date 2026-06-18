@@ -117,9 +117,9 @@ router.put('/:id', async (req, res) => {
         `UPDATE tenders SET ${sets.join(', ')} WHERE id = $${idx}`, params);
     }
 
-    // Replace items if provided (draft only)
+    // Replace items if provided (any status except awarded/cancelled)
     if (req.body.items && Array.isArray(req.body.items)) {
-      if (existing.status !== 'draft') return res.status(400).json({ error: 'Only draft tenders can update items' });
+      if (existing.status === 'awarded' || existing.status === 'cancelled') return res.status(400).json({ error: 'Cannot update items for awarded or cancelled tenders' });
       await db.query('DELETE FROM tender_items WHERE tender_id = $1', [req.params.id]);
       for (let i = 0; i < req.body.items.length; i++) {
         const it = req.body.items[i];

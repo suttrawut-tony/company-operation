@@ -208,6 +208,7 @@
 
       const isDraft = tender.status === 'draft';
       const isTerminal = tender.status === 'cancelled' || tender.status === 'awarded';
+      const canEditItems = !isTerminal; // items editable in draft, published, closed, evaluating
       let btns = '';
       if (isDraft) btns += `<button class="btn-sm" onclick="openEditHeaderModal()">Edit Info</button>`;
       if (isDraft) btns += `<button class="btn-sm btn-primary" onclick="changeStatus('published')">Publish</button>`;
@@ -217,7 +218,7 @@
 
       // Show/hide Add Item button based on status
       const addItemBtn = document.getElementById('addItemBtn');
-      if (addItemBtn) addItemBtn.style.display = isDraft ? '' : 'none';
+      if (addItemBtn) addItemBtn.style.display = canEditItems ? '' : 'none';
 
       document.getElementById('infoCards').innerHTML = `
         <div class="info-card"><div class="lbl">Budget</div><div class="val sq-amount">${fmtNum(tender.budget_amount||0)}</div></div>
@@ -250,7 +251,7 @@
     //  ITEMS TAB
     // ════════════════════════════════
     function renderItems() {
-      const canEdit = tender && tender.status === 'draft';
+      const canEdit = tender && tender.status !== 'cancelled' && tender.status !== 'awarded';
       if (!tenderItems.length) {
         document.getElementById('itemsTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No items added yet</div>';
         return;
