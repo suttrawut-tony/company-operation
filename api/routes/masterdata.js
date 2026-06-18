@@ -84,7 +84,7 @@ router.get('/items/:id', async (req, res) => {
 });
 
 // FIXED: Added DELETE /items/:id (soft delete)
-router.delete('/items/:id', requireRole('executive','admin'), async (req, res) => {
+router.delete('/items/:id', requireRole('executive','admin','owner'), async (req, res) => {
   try {
     const { rows } = await db.query(
       'UPDATE items SET is_active=false WHERE id=$1 AND company_id=$2 RETURNING *',
@@ -104,7 +104,7 @@ router.get('/bp/:id', async (req, res) => {
 });
 
 // FIXED: Added DELETE /bp/:id (soft delete)
-router.delete('/bp/:id', requireRole('executive','admin'), async (req, res) => {
+router.delete('/bp/:id', requireRole('executive','admin','owner'), async (req, res) => {
   try {
     const { rows } = await db.query(
       'UPDATE business_partners SET is_active=false WHERE id=$1 AND company_id=$2 RETURNING *',

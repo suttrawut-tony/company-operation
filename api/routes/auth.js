@@ -424,7 +424,7 @@ router.get('/users', authenticate, async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // POST /api/auth/users — admin creates a user
 // ═══════════════════════════════════════════════════════════
-router.post('/users', authenticate, requireRole('executive', 'admin'), async (req, res) => {
+router.post('/users', authenticate, requireRole('executive', 'admin', 'owner'), async (req, res) => {
   try {
     const email = normalizeEmail(req.body.email);
     const { password, first_name, last_name, first_name_th, last_name_th,
@@ -461,7 +461,7 @@ router.post('/users', authenticate, requireRole('executive', 'admin'), async (re
 // ═══════════════════════════════════════════════════════════
 // POST /api/auth/users/:id/approve — admin approves / re-activates
 // ═══════════════════════════════════════════════════════════
-router.post('/users/:id/approve', authenticate, requireRole('executive', 'admin'), async (req, res) => {
+router.post('/users/:id/approve', authenticate, requireRole('executive', 'admin', 'owner'), async (req, res) => {
   try {
     const { role, position, department, can_approve, approval_limit } = req.body;
     const { rows } = await db.query(
@@ -504,7 +504,7 @@ ${(process.env.APP_URL || '').replace(/\/$/, '') || 'http://localhost:4000'}/log
 // ═══════════════════════════════════════════════════════════
 // PUT /api/auth/users/:id — update
 // ═══════════════════════════════════════════════════════════
-router.put('/users/:id', authenticate, requireRole('executive', 'admin'), async (req, res) => {
+router.put('/users/:id', authenticate, requireRole('executive', 'admin', 'owner'), async (req, res) => {
   try {
     const { first_name, last_name, first_name_th, last_name_th,
             role, position, department, can_approve, approval_limit, is_active, password } = req.body;
@@ -542,7 +542,7 @@ router.put('/users/:id', authenticate, requireRole('executive', 'admin'), async 
 // ═══════════════════════════════════════════════════════════
 // DELETE /api/auth/users/:id — deactivate
 // ═══════════════════════════════════════════════════════════
-router.delete('/users/:id', authenticate, requireRole('executive', 'admin'), async (req, res) => {
+router.delete('/users/:id', authenticate, requireRole('executive', 'admin', 'owner'), async (req, res) => {
   try {
     const { rows } = await db.query(
       'UPDATE users SET is_active = false WHERE id = $1 AND company_id = $2 RETURNING id, email',

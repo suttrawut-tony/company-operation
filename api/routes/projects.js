@@ -138,7 +138,7 @@ router.get('/:id/members', requireProjectAccess, async (req, res) => {
 });
 
 // POST /api/projects/:id/members — Add member
-router.post('/:id/members', requireProjectAccess, requireRole('pm','executive','admin'), async (req, res) => {
+router.post('/:id/members', requireProjectAccess, requireRole('pm','executive','admin','owner'), async (req, res) => {
   try {
     const { user_id, role } = req.body;
     const { rows: existing } = await db.query('SELECT id FROM project_members WHERE project_id=$1 AND user_id=$2', [req.params.id, user_id]);
@@ -151,7 +151,7 @@ router.post('/:id/members', requireProjectAccess, requireRole('pm','executive','
 });
 
 // DELETE /api/projects/:id/members/:userId — Remove member
-router.delete('/:id/members/:userId', requireProjectAccess, requireRole('pm','executive','admin'), async (req, res) => {
+router.delete('/:id/members/:userId', requireProjectAccess, requireRole('pm','executive','admin','owner'), async (req, res) => {
   try {
     const { rowCount } = await db.query('DELETE FROM project_members WHERE project_id=$1 AND user_id=$2', [req.params.id, req.params.userId]);
     if (!rowCount) return res.status(404).json({ error: 'Member not found' });
@@ -249,7 +249,7 @@ router.get('/:id/phases', requireProjectAccess, async (req, res) => {
 });
 
 // POST /api/projects/:id/phases — Create a new phase
-router.post('/:id/phases', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.post('/:id/phases', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { name, description, start_date, end_date, steps } = req.body;
     // Get max sort_order
@@ -286,7 +286,7 @@ router.post('/:id/phases', requireProjectAccess, requireRole('pm','executive'), 
 });
 
 // PUT /api/projects/:projectId/phases/:phaseId — Update a phase
-router.put('/:id/phases/:phaseId', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.put('/:id/phases/:phaseId', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { name, description, status, start_date, end_date, progress } = req.body;
     const { rows } = await db.query(
@@ -302,7 +302,7 @@ router.put('/:id/phases/:phaseId', requireProjectAccess, requireRole('pm','execu
 });
 
 // DELETE /api/projects/:projectId/phases/:phaseId
-router.delete('/:id/phases/:phaseId', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.delete('/:id/phases/:phaseId', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { rowCount } = await db.query(
       'DELETE FROM phases WHERE id = $1 AND project_id = $2', [req.params.phaseId, req.params.id]);
@@ -312,7 +312,7 @@ router.delete('/:id/phases/:phaseId', requireProjectAccess, requireRole('pm','ex
 });
 
 // POST /api/projects/:id/phases/:phaseId/steps — Add step to phase
-router.post('/:id/phases/:phaseId/steps', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.post('/:id/phases/:phaseId/steps', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { name, assigned_to, start_date, end_date } = req.body;
     const { rows: maxRows } = await db.query(
@@ -328,7 +328,7 @@ router.post('/:id/phases/:phaseId/steps', requireProjectAccess, requireRole('pm'
 });
 
 // PUT /api/projects/:id/phases/:phaseId/steps/:stepId — Update step
-router.put('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.put('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { name, status, assigned_to, start_date, end_date } = req.body;
     const completedAt = status === 'done' ? 'NOW()' : 'NULL';
@@ -347,7 +347,7 @@ router.put('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requireRo
 });
 
 // DELETE /api/projects/:id/phases/:phaseId/steps/:stepId
-router.delete('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.delete('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { rowCount } = await db.query(
       'DELETE FROM phase_steps WHERE id = $1 AND phase_id = $2', [req.params.stepId, req.params.phaseId]);
@@ -360,7 +360,7 @@ router.delete('/:id/phases/:phaseId/steps/:stepId', requireProjectAccess, requir
 // ═══ Sub-tasks (under steps) ═══
 
 // POST /api/projects/:id/subtasks — Create subtask
-router.post('/:id/subtasks', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.post('/:id/subtasks', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { step_id, name, assigned_to, due_date } = req.body;
     const { rows: maxRows } = await db.query(
@@ -377,7 +377,7 @@ router.post('/:id/subtasks', requireProjectAccess, requireRole('pm','executive')
 });
 
 // PUT /api/projects/:id/subtasks/:subId — Update subtask
-router.put('/:id/subtasks/:subId', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.put('/:id/subtasks/:subId', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     const { name, status, assigned_to, due_date } = req.body;
     const { rows } = await db.query(
@@ -397,7 +397,7 @@ router.put('/:id/subtasks/:subId', requireProjectAccess, requireRole('pm','execu
 });
 
 // DELETE /api/projects/:id/subtasks/:subId — Delete subtask
-router.delete('/:id/subtasks/:subId', requireProjectAccess, requireRole('pm','executive'), async (req, res) => {
+router.delete('/:id/subtasks/:subId', requireProjectAccess, requireRole('pm','executive','owner'), async (req, res) => {
   try {
     // Get step_id before deleting
     const { rows: [subInfo] } = await db.query('SELECT step_id FROM step_subtasks WHERE id=$1', [req.params.subId]);

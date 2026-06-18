@@ -42,7 +42,7 @@ router.post('/push-po/:id', requireRole('procurement', 'finance', 'executive'), 
 });
 
 // POST /api/sap/push-expense/:id
-router.post('/push-expense/:id', requireRole('finance', 'executive'), async (req, res) => {
+router.post('/push-expense/:id', requireRole('finance', 'executive', 'owner'), async (req, res) => {
   res.json({ message: 'Push Expense to SAP OPCH — requires SAP Service Layer connection' });
 });
 

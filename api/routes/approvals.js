@@ -80,7 +80,7 @@ router.get('/templates', async (req, res) => {
 });
 
 // POST /api/approvals/templates — create new template
-router.post('/templates', requireRole('executive', 'admin', 'finance'), async (req, res) => {
+router.post('/templates', requireRole('executive', 'admin', 'finance', 'owner'), async (req, res) => {
   try {
     const { doc_type, min_amount, max_amount, steps } = req.body;
     if (!doc_type || !VALID_DOC_TYPES.includes(doc_type)) {
@@ -120,7 +120,7 @@ router.post('/templates', requireRole('executive', 'admin', 'finance'), async (r
 });
 
 // PUT /api/approvals/templates/:id — update template
-router.put('/templates/:id', requireRole('executive', 'admin', 'finance'), async (req, res) => {
+router.put('/templates/:id', requireRole('executive', 'admin', 'finance', 'owner'), async (req, res) => {
   try {
     const { min_amount, max_amount, steps, is_active } = req.body;
 
@@ -169,7 +169,7 @@ router.put('/templates/:id', requireRole('executive', 'admin', 'finance'), async
 });
 
 // DELETE /api/approvals/templates/:id
-router.delete('/templates/:id', requireRole('executive', 'admin', 'finance'), async (req, res) => {
+router.delete('/templates/:id', requireRole('executive', 'admin', 'finance', 'owner'), async (req, res) => {
   try {
     const { rowCount } = await db.query(
       `DELETE FROM approval_templates WHERE id = $1 AND company_id = $2`,

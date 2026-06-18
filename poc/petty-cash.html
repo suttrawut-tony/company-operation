@@ -340,7 +340,7 @@
               <button class="btn btn-primary btn-sm" onclick="openDisbModal('${f.id}','${f.fund_name}',${bal})">+ Disburse</button>
               <button class="btn btn-secondary btn-sm" onclick="openReplModal('${f.id}',${limit},${bal})">Replenish</button>
               <button class="btn btn-secondary btn-sm" onclick="openCountModal('${f.id}',${bal})">Cash Count</button>
-              ${['finance','executive','admin'].includes(userRole) ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editFund('${f.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> Edit Fund</button>` : ''}
+              ${['finance','executive','admin','owner'].includes(userRole) ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editFund('${f.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> Edit Fund</button>` : ''}
             </div>
             <div id="detail-${f.id}"><div style="color:var(--text-muted);font-size:12px;">Loading...</div></div>
           </div>
@@ -372,10 +372,10 @@
             const receiptLabel = d.receipt_status === 'approved' ? '<span style="color:var(--success);font-size:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Receipt approved</span>'
               : d.receipt_status === 'submitted' ? '<span style="color:var(--warning);font-size:10px;">Receipt pending</span>'
               : '<a href="#" onclick="event.preventDefault();openReceiptModal(\''+d.id+'\','+parseFloat(d.amount)+',\''+d.description+'\',\''+d.category+'\')" style="font-size:10px;">Submit Receipt</a>';
-            const approveBtn = d.receipt_status === 'submitted' && ['finance','executive'].includes(userRole)
+            const approveBtn = d.receipt_status === 'submitted' && ['finance','executive','owner'].includes(userRole)
               ? ' <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.preventDefault();approveDisb(\''+d.id+'\')">Approve</button>'
               : '';
-            const canDeleteDisb = ['draft','disbursed'].includes(d.status) && (d.created_by === userId || ['finance','executive','admin'].includes(userRole));
+            const canDeleteDisb = ['draft','disbursed'].includes(d.status) && (d.created_by === userId || ['finance','executive','admin','owner'].includes(userRole));
             const deleteDisbBtn = canDeleteDisb ? ` <button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.stopPropagation();deleteDisb('${d.id}','${id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Delete</button>` : '';
             html += `<div class="pc-item">
               <div class="dot" style="background:${dotColor};"></div>
@@ -394,7 +394,7 @@
         if (data.replenishments && data.replenishments.length) {
           data.replenishments.forEach(r => {
             const stColor = r.status === 'transferred' ? 'var(--success)' : 'var(--warning)';
-            const approveBtn = r.status === 'requested' && ['finance','executive'].includes(userRole)
+            const approveBtn = r.status === 'requested' && ['finance','executive','owner'].includes(userRole)
               ? ' <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px;" onclick="event.preventDefault();openApproveReplModal(\''+r.id+'\','+parseFloat(r.amount)+')">Approve & Transfer</button>'
               : '';
             html += `<div class="pc-item">

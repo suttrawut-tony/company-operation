@@ -378,8 +378,8 @@
               ประวัติแก้ไข
             </button>
             ${canEditBudget(st, userRole, b) ? '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openEditBudget(\''+b.id+'\')" style="font-size:11px;">Edit</button>' : ''}
-            ${(['draft','rejected'].includes(st) && ['finance','executive'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteBudget(\''+b.id+'\',\''+b.code+'\')">Del</button>' : ''}
-            ${st === 'revised' && ['finance','executive','pm'].includes(userRole) ? '<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="event.stopPropagation();resubmitBudget(\''+b.id+'\')">Resubmit</button>' : ''}
+            ${(['draft','rejected'].includes(st) && ['finance','executive','owner'].includes(userRole)) ? '<button class="btn btn-sm" style="font-size:11px;background:var(--danger-bg);color:var(--danger);" onclick="event.stopPropagation();deleteBudget(\''+b.id+'\',\''+b.code+'\')">Del</button>' : ''}
+            ${st === 'revised' && ['finance','executive','pm','owner'].includes(userRole) ? '<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="event.stopPropagation();resubmitBudget(\''+b.id+'\')">Resubmit</button>' : ''}
             ${st === 'revised' && userRole === 'executive' ? '<button class="btn btn-success btn-sm" style="font-size:11px;" onclick="event.stopPropagation();fastApprove(\''+b.id+'\')">Approve Now</button>' : ''}
             ${controlBadge}
             ${b.reject_reason ? '<span style="font-size:11px;color:var(--danger);">Rejected: '+b.reject_reason+'</span>' : ''}

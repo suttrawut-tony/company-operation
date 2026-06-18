@@ -27,7 +27,7 @@ router.get('/settings', async (req, res) => {
 });
 
 // PUT /api/company/settings — shallow-merge a settings patch (exec/admin only)
-router.put('/settings', requireRole('executive', 'admin'), async (req, res) => {
+router.put('/settings', requireRole('executive', 'admin', 'owner'), async (req, res) => {
   try {
     const patch = (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) ? req.body : {};
     const { rows: [c] } = await db.query(
