@@ -113,7 +113,10 @@
     <div class="tab-content" id="tab-evaluation">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h3 style="font-size:14px;font-weight:700;margin:0;">Scoring Matrix</h3>
-        <button class="btn-sm btn-success" onclick="awardTender()" id="awardBtn" style="display:none;">Award Tender</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sm btn-primary" onclick="saveScores()" id="saveScoresBtn">Save Scores</button>
+          <button class="btn-sm btn-success" onclick="awardTender()" id="awardBtn" style="display:none;">Award Tender</button>
+        </div>
       </div>
       <div id="evalMatrix"></div>
     </div>
@@ -232,9 +235,12 @@
       if (remarksEl) { remarksEl.value = tender.remarks || tender.terms_conditions || ''; }
       document.getElementById('saveRemarksBtn').style.display = 'none';
 
-      // Show award button in eval tab if status is closed
+      // Show/hide eval buttons based on status
+      const isTerminal = tender.status === 'cancelled' || tender.status === 'awarded';
       const awardBtn = document.getElementById('awardBtn');
+      const saveScoresBtn = document.getElementById('saveScoresBtn');
       if (awardBtn) awardBtn.style.display = (tender.status==='closed' || tender.status==='evaluating') ? '' : 'none';
+      if (saveScoresBtn) saveScoresBtn.style.display = isTerminal ? 'none' : '';
     }
 
     // ════════════════════════════════
@@ -454,9 +460,43 @@
     // ════════════════════════════════
     //  EVALUATION TAB
     // ════════════════════════════════
+    async function saveScores() {
+      try {
+        // Collect all scores from inputs
+        const rows = document.querySelectorAll('.score-matrix tbody tr');
+        const submittedVendors = tenderVendors.filter(v=>v.status==='submitted'||v.total_price||v.status==='invited');
+        rows.forEach((row, i) => {
+          const inputs = row.querySelectorAll('input[type="number"]');
+          const v = submittedVendors[i];
+          if (!v) return;
+          if (!v.scores) v.scores = {};
+          const criteria = parseCriteria();
+          inputs.forEach((inp, j) => {
+            const key = criteria[j]?.key || ('c'+j);
+            v.scores[key] = parseFloat(inp.value)||0;
+          });
+          v.evaluation_score = Object.values(v.scores).reduce((s,val)=>s+(parseFloat(val)||0),0);
+        });
+        await API.put('/tenders/'+tenderId, { vendors: tenderVendors });
+        showToast('Scores saved', 'success');
+        await loadData();
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    function parseCriteria() {
+      let raw = tender.evaluation_criteria;
+      // Handle JSON array format [{name,weight}] or string "Price,Quality"
+      if (typeof raw === 'string') {
+        try { raw = JSON.parse(raw); } catch(e) { return raw.split(',').map(c=>({name:c.trim(),key:c.trim().toLowerCase().replace(/\s+/g,'_')})); }
+      }
+      if (Array.isArray(raw)) return raw.map(c=>({name:c.name||c,key:(c.name||c).toLowerCase().replace(/[^a-z0-9]+/g,'_'),weight:c.weight}));
+      return [{name:'Price',key:'price'},{name:'Quality',key:'quality'},{name:'Delivery',key:'delivery'}];
+    }
+
     function renderEvaluation() {
-      const criteria = (tender.evaluation_criteria||'Price,Quality,Delivery').split(',').map(c=>c.trim()).filter(Boolean);
-      const submittedVendors = tenderVendors.filter(v=>v.status==='submitted'||v.total_price);
+      const criteria = parseCriteria();
+      // Show all vendors (not just submitted) so user can score anyone
+      const submittedVendors = tenderVendors.filter(v=>v.status==='submitted'||v.total_price||v.status==='invited');
 
       if (!submittedVendors.length) {
         document.getElementById('evalMatrix').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No vendor submissions to evaluate yet</div>';
@@ -464,7 +504,7 @@
       }
 
       let h='<table class="score-matrix"><thead><tr><th>Vendor</th><th>Total Price</th>';
-      criteria.forEach(c=>{ h+=`<th>${c}<br><span style="font-size:9px;font-weight:400">(1-10)</span></th>`; });
+      criteria.forEach(c=>{ h+=`<th>${c.name||c}${c.weight?' ('+c.weight+'%)':''}<br><span style="font-size:9px;font-weight:400">(1-10)</span></th>`; });
       h+='<th>Total Score</th></tr></thead><tbody>';
 
       submittedVendors.forEach((v,i)=>{
@@ -472,10 +512,10 @@
         let totalScore = 0;
         h+=`<tr><td style="font-weight:600">${v.vendor_name}</td><td class="sq-amount">${fmtNum(v.total_price||0)}</td>`;
         criteria.forEach(c=>{
-          const key = c.toLowerCase().replace(/\s+/g,'_');
+          const key = c.key || (c.name||c).toLowerCase().replace(/[^a-z0-9]+/g,'_');
           const val = scores[key]||'';
           totalScore += parseFloat(val)||0;
-          h+=`<td><input type="number" min="1" max="10" value="${val}" onchange="updateScore(${tenderVendors.indexOf(v)},'${key}',this.value)"></td>`;
+          h+=`<td><input type="number" min="1" max="10" value="${val}" style="width:60px;text-align:center;padding:4px;"></td>`;
         });
         h+=`<td style="font-weight:800;font-size:16px">${totalScore||'-'}</td></tr>`;
       });
