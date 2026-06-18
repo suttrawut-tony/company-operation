@@ -383,8 +383,7 @@
     async function saveVendor() {
       const data = {
         vendor_name: document.getElementById('vmName').value,
-        contact: document.getElementById('vmContact').value,
-        notes: document.getElementById('vmNotes').value||'',
+        evaluation_notes: (document.getElementById('vmContact').value||'') + (document.getElementById('vmNotes').value ? ' | ' + document.getElementById('vmNotes').value : ''),
       };
       if (editVendorIdx === -1) {
         data.status = 'invited';
