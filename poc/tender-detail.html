@@ -75,6 +75,15 @@
 
     <div class="info-cards" id="infoCards"></div>
 
+    <!-- Remarks -->
+    <div style="margin-bottom:20px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;">Remarks / หมายเหตุ</label>
+        <button class="btn-sm" id="saveRemarksBtn" onclick="saveRemarks()" style="font-size:11px;padding:3px 10px;display:none;">Save</button>
+      </div>
+      <textarea id="tenderRemarks" rows="2" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);resize:vertical;box-sizing:border-box;background:var(--bg-white);" placeholder="เพิ่มหมายเหตุ..." oninput="document.getElementById('saveRemarksBtn').style.display=''"></textarea>
+    </div>
+
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('items')">Items</button>
@@ -183,6 +192,7 @@
       document.getElementById('statusBadge').innerHTML = `<span class="sq-badge" style="${statusStyle(tender.status)}">${tender.status||'-'}</span>`;
 
       let btns = '';
+      btns += `<button class="btn-sm" onclick="openEditHeaderModal()">Edit Info</button>`;
       if (tender.status==='draft') btns += `<button class="btn-sm btn-primary" onclick="changeStatus('published')">Publish</button>`;
       if (tender.status==='published') btns += `<button class="btn-sm btn-warning" onclick="changeStatus('closed')">Close Tender</button>`;
       if (tender.status==='closed' || tender.status==='evaluating') btns += `<button class="btn-sm btn-success" onclick="awardTender()">Award</button>`;
@@ -194,6 +204,11 @@
         <div class="info-card"><div class="lbl">Close Date</div><div class="val">${tender.close_date?new Date(tender.close_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-'}</div></div>
         <div class="info-card"><div class="lbl">Items</div><div class="val">${tenderItems.length}</div></div>
         <div class="info-card"><div class="lbl">Vendors</div><div class="val">${tenderVendors.length}</div></div>`;
+
+      // Populate remarks
+      const remarksEl = document.getElementById('tenderRemarks');
+      if (remarksEl) { remarksEl.value = tender.remarks || tender.terms_conditions || ''; }
+      document.getElementById('saveRemarksBtn').style.display = 'none';
 
       // Show award button in eval tab if status is closed
       const awardBtn = document.getElementById('awardBtn');
@@ -306,42 +321,89 @@
         awarded:'background:#fef3c7;color:#92400e'
       }[s]||'background:#e2e3e5;color:#383d41');
 
-      let h='<table class="sq-table"><thead><tr><th>#</th><th>Vendor Name</th><th>Contact</th><th>Status</th><th>Submitted Date</th><th>Total Price</th><th>Score</th><th></th></tr></thead><tbody>';
+      let h='<table class="sq-table"><thead><tr><th style="width:30px">#</th><th>Vendor Name</th><th>Contact</th><th style="width:90px;text-align:center">Status</th><th>Submitted Date</th><th style="text-align:right">Total Price</th><th style="text-align:center;width:60px">Score</th><th>Notes / หมายเหตุ</th><th style="width:80px"></th></tr></thead><tbody>';
       tenderVendors.forEach((v,i)=>{
         h+=`<tr>
           <td>${i+1}</td>
           <td style="font-weight:600">${v.vendor_name||'-'}</td>
-          <td>${v.contact||'-'}</td>
-          <td><span class="sq-badge" style="${vendorStatusStyle(v.status)}">${v.status||'invited'}</span></td>
-          <td>${v.submitted_date?new Date(v.submitted_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-'}</td>
-          <td class="sq-amount">${v.total_price?fmtNum(v.total_price):'-'}</td>
-          <td style="font-weight:700">${v.score!=null?v.score:'-'}</td>
-          <td><button class="del-btn" onclick="removeVendor(${i})">x</button></td></tr>`;
+          <td style="font-size:12px;color:var(--text-secondary)">${v.contact||'-'}</td>
+          <td style="text-align:center"><span class="sq-badge" style="${vendorStatusStyle(v.status)}">${v.status||'invited'}</span></td>
+          <td style="font-size:12px">${v.submitted_date?new Date(v.submitted_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-'}</td>
+          <td class="sq-amount" style="text-align:right">${v.total_price?fmtNum(v.total_price):'–'}</td>
+          <td style="font-weight:700;text-align:center">${v.score!=null?v.score:'-'}</td>
+          <td style="font-size:12px;color:var(--text-secondary);max-width:200px;">${v.notes||'-'}</td>
+          <td>
+            <div style="display:flex;gap:4px;">
+              <button class="btn-sm" onclick="openEditVendorModal(${i})" style="font-size:10px;padding:2px 8px;">Edit</button>
+              <button class="del-btn" onclick="removeVendor(${i})" title="Remove">x</button>
+            </div>
+          </td></tr>`;
       });
       h+='</tbody></table>';
       document.getElementById('vendorsTable').innerHTML=h;
     }
 
+    let editVendorIdx = -1;
+
     function openVendorModal() {
+      editVendorIdx = -1;
       document.getElementById('vendorModalBody').innerHTML = `
         <div class="sq-fg"><label>Vendor Name</label><input type="text" id="vmName"></div>
-        <div class="sq-fg"><label>Contact (Email / Phone)</label><input type="text" id="vmContact"></div>`;
+        <div class="sq-fg"><label>Contact (Email / Phone)</label><input type="text" id="vmContact"></div>
+        <div class="sq-fg"><label>Notes / หมายเหตุ</label><textarea id="vmNotes" rows="2" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;box-sizing:border-box;resize:vertical;font-family:var(--font);" placeholder="หมายเหตุเพิ่มเติม..."></textarea></div>`;
       document.getElementById('vendorModalFooter').innerHTML = `
-        <button class="btn-sm btn-primary" onclick="inviteVendor()">Invite</button>
+        <button class="btn-sm btn-primary" onclick="saveVendor()">Invite</button>
         <button class="btn-sm" onclick="closeVendorModal()">Cancel</button>`;
       document.getElementById('vendorModal').classList.add('show');
     }
 
-    async function inviteVendor() {
-      const vendor = {
+    function openEditVendorModal(idx) {
+      editVendorIdx = idx;
+      const v = tenderVendors[idx];
+      document.getElementById('vendorModalBody').innerHTML = `
+        <div class="sq-fg"><label>Vendor Name</label><input type="text" id="vmName" value="${v.vendor_name||''}"></div>
+        <div class="sq-fg"><label>Contact (Email / Phone)</label><input type="text" id="vmContact" value="${v.contact||''}"></div>
+        <div class="sq-info-grid">
+          <div class="sq-fg"><label>Status</label><select id="vmStatus">
+            <option value="invited" ${v.status==='invited'?'selected':''}>Invited</option>
+            <option value="submitted" ${v.status==='submitted'?'selected':''}>Submitted</option>
+            <option value="qualified" ${v.status==='qualified'?'selected':''}>Qualified</option>
+            <option value="disqualified" ${v.status==='disqualified'?'selected':''}>Disqualified</option>
+          </select></div>
+          <div class="sq-fg"><label>Submitted Date</label><input type="date" id="vmSubmittedDate" value="${v.submitted_date?v.submitted_date.substring(0,10):''}"></div>
+        </div>
+        <div class="sq-fg"><label>Total Price</label><input type="number" id="vmTotalPrice" value="${v.total_price||''}" placeholder="0.00" step="0.01"></div>
+        <div class="sq-fg"><label>Notes / หมายเหตุ</label><textarea id="vmNotes" rows="2" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;box-sizing:border-box;resize:vertical;font-family:var(--font);">${v.notes||''}</textarea></div>`;
+      document.getElementById('vendorModalFooter').innerHTML = `
+        <button class="btn-sm btn-primary" onclick="saveVendor()">Save</button>
+        <button class="btn-sm" onclick="closeVendorModal()">Cancel</button>`;
+      document.getElementById('vendorModal').classList.add('show');
+    }
+
+    async function saveVendor() {
+      const data = {
         vendor_name: document.getElementById('vmName').value,
         contact: document.getElementById('vmContact').value,
-        status: 'invited',
+        notes: document.getElementById('vmNotes').value||'',
       };
-      tenderVendors.push(vendor);
+      if (editVendorIdx === -1) {
+        data.status = 'invited';
+        tenderVendors.push(data);
+      } else {
+        const statusEl = document.getElementById('vmStatus');
+        const dateEl = document.getElementById('vmSubmittedDate');
+        const priceEl = document.getElementById('vmTotalPrice');
+        if (statusEl) data.status = statusEl.value;
+        if (dateEl) data.submitted_date = dateEl.value||null;
+        if (priceEl) data.total_price = parseFloat(priceEl.value)||null;
+        // Preserve existing scores
+        data.scores = tenderVendors[editVendorIdx].scores;
+        data.score = tenderVendors[editVendorIdx].score;
+        tenderVendors[editVendorIdx] = { ...tenderVendors[editVendorIdx], ...data };
+      }
       try {
         await API.put('/tenders/'+tenderId, { vendors: tenderVendors });
-        typeof showToast==='function' && showToast('Vendor invited','success');
+        typeof showToast==='function' && showToast(editVendorIdx===-1?'Vendor invited':'Vendor updated','success');
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
       closeVendorModal();
       renderVendors();
@@ -418,6 +480,62 @@
       try {
         await API.post('/tenders/'+tenderId+'/award', { vendor_id: winner.id });
         typeof showToast==='function' && showToast('Tender awarded to '+winner.vendor_name,'success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    // ════════════════════════════════
+    //  SAVE REMARKS
+    // ════════════════════════════════
+    async function saveRemarks() {
+      const remarks = document.getElementById('tenderRemarks').value;
+      try {
+        await API.put('/tenders/'+tenderId, { remarks });
+        tender.remarks = remarks;
+        typeof showToast==='function' && showToast('Remarks saved','success');
+        document.getElementById('saveRemarksBtn').style.display = 'none';
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    // ════════════════════════════════
+    //  EDIT HEADER INFO
+    // ════════════════════════════════
+    function openEditHeaderModal() {
+      const t = tender;
+      document.getElementById('vendorModalBody').innerHTML = `
+        <div class="sq-fg"><label>Title</label><input type="text" id="ehTitle" value="${t.title||''}"></div>
+        <div class="sq-info-grid">
+          <div class="sq-fg"><label>Tender Type</label><select id="ehType">
+            <option value="direct_purchase" ${t.tender_type==='direct_purchase'?'selected':''}>Direct Purchase</option>
+            <option value="price_comparison" ${t.tender_type==='price_comparison'?'selected':''}>Price Comparison</option>
+            <option value="bidding" ${t.tender_type==='bidding'?'selected':''}>Bidding</option>
+          </select></div>
+          <div class="sq-fg"><label>Budget</label><input type="number" id="ehBudget" value="${t.budget_amount||''}" step="0.01"></div>
+        </div>
+        <div class="sq-info-grid">
+          <div class="sq-fg"><label>Open Date</label><input type="date" id="ehOpenDate" value="${t.opening_date?t.opening_date.substring(0,10):''}"></div>
+          <div class="sq-fg"><label>Close Date</label><input type="date" id="ehCloseDate" value="${t.close_date?t.close_date.substring(0,10):''}"></div>
+        </div>
+        <div class="sq-fg"><label>Evaluation Criteria (comma-separated)</label><input type="text" id="ehCriteria" value="${t.evaluation_criteria||''}" placeholder="Price, Quality, Delivery"></div>`;
+      document.getElementById('vendorModalFooter').innerHTML = `
+        <button class="btn-sm btn-primary" onclick="saveHeaderInfo()">Save</button>
+        <button class="btn-sm" onclick="closeVendorModal()">Cancel</button>`;
+      document.getElementById('vendorModal').classList.add('show');
+    }
+
+    async function saveHeaderInfo() {
+      const data = {
+        title: document.getElementById('ehTitle').value,
+        tender_type: document.getElementById('ehType').value,
+        budget_amount: parseFloat(document.getElementById('ehBudget').value)||0,
+        opening_date: document.getElementById('ehOpenDate').value||null,
+        close_date: document.getElementById('ehCloseDate').value||null,
+        evaluation_criteria: document.getElementById('ehCriteria').value||null,
+      };
+      try {
+        await API.put('/tenders/'+tenderId, data);
+        typeof showToast==='function' && showToast('Tender info updated','success');
+        closeVendorModal();
         loadData();
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
     }

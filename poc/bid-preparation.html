@@ -194,7 +194,7 @@
           <td>${proj?proj.code||proj.name:'-'}</td>
           <td>${b.tender_number||'-'}</td>
           <td class="sq-amount">${fmtNum(b.total_cost||0)}</td>
-          <td style="font-weight:600;color:${(b.margin_percent||0)>=0?'var(--success,#0f9d58)':'var(--danger)'}">${(b.margin_percent||0).toFixed(1)}%</td>
+          <td style="font-weight:600;color:${parseFloat(b.margin_percent||0)>=0?'var(--success,#0f9d58)':'var(--danger)'}">${parseFloat(b.margin_percent||0).toFixed(1)}%</td>
           <td class="sq-amount" style="font-weight:800">${fmtNum(b.bid_price||0)}</td>
           <td><span class="sq-badge" style="${statusStyle(b.status)}">${b.status||'-'}</span></td>
           <td onclick="event.stopPropagation()">
@@ -541,7 +541,7 @@
     // Init
     if (API.requireAuth()) {
       loadData();
-      if (typeof I!=='undefined') document.getElementById('pgIcon').innerHTML = I.dollarSign+' Bid Preparation';
+      if (typeof I!=='undefined' && I.dollar) document.getElementById('pgIcon').innerHTML = I.dollar+' Bid Preparation';
       else document.getElementById('pgIcon').textContent = 'Bid Preparation';
     }
   </script>
