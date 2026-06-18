@@ -106,6 +106,8 @@
     </div>
   </div>
 
+  <input type="file" id="bidExcelInput" accept=".xlsx,.xls,.csv" style="display:none">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/helpers.js"></script>
   <script src="assets/js/icons.js"></script>
@@ -252,6 +254,7 @@
       h += '<h4 style="font-size:13px;font-weight:700;margin:0;">Cost Breakdown</h4>';
       h += '<div style="display:flex;gap:6px;">';
       h += '<button class="btn-sm" onclick="importFromPR()" style="font-size:11px;">Import from PR</button>';
+      h += '<button class="btn-sm" onclick="importExcel()" style="font-size:11px;">Import Excel</button>';
       h += '<button class="btn-sm btn-primary" onclick="addCostItem()" style="font-size:11px;">+ Add Item</button>';
       h += '</div></div>';
 
@@ -378,6 +381,95 @@
         const importRow = document.querySelector('.pr-import-row');
         if (importRow) importRow.remove();
       } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function importExcel() {
+      const input = document.getElementById('bidExcelInput');
+      input.value = '';
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          let rows = [];
+          try {
+            if (ext === 'csv') {
+              rows = parseCSV(ev.target.result);
+            } else {
+              const data = new Uint8Array(ev.target.result);
+              const wb = XLSX.read(data, { type: 'array' });
+              const ws = wb.Sheets[wb.SheetNames[0]];
+              rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            }
+          } catch(err) {
+            typeof showToast === 'function' && showToast('Failed to read file: ' + err.message, 'error');
+            return;
+          }
+          if (!rows.length) {
+            typeof showToast === 'function' && showToast('No data found in file', 'warning');
+            return;
+          }
+          const colMap = mapColumns(Object.keys(rows[0]));
+          let imported = 0;
+          rows.forEach(function(row) {
+            const desc = String(row[colMap.description] || '').trim();
+            if (!desc) return;
+            const qty = parseFloat(row[colMap.qty]) || 0;
+            const unitCost = parseFloat(row[colMap.unit_cost]) || 0;
+            const rawCat = String(row[colMap.category] || '').trim().toLowerCase();
+            const category = ['material','labor','overhead','other'].includes(rawCat) ? rawCat : 'other';
+            editCostItems.push({
+              category: category,
+              description: desc,
+              qty: qty,
+              unit_cost: unitCost,
+              total: qty * unitCost
+            });
+            imported++;
+          });
+          renderCostItems();
+          recalcBid();
+          typeof showToast === 'function' && showToast('Imported ' + imported + ' items from Excel', 'success');
+        };
+        if (ext === 'csv') {
+          reader.readAsText(file);
+        } else {
+          reader.readAsArrayBuffer(file);
+        }
+      };
+      input.click();
+    }
+
+    function parseCSV(text) {
+      const lines = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/^"|"$/g, ''); });
+      const result = [];
+      for (let i = 1; i < lines.length; i++) {
+        const vals = lines[i].split(',').map(function(v) { return v.trim().replace(/^"|"$/g, ''); });
+        const obj = {};
+        headers.forEach(function(h, idx) { obj[h] = vals[idx] || ''; });
+        result.push(obj);
+      }
+      return result;
+    }
+
+    function mapColumns(headers) {
+      const map = { category: null, description: null, qty: null, unit_cost: null };
+      headers.forEach(function(h) {
+        const low = h.toLowerCase();
+        if (!map.category && low.includes('cat')) map.category = h;
+        if (!map.description && (low.includes('desc') || low.includes('name') || low.includes('item'))) map.description = h;
+        if (!map.qty && (low.includes('qty') || low.includes('quantity'))) map.qty = h;
+        if (!map.unit_cost && (low.includes('cost') || low.includes('price') || low.includes('unit'))) map.unit_cost = h;
+      });
+      // Fallback to positional if headers don't match
+      if (!map.category) map.category = headers[0] || '';
+      if (!map.description) map.description = headers[1] || '';
+      if (!map.qty) map.qty = headers[2] || '';
+      if (!map.unit_cost) map.unit_cost = headers[3] || '';
+      return map;
     }
 
     async function saveBid(isNew) {
