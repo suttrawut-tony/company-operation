@@ -236,7 +236,6 @@
       document.getElementById('saveRemarksBtn').style.display = 'none';
 
       // Show/hide eval buttons based on status
-      const isTerminal = tender.status === 'cancelled' || tender.status === 'awarded';
       const awardBtn = document.getElementById('awardBtn');
       const saveScoresBtn = document.getElementById('saveScoresBtn');
       if (awardBtn) awardBtn.style.display = (tender.status==='closed' || tender.status==='evaluating') ? '' : 'none';
