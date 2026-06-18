@@ -70,11 +70,11 @@ const NAV_GROUPS_FALLBACK = [
     { id: 'taskboard', label: 'Taskboard', icon: ICONS.taskboard, href: 'taskboard.html' },
   ]},
   { label: 'Pre-Sales', collapsible: true, iconColor: 'icon-purple', items: [
-    { id: 'tenders', label: 'Tenders', icon: icon('<path d="M16 2v4"/><path d="M8 2v4"/><path d="M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="m9 14 2 2 4-4"/>'), href: 'tenders.html' },
-    { id: 'bid-preparation', label: 'Bid Preparation', icon: icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/>'), href: 'bid-preparation.html' },
-    { id: 'contracts', label: 'Contracts', icon: icon('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 12h4"/><path d="M10 16h4"/>'), href: 'contracts.html' },
-    { id: 'guarantees', label: 'Guarantees', icon: icon('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>'), href: 'guarantees.html' },
-    { id: 'disputes', label: 'Disputes', icon: icon('<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>'), href: 'disputes.html' },
+    { id: 'tenders', label: 'Tenders', icon: icon('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'), href: 'tenders.html' },
+    { id: 'bid-preparation', label: 'Bid Preparation', icon: icon('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h4"/><path d="M16 14h.01"/>'), href: 'bid-preparation.html' },
+    { id: 'contracts', label: 'Contracts', icon: icon('<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/>'), href: 'contracts.html' },
+    { id: 'guarantees', label: 'Guarantees', icon: icon('<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'), href: 'guarantees.html' },
+    { id: 'disputes', label: 'Disputes', icon: icon('<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'), href: 'disputes.html' },
   ]},
   { label: 'Document', collapsible: true, iconColor: 'icon-green', items: [
     { id: 'budget', label: 'Budget', icon: ICONS.budget, href: 'budget.html' },
