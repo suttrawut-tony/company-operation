@@ -94,13 +94,19 @@ router.put('/:id', async (req, res) => {
       'SELECT * FROM tenders WHERE id=$1 AND company_id=$2', [req.params.id, req.user.company_id]);
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
-    // Header fields can only be updated when draft
-    const allowed = ['title','tender_type','budget_amount','close_date','opening_date',
-      'evaluation_criteria','remarks'];
+    // Remarks can be updated in any non-terminal status; other header fields require draft
+    const alwaysEditable = ['remarks'];
+    const draftOnly = ['title','tender_type','budget_amount','close_date','opening_date','evaluation_criteria'];
     const sets = []; const params = []; let idx = 1;
-    for (const f of allowed) {
+    for (const f of alwaysEditable) {
       if (req.body[f] !== undefined) {
-        if (existing.status !== 'draft') return res.status(400).json({ error: 'Only draft tenders can update header fields' });
+        if (existing.status === 'cancelled') return res.status(400).json({ error: 'Cannot update cancelled tenders' });
+        sets.push(`${f} = $${idx++}`); params.push(req.body[f]);
+      }
+    }
+    for (const f of draftOnly) {
+      if (req.body[f] !== undefined) {
+        if (existing.status !== 'draft') return res.status(400).json({ error: 'Only draft tenders can update ' + f });
         sets.push(`${f} = $${idx++}`); params.push(req.body[f]);
       }
     }

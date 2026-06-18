@@ -95,7 +95,7 @@
     <div class="tab-content active" id="tab-items">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h3 style="font-size:14px;font-weight:700;margin:0;">Tender Items</h3>
-        <button class="btn-sm btn-primary" onclick="openItemModal(true)">+ Add Item</button>
+        <button class="btn-sm btn-primary" id="addItemBtn" onclick="openItemModal(true)">+ Add Item</button>
       </div>
       <div id="itemsTable"></div>
     </div>
@@ -206,12 +206,18 @@
       document.getElementById('tenderSub').textContent = typeLabel(tender.tender_type);
       document.getElementById('statusBadge').innerHTML = `<span class="sq-badge" style="${statusStyle(tender.status)}">${tender.status||'-'}</span>`;
 
+      const isDraft = tender.status === 'draft';
+      const isTerminal = tender.status === 'cancelled' || tender.status === 'awarded';
       let btns = '';
-      btns += `<button class="btn-sm" onclick="openEditHeaderModal()">Edit Info</button>`;
-      if (tender.status==='draft') btns += `<button class="btn-sm btn-primary" onclick="changeStatus('published')">Publish</button>`;
+      if (isDraft) btns += `<button class="btn-sm" onclick="openEditHeaderModal()">Edit Info</button>`;
+      if (isDraft) btns += `<button class="btn-sm btn-primary" onclick="changeStatus('published')">Publish</button>`;
       if (tender.status==='published') btns += `<button class="btn-sm btn-warning" onclick="changeStatus('closed')">Close Tender</button>`;
       if (tender.status==='closed' || tender.status==='evaluating') btns += `<button class="btn-sm btn-success" onclick="awardTender()">Award</button>`;
       document.getElementById('actionButtons').innerHTML = btns;
+
+      // Show/hide Add Item button based on status
+      const addItemBtn = document.getElementById('addItemBtn');
+      if (addItemBtn) addItemBtn.style.display = isDraft ? '' : 'none';
 
       document.getElementById('infoCards').innerHTML = `
         <div class="info-card"><div class="lbl">Budget</div><div class="val sq-amount">${fmtNum(tender.budget_amount||0)}</div></div>
@@ -244,11 +250,12 @@
     //  ITEMS TAB
     // ════════════════════════════════
     function renderItems() {
+      const canEdit = tender && tender.status === 'draft';
       if (!tenderItems.length) {
         document.getElementById('itemsTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">No items added yet</div>';
         return;
       }
-      let h='<table class="sq-table"><thead><tr><th>#</th><th>Item Code</th><th>Item Name</th><th>Qty</th><th>UOM</th><th>Estimated Price</th><th>Total</th><th></th></tr></thead><tbody>';
+      let h='<table class="sq-table"><thead><tr><th>#</th><th>Item Code</th><th>Item Name</th><th>Qty</th><th>UOM</th><th>Estimated Price</th><th>Total</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
       tenderItems.forEach((it,i)=>{
         const total = (parseFloat(it.quantity)||0)*(parseFloat(it.estimated_price)||0);
         h+=`<tr>
@@ -258,11 +265,14 @@
           <td>${it.quantity||0}</td>
           <td>${it.uom||'EA'}</td>
           <td class="sq-amount">${fmtNum(it.estimated_price||0)}</td>
-          <td class="sq-amount">${fmtNum(total)}</td>
-          <td>
+          <td class="sq-amount">${fmtNum(total)}</td>`;
+        if (canEdit) {
+          h+=`<td>
             <button class="btn-sm" onclick="openItemModal(false,${i})" style="font-size:11px;padding:2px 8px;">Edit</button>
             <button class="del-btn" onclick="removeItem(${i})">x</button>
-          </td></tr>`;
+          </td>`;
+        }
+        h+=`</tr>`;
       });
       const grandTotal = tenderItems.reduce((s,it)=>s+(parseFloat(it.quantity)||0)*(parseFloat(it.estimated_price)||0),0);
       h+=`<tr><td colspan="6" style="text-align:right;font-weight:700">Total</td><td class="sq-amount" style="font-weight:800">${fmtNum(grandTotal)}</td><td></td></tr>`;
