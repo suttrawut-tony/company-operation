@@ -254,6 +254,10 @@ router.post('/:id/award', async (req, res) => {
       "UPDATE tenders SET status='awarded', awarded_vendor_code=$1, awarded_vendor_name=$2, awarded_amount=$3, updated_at=NOW() WHERE id=$4",
       [vendor.vendor_code, vendor.vendor_name, vendor.total_price || tender.budget_amount, tender.id]);
 
+    // Update vendor statuses: winner = awarded, others = disqualified
+    await db.query("UPDATE tender_vendors SET status='awarded' WHERE id=$1", [vendor_id]);
+    await db.query("UPDATE tender_vendors SET status='disqualified' WHERE tender_id=$1 AND id!=$2", [tender.id, vendor_id]);
+
     // Auto-generate contract number
     const { rows: [cSeries] } = await db.query(
       `INSERT INTO number_series (company_id, doc_type, prefix, year_month, current_number)
