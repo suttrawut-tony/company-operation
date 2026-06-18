@@ -77,8 +77,8 @@ router.post('/', async (req, res) => {
     const { code, name, description, start_date, end_date, pm_user_id, tor_amount, status } = req.body;
     const { rows } = await db.query(
       `INSERT INTO projects (company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount, status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9,'planning'),$10) RETURNING *`,
-      [req.user.company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount || 0, status, req.user.id]
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9::project_status,'planning'),$10) RETURNING *`,
+      [req.user.company_id, code, name, description, start_date, end_date, pm_user_id, tor_amount || 0, status || null, req.user.id]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
