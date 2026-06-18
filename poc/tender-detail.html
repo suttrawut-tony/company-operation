@@ -474,7 +474,13 @@
             const key = criteria[j]?.key || ('c'+j);
             v.scores[key] = parseFloat(inp.value)||0;
           });
-          v.evaluation_score = Object.values(v.scores).reduce((s,val)=>s+(parseFloat(val)||0),0);
+          // Weighted score calculation
+          const crit = parseCriteria();
+          const totalW = crit.reduce((s,c)=>s+(c.weight||0),0) || 100;
+          v.evaluation_score = parseFloat(crit.reduce((s,c)=>{
+            const key = c.key || (c.name||c).toLowerCase().replace(/[^a-z0-9]+/g,'_');
+            return s + ((parseFloat(v.scores[key])||0) * (c.weight||(100/crit.length)) / totalW);
+          },0).toFixed(2));
         });
         await API.put('/tenders/'+tenderId, { vendors: tenderVendors });
         showToast('Scores saved', 'success');
@@ -506,17 +512,21 @@
       criteria.forEach(c=>{ h+=`<th>${c.name||c}${c.weight?' ('+c.weight+'%)':''}<br><span style="font-size:9px;font-weight:400">(1-10)</span></th>`; });
       h+='<th>Total Score</th></tr></thead><tbody>';
 
+      const totalWeight = criteria.reduce((s,c)=>s+(c.weight||0),0) || 100;
       submittedVendors.forEach((v,i)=>{
         const scores = v.scores || {};
-        let totalScore = 0;
+        let weightedScore = 0;
+        let hasAnyScore = false;
         h+=`<tr><td style="font-weight:600">${v.vendor_name}</td><td class="sq-amount">${fmtNum(v.total_price||0)}</td>`;
         criteria.forEach(c=>{
           const key = c.key || (c.name||c).toLowerCase().replace(/[^a-z0-9]+/g,'_');
           const val = scores[key]||'';
-          totalScore += parseFloat(val)||0;
+          const weight = c.weight || (100/criteria.length);
+          if (val) { weightedScore += (parseFloat(val)||0) * weight / totalWeight; hasAnyScore = true; }
           h+=`<td><input type="number" min="1" max="10" value="${val}" style="width:60px;text-align:center;padding:4px;"></td>`;
         });
-        h+=`<td style="font-weight:800;font-size:16px">${totalScore||'-'}</td></tr>`;
+        const displayScore = hasAnyScore ? weightedScore.toFixed(1) : '-';
+        h+=`<td style="font-weight:800;font-size:16px">${displayScore}</td></tr>`;
       });
       h+='</tbody></table>';
       document.getElementById('evalMatrix').innerHTML=h;
