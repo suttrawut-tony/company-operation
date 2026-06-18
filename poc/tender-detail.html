@@ -326,12 +326,12 @@
         h+=`<tr>
           <td>${i+1}</td>
           <td style="font-weight:600">${v.vendor_name||'-'}</td>
-          <td style="font-size:12px;color:var(--text-secondary)">${v.contact||'-'}</td>
+          <td style="font-size:12px;color:var(--text-secondary)">${v.evaluation_notes||v.contact||'-'}</td>
           <td style="text-align:center"><span class="sq-badge" style="${vendorStatusStyle(v.status)}">${v.status||'invited'}</span></td>
           <td style="font-size:12px">${v.submitted_date?new Date(v.submitted_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-'}</td>
           <td class="sq-amount" style="text-align:right">${v.total_price?fmtNum(v.total_price):'–'}</td>
-          <td style="font-weight:700;text-align:center">${v.score!=null?v.score:'-'}</td>
-          <td style="font-size:12px;color:var(--text-secondary);max-width:200px;">${v.notes||'-'}</td>
+          <td style="font-weight:700;text-align:center">${v.evaluation_score!=null?v.evaluation_score:(v.score!=null?v.score:'-')}</td>
+          <td style="font-size:12px;color:var(--text-secondary);max-width:200px;">${v.evaluation_notes||v.notes||'-'}</td>
           <td>
             <div style="display:flex;gap:4px;">
               <button class="btn-sm" onclick="openEditVendorModal(${i})" style="font-size:10px;padding:2px 8px;">Edit</button>
@@ -362,7 +362,7 @@
       const v = tenderVendors[idx];
       document.getElementById('vendorModalBody').innerHTML = `
         <div class="sq-fg"><label>Vendor Name</label><input type="text" id="vmName" value="${v.vendor_name||''}"></div>
-        <div class="sq-fg"><label>Contact (Email / Phone)</label><input type="text" id="vmContact" value="${v.contact||''}"></div>
+        <div class="sq-fg"><label>Contact (Email / Phone)</label><input type="text" id="vmContact" value="${v.evaluation_notes||v.contact||''}"></div>
         <div class="sq-info-grid">
           <div class="sq-fg"><label>Status</label><select id="vmStatus">
             <option value="invited" ${v.status==='invited'?'selected':''}>Invited</option>
@@ -396,8 +396,7 @@
         if (dateEl) data.submitted_date = dateEl.value||null;
         if (priceEl) data.total_price = parseFloat(priceEl.value)||null;
         // Preserve existing scores
-        data.scores = tenderVendors[editVendorIdx].scores;
-        data.score = tenderVendors[editVendorIdx].score;
+        data.evaluation_score = tenderVendors[editVendorIdx].evaluation_score || tenderVendors[editVendorIdx].score;
         tenderVendors[editVendorIdx] = { ...tenderVendors[editVendorIdx], ...data };
       }
       try {
