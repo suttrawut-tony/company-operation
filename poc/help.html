@@ -93,6 +93,13 @@
       <a href="#sow" data-i18n="help_nav_sow">SOW Generator</a>
       <a href="#pricing" data-i18n="help_nav_pricing">แพ็กเกจ</a>
       <a href="#shortcuts" data-i18n="help_nav_shortcuts">คีย์ลัด</a>
+      <a href="#tenders" data-i18n="help_nav_tenders">ประกวดราคา</a>
+      <a href="#bid-preparation" data-i18n="help_nav_bid_preparation">เตรียมยื่นซอง</a>
+      <a href="#contracts" data-i18n="help_nav_contracts">สัญญา</a>
+      <a href="#guarantees" data-i18n="help_nav_guarantees">หนังสือค้ำประกัน</a>
+      <a href="#disputes" data-i18n="help_nav_disputes">ข้อพิพาท</a>
+      <a href="#warehouse" data-i18n="help_nav_warehouse">คลังสินค้า</a>
+      <a href="#full-flow" data-i18n="help_nav_full_flow">Full Flow Guide</a>
     </div>
 
     <!-- ═══════════ หน้าหลัก ═══════════ -->
@@ -667,6 +674,352 @@
           </ul>
         </div>
         <div class="tip-box">💡 OT ที่อนุมัติแล้วจะถูกรวมในรายงานสรุปรายเดือนอัตโนมัติ</div>
+      </div>
+    </div>
+
+    <!-- ═══ PRE-SALES / สัญญา / คลัง ═══ -->
+
+    <div class="guide-section" id="tenders">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        <span data-i18n="help_sec_tenders">ประกวดราคา / สืบราคา (Tenders)</span> <span class="badge badge-doc" data-i18n="help_badge_document">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>จัดการประกวดราคา/สืบราคาจาก Supplier รวบรวมใบเสนอราคาจากผู้ขายหลายราย เปรียบเทียบ ให้คะแนน แล้วเลือกผู้ชนะ</p>
+        </div>
+        <div class="guide-block">
+          <h4>ประเภทการจัดซื้อ</h4>
+          <table class="guide-table">
+            <tr><th>ประเภท</th><th>คำอธิบาย</th></tr>
+            <tr><td>Direct Purchase</td><td>ซื้อตรงจากผู้ขายรายเดียว (วงเงินน้อย)</td></tr>
+            <tr><td>Price Comparison</td><td>สืบราคาจากผู้ขายหลายราย เปรียบเทียบราคา</td></tr>
+            <tr><td>Bidding</td><td>ประกวดราคาเต็มรูปแบบ เชิญผู้ขายยื่นซอง</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะ Tender</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Draft</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Published</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Closed</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Evaluating</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Awarded</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>Document Flow</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">สร้าง Tender</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Publish</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">เชิญ Vendor</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">ปิดรับ</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">ให้คะแนน</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Award</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>หน้าจอที่เกี่ยวข้อง</h4>
+          <table class="guide-table">
+            <tr><th>หน้าจอ</th><th>คำอธิบาย</th></tr>
+            <tr><td>tenders.html</td><td>รายการ Tender ทั้งหมด กรองตามสถานะ/โปรเจค</td></tr>
+            <tr><td>tender-detail.html</td><td>รายละเอียด Tender แบ่ง 3 แท็บ</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>3 แท็บในหน้ารายละเอียด</h4>
+          <table class="guide-table">
+            <tr><th>แท็บ</th><th>คำอธิบาย</th></tr>
+            <tr><td>Items</td><td>รายการสินค้า/บริการจาก TOR ที่ต้องการจัดซื้อ</td></tr>
+            <tr><td>Vendors</td><td>ผู้ขายที่ถูกเชิญเข้าร่วม พร้อมสถานะการตอบรับ</td></tr>
+            <tr><td>Evaluation</td><td>ให้คะแนนผู้ขายแต่ละราย เปรียบเทียบราคา/คุณภาพ</td></tr>
+          </table>
+        </div>
+        <div class="tip-box">💡 เมื่อ Award ผู้ชนะแล้ว ระบบจะสร้าง Contract ให้อัตโนมัติ ไม่ต้องสร้างเอง</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="bid-preparation">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        <span data-i18n="help_sec_bid_preparation">เตรียมยื่นซอง (Bid Preparation)</span> <span class="badge badge-doc" data-i18n="help_badge_document">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>คำนวณต้นทุน+กำไร เตรียมยื่นซองประมูล ช่วยให้คำนวณราคาเสนอได้ถูกต้องและรวดเร็ว</p>
+        </div>
+        <div class="guide-block">
+          <h4>โครงสร้างต้นทุน</h4>
+          <table class="guide-table">
+            <tr><th>หมวดต้นทุน</th><th>คำอธิบาย</th></tr>
+            <tr><td>วัสดุ (Material)</td><td>ค่าวัสดุอุปกรณ์ทั้งหมด</td></tr>
+            <tr><td>แรงงาน (Labor)</td><td>ค่าแรงงานช่าง/ทีมงาน</td></tr>
+            <tr><td>ขนส่ง (Transportation)</td><td>ค่าขนส่งวัสดุไปหน้างาน</td></tr>
+            <tr><td>อื่นๆ (Others)</td><td>ค่าใช้จ่ายเบ็ดเตล็ดอื่นๆ</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>การคำนวณราคาเสนอ</h4>
+          <ul>
+            <li><strong>Total Cost</strong> = วัสดุ + แรงงาน + ขนส่ง + อื่นๆ</li>
+            <li><strong>Margin %</strong> = กำไรที่ต้องการ (กำหนดเป็น %)</li>
+            <li><strong>Margin Amount</strong> = Total Cost x Margin %</li>
+            <li><strong>Bid Price</strong> = Total Cost + Margin Amount</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีนำเข้าข้อมูล</h4>
+          <table class="guide-table">
+            <tr><th>วิธี</th><th>คำอธิบาย</th></tr>
+            <tr><td>Import from PR</td><td>ดึง PR lines มาเป็น cost items อัตโนมัติ</td></tr>
+            <tr><td>Import Excel</td><td>อัปโหลดไฟล์ .xlsx หรือ .csv</td></tr>
+            <tr><td>กรอกเอง</td><td>เพิ่มรายการต้นทุนทีละรายการ</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะ Bid</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Draft</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Submitted</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Won</span><span class="flow-arrow-sm">/</span>
+            <span class="flow-step-box">Lost</span>
+          </div>
+        </div>
+        <div class="tip-box">💡 ใช้ Import from PR เพื่อดึงรายการจากใบขอซื้อมาคำนวณต้นทุนได้เร็วขึ้น</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="contracts">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        <span data-i18n="help_sec_contracts">สัญญา (Contracts)</span> <span class="badge badge-doc" data-i18n="help_badge_document">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>จัดการสัญญาโครงการทุกประเภท ตั้งแต่สร้าง ตรวจสอบ จนถึงจบสัญญา สร้างได้อัตโนมัติจาก Tender Award หรือสร้างเองก็ได้</p>
+        </div>
+        <div class="guide-block">
+          <h4>ประเภทสัญญา</h4>
+          <table class="guide-table">
+            <tr><th>ประเภท</th><th>คำอธิบาย</th></tr>
+            <tr><td>Main Contract</td><td>สัญญาหลักกับลูกค้า/เจ้าของโครงการ</td></tr>
+            <tr><td>Subcontract</td><td>สัญญาจ้างเหมาช่วง (Subcontractor)</td></tr>
+            <tr><td>Purchase Agreement</td><td>สัญญาซื้อขายระยะยาวกับ Supplier</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะสัญญา</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Draft</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Pending Review</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Active</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Completed</span><span class="flow-arrow-sm">/</span>
+            <span class="flow-step-box">Terminated</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>Amendment (แก้ไขสัญญา)</h4>
+          <p>สัญญาที่ Active แล้วสามารถสร้าง Amendment เพื่อแก้ไขได้ โดยระบุ:</p>
+          <ul>
+            <li><strong>จำนวนเงิน</strong> — เพิ่ม/ลดวงเงินสัญญา</li>
+            <li><strong>วันที่</strong> — ขยายหรือย่นระยะเวลา</li>
+            <li><strong>เหตุผล</strong> — ระบุเหตุผลที่ต้องแก้ไข</li>
+          </ul>
+        </div>
+        <div class="tip-box">💡 สัญญาที่สร้างจาก Tender Award จะดึงข้อมูลผู้ขาย รายการสินค้า และราคามาให้อัตโนมัติ</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="guarantees">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        <span data-i18n="help_sec_guarantees">หนังสือค้ำประกัน (Guarantees)</span> <span class="badge badge-doc" data-i18n="help_badge_document">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>จัดการหนังสือค้ำประกันทุกประเภท ติดตามวันหมดอายุ และปล่อยค้ำประกันเมื่อจบโครงการ</p>
+        </div>
+        <div class="guide-block">
+          <h4>ประเภทค้ำประกัน</h4>
+          <table class="guide-table">
+            <tr><th>ประเภท</th><th>คำอธิบาย</th></tr>
+            <tr><td>Bid Bond</td><td>ค้ำประกันซอง — วางตอนยื่นประมูล</td></tr>
+            <tr><td>Performance Bond</td><td>ค้ำประกันผลงาน — วางตอนเซ็นสัญญา</td></tr>
+            <tr><td>Advance Payment</td><td>ค้ำประกันเงินล่วงหน้า — วางตอนรับเงินจ่ายล่วงหน้า</td></tr>
+            <tr><td>Retention Bond</td><td>ค้ำประกันเงินหัก Retention — วางแทนเงินสำรอง</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>การแจ้งเตือนวันหมดอายุ</h4>
+          <table class="guide-table">
+            <tr><th>ระยะเวลาคงเหลือ</th><th>สี Badge</th><th>ความหมาย</th></tr>
+            <tr><td>น้อยกว่า 30 วัน</td><td style="color:#dc2626;">แดง</td><td>ใกล้หมดอายุ ต้องรีบดำเนินการ</td></tr>
+            <tr><td>30 - 60 วัน</td><td style="color:#d97706;">เหลือง</td><td>ควรเตรียมการต่ออายุ</td></tr>
+            <tr><td>มากกว่า 60 วัน</td><td style="color:#059669;">เขียว</td><td>ยังมีเวลาเหลือเพียงพอ</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะค้ำประกัน</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Pending</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Active</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Expiring</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Released</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>การปล่อยค้ำประกัน (Release)</h4>
+          <p>เมื่อจบโครงการหรือครบเงื่อนไข กดปุ่ม <strong>Release</strong> เพื่อปล่อยค้ำประกัน ระบบจะบันทึกวันที่ปล่อยและเปลี่ยนสถานะเป็น Released</p>
+        </div>
+        <div class="tip-box">💡 ค้ำประกันที่ใกล้หมดอายุจะแจ้งเตือนที่ Dashboard และระฆังแจ้งเตือนอัตโนมัติ</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="disputes">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        <span data-i18n="help_sec_disputes">ข้อพิพาท (Disputes)</span> <span class="badge badge-doc" data-i18n="help_badge_document">เอกสาร</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>จัดการข้อพิพาท/โต้แย้งที่เกิดขึ้นในโครงการ ติดตามสถานะ บันทึกกิจกรรม จนกว่าจะปิดเรื่อง</p>
+        </div>
+        <div class="guide-block">
+          <h4>ประเภทข้อพิพาท</h4>
+          <table class="guide-table">
+            <tr><th>ประเภท</th><th>คำอธิบาย</th></tr>
+            <tr><td>Payment</td><td>ข้อพิพาทเรื่องการจ่ายเงิน/งวดเงิน</td></tr>
+            <tr><td>Quality</td><td>ข้อพิพาทเรื่องคุณภาพงาน/วัสดุ</td></tr>
+            <tr><td>Delay</td><td>ข้อพิพาทเรื่องงานล่าช้า/ส่งไม่ทัน</td></tr>
+            <tr><td>Scope</td><td>ข้อพิพาทเรื่องขอบเขตงานไม่ตรงสัญญา</td></tr>
+            <tr><td>Safety</td><td>ข้อพิพาทเรื่องความปลอดภัยในหน้างาน</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>ระดับความสำคัญ (Priority)</h4>
+          <table class="guide-table">
+            <tr><th>ระดับ</th><th>คำอธิบาย</th></tr>
+            <tr><td>Low</td><td>ผลกระทบน้อย แก้ไขได้ในเวลาปกติ</td></tr>
+            <tr><td>Medium</td><td>ผลกระทบปานกลาง ควรแก้ไขเร็ว</td></tr>
+            <tr><td>High</td><td>ผลกระทบมาก ต้องแก้ไขด่วน</td></tr>
+            <tr><td>Critical</td><td>ผลกระทบรุนแรง ต้องแก้ไขทันที</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>Activity Timeline</h4>
+          <p>ทุกกิจกรรมที่เกิดขึ้นกับข้อพิพาทจะถูกบันทึกเป็น Timeline อัตโนมัติ:</p>
+          <ul>
+            <li><strong>Comment</strong> — ความคิดเห็น/หมายเหตุจากผู้เกี่ยวข้อง</li>
+            <li><strong>Status Change</strong> — การเปลี่ยนสถานะ พร้อมเหตุผล</li>
+            <li><strong>Assign</strong> — มอบหมายผู้รับผิดชอบ</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>สถานะข้อพิพาท</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">Open</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Investigating</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Resolved</span><span class="flow-arrow-sm">/</span>
+            <span class="flow-step-box">Escalated</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">Closed</span>
+          </div>
+        </div>
+        <div class="tip-box">💡 ข้อพิพาท Priority = Critical จะแจ้งเตือนผู้บริหารทันทีผ่าน Dashboard</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="warehouse">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        <span data-i18n="help_sec_warehouse">คลังสินค้า (Warehouse)</span> <span class="badge badge-sys" data-i18n="help_badge_system">ระบบ</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>จัดการคลังสินค้าและสต๊อก ดูยอดคงเหลือ แจ้งเตือนเมื่อสินค้าต่ำกว่าจำนวนขั้นต่ำ</p>
+        </div>
+        <div class="guide-block">
+          <h4>ตัวอย่างคลังสินค้า</h4>
+          <table class="guide-table">
+            <tr><th>รหัสคลัง</th><th>คำอธิบาย</th></tr>
+            <tr><td>HQ01</td><td>คลังสำนักงานใหญ่</td></tr>
+            <tr><td>PJ00</td><td>คลังกลางโปรเจค</td></tr>
+            <tr><td>PJ01</td><td>คลังหน้างานโปรเจค 01</td></tr>
+          </table>
+        </div>
+        <div class="guide-block">
+          <h4>วิธีใช้งาน</h4>
+          <ul>
+            <li><strong>สร้างคลัง</strong> — กด + สร้างคลังใหม่ ตั้งชื่อ รหัส ที่ตั้ง</li>
+            <li><strong>เพิ่มสินค้าในคลัง</strong> — เลือก Item จาก Item Master + กำหนดจำนวนเริ่มต้น + จำนวนขั้นต่ำ (Min Qty)</li>
+            <li><strong>ดูยอดคงเหลือ</strong> — ดูจำนวนสินค้าคงเหลือแยกตามคลัง</li>
+            <li><strong>โอนย้ายสินค้า</strong> — ย้ายสินค้าระหว่างคลัง</li>
+          </ul>
+        </div>
+        <div class="guide-block">
+          <h4>Low Stock Alert</h4>
+          <p>เมื่อจำนวนสินค้าในคลังต่ำกว่า Min Qty ที่กำหนดไว้ ระบบจะแจ้งเตือนอัตโนมัติ แสดง badge สีแดงที่รายการสินค้านั้น</p>
+        </div>
+        <div class="tip-box">💡 ตั้ง Min Qty ไว้เพื่อให้ระบบแจ้งเตือนก่อนของหมด จะได้สั่งซื้อทัน</div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="full-flow">
+      <div class="guide-section-header" onclick="toggleGuide(this)">
+        <span data-i18n="help_sec_full_flow">Full Flow Guide — ภาพรวมทั้งระบบ</span> <span class="badge badge-main" data-i18n="help_badge_main">หน้าหลัก</span> <span class="arrow">&#9660;</span>
+      </div>
+      <div class="guide-section-body">
+        <div class="guide-block">
+          <h4>ภาพรวม</h4>
+          <p>ขั้นตอนการทำงานทั้งหมด 18 Steps ตั้งแต่เริ่มประกวดราคาจนถึงปิดโครงการ</p>
+        </div>
+        <div class="guide-block">
+          <h4>Flow Diagram</h4>
+          <div class="flow-diagram">
+            <span class="flow-step-box">1. Tender</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">2. Bid</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">3. Award</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">4. Project</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">5. Contract</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">6. Guarantee</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">7. Phase</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">8. Budget</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">9. PR</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">10. PO</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">11. Booking</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">12. Advance</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">13. Clear</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">14. Payment</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">15. Inspection</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">16. Dispute</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">17. Release</span><span class="flow-arrow-sm">&rarr;</span>
+            <span class="flow-step-box">18. Complete</span>
+          </div>
+        </div>
+        <div class="guide-block">
+          <h4>รายละเอียดแต่ละ Step</h4>
+          <table class="guide-table">
+            <tr><th>Step</th><th>หน้าจอ</th><th>ทำอะไร</th></tr>
+            <tr><td>1. Tender</td><td>tenders.html</td><td>สร้างประกวดราคา เชิญผู้ขาย สืบราคา</td></tr>
+            <tr><td>2. Bid</td><td>bid-preparation.html</td><td>คำนวณต้นทุน กำไร เตรียมราคาเสนอ</td></tr>
+            <tr><td>3. Award</td><td>tender-detail.html</td><td>ให้คะแนน เลือกผู้ชนะ ออก Award</td></tr>
+            <tr><td>4. Project</td><td>projects.html</td><td>สร้างโปรเจคใหม่ กำหนดทีม ระยะเวลา</td></tr>
+            <tr><td>5. Contract</td><td>contracts.html</td><td>สร้าง/ตรวจสอบสัญญาโครงการ</td></tr>
+            <tr><td>6. Guarantee</td><td>guarantees.html</td><td>วางหนังสือค้ำประกัน (Bid/Performance Bond)</td></tr>
+            <tr><td>7. Phase</td><td>plan-project.html</td><td>แบ่ง Phase งาน กำหนดงวดรับเงิน</td></tr>
+            <tr><td>8. Budget</td><td>budget.html</td><td>ตั้งงบประมาณแต่ละหมวด</td></tr>
+            <tr><td>9. PR</td><td>pr.html</td><td>สร้างใบขอซื้อ ส่งอนุมัติ</td></tr>
+            <tr><td>10. PO</td><td>po.html</td><td>สร้างใบสั่งซื้อจาก PR ที่อนุมัติแล้ว</td></tr>
+            <tr><td>11. Booking</td><td>booking.html</td><td>จองรถ/ช่าง/ตั๋วเครื่องบิน</td></tr>
+            <tr><td>12. Advance</td><td>advance.html</td><td>เบิกเงินทดรองจ่ายให้ทีมงาน</td></tr>
+            <tr><td>13. Clear</td><td>advance.html</td><td>เคลียร์ใบเสร็จเงินทดรอง</td></tr>
+            <tr><td>14. Payment</td><td>phase-finance.html</td><td>ส่งงาน วางบิล รับเงินตามงวด</td></tr>
+            <tr><td>15. Inspection</td><td>plan-project.html</td><td>ตรวจรับงาน ตรวจสอบคุณภาพ</td></tr>
+            <tr><td>16. Dispute</td><td>disputes.html</td><td>จัดการข้อพิพาท (ถ้ามี)</td></tr>
+            <tr><td>17. Release</td><td>guarantees.html</td><td>ปล่อยค้ำประกันเมื่อจบโครงการ</td></tr>
+            <tr><td>18. Complete</td><td>projects.html</td><td>ปิดโปรเจค สรุปกำไร-ขาดทุน</td></tr>
+          </table>
+        </div>
+        <div class="info-box">ไม่จำเป็นต้องทำทุก Step ตามลำดับ บาง Step สามารถข้ามได้ (เช่น ไม่มี Dispute ก็ข้ามไปได้เลย) แต่ Flow หลักควรเป็นไปตามลำดับเพื่อให้ข้อมูลเชื่อมต่อกันถูกต้อง</div>
       </div>
     </div>
 
