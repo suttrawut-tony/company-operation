@@ -465,8 +465,8 @@
         const vLink = document.getElementById('vehicle-detail-link');
         if (vLink) vLink.href = 'vehicle-project.html?project_id='+projectId;
 
-        // ── Vehicle (active only) ──
-        load('/vehicle/bookings?project_id='+projectId, 'vehicle-section', items => {
+        // ── Bookings (all types: vehicle, solar, flight) ──
+        load('/bookings?project_id='+projectId, 'vehicle-section', items => {
           if (!items.length) return empty('No bookings');
 
           const stMap = { pending:'รออนุมัติ', approved:'รอรับรถ', checked_out:'กำลังใช้', checked_in:'คืนแล้ว' };
