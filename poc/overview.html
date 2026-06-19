@@ -210,9 +210,21 @@
 
         const p = await API.getProject(projectId);
         const pct = p.progress||0;
-        const budget = parseFloat(p.budget_amount||0);
-        const actual = parseFloat(p.actual_amount||0);
         const tor = parseFloat(p.tor_amount||0);
+
+        // Fetch budget data from budget module for accurate Budget Used
+        let budgetFromModule = 0, actualFromModule = 0, committedFromModule = 0;
+        try {
+          const budgets = await API.get('/budget?project_id=' + projectId);
+          const approvedBudgets = (Array.isArray(budgets) ? budgets : []).filter(b => b.status === 'approved');
+          budgetFromModule = approvedBudgets.reduce((s, b) => s + (parseFloat(b.total_budget) || 0), 0);
+          actualFromModule = approvedBudgets.reduce((s, b) => s + (parseFloat(b.total_actual) || 0), 0);
+          committedFromModule = approvedBudgets.reduce((s, b) => s + (parseFloat(b.total_committed) || 0), 0);
+        } catch(e) { /* budget module may not have data */ }
+
+        // Use budget module data if available, otherwise fall back to project-level values
+        const budget = budgetFromModule > 0 ? budgetFromModule : parseFloat(p.budget_amount||0);
+        const actual = budgetFromModule > 0 ? (actualFromModule + committedFromModule) : parseFloat(p.actual_amount||0);
         const remaining = budget - actual;
         const budgetPct = budget>0?Math.round(actual/budget*100):0;
         const barC = pct>=80?'green':pct>=50?'yellow':'red';
@@ -375,14 +387,16 @@
         } catch(e) { document.getElementById('team-list').textContent = '-'; }
 
         // Budget
-        document.getElementById('budget-info').innerHTML = `
+        const budgetInfoHtml = `
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--text-secondary);">TOR</span><span style="font-weight:700;">฿${fmtN(tor)}</span></div>
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--text-secondary);">Budget</span><span style="font-weight:700;">฿${fmtN(budget)}</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--primary);">Used</span><span style="font-weight:700;color:var(--primary);">฿${fmtN(actual)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--primary);">Actual</span><span style="font-weight:700;color:var(--primary);">฿${fmtN(actualFromModule > 0 ? actualFromModule : actual)}</span></div>
+          ${committedFromModule > 0 ? '<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--info,#2563eb);">Committed</span><span style="font-weight:700;color:var(--info,#2563eb);">฿'+fmtN(committedFromModule)+'</span></div>' : ''}
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-light);"><span style="color:var(--success);">Remaining</span><span style="font-weight:700;color:${remaining<0?'var(--danger)':'var(--success)'};">฿${fmtN(remaining)}</span></div>
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;"><span style="color:${retColor};">ประกันผลงาน ${retRate}%</span><span style="font-weight:700;color:${retColor};">฿${fmtN(retAmt)}</span></div>
           ${retDue ? '<div style="font-size:11px;color:var(--text-muted);padding:2px 0;">ครบกำหนด: '+retDueFmt+(retDaysText?' &bull; <strong style="color:'+retColor+';">'+retDaysText+'</strong>':'')+'</div>' : ''}
           <div class="progress" style="margin-top:12px;"><div class="progress-bar ${budgetPct>100?'red':budgetPct>80?'yellow':'blue'}" style="width:${Math.min(budgetPct,100)}%;"></div></div>`;
+        document.getElementById('budget-info').innerHTML = budgetInfoHtml;
 
         // ── Tasks ──
         load('/projects/'+projectId+'/tasks', 'tasks-section', items => {
@@ -443,8 +457,8 @@
         });
 
         // ── OT ──
-        load('/ot', 'ot-section', items => {
-          const filtered = items.filter(o => String(o.project_id) === String(projectId));
+        load('/ot?project_id='+projectId, 'ot-section', items => {
+          const filtered = items;
           if (!filtered.length) return empty('No OT records');
           const totalHrs = filtered.reduce((s,o) => s + parseFloat(o.hours||0), 0);
           const totalComp = filtered.reduce((s,o) => s + parseFloat(o.compensation||0), 0);

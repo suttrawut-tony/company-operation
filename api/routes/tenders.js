@@ -95,7 +95,7 @@ router.put('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     // Remarks can be updated in any non-terminal status; other header fields require draft
-    const alwaysEditable = ['remarks'];
+    const alwaysEditable = ['remarks', 'project_id'];
     const draftOnly = ['title','tender_type','budget_amount','close_date','opening_date','evaluation_criteria'];
     const sets = []; const params = []; let idx = 1;
     for (const f of alwaysEditable) {

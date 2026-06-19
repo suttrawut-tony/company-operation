@@ -48,8 +48,10 @@ router.get('/', async (req, res) => {
     const { rows } = await db.query(
       `SELECT p.*,
               u.first_name || ' ' || u.last_name AS pm_name,
-              COALESCE(u.first_name_th, '') || ' ' || COALESCE(u.last_name_th, '') AS pm_name_th
+              COALESCE(u.first_name_th, '') || ' ' || COALESCE(u.last_name_th, '') AS pm_name_th,
+              COALESCE(pc_agg.total_actual, 0) AS actual_amount
        FROM projects p LEFT JOIN users u ON p.pm_user_id = u.id
+       LEFT JOIN (SELECT project_id, SUM(actual_amount) AS total_actual FROM phase_costs GROUP BY project_id) pc_agg ON pc_agg.project_id = p.id
        WHERE ${filter.clause} ORDER BY p.code ASC`,
       filter.params
     );
@@ -62,8 +64,10 @@ router.get('/:id', requireProjectAccess, async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT p.*, u.first_name || ' ' || u.last_name AS pm_name,
-              COALESCE(u.first_name_th,'') || ' ' || COALESCE(u.last_name_th,'') AS pm_name_th
+              COALESCE(u.first_name_th,'') || ' ' || COALESCE(u.last_name_th,'') AS pm_name_th,
+              COALESCE(pc_agg.total_actual, 0) AS actual_amount
        FROM projects p LEFT JOIN users u ON p.pm_user_id = u.id
+       LEFT JOIN (SELECT project_id, SUM(actual_amount) AS total_actual FROM phase_costs GROUP BY project_id) pc_agg ON pc_agg.project_id = p.id
        WHERE p.id = $1 AND p.company_id = $2`,
       [req.params.id, req.user.company_id]);
     if (!rows[0]) return res.status(404).json({ error: 'Project not found' });
