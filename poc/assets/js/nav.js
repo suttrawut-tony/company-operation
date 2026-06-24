@@ -75,7 +75,7 @@ const NAV_GROUPS_FALLBACK = [
     { id: 'phases', label: 'Plan Project', icon: ICONS.phases, href: 'phases.html' },
     { id: 'taskboard', label: 'Taskboard', icon: ICONS.taskboard, href: 'taskboard.html' },
   ]},
-  { label: 'Pre-Sales', collapsible: true, iconColor: 'icon-purple', items: [
+  { label: 'Sales', collapsible: true, iconColor: 'icon-purple', items: [
     { id: 'tenders', label: 'Tenders', icon: icon('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'), href: 'tenders.html' },
     { id: 'bid-preparation', label: 'Bid Preparation', icon: icon('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h4"/><path d="M16 14h.01"/>'), href: 'bid-preparation.html' },
     { id: 'contracts', label: 'Contracts', icon: icon('<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/>'), href: 'contracts.html' },
@@ -114,7 +114,7 @@ let _enabledHrefs = null; // set after API load
 
 // Build NAV_GROUPS from API modules
 function buildNavFromModules(modules) {
-  const groupLabels = { main: 'Main', project: 'Project', presales: 'Pre-Sales', document: 'Document', resource: 'Resource', system: 'System' };
+  const groupLabels = { main: 'Main', project: 'Project', presales: 'Sales', document: 'Document', resource: 'Resource', system: 'System' };
   const groupIconColors = { main: 'icon-blue', project: 'icon-purple', presales: 'icon-purple', document: 'icon-green', resource: 'icon-amber', system: 'icon-rose' };
   // Fix legacy icon keys from DB that cause duplicates
   const iconKeyFix = { booking:'booking', 'my-tasks':'myTasks' };
@@ -216,7 +216,7 @@ function renderSidebar() {
 
   el.className = 'sidebar' + (collapsed ? ' collapsed' : '');
   // Map sidebar group labels to i18n keys
-  const groupI18nKeys = { Main: 'nav_main', Project: 'nav_project', 'Pre-Sales': 'nav_presales', Document: 'nav_document', Resource: 'nav_resource', System: 'nav_system' };
+  const groupI18nKeys = { Main: 'nav_main', Project: 'nav_project', 'Sales': 'nav_presales', Document: 'nav_document', Resource: 'nav_resource', System: 'nav_system' };
   // Map sidebar item IDs to i18n keys
   const itemI18nKeys = {
     dashboard: 'dashboard', 'my-tasks': 'my_tasks', projects: 'projects',
