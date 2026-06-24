@@ -90,8 +90,8 @@
      เฟสที่ยังไม่มีของเดิม (Go/No-Go, ยื่น, ผล, ส่งมอบ, วางบิล) เป็น
      placeholder "เฟสถัดไป" — ยังไม่เขียนข้อมูล.
      ============================================================ */
-  let DATA={tenders:[],bids:[],contracts:[],guarantees:[],disputes:[]};
-  const money=n=>'฿'+Number(n||0).toLocaleString('th-TH');
+  let BDATA={tenders:[],bids:[],contracts:[],guarantees:[],disputes:[]};
+  const bMoney=n=>'฿'+Number(n||0).toLocaleString('th-TH');
   const root=()=>document.getElementById('bidding-root');
 
   // chain steps — kind: 'reuse' (ลิงก์โมดูลเดิม) | 'new' (เฟสถัดไป)
@@ -107,7 +107,7 @@
     {k:'rel', ph:'เฟส 9', t:'คืนหลักประกัน', kind:'reuse', mod:'Guarantees', href:'guarantees.html'},
   ];
 
-  function statusBadge(st){
+  function bStatusBadge(st){
     if(!st) return '<span class="b b-gray">—</span>';
     const s=String(st).toLowerCase();
     let cl='b-gray';
@@ -121,12 +121,12 @@
 
   // per-tender linked records from real data
   function ctxFor(t){
-    const contract=DATA.contracts.find(c=>c.tender_id===t.id)||null;
-    const bid=DATA.bids.find(b=>b.tender_id===t.id)||null;
-    const dispute=DATA.disputes.find(d=>d.tender_id===t.id||(contract&&d.contract_id===contract.id))||null;
+    const contract=BDATA.contracts.find(c=>c.tender_id===t.id)||null;
+    const bid=BDATA.bids.find(b=>b.tender_id===t.id)||null;
+    const dispute=BDATA.disputes.find(d=>d.tender_id===t.id||(contract&&d.contract_id===contract.id))||null;
     const matchG=g=> (contract&&g.contract_id===contract.id) || (t.project_id&&g.project_id===t.project_id);
-    const gBond=DATA.guarantees.find(g=>g.guarantee_type==='bid_bond'&&matchG(g))||null;
-    const gOther=DATA.guarantees.find(g=>g.guarantee_type&&g.guarantee_type!=='bid_bond'&&matchG(g))||null;
+    const gBond=BDATA.guarantees.find(g=>g.guarantee_type==='bid_bond'&&matchG(g))||null;
+    const gOther=BDATA.guarantees.find(g=>g.guarantee_type&&g.guarantee_type!=='bid_bond'&&matchG(g))||null;
     return {contract,bid,dispute,gBond,gOther};
   }
   // returns {no,status} for a reuse step, or null
@@ -145,21 +145,21 @@
     if(route.view==='list') root().innerHTML=viewList();
     else if(route.view==='deal') root().innerHTML=viewDeal(route.deal);
   }
-  const tenderById=id=>DATA.tenders.find(t=>t.id===id);
+  const tenderById=id=>BDATA.tenders.find(t=>t.id===id);
 
   function viewList(){
-    const T=DATA.tenders;
+    const T=BDATA.tenders;
     const withBid=T.filter(t=>ctxFor(t).bid).length;
     const withCt=T.filter(t=>ctxFor(t).contract).length;
     const awarded=T.filter(t=>String(t.status).toLowerCase()==='awarded').length;
-    const val=DATA.contracts.reduce((s,c)=>s+Number(c.contract_amount||0),0);
+    const val=BDATA.contracts.reduce((s,c)=>s+Number(c.contract_amount||0),0);
     const rows=T.map(t=>{
       const ctx=ctxFor(t);
       return `<tr onclick="go('deal','${t.id}')">
         <td class="mono">${t.tender_number||'—'}</td>
         <td><b>${t.title||'—'}</b><div style="font-size:11px;color:var(--text-muted)">${t.project_name||t.project_code||''}</div></td>
-        <td class="right mono">${money(t.budget_amount)}</td>
-        <td>${statusBadge(t.status)}</td>
+        <td class="right mono">${bMoney(t.budget_amount)}</td>
+        <td>${bStatusBadge(t.status)}</td>
         <td>${miniChain(t,ctx)}</td></tr>`;
     }).join('')||`<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">ยังไม่มีประกวดราคา — สร้างที่เมนู Tenders</td></tr>`;
     return `<div class="page-header"><div><h1>Bidding · งานประมูล</h1></div>
@@ -170,7 +170,7 @@
         <div class="tile ok"><div class="v">${awarded}</div><div class="l">มอบสัญญาแล้ว</div></div>
         <div class="tile"><div class="v">${withBid}</div><div class="l">มีใบเตรียมข้อเสนอ</div></div>
         <div class="tile"><div class="v">${withCt}</div><div class="l">มีสัญญา</div></div>
-        <div class="tile ok"><div class="v" style="font-size:17px">${money(val)}</div><div class="l">มูลค่าสัญญารวม</div></div></div>
+        <div class="tile ok"><div class="v" style="font-size:17px">${bMoney(val)}</div><div class="l">มูลค่าสัญญารวม</div></div></div>
       <div class="bm-card"><div class="bm-card-h"><h2>รายการประกวดราคา (จากโมดูล Tenders)</h2></div>
         <table class="tbl"><thead><tr><th>เลขที่</th><th>โครงการ</th><th class="right">งบประมาณ</th><th>สถานะ</th><th>ห่วงโซ่เอกสาร</th></tr></thead>
         <tbody>${rows}</tbody></table></div>`;
@@ -195,7 +195,7 @@
         chain+=`<div class="cnode reuse ${has?'has':'empty'}" onclick="location.href='${s.href}'">
           <div class="ph">${s.ph}</div><div class="ttl">${s.t}</div>
           <div class="no">${has?rec.no:'—'}</div>
-          <div class="st">${has?statusBadge(rec.status):'<span class="b b-gray">ยังไม่มี</span>'}</div>
+          <div class="st">${has?bStatusBadge(rec.status):'<span class="b b-gray">ยังไม่มี</span>'}</div>
           <div class="lk">↗ ${has?'เปิดใน':'สร้างใน'} ${s.mod}</div></div>`;
       } else {
         chain+=`<div class="cnode newp" title="เฟสถัดไป — ยังไม่เปิดใช้">
@@ -210,7 +210,7 @@
       <div class="projbar"><div class="pj-ic">▤</div>
         <div><div class="pj-t">${t.title||'—'}</div>
           <div class="pj-s">${t.tender_number||''} · ${t.project_name||t.project_code||''} · <a class="pj-lk" href="tenders.html">ดูใน Tenders →</a></div></div>
-        <div class="pj-meta">งบประมาณ<b>${money(t.budget_amount)}</b></div></div>
+        <div class="pj-meta">งบประมาณ<b>${bMoney(t.budget_amount)}</b></div></div>
       ${disputeAlert}
       <div class="bm-card"><div class="bm-card-h"><h2>ห่วงโซ่เอกสาร — Document Flow Chain</h2>
         <span style="font-size:11px;color:var(--text-muted)">คลิกใบสีเขียวเพื่อเปิดเอกสารจริง</span></div>
@@ -243,7 +243,7 @@
     try{
       const [t,b,c,g,d]=await Promise.all([
         API.get('/tenders'),API.get('/bids'),API.get('/contracts'),API.get('/guarantees'),API.get('/disputes')]);
-      DATA={tenders:arr(t),bids:arr(b),contracts:arr(c),guarantees:arr(g),disputes:arr(d)};
+      BDATA={tenders:arr(t),bids:arr(b),contracts:arr(c),guarantees:arr(g),disputes:arr(d)};
       go('list');
     }catch(e){ root().innerHTML=errBox(e); }
   }
