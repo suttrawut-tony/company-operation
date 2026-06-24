@@ -92,6 +92,23 @@
     // Version changelog data — updated when saving versions
     const VERSIONS = [
       {
+        tag: 'v2.3',
+        date: '2026-06-24',
+        summary: 'โมดูล Bidding (มุมมองห่วงโซ่เอกสาร) — reuse โมดูลเดิม + เปิด/ปิดได้',
+        stats: { added: 2, changed: 2, fixed: 0 },
+        changes: [
+          { type: 'new', module: 'Bidding', desc: 'มุมมอง "ห่วงโซ่เอกสาร" (Document Flow Chain) ราย "ประกวดราคา" — ร้อยข้อมูลจริงจากโมดูลเดิมเข้าด้วยกัน: Tenders → Bid Preparation → Guarantees → Contracts → Disputes' },
+          { type: 'new', module: 'Config / Module', desc: 'เปิด/ปิดโมดูล Bidding ได้ที่ Setup → Module Management (ค่าเริ่มต้น: ปิด) — ถ้าใช้ค่อยเปิด ถ้าไม่ใช้ก็ปิด' },
+          { type: 'update', module: 'Bidding', desc: 'ขั้นที่ซ้ำกับของเดิม (BOQ/หลักประกัน/สัญญา/อุทธรณ์) ลิงก์ไปหน้า + ใช้เลขเอกสารชุดเดียวกับโมดูลเดิม ไม่สร้างข้อมูลซ้ำ/เลขชน · เฟสที่ยังไม่มีของเดิม (Go/No-Go, ยื่น, ผล, ส่งมอบ, วางบิล) เป็น placeholder "เฟสถัดไป"' },
+          { type: 'update', module: 'System', desc: 'self-heal seed โมดูล bidding ทุก boot (ปิดไว้ก่อน) โดยไม่ทับค่าที่ตั้งเปิด/ปิดไว้แล้ว' },
+        ],
+        files: [
+          { path: 'poc/bidding.html', added: 330, removed: 0 },
+          { path: 'api/migrate.js', added: 44, removed: 0 },
+          { path: 'poc/changelog.html', added: 16, removed: 0 },
+        ]
+      },
+      {
         tag: 'v2.2',
         date: '2026-06-16',
         summary: 'Warranty สินค้า, ข้อมูลรถในการจอง, Performance',

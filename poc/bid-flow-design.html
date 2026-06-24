@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Operation — Bid Flow Screen Design (Go/No-Go → Warranty)</title>
+<link rel="stylesheet" href="assets/css/theme.css">
+<style>
+  body { background: var(--bg-body); margin:0; font-family: var(--font); color: var(--text-primary); }
+  .doc { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  .doc-hero { text-align:center; padding: 28px 0 8px; }
+  .doc-hero .kicker { font-size:12px; font-weight:700; letter-spacing:2px; color:var(--primary); text-transform:uppercase; }
+  .doc-hero h1 { font-size: 30px; font-weight: 800; margin: 8px 0 6px; }
+  .doc-hero p { color: var(--text-secondary); font-size: 14px; max-width: 720px; margin: 0 auto; }
+
+  /* Process pipeline */
+  .pipeline { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin: 28px 0 12px; }
+  .pstep { display:flex; align-items:center; gap:8px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-full); padding:7px 14px; font-size:12px; font-weight:600; box-shadow:var(--shadow-xs); }
+  .pstep .n { width:20px; height:20px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; }
+  .pstep.new { border-color:var(--success); }
+  .pstep.new .n { background:var(--success); }
+  .pstep.exist .n { background:var(--text-muted); }
+  .legend { text-align:center; font-size:12px; color:var(--text-secondary); margin-bottom:8px; }
+  .legend b { color:var(--success); }
+  .legend i { color:var(--text-muted); font-style:normal; font-weight:700; }
+
+  /* Phase section */
+  .phase { margin-top: 40px; }
+  .phase-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .phase-num { width:46px; height:46px; border-radius:14px; background:linear-gradient(135deg,var(--primary),var(--purple)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800; flex-shrink:0; box-shadow:var(--shadow-md); }
+  .phase-head h2 { font-size:20px; font-weight:800; margin:0; }
+  .phase-head .sub { font-size:13px; color:var(--text-secondary); margin-top:2px; }
+  .tag-new { font-size:10px; font-weight:800; color:#fff; background:var(--success); padding:2px 8px; border-radius:var(--radius-full); vertical-align:middle; }
+  .tag-exist { font-size:10px; font-weight:800; color:var(--text-secondary); background:var(--bg-hover); padding:2px 8px; border-radius:var(--radius-full); vertical-align:middle; }
+
+  /* Browser frame mockup */
+  .frame { border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-md); background:var(--bg-white); }
+  .frame-bar { background:var(--bg-light); border-bottom:1px solid var(--border); padding:9px 14px; display:flex; align-items:center; gap:8px; }
+  .dot3 { display:flex; gap:6px; }
+  .dot3 span { width:11px; height:11px; border-radius:50%; }
+  .dot3 .r{background:#ff5f57}.dot3 .y{background:#febc2e}.dot3 .g{background:#28c840}
+  .frame-url { flex:1; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-full); padding:4px 12px; font-size:11px; color:var(--text-muted); font-family:var(--font-mono); }
+  .frame-body { padding:18px; }
+
+  /* mock page header */
+  .m-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .m-head h3 { font-size:18px; font-weight:800; margin:0; }
+  .m-head .crumb { font-size:11px; color:var(--text-muted); margin-bottom:3px; }
+
+  .m-btn { font-size:12px; padding:7px 13px; border-radius:var(--radius); border:1px solid var(--border); background:var(--bg-white); font-weight:700; color:var(--text-primary); }
+  .m-btn.p { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .m-btn.s { background:var(--success); color:#fff; border-color:var(--success); }
+  .m-btn.d { background:var(--danger); color:#fff; border-color:var(--danger); }
+  .m-btn.w { background:var(--warning); color:#fff; border-color:var(--warning); }
+  .m-btn.gh { background:var(--bg-white); color:var(--text-secondary); }
+  .row-btns { display:flex; gap:8px; }
+
+  /* stat tiles */
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .tile { border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; background:var(--bg-white); }
+  .tile .v { font-size:22px; font-weight:800; line-height:1; }
+  .tile .l { font-size:11px; color:var(--text-secondary); margin-top:5px; }
+  .tile.ok .v{color:var(--success)} .tile.warn .v{color:var(--warning)} .tile.dng .v{color:var(--danger)} .tile.pri .v{color:var(--primary)}
+
+  /* generic table */
+  .mt { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .mt th { background:var(--bg-light); text-align:left; padding:9px 12px; font-size:10.5px; font-weight:800; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); letter-spacing:.3px; }
+  .mt td { padding:9px 12px; border-bottom:1px solid var(--border-light); }
+  .mt tr:last-child td{border-bottom:none}
+  .mono{font-family:var(--font-mono)} .right{text-align:right}
+  .b { font-size:10px; padding:2px 9px; border-radius:var(--radius-full); font-weight:800; display:inline-block; }
+  .b-ok{background:var(--success-light);color:#059669}.b-warn{background:var(--warning-light);color:#d97706}
+  .b-dng{background:var(--danger-light);color:#e11d48}.b-pri{background:var(--primary-light);color:var(--primary)}
+  .b-info{background:var(--info-light);color:var(--info)}.b-gray{background:var(--bg-hover);color:var(--text-secondary)}
+  .b-purple{background:var(--purple-light);color:var(--purple)}
+
+  /* panels */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .panel{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .panel-h{background:var(--bg-light);padding:9px 13px;font-size:12px;font-weight:800;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .panel-b{padding:13px}
+  .fld{margin-bottom:11px}
+  .fld label{display:block;font-size:10.5px;font-weight:700;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+  .ipt{border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12.5px;color:var(--text-primary);background:var(--bg-white)}
+  .ipt.full{display:block;width:100%;box-sizing:border-box}
+  .ipt.ph{color:var(--text-muted)}
+
+  /* checklist */
+  .chk{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px dashed var(--border-light)}
+  .chk:last-child{border-bottom:none}
+  .chk .box{width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;margin-top:1px}
+  .chk .box.y{background:var(--success)} .chk .box.n{background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border)} .chk .box.x{background:var(--danger)}
+  .chk .txt{font-size:12.5px;flex:1}
+  .chk .txt small{display:block;color:var(--text-muted);font-size:11px;margin-top:1px}
+
+  /* alert strip */
+  .alert{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:600;margin-bottom:14px}
+  .alert.warn{background:var(--warning-light);color:#92590c;border:1px solid #fde68a}
+  .alert.dng{background:var(--danger-light);color:#9f1239;border:1px solid #fecaca}
+  .alert.ok{background:var(--success-light);color:#047857;border:1px solid #a7f3d0}
+  .alert.info{background:var(--info-light);color:#1e40af;border:1px solid #bfdbfe}
+  .alert .ic{font-size:16px}
+
+  /* countdown */
+  .countdown{display:inline-flex;align-items:center;gap:6px;background:var(--danger);color:#fff;padding:4px 12px;border-radius:var(--radius-full);font-weight:800;font-size:12px;font-family:var(--font-mono)}
+  .countdown.warn{background:var(--warning)} .countdown.ok{background:var(--success)}
+
+  /* gauge / decision */
+  .decision{display:flex;gap:18px;align-items:center;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:linear-gradient(135deg,var(--primary-50),transparent)}
+  .score-ring{width:92px;height:92px;border-radius:50%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;background:conic-gradient(var(--success) 0 78%, #e5e7eb 78% 100%);}
+  .score-ring .inner{width:72px;height:72px;border-radius:50%;background:var(--bg-white);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .score-ring .inner b{font-size:24px;font-weight:900;color:var(--success)}
+  .score-ring .inner span{font-size:9px;color:var(--text-muted);font-weight:700}
+
+  /* annotation callouts */
+  .notes{margin-top:14px;background:var(--bg-white);border:1px dashed var(--primary);border-radius:var(--radius);padding:14px 16px}
+  .notes h4{margin:0 0 8px;font-size:12px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+  .notes ul{margin:0;padding-left:18px}
+  .notes li{font-size:12.5px;color:var(--text-secondary);margin-bottom:5px;line-height:1.5}
+  .notes li b{color:var(--text-primary)}
+  .pill-new{font-size:9px;font-weight:800;background:var(--success);color:#fff;padding:1px 6px;border-radius:var(--radius-full);margin-left:4px}
+
+  /* timeline (delivery) */
+  .tl{position:relative;padding-left:26px}
+  .tl::before{content:"";position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border)}
+  .tl-item{position:relative;padding:0 0 16px}
+  .tl-item:last-child{padding-bottom:0}
+  .tl-dot{position:absolute;left:-22px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--bg-white);border:3px solid var(--border)}
+  .tl-item.done .tl-dot{background:var(--success);border-color:var(--success)}
+  .tl-item.now .tl-dot{background:var(--primary);border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-50)}
+  .tl-item .t1{font-size:13px;font-weight:700}
+  .tl-item .t2{font-size:11px;color:var(--text-muted)}
+
+  .sec-divider{height:1px;background:var(--border);margin:48px 0 0}
+  h5.block-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin:0 0 10px}
+  @media(max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="doc-hero">
+    <div class="kicker">Company Operation · Government e‑Bidding</div>
+    <h1>ออกแบบหน้าจอ — สายงานประมูลงานรัฐไทย</h1>
+    <p>มุมมอง <b>ผู้เข้าประมูล (Bidder)</b> ตาม พ.ร.บ. การจัดซื้อจัดจ้างฯ 2560 / ระบบ e‑GP — ครอบคลุมตั้งแต่ <b>เฟส 2 Go/No‑Go</b> จนถึง <b>เฟส 10 คืนหลักประกัน</b></p>
+  </div>
+
+  <div class="pipeline">
+    <div class="pstep new"><span class="n">2</span> Go/No‑Go</div>
+    <div class="pstep exist"><span class="n">3</span> Bid Preparation</div>
+    <div class="pstep exist"><span class="n">4</span> หลักประกันซอง</div>
+    <div class="pstep new"><span class="n">5</span> ยื่น/เสนอราคา</div>
+    <div class="pstep new"><span class="n">6</span> ผล + อุทธรณ์</div>
+    <div class="pstep exist"><span class="n">7</span> สัญญา</div>
+    <div class="pstep new"><span class="n">8</span> ส่งมอบ/ตรวจรับ</div>
+    <div class="pstep new"><span class="n">9</span> เบิกจ่าย</div>
+    <div class="pstep exist"><span class="n">10</span> คืนประกัน</div>
+  </div>
+  <div class="legend"><b>● เขียว = หน้าจอใหม่ที่ต้องสร้าง</b> &nbsp;·&nbsp; <i>● เทา = ต่อยอดหน้าที่มีอยู่แล้ว</i></div>
+
+  <!-- ============ PHASE 2 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">2</div>
+      <div>
+        <h2>Go / No‑Go Decision <span class="tag-new">หน้าใหม่</span></h2>
+        <div class="sub">วิเคราะห์ TOR · เช็คคุณสมบัติ · ให้คะแนนความเสี่ยง · ผู้บริหารอนุมัติเข้าประมูล</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/go-no-go.html?tender=TD-2606-0042</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Tenders › TD‑2606‑0042</div><h3>จ้างพัฒนาระบบสารสนเทศ — กรมส่งเสริมการปกครองท้องถิ่น</h3></div>
+          <div class="row-btns"><button class="m-btn d">✕ No‑Go</button><button class="m-btn s">✓ Go — เข้าประมูล</button></div>
+        </div>
+
+        <div class="alert warn"><span class="ic">⏱</span> เหลือเวลาซื้อ/ดาวน์โหลดเอกสาร <b>3 วัน</b> · ปิดรับยื่นข้อเสนอ 8 ก.ค. 2026 16:30 น. &nbsp; <span class="countdown warn">13วัน 02:14:33</span></div>
+
+        <div class="tiles">
+          <div class="tile pri"><div class="v">฿12.5M</div><div class="l">ราคากลาง (Budget)</div></div>
+          <div class="tile"><div class="v">e‑bidding</div><div class="l">วิธีจัดซื้อจัดจ้าง</div></div>
+          <div class="tile ok"><div class="v">7/8</div><div class="l">คุณสมบัติผ่าน</div></div>
+          <div class="tile warn"><div class="v">ปานกลาง</div><div class="l">ระดับความเสี่ยง</div></div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-h">เช็คคุณสมบัติผู้เสนอราคา (Eligibility) <span class="b b-warn">7/8</span></div>
+            <div class="panel-b">
+              <div class="chk"><div class="box y">✓</div><div class="txt">ขึ้นทะเบียนผู้ค้ากับภาครัฐ (e‑GP)<small>เลขทะเบียน 0105...· ใช้ได้ถึง 2027</small></div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">ทุนจดทะเบียน ≥ 5 ล้านบาท<small>จดทะเบียน 10 ล้านบาท</small></div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">ผลงานประเภทเดียวกัน ≥ 6.25 ล้านบาท/สัญญา<small>มีผลงาน 8.2 ล้าน (กรมสรรพากร 2024)</small></div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">ไม่เป็นผู้ทิ้งงาน / ไม่อยู่บัญชีดำ</div></div>
+              <div class="chk"><div class="box x">✕</div><div class="txt">หนังสือรับรองมาตรฐาน ISO 27001<small style="color:var(--danger)">ยังไม่มี — ต้องประสาน หรืออาจตกคุณสมบัติ</small></div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">งบการเงินย้อนหลัง 3 ปี ไม่ขาดทุนเกินเกณฑ์</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">วิเคราะห์ความเสี่ยง / TOR Risk <span class="b b-warn">Score 78</span></div>
+            <div class="panel-b">
+              <div class="decision" style="margin-bottom:13px">
+                <div class="score-ring"><div class="inner"><b>78</b><span>WIN SCORE</span></div></div>
+                <div style="font-size:12.5px;line-height:1.7">
+                  <div>โอกาสชนะ (ประเมิน): <b style="color:var(--success)">สูง</b></div>
+                  <div>Margin ที่ราคากลาง: <b>~18%</b></div>
+                  <div>คู่แข่งคาดการณ์: <b>3–4 ราย</b></div>
+                </div>
+              </div>
+              <div class="chk"><div class="box x">!</div><div class="txt" style="color:var(--danger)">ล็อกสเปก: ระบุยี่ห้อ Hardware เฉพาะ<small>ความเสี่ยงสูง — ตรวจ TOR ข้อ 4.3</small></div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">ระยะส่งมอบ 180 วัน — ทำได้</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">เงื่อนไขชำระเงิน 4 งวด — รับได้</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>Eligibility Checklist engine</b> <span class="pill-new">ใหม่</span> ดึงคุณสมบัติบริษัทจาก master (ทะเบียน/ผลงาน/ทุน) มาเทียบกับ TOR อัตโนมัติ — เป็นจุดที่ทำให้ "ตกคุณสมบัติ" น้อยลง</li>
+            <li><b>Win Score</b> ถ่วงน้ำหนักจาก margin + จำนวนคู่แข่ง + ความพร้อมเอกสาร — ช่วยผู้บริหารตัดสิน Go/No‑Go</li>
+            <li><b>การกด Go</b> สร้าง Bid Preparation (เฟส 3) อัตโนมัติ + ผูก approval ผู้มีอำนาจ · <b>No‑Go</b> ต้องบันทึกเหตุผล (ใช้วิเคราะห์ win‑rate)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 3 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">3</div>
+      <div>
+        <h2>Bid Preparation — เตรียมข้อเสนอ <span class="tag-exist">ต่อยอดของเดิม</span></h2>
+        <div class="sub">เอกสาร 3 ซอง (คุณสมบัติ · เทคนิค · ราคา) + BOQ + Margin เทียบราคากลาง</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/bid-preparation.html?bid=BD-2606-0019</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Bid Preparation › BD‑2606‑0019</div><h3>ข้อเสนอ — TD‑2606‑0042</h3></div>
+          <div class="row-btns"><button class="m-btn gh">บันทึกร่าง</button><button class="m-btn p">ตรวจความครบ → ยื่น</button></div>
+        </div>
+
+        <div class="grid3" style="margin-bottom:16px">
+          <div class="panel">
+            <div class="panel-h">📁 ซองคุณสมบัติ <span class="b b-ok">ครบ 9/9</span></div>
+            <div class="panel-b" style="font-size:12px">
+              <div class="chk"><div class="box y">✓</div><div class="txt">หนังสือรับรองบริษัท (อายุ ≤ 6 ด.)</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">ภ.พ.20 / ภ.พ.01</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">งบการเงิน 3 ปี</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">หนังสือมอบอำนาจ + อากร</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">บัญชีผลงาน + สำเนาสัญญา</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">📁 ซองเทคนิค <span class="b b-warn">5/6</span></div>
+            <div class="panel-b" style="font-size:12px">
+              <div class="chk"><div class="box y">✓</div><div class="txt">ข้อเสนอด้านเทคนิค (Proposal)</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">แผนการดำเนินงาน / Timeline</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">รายชื่อทีม + CV</div></div>
+              <div class="chk"><div class="box n"> </div><div class="txt">ใบรับรอง ISO 27001<small>รอจากเฟส 2</small></div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">Catalog / Spec อุปกรณ์</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">📁 ซองราคา (BOQ) <span class="b b-ok">พร้อม</span></div>
+            <div class="panel-b">
+              <div class="fld"><label>ต้นทุนรวม</label><div class="ipt full mono">฿ 10,250,000</div></div>
+              <div class="fld"><label>Margin %</label><div class="ipt full mono">18.0 %</div></div>
+              <div class="fld"><label>ราคาเสนอ (Bid Price)</label><div class="ipt full mono" style="font-weight:800;color:var(--primary)">฿ 12,095,000</div></div>
+              <div class="alert ok" style="margin:0"><span class="ic">✓</span> ต่ำกว่าราคากลาง 3.2% — แข่งขันได้</div>
+            </div>
+          </div>
+        </div>
+
+        <h5 class="block-label">รายละเอียดต้นทุน (Cost Breakdown — BOQ)</h5>
+        <table class="mt">
+          <thead><tr><th>รายการ</th><th>หมวด</th><th class="right">จำนวน</th><th class="right">ราคา/หน่วย</th><th class="right">รวม</th><th>ผู้ขาย/PR</th></tr></thead>
+          <tbody>
+            <tr><td>License ระบบ ERP</td><td><span class="b b-purple">Material</span></td><td class="right mono">1</td><td class="right mono">4,200,000</td><td class="right mono">4,200,000</td><td><span class="b b-info">PR‑0231</span></td></tr>
+            <tr><td>Implementation (240 MD)</td><td><span class="b b-info">Labor</span></td><td class="right mono">240</td><td class="right mono">22,000</td><td class="right mono">5,280,000</td><td>ภายใน</td></tr>
+            <tr><td>Hardware Server</td><td><span class="b b-purple">Material</span></td><td class="right mono">1</td><td class="right mono">520,000</td><td class="right mono">520,000</td><td><span class="b b-info">PR‑0232</span></td></tr>
+            <tr><td>Overhead + ค่าธรรมเนียม Bond</td><td><span class="b b-gray">Overhead</span></td><td class="right mono">1</td><td class="right mono">250,000</td><td class="right mono">250,000</td><td>—</td></tr>
+          </tbody>
+        </table>
+
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>Document Compliance ตาม 3 ซอง</b> <span class="pill-new">ใหม่</span> ของเดิมมีแค่ cost/margin — เพิ่ม checklist เอกสารผูก TOR (จุดตกประมูลอันดับ 1) + เตือนเอกสารหมดอายุ</li>
+            <li><b>เทียบราคากลาง</b> แสดง bid price vs budget แบบ real‑time → กันเสนอเกินราคากลาง (ตกทันที)</li>
+            <li><b>BOQ ผูก PR/PO จริง</b> ดึงต้นทุนจาก PR เพื่อให้ margin แม่น และส่งต่อเป็น PO เมื่อชนะ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 4 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">4</div>
+      <div>
+        <h2>หลักประกันซอง — Bid Bond <span class="tag-exist">ต่อยอด Guarantees</span></h2>
+        <div class="sub">ขอออกหลักประกันการเสนอราคา 5% · ติดตามวันหมดอายุ · ค่าธรรมเนียมเข้า cost</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/guarantees.html?type=bid_bond&bid=BD-2606-0019</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Guarantees › Bid Bond</div><h3>หลักประกันการเสนอราคา — GR‑2606‑0033</h3></div>
+          <div class="row-btns"><button class="m-btn gh">พิมพ์คำขอ</button><button class="m-btn p">บันทึก</button></div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-h">ข้อมูลหลักประกัน</div>
+            <div class="panel-b">
+              <div class="grid2">
+                <div class="fld"><label>ประเภท</label><div class="ipt full">Bid Bond (หลักประกันซอง)</div></div>
+                <div class="fld"><label>วงเงิน (5% ราคากลาง)</label><div class="ipt full mono">฿ 625,000</div></div>
+                <div class="fld"><label>รูปแบบ</label><div class="ipt full">หนังสือค้ำประกันธนาคาร</div></div>
+                <div class="fld"><label>ธนาคาร</label><div class="ipt full">กรุงเทพ — สนญ.</div></div>
+                <div class="fld"><label>วันออก</label><div class="ipt full mono">25 มิ.ย. 2026</div></div>
+                <div class="fld"><label>วันหมดอายุ</label><div class="ipt full mono">90 วันหลังยื่น</div></div>
+              </div>
+              <div class="fld"><label>ค่าธรรมเนียม (เข้า BOQ Overhead)</label><div class="ipt full mono">฿ 9,375 (1.5%)</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">สถานะ & การติดตาม</div>
+            <div class="panel-b">
+              <div class="tl">
+                <div class="tl-item done"><div class="tl-dot"></div><div class="t1">ยื่นคำขอกับธนาคาร</div><div class="t2">24 มิ.ย. 2026</div></div>
+                <div class="tl-item done"><div class="tl-dot"></div><div class="t1">ธนาคารออกหนังสือค้ำประกัน</div><div class="t2">25 มิ.ย. 2026</div></div>
+                <div class="tl-item now"><div class="tl-dot"></div><div class="t1">แนบในซองยื่นข้อเสนอ</div><div class="t2">กำลังดำเนินการ</div></div>
+                <div class="tl-item"><div class="tl-dot"></div><div class="t1">คืนหลักประกัน (ถ้าไม่ชนะ)</div><div class="t2">หลังประกาศผล</div></div>
+              </div>
+              <div class="alert info" style="margin:14px 0 0"><span class="ic">🔔</span> ระบบเตือนล่วงหน้า 15 วันก่อนหมดอายุ — ต่ออายุ/ขอคืน</div>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>หลักประกัน 4 ประเภทใน lifecycle เดียว</b> Bid Bond → Performance Bond → Advance Bond → Retention — ติดตามต่อเนื่องตามสถานะงาน</li>
+            <li><b>Auto‑alert ก่อนหมดอายุ</b> <span class="pill-new">ใหม่</span> งานรัฐ bond หมดอายุ = เสียสิทธิ์/ถูกริบ — ต้องเตือนหลายระดับ</li>
+            <li><b>ค่าธรรมเนียมไหลเข้า BOQ</b> เชื่อมกลับเฟส 3 ให้ margin สะท้อนต้นทุนจริง</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 5 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">5</div>
+      <div>
+        <h2>ยื่น / เสนอราคา — Submission <span class="tag-new">หน้าใหม่</span></h2>
+        <div class="sub">เช็คความครบก่อนยื่น · เลขที่โครงการ e‑GP · นาฬิกานับถอยหลังถึงเวลาปิดรับ</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/bid-submission.html?bid=BD-2606-0019</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Bid Preparation › ยื่นข้อเสนอ</div><h3>ยืนยันการยื่น — TD‑2606‑0042</h3></div>
+          <div class="countdown">⏱ ปิดรับใน 02:14:33</div>
+        </div>
+        <div class="alert dng"><span class="ic">⚠</span> งานรัฐ <b>พลาด deadline 1 นาที = ตกทันที</b> — ตรวจให้ครบทุกข้อก่อนกด "ยืนยันยื่น"</div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-h">Checklist ก่อนยื่น <span class="b b-warn">5/6 พร้อม</span></div>
+            <div class="panel-b">
+              <div class="chk"><div class="box y">✓</div><div class="txt">ซองคุณสมบัติครบ 9/9</div></div>
+              <div class="chk"><div class="box n"> </div><div class="txt">ซองเทคนิค (ขาด ISO 27001)<small style="color:var(--danger)">ต้องแนบก่อนยื่น</small></div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">ซองราคา (BOQ) + ลายเซ็นดิจิทัล</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">Bid Bond แนบแล้ว (GR‑2606‑0033)</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">ราคาเสนอ ≤ ราคากลาง</div></div>
+              <div class="chk"><div class="box y">✓</div><div class="txt">อนุมัติยื่นโดยผู้มีอำนาจ</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">ข้อมูลยื่นผ่าน e‑GP</div>
+            <div class="panel-b">
+              <div class="fld"><label>เลขที่โครงการ e‑GP</label><div class="ipt full mono">66069123456</div></div>
+              <div class="fld"><label>หน่วยงาน</label><div class="ipt full">กรมส่งเสริมการปกครองท้องถิ่น</div></div>
+              <div class="fld"><label>วิธีเสนอราคา</label><div class="ipt full">e‑bidding (ออนไลน์)</div></div>
+              <div class="fld"><label>วัน‑เวลาปิดรับยื่น</label><div class="ipt full mono">8 ก.ค. 2026 · 16:30 น.</div></div>
+              <div class="alert info" style="margin:8px 0 0"><span class="ic">ℹ</span> e‑GP ไม่มี public API — ระบบเก็บสถานะ + ลิงก์ไปยื่นบนเว็บ e‑GP</div>
+              <button class="m-btn d" style="width:100%;margin-top:12px;opacity:.6">ยืนยันยื่น (ปลดล็อกเมื่อครบ 6/6)</button>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>Pre‑submission gate</b> <span class="pill-new">ใหม่</span> ปุ่มยืนยันยื่น "ล็อก" จนกว่าทุก checklist เขียว — กันยื่นเอกสารไม่ครบ (foolproof UX)</li>
+            <li><b>Countdown engine</b> นับถอยหลังถึงเวลาปิดรับจริง + เตือน 24ชม./3ชม./1ชม.</li>
+            <li><b>ผูกเลขโครงการ e‑GP</b> เป็น manual workflow ตามจริง (ไม่ออกแบบให้คาดหวัง auto‑sync)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 6 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">6</div>
+      <div>
+        <h2>ประกาศผล + อุทธรณ์ — Result &amp; Appeal <span class="tag-new">หน้าใหม่ (+ Disputes)</span></h2>
+        <div class="sub">ผลแพ้/ชนะ · ราคาคู่แข่ง · นาฬิกาอุทธรณ์ 7 วันทำการ</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/bid-result.html?bid=BD-2606-0019</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Bid › ผลการพิจารณา</div><h3>ผลประมูล — TD‑2606‑0042</h3></div>
+          <div class="row-btns"><button class="m-btn w">ยื่นอุทธรณ์</button><button class="m-btn p">→ สร้างสัญญา</button></div>
+        </div>
+        <div class="alert dng"><span class="ic">⚖</span> สิทธิ์อุทธรณ์เหลือ <b>5 วันทำการ</b> (ภายใน 11 ก.ค. 2026) — หากเห็นว่าผลไม่เป็นธรรม &nbsp;<span class="countdown warn">5 วันทำการ</span></div>
+        <div class="tiles">
+          <div class="tile dng"><div class="v">อันดับ 2</div><div class="l">ผลของเรา</div></div>
+          <div class="tile"><div class="v">฿12.10M</div><div class="l">ราคาที่เราเสนอ</div></div>
+          <div class="tile ok"><div class="v">฿11.85M</div><div class="l">ราคาผู้ชนะ</div></div>
+          <div class="tile warn"><div class="v">2.1%</div><div class="l">ห่างผู้ชนะ</div></div>
+        </div>
+        <h5 class="block-label">ผลการพิจารณา (Bid Tabulation)</h5>
+        <table class="mt">
+          <thead><tr><th>อันดับ</th><th>ผู้เสนอราคา</th><th>คุณสมบัติ</th><th class="right">ราคาเสนอ</th><th class="right">คะแนนรวม</th><th>ผล</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">1</td><td>บจก. คู่แข่ง A</td><td><span class="b b-ok">ผ่าน</span></td><td class="right mono">11,850,000</td><td class="right mono">96.2</td><td><span class="b b-ok">ชนะ</span></td></tr>
+            <tr style="background:var(--primary-50)"><td class="mono">2</td><td><b>บริษัทเรา</b></td><td><span class="b b-ok">ผ่าน</span></td><td class="right mono">12,095,000</td><td class="right mono">94.1</td><td><span class="b b-warn">แพ้</span></td></tr>
+            <tr><td class="mono">3</td><td>บจก. คู่แข่ง C</td><td><span class="b b-dng">ตกคุณสมบัติ</span></td><td class="right mono">11,200,000</td><td class="right mono">—</td><td><span class="b b-gray">ตัดสิทธิ์</span></td></tr>
+          </tbody>
+        </table>
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>เก็บราคาคู่แข่ง</b> <span class="pill-new">ใหม่</span> เป็นข้อมูลทองสำหรับ pricing ครั้งต่อไป (win‑rate / กลยุทธ์ราคา)</li>
+            <li><b>นาฬิกาอุทธรณ์ 7 วันทำการ</b> นับเฉพาะวันทำการตามจริง — เลยกำหนด = เสียสิทธิ์ ปุ่ม "ยื่นอุทธรณ์" สร้าง Dispute (bid_protest) อัตโนมัติ</li>
+            <li><b>ถ้าชนะ</b> ปุ่ม "สร้างสัญญา" ส่งต่อเฟส 7 พร้อมยกข้อมูล bid ไปทั้งชุด</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 7 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">7</div>
+      <div>
+        <h2>ทำสัญญา — Contract <span class="tag-exist">ต่อยอด Contracts</span></h2>
+        <div class="sub">ลงนามสัญญา · หลักประกันสัญญา 5% · งวดงาน/งวดเงิน</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/contracts.html?contract=CT-2607-0008</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Contracts › CT‑2607‑0008</div><h3>สัญญาจ้าง — กรมส่งเสริมการปกครองท้องถิ่น</h3></div>
+          <div class="row-btns"><button class="m-btn gh">แก้ไขสัญญา (Amendment)</button><button class="m-btn s">เปิดใช้งานสัญญา</button></div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-h">รายละเอียดสัญญา</div>
+            <div class="panel-b">
+              <div class="grid2">
+                <div class="fld"><label>เลขที่สัญญา</label><div class="ipt full mono">จ.42/2569</div></div>
+                <div class="fld"><label>มูลค่าสัญญา</label><div class="ipt full mono">฿ 11,850,000</div></div>
+                <div class="fld"><label>วันลงนาม</label><div class="ipt full mono">15 ก.ค. 2026</div></div>
+                <div class="fld"><label>ระยะส่งมอบ</label><div class="ipt full">180 วัน</div></div>
+                <div class="fld"><label>เริ่ม</label><div class="ipt full mono">16 ก.ค. 2026</div></div>
+                <div class="fld"><label>สิ้นสุด</label><div class="ipt full mono">12 ม.ค. 2027</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">หลักประกันสัญญา + งวดงาน</div>
+            <div class="panel-b">
+              <div class="alert ok" style="margin-bottom:12px"><span class="ic">🛡</span> Performance Bond 5% = <b>฿592,500</b> ออกแล้ว (GR‑2607‑0041)</div>
+              <table class="mt">
+                <thead><tr><th>งวด</th><th>งาน</th><th class="right">%</th><th class="right">มูลค่า</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">1</td><td>ส่งมอบแผน + วิเคราะห์</td><td class="right mono">20%</td><td class="right mono">2,370,000</td></tr>
+                  <tr><td class="mono">2</td><td>พัฒนา + ติดตั้ง</td><td class="right mono">40%</td><td class="right mono">4,740,000</td></tr>
+                  <tr><td class="mono">3</td><td>UAT + อบรม</td><td class="right mono">25%</td><td class="right mono">2,962,500</td></tr>
+                  <tr><td class="mono">4</td><td>Go‑Live + ส่งมอบ</td><td class="right mono">15%</td><td class="right mono">1,777,500</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>งวดงาน = แม่แบบเฟส 8–9</b> งวดในสัญญาสร้าง milestone ตรวจรับ (เฟส 8) และงวดเบิกจ่าย (เฟส 9) อัตโนมัติ</li>
+            <li><b>Performance Bond</b> เชื่อม Guarantees · <b>Amendment</b> เก็บประวัติแก้สัญญา (มี contract_amendments แล้ว)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 8 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">8</div>
+      <div>
+        <h2>ส่งมอบ / ตรวจรับ — Delivery &amp; Inspection <span class="tag-new">หน้าใหม่</span></h2>
+        <div class="sub">ส่งมอบตามงวด · คณะกรรมการตรวจรับ · ค่าปรับล่าช้า (Liquidated Damages)</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/delivery.html?contract=CT-2607-0008</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Contract › ส่งมอบ/ตรวจรับ</div><h3>การส่งมอบงาน — จ.42/2569</h3></div>
+          <div class="row-btns"><button class="m-btn p">บันทึกส่งมอบงวด</button></div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-h">ความคืบหน้าตามงวด</div>
+            <div class="panel-b">
+              <div class="tl">
+                <div class="tl-item done"><div class="tl-dot"></div><div class="t1">งวด 1 — แผน + วิเคราะห์ <span class="b b-ok">ตรวจรับแล้ว</span></div><div class="t2">ส่ง 30 ส.ค. · ตรวจรับ 5 ก.ย. 2026</div></div>
+                <div class="tl-item now"><div class="tl-dot"></div><div class="t1">งวด 2 — พัฒนา + ติดตั้ง <span class="b b-warn">รอตรวจรับ</span></div><div class="t2">ส่ง 28 พ.ย. · คกก.ตรวจรับ 7 วัน</div></div>
+                <div class="tl-item"><div class="tl-dot"></div><div class="t1">งวด 3 — UAT + อบรม</div><div class="t2">กำหนด 27 ธ.ค. 2026</div></div>
+                <div class="tl-item"><div class="tl-dot"></div><div class="t1">งวด 4 — Go‑Live</div><div class="t2">กำหนด 12 ม.ค. 2027</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">งวดที่ส่งมอบ — งวด 2</div>
+            <div class="panel-b">
+              <div class="fld"><label>วันส่งมอบจริง</label><div class="ipt full mono">28 พ.ย. 2026</div></div>
+              <div class="fld"><label>กำหนดตามสัญญา</label><div class="ipt full mono">30 พ.ย. 2026</div></div>
+              <div class="alert ok"><span class="ic">✓</span> ส่งก่อนกำหนด 2 วัน — ไม่มีค่าปรับ</div>
+              <div class="fld"><label>คณะกรรมการตรวจรับ</label><div class="ipt full">3 ท่าน · รอผลตรวจรับ</div></div>
+              <div class="fld"><label>เอกสารแนบ</label><div class="ipt full ph">ใบส่งมอบงาน · รายงานผล · ภาพถ่าย</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>คำนวณค่าปรับล่าช้าอัตโนมัติ</b> <span class="pill-new">ใหม่</span> เทียบวันส่งจริง vs สัญญา × อัตราค่าปรับ/วัน — งานรัฐมีค่าปรับชัดเจน</li>
+            <li><b>คณะกรรมการตรวจรับ + เอกสารหลักฐาน</b> เก็บครบเพื่อใช้เบิกจ่าย (เฟส 9) — ตรวจรับผ่าน = ปลดล็อกเบิกงวด</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 9 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">9</div>
+      <div>
+        <h2>เบิกจ่าย — Payment / Billing <span class="tag-new">หน้าใหม่</span></h2>
+        <div class="sub">วางบิลตามงวดที่ตรวจรับ · ติดตามการจ่ายของหน่วยงาน · cashflow</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/billing.html?contract=CT-2607-0008</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Contract › เบิกจ่าย</div><h3>การวางบิล/เบิกจ่าย — จ.42/2569</h3></div>
+          <div class="row-btns"><button class="m-btn p">วางบิลงวด 2</button></div>
+        </div>
+        <div class="tiles">
+          <div class="tile ok"><div class="v">฿2.37M</div><div class="l">รับแล้ว (งวด 1)</div></div>
+          <div class="tile warn"><div class="v">฿4.74M</div><div class="l">วางบิลแล้ว รอจ่าย</div></div>
+          <div class="tile"><div class="v">฿4.74M</div><div class="l">ยังไม่วางบิล</div></div>
+          <div class="tile pri"><div class="v">40%</div><div class="l">รับเงินสะสม</div></div>
+        </div>
+        <table class="mt">
+          <thead><tr><th>งวด</th><th class="right">มูลค่า</th><th>ตรวจรับ</th><th>วางบิล</th><th>กำหนดจ่าย</th><th>สถานะจ่าย</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">1</td><td class="right mono">2,370,000</td><td><span class="b b-ok">✓ 5 ก.ย.</span></td><td class="mono">8 ก.ย.</td><td class="mono">8 ต.ค.</td><td><span class="b b-ok">จ่ายแล้ว</span></td></tr>
+            <tr><td class="mono">2</td><td class="right mono">4,740,000</td><td><span class="b b-warn">รอตรวจรับ</span></td><td class="mono">—</td><td class="mono">—</td><td><span class="b b-gray">รอ</span></td></tr>
+            <tr><td class="mono">3</td><td class="right mono">2,962,500</td><td><span class="b b-gray">—</span></td><td class="mono">—</td><td class="mono">—</td><td><span class="b b-gray">รอ</span></td></tr>
+            <tr><td class="mono">4</td><td class="right mono">1,777,500</td><td><span class="b b-gray">—</span></td><td class="mono">—</td><td class="mono">—</td><td><span class="b b-gray">รอ</span></td></tr>
+          </tbody>
+        </table>
+        <div class="alert warn" style="margin-top:14px"><span class="ic">💸</span> หน่วยงานรัฐมักจ่ายช้า 30–60 วัน — ระบบติดตามอายุหนี้ + เตือนตามทวง (เชื่อม cashflow projection)</div>
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>เบิกได้เฉพาะงวดที่ตรวจรับผ่าน</b> <span class="pill-new">ใหม่</span> ผูกกับเฟส 8 ตรง ๆ — กันวางบิลก่อนตรวจรับ</li>
+            <li><b>ติดตามการจ่ายของรัฐ + AR aging</b> สำคัญต่อ cashflow เพราะรัฐจ่ายช้า · เชื่อมงบ/บัญชีจริงในระบบ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHASE 10 ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num">10</div>
+      <div>
+        <h2>รับประกัน / คืนหลักประกัน — Warranty &amp; Bond Release <span class="tag-exist">ต่อยอด Guarantees</span></h2>
+        <div class="sub">ระยะรับประกันผลงาน · คืน Retention/Performance Bond · ปิดงาน + บันทึกผลงาน</div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><div class="dot3"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="frame-url">company-operation/guarantees.html?view=release&contract=CT-2607-0008</div></div>
+      <div class="frame-body">
+        <div class="m-head">
+          <div><div class="crumb">Guarantees › คืนหลักประกัน</div><h3>รับประกัน &amp; คืนหลักประกัน — จ.42/2569</h3></div>
+          <div class="row-btns"><button class="m-btn s">ปิดงาน + บันทึกผลงาน</button></div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-h">สถานะหลักประกันทั้งหมด</div>
+            <div class="panel-b">
+              <table class="mt">
+                <thead><tr><th>ประเภท</th><th class="right">วงเงิน</th><th>หมดอายุ</th><th>สถานะ</th></tr></thead>
+                <tbody>
+                  <tr><td>Bid Bond</td><td class="right mono">625,000</td><td class="mono">—</td><td><span class="b b-ok">คืนแล้ว</span></td></tr>
+                  <tr><td>Performance Bond</td><td class="right mono">592,500</td><td class="mono">12 ก.พ. 2027</td><td><span class="b b-warn">รอคืน</span></td></tr>
+                  <tr><td>Retention 5%</td><td class="right mono">592,500</td><td class="mono">12 ม.ค. 2028</td><td><span class="b b-info">ค้ำประกันผลงาน</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">ระยะรับประกันผลงาน</div>
+            <div class="panel-b">
+              <div class="fld"><label>เริ่มรับประกัน</label><div class="ipt full mono">12 ม.ค. 2027</div></div>
+              <div class="fld"><label>สิ้นสุดรับประกัน (1 ปี)</label><div class="ipt full mono">12 ม.ค. 2028</div></div>
+              <div class="alert info"><span class="ic">🔔</span> เตือนคืน Performance Bond เมื่อพ้น 30 วันหลังส่งมอบ · คืน Retention เมื่อพ้นรับประกัน</div>
+              <div class="alert ok" style="margin:0"><span class="ic">★</span> ปิดงานแล้ว บันทึกเข้า <b>คลังผลงาน (Track Record)</b> — reuse เป็นคุณสมบัติประมูลครั้งหน้า (กลับไปเฟส 2)</div>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <h4>★ จุดออกแบบสำคัญ</h4>
+          <ul>
+            <li><b>คืนหลักประกันตามเงื่อนไขเวลา</b> Performance Bond คืนหลังส่งมอบ · Retention คืนหลังพ้นรับประกัน — auto‑alert ทุกตัว</li>
+            <li><b>ปิดงาน → คลังผลงาน</b> <span class="pill-new">ใหม่</span> งานที่ปิดแล้วกลายเป็น "ผลงานอ้างอิง" ของเฟส 2 ครั้งถัดไป — ครบ loop</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-divider"></div>
+
+  <!-- summary -->
+  <div class="phase">
+    <div class="phase-head">
+      <div class="phase-num" style="background:linear-gradient(135deg,var(--success),var(--info))">∑</div>
+      <div><h2>สรุปหน้าจอที่ต้องสร้าง / ต่อยอด</h2><div class="sub">9 เฟส · 5 หน้าใหม่ + 4 หน้าต่อยอด + 3 master/engine</div></div>
+    </div>
+    <table class="mt">
+      <thead><tr><th>เฟส</th><th>หน้าจอ</th><th>ไฟล์</th><th>สถานะ</th><th>ตารางข้อมูลหลัก</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2</td><td>Go / No‑Go Decision</td><td class="mono">go-no-go.html</td><td><span class="b b-ok">สร้างใหม่</span></td><td class="mono">tenders, eligibility_checks*</td></tr>
+        <tr><td class="mono">3</td><td>Bid Preparation (+ compliance)</td><td class="mono">bid-preparation.html</td><td><span class="b b-gray">ต่อยอด</span></td><td class="mono">bid_preparations, bid_documents*</td></tr>
+        <tr><td class="mono">4</td><td>Bid Bond</td><td class="mono">guarantees.html</td><td><span class="b b-gray">ต่อยอด</span></td><td class="mono">guarantees</td></tr>
+        <tr><td class="mono">5</td><td>Bid Submission</td><td class="mono">bid-submission.html</td><td><span class="b b-ok">สร้างใหม่</span></td><td class="mono">bid_submissions*</td></tr>
+        <tr><td class="mono">6</td><td>Result &amp; Appeal</td><td class="mono">bid-result.html</td><td><span class="b b-ok">สร้างใหม่</span></td><td class="mono">bid_results*, disputes</td></tr>
+        <tr><td class="mono">7</td><td>Contract</td><td class="mono">contracts.html</td><td><span class="b b-gray">ต่อยอด</span></td><td class="mono">contracts, contract_milestones*</td></tr>
+        <tr><td class="mono">8</td><td>Delivery &amp; Inspection</td><td class="mono">delivery.html</td><td><span class="b b-ok">สร้างใหม่</span></td><td class="mono">deliveries*, inspections*</td></tr>
+        <tr><td class="mono">9</td><td>Payment / Billing</td><td class="mono">billing.html</td><td><span class="b b-ok">สร้างใหม่</span></td><td class="mono">contract_billings*</td></tr>
+        <tr><td class="mono">10</td><td>Warranty &amp; Bond Release</td><td class="mono">guarantees.html</td><td><span class="b b-gray">ต่อยอด</span></td><td class="mono">guarantees, track_record*</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:11.5px;color:var(--text-muted);margin-top:8px">* = ตาราง/engine ที่ต้องเพิ่มใน schema (compliance checklist · countdown/alert · track record)</p>
+  </div>
+
+</div>
+</body>
+</html>

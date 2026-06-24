@@ -333,6 +333,44 @@ async function ensureCompanyModules(client) {
 }
 
 /**
+ * Bidding module — self-heal seed on EVERY boot (idempotent).
+ *
+ * Adds the unified "Bidding" (งานประมูล) module to company_modules for any
+ * company that doesn't have it yet, DISABLED by default (is_enabled=false) so
+ * it only appears once an admin turns it on in Setup → Module Management.
+ *
+ * WHERE NOT EXISTS guards two things: (1) survives the POC TRUNCATE that wipes
+ * company_modules, re-adding the row on the next boot; (2) once present, the
+ * row is NEVER re-inserted — so flipping the toggle on/off in the UI is
+ * preserved and not reset back to disabled on the next deploy.
+ */
+async function ensureBiddingModule(client) {
+  try {
+    if (!(await tableExists(client, 'company_modules')) || !(await tableExists(client, 'companies'))) {
+      console.log('[migrate] ensure-bidding skipped: company_modules/companies table missing');
+      return;
+    }
+    await client.query('SET search_path TO public');
+    const { rowCount } = await client.query(`
+      INSERT INTO company_modules
+        (company_id, module_id, module_name, module_group, icon, href, is_core, sort_order, is_enabled)
+      SELECT c.id, 'bidding', 'Bidding (งานประมูล)', 'presales', 'tenders', 'bidding.html', false, 50, false
+      FROM companies c
+      WHERE NOT EXISTS (
+        SELECT 1 FROM company_modules cm
+         WHERE cm.company_id = c.id AND cm.module_id = 'bidding'
+      )
+      ON CONFLICT (company_id, module_id) DO NOTHING
+    `);
+    if (rowCount > 0) {
+      console.log(`[migrate] ✓ seeded bidding module (disabled) for ${rowCount} company(ies)`);
+    }
+  } catch (err) {
+    console.error('[migrate] ensure-bidding failed:', err.message);
+  }
+}
+
+/**
 /**
  * Owner role wiring — runs every boot (idempotent). Promotes the product
  * owners to the 'owner' role and restricts the 'changelog' module so only
@@ -508,6 +546,9 @@ async function runAll() {
     // P0-2 — re-seed company_modules for any company left with 0 modules
     // (TRUNCATE companies CASCADE in the POC seed wipes them). Self-healing.
     if (failed === 0) await ensureCompanyModules(client);
+
+    // Bidding module — seed (disabled) for any company missing it. Self-healing.
+    if (failed === 0) await ensureBiddingModule(client);
 
     // Owner role wiring (self-healing): promote the product owners + restrict
     // the dev Change Log to owners only. Runs after enum 035 has committed.

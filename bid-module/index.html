@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bid Module — Standalone Prototype (Document Chain)</title>
+<style>
+:root{
+  --bg-body:#f5f7fa;--bg-white:#fff;--bg-light:#f8f9fb;--bg-hover:#f1f3f7;
+  --border:#e5e7eb;--border-light:#f0f1f3;--text-primary:#1a1a2e;--text-secondary:#374151;--text-muted:#4b5563;
+  --primary:#4f6ef7;--primary-hover:#3b5ce4;--primary-light:#eef2ff;--primary-50:rgba(79,110,247,.08);
+  --success:#10b981;--success-light:#ecfdf5;--warning:#f59e0b;--warning-light:#fffbeb;
+  --danger:#ef4444;--danger-light:#fef2f2;--info:#3b82f6;--info-light:#eff6ff;--purple:#8b5cf6;--purple-light:#f5f3ff;
+  --radius-sm:6px;--radius:8px;--radius-lg:12px;--radius-full:9999px;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.04);--shadow-sm:0 1px 3px rgba(0,0,0,.06);--shadow:0 2px 8px rgba(0,0,0,.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 8px 24px rgba(0,0,0,.1);
+  --font:'Sukhumvit Set','IBM Plex Sans Thai',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'SF Mono','JetBrains Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font);background:var(--bg-body);color:var(--text-primary);font-size:13px}
+.app{display:flex;min-height:100vh}
+/* sidebar */
+.side{width:230px;background:var(--bg-white);border-right:1px solid var(--border);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:18px 18px 12px;border-bottom:1px solid var(--border-light)}
+.brand .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px}
+.brand .logo .mk{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+.brand .sub{font-size:10px;color:var(--text-muted);margin-top:6px;letter-spacing:.5px;text-transform:uppercase;font-weight:700}
+.nav{padding:10px 10px}
+.nav .grp{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;padding:10px 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);color:var(--text-secondary);text-decoration:none;font-weight:600;font-size:12.5px;cursor:pointer;margin-bottom:1px}
+.nav a:hover{background:var(--bg-hover)}
+.nav a.on{background:var(--primary-light);color:var(--primary)}
+.nav a .ic{width:17px;height:17px;flex-shrink:0}
+.nav a .stepn{margin-left:auto;font-size:9px;font-weight:800;color:#fff;background:var(--text-muted);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.curproj{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin:2px 6px 4px;cursor:pointer;background:var(--bg-light)}
+.curproj:hover{background:var(--bg-hover)}
+.curproj.on{border-color:var(--primary);background:var(--primary-light)}
+.curproj .cp-t{font-size:12px;font-weight:800;line-height:1.3}
+.curproj .cp-s{font-size:10px;color:var(--text-muted);margin-top:2px}
+.nav-hint{padding:6px 12px 4px;font-size:11px;color:var(--text-muted);line-height:1.55}
+/* project banner on document views */
+.projbar{display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,var(--primary),var(--purple));color:#fff;border-radius:var(--radius-lg);padding:13px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.projbar .pj-ic{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.projbar .pj-t{font-size:15px;font-weight:800;line-height:1.2}
+.projbar .pj-s{font-size:11.5px;opacity:.92;margin-top:2px}
+.projbar .pj-meta{margin-left:auto;text-align:right;font-size:11px;opacity:.92;white-space:nowrap}
+.projbar .pj-meta b{font-size:15px;display:block;font-weight:800}
+/* main */
+.main{flex:1;min-width:0}
+.top{height:54px;background:var(--bg-white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:14px;position:sticky;top:0;z-index:50}
+.top .crumb{font-size:12px;color:var(--text-muted)}
+.top .crumb b{color:var(--text-primary)}
+.top .spacer{flex:1}
+.top .badge-demo{font-size:10px;font-weight:800;color:var(--warning);background:var(--warning-light);padding:3px 9px;border-radius:var(--radius-full);border:1px solid #fde68a}
+.wrap{padding:22px 26px 70px;max-width:1180px}
+.fade{animation:f .25s ease}@keyframes f{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+
+h1.pt{font-size:22px;font-weight:800;margin:0 0 3px}
+.psub{font-size:13px;color:var(--text-secondary);margin-bottom:20px}
+.phead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:16px}
+
+/* buttons */
+.btn{font-size:12.5px;padding:8px 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg-white);font-weight:700;color:var(--text-primary);cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--bg-hover)}
+.btn.p{background:var(--primary);color:#fff;border-color:var(--primary)}.btn.p:hover{background:var(--primary-hover)}
+.btn.s{background:var(--success);color:#fff;border-color:var(--success)}.btn.s:hover{filter:brightness(.95)}
+.btn.d{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.w{background:var(--warning);color:#fff;border-color:var(--warning)}
+.btn.sm{padding:6px 11px;font-size:11.5px}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.tile{background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow-xs)}
+.tile .v{font-size:24px;font-weight:800;line-height:1}
+.tile .l{font-size:11px;color:var(--text-secondary);margin-top:6px}
+.tile.ok .v{color:var(--success)}.tile.warn .v{color:var(--warning)}.tile.dng .v{color:var(--danger)}.tile.pri .v{color:var(--primary)}
+
+/* card + table */
+.card{background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-xs);overflow:hidden;margin-bottom:18px}
+.card-h{padding:13px 18px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.card-h h2{font-size:15px;font-weight:800;margin:0}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{background:var(--bg-light);text-align:left;padding:10px 16px;font-size:10.5px;font-weight:800;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);letter-spacing:.3px}
+.tbl td{padding:11px 16px;border-bottom:1px solid var(--border-light)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{cursor:pointer}.tbl tbody tr:hover td{background:var(--bg-hover)}
+.mono{font-family:var(--mono)}.right{text-align:right}
+.b{font-size:10px;padding:2px 9px;border-radius:var(--radius-full);font-weight:800;display:inline-block;white-space:nowrap}
+.b-ok{background:var(--success-light);color:#059669}.b-warn{background:var(--warning-light);color:#d97706}
+.b-dng{background:var(--danger-light);color:#e11d48}.b-pri{background:var(--primary-light);color:var(--primary)}
+.b-info{background:var(--info-light);color:var(--info)}.b-gray{background:var(--bg-hover);color:var(--text-secondary)}
+.b-purple{background:var(--purple-light);color:var(--purple)}
+
+/* document flow chain (the heart) */
+.chain{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;padding:6px 2px}
+.cnode{position:relative;display:flex;flex-direction:column;min-width:138px;background:var(--bg-white);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:11px 13px;cursor:pointer;transition:.15s}
+.cnode:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.cnode.done{border-color:var(--success);background:linear-gradient(180deg,var(--success-light),#fff)}
+.cnode.active{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-50)}
+.cnode.future{opacity:.5;border-style:dashed;cursor:not-allowed}
+.cnode.skip{opacity:.35}
+.cnode .ph{font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px}
+.cnode .ttl{font-size:12.5px;font-weight:800;margin:4px 0 6px}
+.cnode .no{font-size:10.5px;font-family:var(--mono);color:var(--text-muted)}
+.cnode .st{margin-top:7px}
+.carrow{display:flex;align-items:center;color:var(--border);font-size:20px;padding:0 5px;align-self:center}
+.carrow.done{color:var(--success)}
+
+/* document detail */
+.doc-top{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:16px}
+.doc-meta{background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+.doc-meta .dno{font-size:11px;color:var(--text-muted);font-family:var(--mono)}
+.doc-meta .dttl{font-size:18px;font-weight:800;margin:3px 0 8px}
+.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 18px;margin-top:12px}
+.kv .k{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.3px}
+.kv .v{font-size:13px;font-weight:600;margin-top:1px}
+.aside-card{background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;height:fit-content}
+.aside-card h4{margin:0 0 10px;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--text-muted);letter-spacing:.4px}
+
+/* convert panel */
+.convert{background:linear-gradient(135deg,var(--primary-50),transparent);border:1px solid var(--primary);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.convert .ic{width:40px;height:40px;border-radius:11px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.convert .tx{flex:1}.convert .tx b{font-size:13.5px}.convert .tx div{font-size:12px;color:var(--text-secondary);margin-top:2px}
+
+/* sub tables in doc */
+.dtab{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+.dtab th{background:var(--bg-light);text-align:left;padding:7px 11px;font-size:10px;font-weight:800;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border)}
+.dtab td{padding:7px 11px;border-bottom:1px solid var(--border-light)}
+.sec-t{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--text-muted);letter-spacing:.4px;margin:18px 0 8px}
+
+/* alert */
+.al{display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:600;margin-bottom:14px}
+.al.warn{background:var(--warning-light);color:#92590c;border:1px solid #fde68a}
+.al.ok{background:var(--success-light);color:#047857;border:1px solid #a7f3d0}
+.al.info{background:var(--info-light);color:#1e40af;border:1px solid #bfdbfe}
+.al.dng{background:var(--danger-light);color:#9f1239;border:1px solid #fecaca}
+
+.back{font-size:12px;color:var(--primary);cursor:pointer;font-weight:700;margin-bottom:12px;display:inline-flex;gap:5px;align-items:center}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text-primary);color:#fff;padding:12px 20px;border-radius:var(--radius-full);font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);z-index:200;display:none}
+@media(max-width:860px){.side{display:none}.tiles{grid-template-columns:repeat(2,1fr)}.doc-top{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo"><span class="mk">◆</span> Company Operation</div>
+      <div class="sub">Bidding Module · Prototype</div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <div class="main">
+    <div class="top">
+      <div class="crumb" id="crumb">Bidding · Deals</div>
+      <div class="spacer"></div>
+      <div class="badge-demo">PROTOTYPE — แยกจากระบบจริง</div>
+    </div>
+    <div class="wrap" id="view"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Bid Module — document chain model
+   แต่ละ deal เดินผ่าน "ห่วงโซ่เอกสาร" 9 ขั้น เชื่อมต่อเนื่องกัน
+   เอกสารใบก่อน --convert--> เอกสารใบถัดไป (ยกข้อมูล carry-forward)
+   ============================================================ */
+const STEPS = [
+  {k:'gng', ph:'เฟส 1', t:'ตัดสินใจเข้าประมูล',  pfx:'GNG', doc:'ใบตัดสินใจเข้าประมูล'},
+  {k:'bid', ph:'เฟส 2', t:'Bid Preparation',   pfx:'BD',  doc:'ใบเตรียมข้อเสนอ (BOQ)'},
+  {k:'bond',ph:'เฟส 3', t:'Bid Bond',          pfx:'GB',  doc:'หลักประกันซอง'},
+  {k:'sub', ph:'เฟส 4', t:'Submission',        pfx:'SUB', doc:'ใบยื่นข้อเสนอ'},
+  {k:'res', ph:'เฟส 5', t:'Result',            pfx:'RES', doc:'ใบผลการพิจารณา'},
+  {k:'ct',  ph:'เฟส 6', t:'Contract',          pfx:'CT',  doc:'สัญญา'},
+  {k:'dlv', ph:'เฟส 7', t:'Delivery',          pfx:'DLV', doc:'ใบส่งมอบ/ตรวจรับ'},
+  {k:'bil', ph:'เฟส 8', t:'Billing',           pfx:'BIL', doc:'ใบวางบิล/เบิกจ่าย'},
+  {k:'rel', ph:'เฟส 9', t:'Bond Release',      pfx:'REL', doc:'คืนหลักประกัน'},
+];
+const STEPMAP = Object.fromEntries(STEPS.map(s=>[s.k,s]));
+
+/* statuses per doc: future|draft|active|done|skip|lost */
+function badge(st){
+  const m={future:['รอ','b-gray'],draft:['ร่าง','b-gray'],active:['ดำเนินการ','b-warn'],
+    done:['เสร็จ','b-ok'],won:['ชนะ','b-ok'],lost:['แพ้','b-dng'],skip:['ข้าม','b-gray'],
+    submitted:['ยื่นแล้ว','b-info'],signed:['ลงนาม','b-ok'],released:['คืนแล้ว','b-ok'],appeal:['อุทธรณ์','b-warn']};
+  const [tx,cl]=m[st]||[st,'b-gray'];return `<span class="b ${cl}">${tx}</span>`;
+}
+const money=n=>'฿'+n.toLocaleString('th-TH');
+
+/* ---- mock deals: 3 ตัวอย่างคนละสถานะ ---- */
+const DEALS=[
+ {id:'D1', title:'จ้างพัฒนาระบบสารสนเทศ', agency:'กรมส่งเสริมการปกครองท้องถิ่น', egp:'66069123456',
+  budget:12500000, bidPrice:12095000, method:'e-bidding', deadline:'8 ก.ค. 2026',
+  cur:'res',  // current step
+  flow:{gng:'done',bid:'done',bond:'done',sub:'submitted',res:'lost',ct:'skip',dlv:'skip',bil:'skip',rel:'skip'} },
+ {id:'D2', title:'จ้างเหมาบริการบำรุงรักษาระบบ', agency:'มหาวิทยาลัยเทคโนโลยีฯ', egp:'66059988776',
+  budget:8200000, bidPrice:7850000, method:'e-bidding', deadline:'2 ก.ค. 2026',
+  cur:'dlv',
+  flow:{gng:'done',bid:'done',bond:'done',sub:'submitted',res:'won',ct:'signed',dlv:'active',bil:'draft',rel:'future'} },
+ {id:'D3', title:'ซื้อครุภัณฑ์คอมพิวเตอร์พร้อมติดตั้ง', agency:'สำนักงานสาธารณสุขจังหวัด', egp:'66069555111',
+  budget:4800000, bidPrice:0, method:'e-bidding', deadline:'15 ก.ค. 2026',
+  cur:'gng',
+  flow:{gng:'active',bid:'future',bond:'future',sub:'future',res:'future',ct:'future',dlv:'future',bil:'future',rel:'future'} },
+];
+const dealById=id=>DEALS.find(d=>d.id===id);
+
+/* ---------------- navigation ---------------- */
+let route={view:'list',deal:null,step:null};
+function go(v,deal,step){route={view:v,deal,step};render();window.scrollTo(0,0);}
+
+function navStatusColor(st){
+  if(['done','won','signed','submitted','released'].includes(st))return 'var(--success)';
+  if(['active','draft','appeal'].includes(st))return 'var(--warning)';
+  if(st==='lost')return 'var(--danger)';
+  return 'var(--border)';
+}
+function buildNav(){
+  const cur=route.deal?dealById(route.deal):null;
+  const items=[
+    ['list','Deals · งานประมูล','M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z'],
+    ['pipeline','Pipeline','M3 3v18h18M7 14l4-4 3 3 5-6'],
+  ];
+  let h='<div class="grp">Bidding Module</div>';
+  for(const[v,l,p]of items)
+    h+=`<a class="${route.view===v?'on':''}" onclick="go('${v}')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>${l}</a>`;
+  if(cur){
+    h+='<div class="grp">งานที่กำลังดู</div>';
+    h+=`<div class="curproj ${route.view==='deal'?'on':''}" onclick="go('deal','${cur.id}')">
+          <div class="cp-t">${cur.title}</div>
+          <div class="cp-s">${cur.agency}</div>
+          <div class="cp-s">e-GP ${cur.egp}</div></div>`;
+    h+='<div class="grp">เอกสารของงานนี้</div>';
+    STEPS.forEach(s=>{
+      const st=cur.flow[s.k];const active=!['future','skip'].includes(st);
+      const on=route.view==='doc'&&route.step===s.k;
+      h+=`<a class="${on?'on':''}" ${active?`onclick="go('doc','${cur.id}','${s.k}')"`:'style="opacity:.4;cursor:default"'}>
+            <span style="width:8px;height:8px;border-radius:50%;background:${navStatusColor(st)};flex-shrink:0"></span>${s.doc}</a>`;
+    });
+  } else {
+    h+='<div class="grp">เอกสารของงาน</div>';
+    h+='<div class="nav-hint">เลือกงานประมูลจากรายการก่อน<br>เพื่อดูเอกสารของงานนั้น</div>';
+  }
+  document.getElementById('nav').innerHTML=h;
+}
+
+/* ---------------- views ---------------- */
+function render(){
+  buildNav();
+  const v=document.getElementById('view');
+  if(route.view==='list') v.innerHTML=viewList();
+  else if(route.view==='pipeline') v.innerHTML=viewPipeline();
+  else if(route.view==='deal') v.innerHTML=viewDeal(route.deal);
+  else if(route.view==='doc') v.innerHTML=viewDoc(route.deal,route.step);
+  v.className='wrap fade';
+  // crumb
+  let c='Bidding · Deals';
+  if(route.view==='deal'){const d=dealById(route.deal);c=`Bidding · <b>${d.title}</b>`;}
+  if(route.view==='doc'){const d=dealById(route.deal),s=STEPMAP[route.step];c=`Bidding · ${d.title} · <b>${s.doc}</b>`;}
+  if(route.view==='pipeline')c='Bidding · Pipeline';
+  document.getElementById('crumb').innerHTML=c;
+}
+
+function viewList(){
+  const stat={total:DEALS.length,active:DEALS.filter(d=>!['lost'].includes(d.flow.res)&&d.flow.rel!=='released').length,
+    won:DEALS.filter(d=>d.flow.res==='won').length,lost:DEALS.filter(d=>d.flow.res==='lost').length,
+    val:DEALS.filter(d=>d.flow.res==='won').reduce((s,d)=>s+d.bidPrice,0)};
+  let rows=DEALS.map(d=>{
+    const s=STEPMAP[d.cur];const fl=d.flow[d.cur];
+    return `<tr onclick="go('deal','${d.id}')">
+      <td><b>${d.title}</b><div style="font-size:11px;color:var(--text-muted)">${d.agency}</div></td>
+      <td class="mono">${d.egp}</td>
+      <td class="right mono">${money(d.budget)}</td>
+      <td><span class="b b-pri">${s.ph} · ${s.doc}</span></td>
+      <td>${badge(fl)}</td>
+      <td>${miniChain(d)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="phead"><div><h1 class="pt">Bid Deals</h1><div class="psub">งานประมูลทั้งหมด — แต่ละรายการเดินผ่านห่วงโซ่เอกสาร 9 ขั้น</div></div>
+    <button class="btn p" onclick="alert('Prototype: เปิดฟอร์มสร้างใบตัดสินใจเข้าประมูลใบใหม่')">+ ประมูลใหม่</button></div>
+  <div class="tiles">
+    <div class="tile pri"><div class="v">${stat.total}</div><div class="l">งานทั้งหมด</div></div>
+    <div class="tile warn"><div class="v">${stat.active}</div><div class="l">กำลังดำเนินการ</div></div>
+    <div class="tile ok"><div class="v">${stat.won}</div><div class="l">ชนะประมูล</div></div>
+    <div class="tile dng"><div class="v">${stat.lost}</div><div class="l">แพ้ประมูล</div></div>
+    <div class="tile ok"><div class="v" style="font-size:18px">${money(stat.val)}</div><div class="l">มูลค่างานที่ชนะ</div></div>
+  </div>
+  <div class="card"><div class="card-h"><h2>รายการประมูล</h2></div>
+    <table class="tbl"><thead><tr><th>โครงการ</th><th>เลข e-GP</th><th class="right">ราคากลาง</th><th>ขั้นปัจจุบัน</th><th>สถานะ</th><th>ห่วงโซ่เอกสาร</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+function miniChain(d){
+  return '<div style="display:flex;gap:3px">'+STEPS.map(s=>{
+    const st=d.flow[s.k];const c=st==='done'||st==='won'||st==='signed'||st==='submitted'||st==='released'?'var(--success)':
+      st==='active'||st==='draft'||st==='appeal'?'var(--warning)':st==='lost'?'var(--danger)':'var(--border)';
+    return `<span title="${s.doc}: ${st}" style="width:14px;height:6px;border-radius:3px;background:${c}"></span>`;
+  }).join('')+'</div>';
+}
+
+function viewPipeline(){
+  let cols=STEPS.map(s=>{
+    const ds=DEALS.filter(d=>['active','draft'].includes(d.flow[s.k])||(d.cur===s.k));
+    const cards=ds.map(d=>`<div class="card" style="margin:0 0 8px;cursor:pointer" onclick="go('doc','${d.id}','${s.k}')">
+      <div style="padding:10px 12px"><div style="font-size:12px;font-weight:700">${d.title}</div>
+      <div style="font-size:10.5px;color:var(--text-muted);margin-top:3px">${money(d.budget)}</div></div></div>`).join('')||'<div style="font-size:11px;color:var(--text-muted);padding:6px">—</div>';
+    return `<div style="min-width:170px;flex-shrink:0">
+      <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;padding:0 4px 8px">${s.ph}<br>${s.doc}</div>
+      ${cards}</div>`;
+  }).join('');
+  return `<h1 class="pt">Pipeline</h1><div class="psub">มุมมอง Kanban — งานแต่ละชิ้นอยู่ขั้นไหนของห่วงโซ่</div>
+    <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:14px">${cols}</div>`;
+}
+
+/* ---- DEAL view : the Document Flow Chain ---- */
+function viewDeal(id){
+  const d=dealById(id);
+  let chain='';
+  STEPS.forEach((s,i)=>{
+    const st=d.flow[s.k];
+    let cls='future',clickable=false;
+    if(['done','won','signed','submitted','released'].includes(st)){cls='done';clickable=true;}
+    else if(['active','draft','appeal','lost'].includes(st)){cls='active';clickable=true;}
+    else if(st==='skip'){cls='skip';}
+    const no=clickable?`${s.pfx}-2606-00${10+i}`:'—';
+    chain+=`<div class="cnode ${cls}" ${clickable?`onclick="go('doc','${id}','${s.k}')"`:''}>
+      <div class="ph">${s.ph}</div><div class="ttl">${s.doc}</div><div class="no">${no}</div>
+      <div class="st">${badge(st)}</div></div>`;
+    if(i<STEPS.length-1) chain+=`<div class="carrow ${cls==='done'?'done':''}">›</div>`;
+  });
+  const lost=d.flow.res==='lost';
+  return `<div class="back" onclick="go('list')">‹ กลับรายการ</div>
+    <div class="phead"><div><h1 class="pt">${d.title}</h1><div class="psub">${d.agency} · e-GP ${d.egp} · ราคากลาง ${money(d.budget)}</div></div></div>
+    ${lost?'<div class="al dng">⚖ แพ้ประมูล (อันดับ 2) — สิทธิ์อุทธรณ์เหลือ 5 วันทำการ</div>':''}
+    <div class="card"><div class="card-h"><h2>ห่วงโซ่เอกสาร — Document Flow Chain</h2>
+      <span style="font-size:11px;color:var(--text-muted)">คลิกใบเอกสารเพื่อเปิดดู</span></div>
+      <div style="padding:16px 18px"><div class="chain">${chain}</div></div></div>
+    <div class="al info">ℹ ทุกใบเชื่อมต่อเนื่องกัน — เอกสารใบก่อน <b>"แปลงเป็น"</b> ใบถัดไป โดยยกข้อมูลมาให้อัตโนมัติ (เหมือน PR→PO ของระบบเดิม)</div>`;
+}
+
+/* ---- DOC view : individual document + convert-to-next ---- */
+function viewDoc(id,k){
+  const d=dealById(id),s=STEPMAP[k],idx=STEPS.findIndex(x=>x.k===k);
+  const next=STEPS[idx+1];
+  const st=d.flow[k];
+  const no=`${s.pfx}-2606-00${10+idx}`;
+  // body per step
+  const body={
+    gng:bodyGng,bid:bodyBid,bond:bodyBond,sub:bodySub,res:bodyRes,
+    ct:bodyCt,dlv:bodyDlv,bil:bodyBil,rel:bodyRel
+  }[k](d);
+  // convert action
+  let convert='';
+  const canConvert=next && !['future','skip'].includes(d.flow[k]) && d.flow[next.k]!=='lost';
+  if(k==='res'&&st==='lost'){
+    convert=`<div class="convert" style="border-color:var(--warning);background:var(--warning-light)">
+      <div class="ic" style="background:var(--warning)">⚖</div>
+      <div class="tx"><b>แพ้ประมูล — สร้างเอกสารอุทธรณ์</b><div>แปลงเป็น "ใบอุทธรณ์ผล (Dispute)" ภายใน 7 วันทำการ · ยกข้อมูลผล+ราคาคู่แข่งไปให้</div></div>
+      <button class="btn w" onclick="convertTo('Dispute (อุทธรณ์)')">แปลง → ใบอุทธรณ์</button></div>`;
+  } else if(canConvert){
+    const verb={gng:'แปลง → ใบเตรียมข้อเสนอ',bid:'แปลง → หลักประกันซอง + ใบยื่น',bond:'แนบ → ใบยื่นข้อเสนอ',
+      sub:'บันทึกผล → ใบผลการพิจารณา',res:'แปลง → สัญญา',ct:'แปลง → ใบส่งมอบ',dlv:'แปลง → ใบวางบิล',bil:'แปลง → คืนหลักประกัน'}[k];
+    convert=`<div class="convert"><div class="ic">→</div>
+      <div class="tx"><b>เอกสารต่อเนื่อง: ${next.doc}</b><div>สร้างเอกสารขั้นถัดไป (${next.ph} · ${next.doc}) โดยยกข้อมูลจากใบนี้ไปให้อัตโนมัติ</div></div>
+      <button class="btn p" onclick="convertTo('${next.doc}')">${verb}</button></div>`;
+  }
+  return `<div class="back" onclick="go('deal','${id}')">‹ กลับห่วงโซ่เอกสาร</div>
+    <div class="projbar">
+      <div class="pj-ic">▤</div>
+      <div><div class="pj-t">${d.title}</div><div class="pj-s">${d.agency} · e-GP ${d.egp}</div></div>
+      <div class="pj-meta">ราคากลาง<b>${money(d.budget)}</b></div>
+    </div>
+    <div class="doc-top">
+      <div class="doc-meta">
+        <div class="dno">${no} · ${s.ph}</div>
+        <div class="dttl">${s.doc}</div>
+        ${badge(st)}
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-light);font-size:12px;color:var(--text-secondary)">
+          เอกสารของงานประมูล: <b style="color:var(--text-primary)">${d.title}</b>
+        </div>
+      </div>
+      <div class="aside-card">
+        <h4>เอกสารอ้างอิง (Chain)</h4>
+        ${chainAside(d,k)}
+      </div>
+    </div>
+    ${convert}
+    ${body}`;
+}
+function chainAside(d,k){
+  return STEPS.map((s,i)=>{
+    const st=d.flow[s.k];const on=s.k===k;
+    const active=!['future','skip'].includes(st);
+    const dot=active?(st==='lost'?'var(--danger)':st==='active'||st==='draft'?'var(--warning)':'var(--success)'):'var(--border)';
+    return `<div onclick="${active?`go('doc','${d.id}','${s.k}')`:''}" style="display:flex;align-items:center;gap:9px;padding:6px 0;cursor:${active?'pointer':'default'};${on?'font-weight:800':''}">
+      <span style="width:9px;height:9px;border-radius:50%;background:${dot};flex-shrink:0"></span>
+      <span style="font-size:11.5px;${on?'color:var(--primary)':active?'':'color:var(--text-muted)'}">${s.doc}</span>
+      ${on?'<span class="b b-pri" style="margin-left:auto">ดูอยู่</span>':''}</div>`;
+  }).join('');
+}
+
+/* ---- per-document bodies ---- */
+function bodyGng(d){return `
+  <div class="al warn">⏱ เหลือเวลายื่น ${d.deadline} · ระดับความเสี่ยง: ปานกลาง</div>
+  <div class="sec-t">คุณสมบัติผู้เสนอราคา (Eligibility)</div>
+  <table class="dtab"><thead><tr><th>เกณฑ์</th><th>ผล</th><th>หมายเหตุ</th></tr></thead><tbody>
+    <tr><td>ขึ้นทะเบียนผู้ค้า e-GP</td><td><span class="b b-ok">ผ่าน</span></td><td>ใช้ได้ถึง 2027</td></tr>
+    <tr><td>ผลงานประเภทเดียวกัน ≥ 50% ราคากลาง</td><td><span class="b b-ok">ผ่าน</span></td><td>มีผลงาน 8.2 ลบ.</td></tr>
+    <tr><td>ISO 27001</td><td><span class="b b-dng">ไม่ผ่าน</span></td><td>ต้องประสาน</td></tr>
+  </tbody></table>
+  <div class="sec-t">ผลการตัดสินใจ</div>
+  <div class="al ok">✓ มติ: <b>GO — เข้าประมูล</b> · Win Score 78 · Margin คาดการณ์ 18% · อนุมัติโดยผู้บริหาร</div>`;}
+
+function bodyBid(d){return `
+  <div class="sec-t">เอกสาร 3 ซอง</div>
+  <table class="dtab"><thead><tr><th>ซอง</th><th>เอกสาร</th><th>สถานะ</th></tr></thead><tbody>
+    <tr><td>คุณสมบัติ</td><td>หนังสือรับรอง · ภ.พ.20 · งบ 3 ปี · ผลงาน</td><td><span class="b b-ok">ครบ 9/9</span></td></tr>
+    <tr><td>เทคนิค</td><td>Proposal · Timeline · CV ทีม · Spec</td><td><span class="b b-warn">5/6</span></td></tr>
+    <tr><td>ราคา</td><td>BOQ + ลายเซ็นดิจิทัล</td><td><span class="b b-ok">พร้อม</span></td></tr>
+  </tbody></table>
+  <div class="sec-t">รายละเอียดต้นทุน (BOQ)</div>
+  <table class="dtab"><thead><tr><th>รายการ</th><th>หมวด</th><th class="right">รวม</th></tr></thead><tbody>
+    <tr><td>License ระบบ ERP</td><td><span class="b b-purple">Material</span></td><td class="right mono">4,200,000</td></tr>
+    <tr><td>Implementation 240 MD</td><td><span class="b b-info">Labor</span></td><td class="right mono">5,280,000</td></tr>
+    <tr><td>Hardware + Overhead + Bond</td><td><span class="b b-gray">Other</span></td><td class="right mono">770,000</td></tr>
+  </tbody></table>
+  <div class="al ok" style="margin-top:14px">ราคาเสนอ <b>${money(d.bidPrice)}</b> — ต่ำกว่าราคากลาง 3.2% ✓</div>`;}
+
+function bodyBond(d){return `
+  <div class="sec-t">หลักประกันการเสนอราคา (Bid Bond 5%)</div>
+  <div class="kv" style="grid-template-columns:repeat(3,1fr)">
+    <div><div class="k">วงเงิน</div><div class="v mono">${money(Math.round(d.budget*0.05))}</div></div>
+    <div><div class="k">ธนาคาร</div><div class="v">กรุงเทพ — สนญ.</div></div>
+    <div><div class="k">วันหมดอายุ</div><div class="v">90 วันหลังยื่น</div></div>
+    <div><div class="k">รูปแบบ</div><div class="v">หนังสือค้ำประกัน</div></div>
+    <div><div class="k">ค่าธรรมเนียม</div><div class="v mono">฿9,375</div></div>
+    <div><div class="k">สถานะ</div><div class="v"><span class="b b-ok">ออกแล้ว</span></div></div>
+  </div>
+  <div class="al info" style="margin-top:14px">🔔 เตือนล่วงหน้า 15 วันก่อนหมดอายุ · ค่าธรรมเนียมไหลกลับเข้า BOQ (เฟส 2)</div>`;}
+
+function bodySub(d){return `
+  <div class="al dng">⚠ พลาด deadline 1 นาที = ตกทันที — ปุ่มยืนยันยื่นล็อกจนครบทุก checklist</div>
+  <div class="sec-t">Checklist ก่อนยื่น</div>
+  <table class="dtab"><thead><tr><th>รายการ</th><th>สถานะ</th></tr></thead><tbody>
+    <tr><td>ซองคุณสมบัติครบ</td><td><span class="b b-ok">✓</span></td></tr>
+    <tr><td>ซองเทคนิคครบ</td><td><span class="b b-ok">✓</span></td></tr>
+    <tr><td>Bid Bond แนบแล้ว (GB-2606)</td><td><span class="b b-ok">✓</span></td></tr>
+    <tr><td>ราคาเสนอ ≤ ราคากลาง</td><td><span class="b b-ok">✓</span></td></tr>
+  </tbody></table>
+  <div class="kv" style="margin-top:14px"><div><div class="k">วัน-เวลาปิดรับยื่น</div><div class="v mono">${d.deadline} · 16:30 น.</div></div>
+  <div><div class="k">วิธีเสนอราคา</div><div class="v">${d.method}</div></div></div>`;}
+
+function bodyRes(d){const lost=d.flow.res==='lost';return `
+  <div class="al ${lost?'dng':'ok'}">${lost?'⚖ ผล: แพ้ (อันดับ 2) — ห่างผู้ชนะ 2.1%':'🏆 ผล: ชนะประมูล!'}</div>
+  <div class="sec-t">ผลการพิจารณา (Bid Tabulation)</div>
+  <table class="dtab"><thead><tr><th>อันดับ</th><th>ผู้เสนอราคา</th><th class="right">ราคา</th><th>ผล</th></tr></thead><tbody>
+    <tr><td>1</td><td>คู่แข่ง A</td><td class="right mono">11,850,000</td><td><span class="b b-ok">ชนะ</span></td></tr>
+    <tr style="background:var(--primary-50)"><td>2</td><td><b>บริษัทเรา</b></td><td class="right mono">${money(d.bidPrice).replace('฿','')}</td><td>${lost?'<span class="b b-dng">แพ้</span>':'<span class="b b-ok">ชนะ</span>'}</td></tr>
+  </tbody></table>
+  <div class="al info" style="margin-top:14px">📊 เก็บราคาคู่แข่งเป็นข้อมูล pricing ครั้งหน้า (Track Record)</div>`;}
+
+function bodyCt(d){return `
+  <div class="sec-t">รายละเอียดสัญญา</div>
+  <div class="kv" style="grid-template-columns:repeat(3,1fr)">
+    <div><div class="k">เลขสัญญา</div><div class="v mono">จ.42/2569</div></div>
+    <div><div class="k">มูลค่า</div><div class="v mono">${money(d.bidPrice)}</div></div>
+    <div><div class="k">ระยะส่งมอบ</div><div class="v">180 วัน</div></div>
+  </div>
+  <div class="al ok" style="margin-top:12px">🛡 Performance Bond 5% ออกแล้ว</div>
+  <div class="sec-t">งวดงาน → สร้าง milestone เฟส 7-8 อัตโนมัติ</div>
+  <table class="dtab"><thead><tr><th>งวด</th><th>งาน</th><th class="right">%</th><th class="right">มูลค่า</th></tr></thead><tbody>
+    <tr><td>1</td><td>แผน+วิเคราะห์</td><td class="right">20%</td><td class="right mono">1,570,000</td></tr>
+    <tr><td>2</td><td>พัฒนา+ติดตั้ง</td><td class="right">40%</td><td class="right mono">3,140,000</td></tr>
+    <tr><td>3</td><td>UAT+อบรม</td><td class="right">25%</td><td class="right mono">1,962,500</td></tr>
+    <tr><td>4</td><td>Go-Live</td><td class="right">15%</td><td class="right mono">1,177,500</td></tr>
+  </tbody></table>`;}
+
+function bodyDlv(d){return `
+  <div class="sec-t">การส่งมอบตามงวด</div>
+  <table class="dtab"><thead><tr><th>งวด</th><th>กำหนด</th><th>ส่งจริง</th><th>ตรวจรับ</th><th>ค่าปรับ</th></tr></thead><tbody>
+    <tr><td>1</td><td class="mono">30 ส.ค.</td><td class="mono">28 ส.ค.</td><td><span class="b b-ok">ผ่าน</span></td><td>—</td></tr>
+    <tr><td>2</td><td class="mono">30 พ.ย.</td><td class="mono">28 พ.ย.</td><td><span class="b b-warn">รอตรวจรับ</span></td><td>—</td></tr>
+  </tbody></table>
+  <div class="al info" style="margin-top:14px">⚙ คำนวณค่าปรับล่าช้าอัตโนมัติ (วันส่งจริง vs สัญญา) · ตรวจรับผ่าน = ปลดล็อกวางบิล (เฟส 8)</div>`;}
+
+function bodyBil(d){return `
+  <div class="sec-t">การวางบิล / เบิกจ่าย</div>
+  <table class="dtab"><thead><tr><th>งวด</th><th class="right">มูลค่า</th><th>ตรวจรับ</th><th>วางบิล</th><th>สถานะจ่าย</th></tr></thead><tbody>
+    <tr><td>1</td><td class="right mono">1,570,000</td><td><span class="b b-ok">✓</span></td><td class="mono">8 ก.ย.</td><td><span class="b b-ok">จ่ายแล้ว</span></td></tr>
+    <tr><td>2</td><td class="right mono">3,140,000</td><td><span class="b b-warn">รอ</span></td><td class="mono">—</td><td><span class="b b-gray">รอ</span></td></tr>
+  </tbody></table>
+  <div class="al warn" style="margin-top:14px">💸 หน่วยงานรัฐจ่ายช้า 30-60 วัน — ติดตาม AR aging + cashflow</div>`;}
+
+function bodyRel(d){return `
+  <div class="sec-t">คืนหลักประกัน & รับประกันผลงาน</div>
+  <table class="dtab"><thead><tr><th>ประเภท</th><th class="right">วงเงิน</th><th>หมดอายุ</th><th>สถานะ</th></tr></thead><tbody>
+    <tr><td>Bid Bond</td><td class="right mono">410,000</td><td>—</td><td><span class="b b-ok">คืนแล้ว</span></td></tr>
+    <tr><td>Performance Bond</td><td class="right mono">392,500</td><td class="mono">12 ก.พ. 27</td><td><span class="b b-warn">รอคืน</span></td></tr>
+    <tr><td>Retention 5%</td><td class="right mono">392,500</td><td class="mono">12 ม.ค. 28</td><td><span class="b b-info">ค้ำผลงาน</span></td></tr>
+  </tbody></table>
+  <div class="al ok" style="margin-top:14px">★ ปิดงาน → บันทึกเข้าคลังผลงาน (Track Record) — reuse เป็นคุณสมบัติประมูลครั้งหน้า (วนกลับเฟส 1)</div>`;}
+
+/* ---- convert action (mock) ---- */
+function convertTo(name){
+  toast(`สร้างเอกสารต่อเนื่อง "${name}" แล้ว — ยกข้อมูลจากใบก่อนหน้ามาให้อัตโนมัติ ✓`);
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';
+  clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display='none',2600);}
+
+render();
+</script>
+</body>
+</html>
