@@ -363,12 +363,12 @@ router.post('/:id/convert-to-sq', async (req, res) => {
     // Create project phases
     const phases = [
       { name: 'สำรวจหน้างาน (Survey)', status: 'completed', sort: 1 },
-      { name: 'เสนอราคา (Quotation)', status: 'in_progress', sort: 2 },
-      { name: 'สั่งซื้ออุปกรณ์ (Procurement)', status: 'pending', sort: 3 },
-      { name: 'ติดตั้งระบบ (Installation)', status: 'pending', sort: 4 },
-      { name: 'ทดสอบระบบ (Testing & Commissioning)', status: 'pending', sort: 5 },
-      { name: 'ส่งมอบ + ขอ กฟภ./กฟน. (Handover & MEA/PEA)', status: 'pending', sort: 6 },
-      { name: 'รับประกัน (Warranty)', status: 'pending', sort: 7 },
+      { name: 'เสนอราคา (Quotation)', status: 'active', sort: 2 },
+      { name: 'สั่งซื้ออุปกรณ์ (Procurement)', status: 'upcoming', sort: 3 },
+      { name: 'ติดตั้งระบบ (Installation)', status: 'upcoming', sort: 4 },
+      { name: 'ทดสอบระบบ (Testing & Commissioning)', status: 'upcoming', sort: 5 },
+      { name: 'ส่งมอบ + ขอ กฟภ./กฟน. (Handover & MEA/PEA)', status: 'upcoming', sort: 6 },
+      { name: 'รับประกัน (Warranty)', status: 'upcoming', sort: 7 },
     ];
     for (const ph of phases) {
       await client.query(
