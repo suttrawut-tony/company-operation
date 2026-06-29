@@ -372,7 +372,7 @@ router.post('/:id/convert-to-sq', async (req, res) => {
     ];
     for (const ph of phases) {
       await client.query(
-        `INSERT INTO project_phases (project_id, name, status, sort_order) VALUES ($1,$2,$3,$4)
+        `INSERT INTO phases (project_id, name, status, sort_order) VALUES ($1,$2,$3,$4)
          ON CONFLICT DO NOTHING`,
         [project.id, ph.name, ph.status, ph.sort]);
     }
