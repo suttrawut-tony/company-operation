@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Payment / Receipt</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .sq-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+    .sq-stat { background: var(--bg-white); border:1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 18px; text-align: center; transition: all 0.15s; box-shadow: var(--shadow-xs); }
+    .sq-stat:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(79,110,247,0.1); }
+    .sq-stat .val { font-size: 28px; font-weight: 800; line-height: 1.2; }
+    .sq-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: 500; letter-spacing: 0.3px; }
+    .sq-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sq-table th { background:var(--bg-light); padding:12px 16px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); border-bottom:2px solid var(--border); }
+    .sq-table td { padding:14px 16px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .sq-table tbody tr { cursor:pointer; transition: background 0.1s; }
+    .sq-table tbody tr:hover td { background:var(--bg-hover); }
+    .sq-table tbody tr:last-child td { border-bottom: none; }
+    .sq-badge { font-size:10px; padding:3px 10px; border-radius:var(--radius-full); font-weight:600; display:inline-block; letter-spacing:0.2px; }
+    .sq-amount { font-weight:700; font-variant-numeric:tabular-nums; font-size:13px; }
+    .sq-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; }
+    .sq-modal-overlay.show { display:flex; }
+    .sq-modal { background:var(--bg-white); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .sq-modal-header { padding:16px 20px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; }
+    .sq-modal-header h3 { font-size:16px; font-weight:700; }
+    .sq-modal-body { padding:20px; }
+    .sq-modal-footer { padding:12px 20px; border-top:1px solid var(--border-light); display:flex; gap:8px; justify-content:flex-end; }
+    .sq-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .sq-fg { margin-bottom:10px; }
+    .sq-fg label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    .sq-fg input, .sq-fg select, .sq-fg textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; box-sizing:border-box; background:var(--bg-white); }
+    .sq-fg input:focus, .sq-fg select:focus, .sq-fg textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .sq-fg textarea { min-height:60px; resize:vertical; }
+    .filter-bar { display:flex; gap:10px; margin-bottom:20px; align-items:center; flex-wrap:wrap; padding:14px 16px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-xs); }
+    .filter-bar select, .filter-bar input { padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; background:var(--bg-white); font-family:var(--font); }
+    .filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+    .filter-bar input[type="search"] { min-width:220px; }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-muted); line-height:1; }
+    .close-btn:hover { color:var(--text-primary); }
+    .btn-sm { font-size:12px; padding:6px 14px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); color:var(--text-primary); }
+    .btn-sm:hover { background:var(--bg-hover); }
+    .btn-primary { background:var(--primary); color:white; border-color:var(--primary); }
+    .btn-primary:hover { filter:brightness(0.9); }
+    .btn-danger { background:var(--danger); color:white; border-color:var(--danger); }
+    .btn-success { background:var(--success,#0f9d58); color:white; border-color:var(--success,#0f9d58); }
+    .btn-warning { background:#f59e0b; color:white; border-color:#f59e0b; }
+    .action-btns { display:flex; gap:6px; align-items:center; }
+    .action-btns button { font-size:11px; padding:5px 12px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-weight:600; background:var(--bg-white); white-space:nowrap; transition: all 0.15s; }
+    .action-btns button:hover { background:var(--bg-hover); transform:translateY(-1px); }
+    .action-btns .btn-primary:hover { filter:brightness(0.9); transform:translateY(-1px); }
+    .action-btns .btn-danger { font-size:11px; padding:5px 10px; opacity:0.7; }
+    .action-btns .btn-danger:hover { opacity:1; }
+    .summary-box { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; padding:20px; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-xs); }
+    .summary-box .sum-item { text-align:center; }
+    .summary-box .sum-val { font-size:24px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .summary-box .sum-lbl { font-size:11px; color:var(--text-secondary); margin-top:4px; font-weight:500; }
+    @media (max-width:768px) { .sq-stats { grid-template-columns: repeat(2,1fr); } .sq-info-grid { grid-template-columns:1fr; } .filter-bar { flex-direction:column; } .summary-box { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+  <main class="page fade-in">
+    <div class="page-header">
+      <div><h1 id="pgIcon" data-i18n="payment_page_title">Payment / Receipt</h1></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="exportPayments()" style="display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> <span data-i18n="payment_btn_export">Export Excel</span></button>
+        <button class="btn btn-primary" onclick="openCreateModal()" data-i18n="payment_btn_new">+ New Payment</button>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <select id="filterProject" onchange="applyFilters()">
+        <option value="">All Projects</option>
+      </select>
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="received">Received</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <select id="filterType" onchange="applyFilters()">
+        <option value="">All Types</option>
+        <option value="deposit">Deposit</option>
+        <option value="installment">Installment</option>
+        <option value="final">Final</option>
+        <option value="full">Full</option>
+      </select>
+      <input type="date" id="filterDateFrom" onchange="applyFilters()" title="From date">
+      <input type="date" id="filterDateTo" onchange="applyFilters()" title="To date">
+      <input type="search" id="filterSearch" placeholder="Search payments..." oninput="applyFilters()">
+    </div>
+
+    <div class="sq-stats" id="stats"></div>
+    <div class="card" style="border-radius:var(--radius-lg);box-shadow:var(--shadow-xs);overflow:hidden;">
+      <div class="card-header" style="padding:16px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="font-size:15px;font-weight:700;margin:0;" data-i18n="payment_list_heading">Payment List</h2>
+        <span style="font-size:12px;color:var(--text-muted);" id="tableCount"></span>
+      </div>
+      <div id="tableWrap" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- Summary Box -->
+    <div class="summary-box" id="summaryBox"></div>
+  </main>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="sq-modal-overlay" id="paymentModal" onclick="if(event.target===this)closeModal()">
+    <div class="sq-modal">
+      <div class="sq-modal-header">
+        <h3 id="modalTitle"></h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="sq-modal-body" id="modalBody"></div>
+      <div class="sq-modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/excel-export.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    let allPayments = [];
+    let filteredPayments = [];
+    let editPayment = null;
+    let projects = [];
+
+    async function loadData() {
+      try {
+        allPayments = await API.get('/payments');
+        if (!Array.isArray(allPayments)) allPayments = [];
+      } catch(e) { allPayments = []; }
+      try {
+        const res = await API.get('/projects');
+        projects = Array.isArray(res) ? res : (res.projects || []);
+        renderProjectFilter();
+      } catch(e) { projects = []; }
+      applyFilters();
+    }
+
+    function renderProjectFilter() {
+      const sel = document.getElementById('filterProject');
+      let opts = '<option value="">All Projects</option>';
+      projects.forEach(p => { opts += `<option value="${p.id}">${p.code||''} — ${p.name||''}</option>`; });
+      sel.innerHTML = opts;
+    }
+
+    function applyFilters() {
+      const status = document.getElementById('filterStatus').value;
+      const type = document.getElementById('filterType').value;
+      const project = document.getElementById('filterProject').value;
+      const dateFrom = document.getElementById('filterDateFrom').value;
+      const dateTo = document.getElementById('filterDateTo').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+      filteredPayments = allPayments.filter(p => {
+        if (status && p.status !== status) return false;
+        if (type && p.payment_type !== type) return false;
+        if (project && String(p.project_id) !== project) return false;
+        if (dateFrom && p.payment_date && p.payment_date < dateFrom) return false;
+        if (dateTo && p.payment_date && p.payment_date > dateTo) return false;
+        if (search && !(p.payment_number||'').toLowerCase().includes(search)
+            && !(p.customer_name||'').toLowerCase().includes(search)
+            && !(p.reference_no||'').toLowerCase().includes(search)) return false;
+        return true;
+      });
+      renderStats();
+      renderTable();
+      renderSummary();
+    }
+
+    function renderStats() {
+      const t = filteredPayments.length;
+      const pend = filteredPayments.filter(x=>x.status==='pending').length;
+      const recv = filteredPayments.filter(x=>x.status==='received').length;
+      const totalReceived = filteredPayments.filter(x=>x.status==='received').reduce((s,x)=>s+parseFloat(x.total_amount||0),0);
+      document.getElementById('stats').innerHTML = `
+        <div class="sq-stat"><div class="val">${t}</div><div class="lbl" data-i18n="payment_stat_total">Total Payments</div></div>
+        <div class="sq-stat"><div class="val" style="color:#f59e0b">${pend}</div><div class="lbl" data-i18n="payment_stat_pending">Pending</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--success,#0f9d58)">${recv}</div><div class="lbl" data-i18n="payment_stat_received">Received</div></div>
+        <div class="sq-stat"><div class="val" style="color:var(--primary);font-size:22px;">${fmtNum(totalReceived)}</div><div class="lbl" data-i18n="payment_stat_amount">Total Amount Received</div></div>`;
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
+    }
+
+    function statusStyle(s) {
+      return ({
+        pending:'background:#fef3c7;color:#92400e',
+        received:'background:#d4edda;color:#155724',
+        cancelled:'background:#f8d7da;color:#721c24'
+      }[s]||'background:#e2e3e5;color:#383d41');
+    }
+
+    function typeBadge(t) {
+      const styles = {
+        deposit:'background:#d4edda;color:#155724',
+        installment:'background:#dbeafe;color:#1d4ed8',
+        final:'background:#e0e7ff;color:#3730a3',
+        full:'background:#ffedd5;color:#9a3412'
+      };
+      return styles[t]||'background:#e2e3e5;color:#383d41';
+    }
+
+    function typeLabel(t) {
+      return ({deposit:'Deposit',installment:'Installment',final:'Final',full:'Full'}[t]||t||'-');
+    }
+
+    function methodLabel(m) {
+      return ({cash:'Cash',transfer:'Transfer',cheque:'Cheque',credit_card:'Credit Card'}[m]||m||'-');
+    }
+
+    function renderTable() {
+      if (!filteredPayments.length) {
+        document.getElementById('tableWrap').innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text-muted);"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;opacity:0.4"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><div style="font-size:14px;font-weight:500;" data-i18n="payment_empty_title">No payments found</div><div style="font-size:12px;margin-top:4px;" data-i18n="payment_empty_subtitle">Try adjusting your filters or create a new payment</div></div>';if(typeof I18N!=='undefined')I18N.applyTranslations();
+        return;
+      }
+      let h='<table class="sq-table"><thead><tr><th style="width:120px">Payment No.</th><th style="width:140px">Project</th><th style="min-width:140px">Customer</th><th style="width:90px;text-align:center">Type</th><th style="width:100px;text-align:right">Amount</th><th style="width:80px;text-align:right">VAT</th><th style="width:110px;text-align:right">Total</th><th style="width:90px">Method</th><th style="width:80px;text-align:center">Status</th><th style="width:100px">Date</th><th style="width:200px;text-align:center">Actions</th></tr></thead><tbody>';
+      filteredPayments.forEach(p=>{
+        const projName = projects.find(pr=>pr.id===p.project_id);
+        h+=`<tr>
+          <td><span style="font-weight:700;color:var(--primary);font-size:12px;">${p.payment_number||'-'}</span></td>
+          <td style="font-size:12px;color:var(--text-secondary);">${projName?projName.code||projName.name:'-'}</td>
+          <td><div style="font-weight:500;color:var(--text-primary);">${p.customer_name||'-'}</div></td>
+          <td style="text-align:center"><span class="sq-badge" style="${typeBadge(p.payment_type)}">${typeLabel(p.payment_type)}</span></td>
+          <td class="sq-amount" style="text-align:right">${fmtNum(p.amount||0)}</td>
+          <td class="sq-amount" style="text-align:right">${fmtNum(p.vat_amount||0)}</td>
+          <td class="sq-amount" style="text-align:right">${fmtNum(p.total_amount||0)}</td>
+          <td style="font-size:12px;">${methodLabel(p.payment_method)}</td>
+          <td style="text-align:center"><span class="sq-badge" style="${statusStyle(p.status)}">${p.status||'-'}</span></td>
+          <td style="font-size:12px;color:var(--text-secondary);">${p.payment_date?new Date(p.payment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-'}</td>
+          <td onclick="event.stopPropagation()" style="text-align:center">
+            <div class="action-btns" style="justify-content:center">
+              ${p.status==='pending'?`<button onclick="openEditModal('${p.id}')" title="Edit">Edit</button>`:''}
+              ${p.status==='pending'?`<button class="btn-success" style="color:white" onclick="receivePayment('${p.id}')">Receive</button>`:''}
+              ${p.status==='pending'?`<button class="btn-danger" onclick="deletePayment('${p.id}')" title="Cancel">&times;</button>`:''}
+            </div>
+          </td></tr>`;
+      });
+      h+='</tbody></table>';
+      document.getElementById('tableWrap').innerHTML=h;
+      const countEl = document.getElementById('tableCount');
+      if (countEl) countEl.textContent = filteredPayments.length + ' of ' + allPayments.length + ' payments';
+      if(typeof I18N!=='undefined')I18N.applyTranslations();
+    }
+
+    function renderSummary() {
+      const pendingTotal = filteredPayments.filter(x=>x.status==='pending').reduce((s,x)=>s+parseFloat(x.total_amount||0),0);
+      const receivedTotal = filteredPayments.filter(x=>x.status==='received').reduce((s,x)=>s+parseFloat(x.total_amount||0),0);
+      document.getElementById('summaryBox').innerHTML = `
+        <div class="sum-item"><div class="sum-val" style="color:#f59e0b;">${fmtNum(pendingTotal)}</div><div class="sum-lbl">Pending Total</div></div>
+        <div class="sum-item"><div class="sum-val" style="color:var(--success,#0f9d58);">${fmtNum(receivedTotal)}</div><div class="sum-lbl">Received Total</div></div>`;
+    }
+
+    // ════════════════════════════════
+    //  MODAL: CREATE / EDIT
+    // ════════════════════════════════
+    function openCreateModal() {
+      editPayment = { payment_type:'deposit', status:'pending' };
+      renderModal(true);
+      document.getElementById('paymentModal').classList.add('show');
+    }
+
+    async function openEditModal(id) {
+      try {
+        editPayment = await API.get('/payments/'+id);
+        renderModal(false);
+        document.getElementById('paymentModal').classList.add('show');
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function renderModal(isNew) {
+      const p = editPayment;
+      document.getElementById('modalTitle').textContent = isNew ? 'Create New Payment' : 'Edit Payment — '+(p.payment_number||'');
+
+      let projOpts = '<option value="">-- Select Project --</option>';
+      projects.forEach(pr => { projOpts += `<option value="${pr.id}" ${pr.id===p.project_id?'selected':''}>${pr.code||''} — ${pr.name||''}</option>`; });
+
+      let h = '<div class="sq-info-grid"><div>';
+      h += `<div class="sq-fg"><label>Project</label><select id="pyProject">${projOpts}</select></div>`;
+      h += fg('Customer Name', 'text', 'pyCustomer', p.customer_name||'');
+      h += `<div class="sq-fg"><label>Payment Type</label><select id="pyType">
+        <option value="deposit" ${p.payment_type==='deposit'?'selected':''}>Deposit</option>
+        <option value="installment" ${p.payment_type==='installment'?'selected':''}>Installment</option>
+        <option value="final" ${p.payment_type==='final'?'selected':''}>Final</option>
+        <option value="full" ${p.payment_type==='full'?'selected':''}>Full</option>
+      </select></div>`;
+      h += fg('Amount', 'number', 'pyAmount', p.amount||'', 'step="0.01" oninput="calcVat()"');
+      h += fg('VAT Amount (7%)', 'number', 'pyVat', p.vat_amount||'', 'step="0.01"');
+      h += fg('Total Amount', 'number', 'pyTotal', p.total_amount||'', 'step="0.01"');
+      h += '</div><div>';
+      h += `<div class="sq-fg"><label>Payment Method</label><select id="pyMethod">
+        <option value="">-- Select --</option>
+        <option value="cash" ${p.payment_method==='cash'?'selected':''}>Cash</option>
+        <option value="transfer" ${p.payment_method==='transfer'?'selected':''}>Transfer</option>
+        <option value="cheque" ${p.payment_method==='cheque'?'selected':''}>Cheque</option>
+        <option value="credit_card" ${p.payment_method==='credit_card'?'selected':''}>Credit Card</option>
+      </select></div>`;
+      h += fg('Reference No.', 'text', 'pyRef', p.reference_no||'');
+      h += fg('Bank Account', 'text', 'pyBank', p.bank_account||'');
+      h += `<div class="sq-fg"><label>Remarks</label><textarea id="pyRemarks">${p.remarks||''}</textarea></div>`;
+      h += '</div></div>';
+
+      document.getElementById('modalBody').innerHTML = h;
+
+      let f = '';
+      f += `<button class="btn-sm btn-primary" onclick="savePayment(${isNew})">${isNew?'Create':'Save'}</button>`;
+      f += '<button class="btn-sm" onclick="closeModal()">Cancel</button>';
+      document.getElementById('modalFooter').innerHTML = f;
+    }
+
+    function fg(label, type, id, val, extra='') {
+      return `<div class="sq-fg"><label>${label}</label><input type="${type}" id="${id}" value="${val||''}" ${extra}></div>`;
+    }
+
+    function calcVat() {
+      const amount = parseFloat(document.getElementById('pyAmount').value) || 0;
+      const vat = Math.round(amount * 0.07 * 100) / 100;
+      document.getElementById('pyVat').value = vat;
+      document.getElementById('pyTotal').value = Math.round((amount + vat) * 100) / 100;
+    }
+
+    async function savePayment(isNew) {
+      const data = {
+        project_id: document.getElementById('pyProject').value||null,
+        customer_name: document.getElementById('pyCustomer').value||null,
+        payment_type: document.getElementById('pyType').value||'deposit',
+        amount: parseFloat(document.getElementById('pyAmount').value)||0,
+        vat_amount: parseFloat(document.getElementById('pyVat').value)||0,
+        total_amount: parseFloat(document.getElementById('pyTotal').value)||0,
+        payment_method: document.getElementById('pyMethod').value||null,
+        reference_no: document.getElementById('pyRef').value||null,
+        bank_account: document.getElementById('pyBank').value||null,
+        remarks: document.getElementById('pyRemarks').value||null,
+      };
+      try {
+        if (isNew) {
+          await API.post('/payments', data);
+          typeof showToast==='function' && showToast('Payment created successfully','success');
+        } else {
+          await API.put('/payments/'+editPayment.id, data);
+          typeof showToast==='function' && showToast('Payment updated successfully','success');
+        }
+        closeModal(); loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function receivePayment(id) {
+      if (!confirm('Mark this payment as received?')) return;
+      try {
+        await API.post('/payments/'+id+'/receive');
+        typeof showToast==='function' && showToast('Payment received','success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    async function deletePayment(id) {
+      if (!confirm('Cancel this payment?')) return;
+      try {
+        await API.del('/payments/'+id);
+        typeof showToast==='function' && showToast('Payment cancelled','success');
+        loadData();
+      } catch(e) { typeof showToast==='function' && showToast(e.message,'error'); }
+    }
+
+    function closeModal() { document.getElementById('paymentModal').classList.remove('show'); }
+
+    function exportPayments() {
+      if (!filteredPayments.length) { typeof showToast==='function' && showToast('No data to export','warning'); return; }
+      const headers = ['Payment No.','Project','Customer','Type','Amount','VAT','Total','Method','Status','Date','Reference','Remarks'];
+      const rows = filteredPayments.map(p => {
+        const proj = projects.find(pr=>pr.id===p.project_id);
+        return [
+          p.payment_number||'', proj?proj.code||proj.name:'', p.customer_name||'',
+          typeLabel(p.payment_type), parseFloat(p.amount||0), parseFloat(p.vat_amount||0),
+          parseFloat(p.total_amount||0), methodLabel(p.payment_method), p.status||'',
+          p.payment_date?new Date(p.payment_date).toLocaleDateString('th-TH'):'',
+          p.reference_no||'', p.remarks||''
+        ];
+      });
+      exportToExcel(headers, rows, 'Payments', 'payments.xlsx');
+    }
+
+    // Init
+    if (API.requireAuth()) {
+      loadData();
+      if (typeof I!=='undefined') document.getElementById('pgIcon').innerHTML = I.payments+' Payment / Receipt';
+      else document.getElementById('pgIcon').textContent = 'Payment / Receipt';
+    }
+  </script>
+</body>
+</html>

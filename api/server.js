@@ -141,6 +141,8 @@ app.use('/api/bids',          require('./routes/bids'));
 app.use('/api/contracts',     require('./routes/contracts'));
 app.use('/api/guarantees',    require('./routes/guarantees'));
 app.use('/api/disputes',      require('./routes/disputes'));
+app.use('/api/leads',          require('./routes/leads'));
+app.use('/api/payments',       require('./routes/payments'));
 
 // Health check — includes a DB ping so monitoring sees real status
 app.get('/api/health', async (req, res) => {
