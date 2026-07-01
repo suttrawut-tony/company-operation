@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — CRM Detail</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ── ERP Document Form ── */
+    .erp-toolbar {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 10px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-xs);
+    }
+    .erp-toolbar-left { display: flex; align-items: center; gap: 6px; }
+    .erp-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .erp-btn {
+      padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      font-family: var(--font); color: var(--text-secondary); display: flex;
+      align-items: center; gap: 5px; transition: all 0.15s;
+    }
+    .erp-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .erp-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .erp-btn.primary:hover { background: var(--primary-hover); }
+    .erp-btn.success { background: var(--success); color: white; border-color: var(--success); }
+    .erp-btn.success:hover { filter: brightness(0.9); }
+    .erp-btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+    .erp-btn.danger:hover { filter: brightness(0.9); }
+    .erp-btn svg { width: 14px; height: 14px; }
+    .erp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .erp-nav { display: flex; align-items: center; gap: 4px; margin-left: 12px; }
+    .erp-nav button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-white); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: var(--text-md); }
+    .erp-nav button:hover { background: var(--bg-hover); }
+    .erp-nav span { font-size: var(--text-xs); color: var(--text-muted); min-width: 60px; text-align: center; }
+
+    /* Header Form */
+    .erp-header {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .erp-header-top {
+      padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 100%);
+    }
+    .erp-header-top .doc-type {
+      font-size: var(--text-2xs); font-weight: 700; color: var(--primary); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 2px;
+    }
+    .erp-header-top .doc-number {
+      font-size: var(--text-3xl); font-weight: 800; color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+    .erp-fields {
+      padding: 20px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .erp-field { position: relative; }
+    .erp-field label {
+      display: block; font-size: var(--text-2xs); font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+    }
+    .erp-field input, .erp-field select, .erp-field textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: var(--text-base); font-family: var(--font);
+      color: var(--text-primary); background: var(--bg-white); outline: none;
+      transition: all 0.15s; box-sizing: border-box;
+    }
+    .erp-field textarea { min-height: 60px; resize: vertical; }
+    .erp-field input:focus, .erp-field select:focus, .erp-field textarea:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+    .erp-field input[readonly], .erp-field textarea[readonly] {
+      background: var(--bg-light); color: var(--text-secondary); border-color: transparent;
+    }
+    .erp-field .field-val {
+      font-size: var(--text-md); font-weight: 700; padding: 8px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .erp-field.span2 { grid-column: span 2; }
+    .erp-field.span4 { grid-column: span 4; }
+
+    /* Document Flow */
+    .doc-flow {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .doc-flow-header {
+      padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: var(--bg-light);
+      font-size: var(--text-base); font-weight: 600; color: var(--text-primary);
+    }
+    .doc-flow-body {
+      padding: 24px 20px; display: flex; align-items: center; justify-content: center;
+      gap: 0; flex-wrap: wrap; overflow-x: auto;
+    }
+    .flow-step {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 16px; border-radius: var(--radius-lg); min-width: 120px;
+      text-align: center; transition: all 0.15s; cursor: default;
+      border: 2px solid transparent; position: relative;
+    }
+    .flow-step.active {
+      background: var(--primary-50, #eef2ff); border-color: var(--primary);
+    }
+    .flow-step.completed {
+      background: var(--success-bg, #ecfdf5); border-color: var(--success, #16a34a);
+    }
+    .flow-step.linked {
+      cursor: pointer;
+    }
+    .flow-step.linked:hover {
+      transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .flow-step-icon {
+      width: 40px; height: 40px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 18px;
+      background: var(--bg-light); color: var(--text-muted);
+    }
+    .flow-step.active .flow-step-icon { background: var(--primary); color: white; }
+    .flow-step.completed .flow-step-icon { background: var(--success, #16a34a); color: white; }
+    .flow-step-label {
+      font-size: var(--text-xs); font-weight: 600; color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .flow-step-sub {
+      font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);
+    }
+    .flow-arrow {
+      display: flex; align-items: center; color: var(--border); font-size: 20px;
+      padding: 0 4px; flex-shrink: 0;
+    }
+    .flow-arrow.done { color: var(--success, #16a34a); }
+
+    /* Status badges — CRM specific */
+    .crm-status {
+      font-size: 10px; padding: 4px 12px; border-radius: var(--radius-full);
+      font-weight: 700; display: inline-block; letter-spacing: 0.3px; text-transform: uppercase;
+    }
+    .crm-status.new { background: #dbeafe; color: #1d4ed8; }
+    .crm-status.contacted { background: #e0e7ff; color: #4338ca; }
+    .crm-status.qualified { background: #fef3c7; color: #92400e; }
+    .crm-status.quoted { background: #fce7f3; color: #9d174d; }
+    .crm-status.won { background: #d1fae5; color: #065f46; }
+    .crm-status.lost { background: #fee2e2; color: #991b1b; }
+
+    /* Bottom Tabs */
+    .erp-bottom-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      background: var(--bg-white); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+    }
+    .erp-btab {
+      padding: 10px 20px; font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      color: var(--text-secondary); border-bottom: 2px solid transparent;
+      transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .erp-btab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .erp-btab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .erp-btab svg { width: 14px; height: 14px; }
+    .erp-bottom-content {
+      background: var(--bg-white); border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg); box-shadow: var(--shadow-xs);
+      min-height: 200px;
+    }
+    .erp-tab-panel { display: none; padding: 16px 20px; }
+    .erp-tab-panel.active { display: block; }
+
+    /* Activity timeline */
+    .atl-item { display: flex; gap: 12px; padding: 10px 0; position: relative; }
+    .atl-item::before { content:''; position: absolute; left: 15px; top: 42px; bottom: 0; width: 2px; background: var(--border-light); }
+    .atl-item:last-child::before { display: none; }
+    .atl-dot { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: var(--text-sm); z-index: 1; }
+    .atl-dot.done { background: var(--success-bg); color: var(--success); }
+    .atl-dot.current { background: var(--warning-bg); color: var(--warning); border: 2px solid var(--warning); }
+    .atl-dot.pending { background: var(--bg-hover); color: var(--text-muted); }
+    .atl-info h4 { font-size: var(--text-sm); font-weight: 600; }
+    .atl-info .sub { font-size: var(--text-xs); color: var(--text-muted); }
+
+    /* Linked docs list */
+    .linked-doc {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      border: 1px solid var(--border-light); border-radius: var(--radius);
+      margin-bottom: 8px; transition: all 0.15s; cursor: pointer;
+    }
+    .linked-doc:hover { border-color: var(--primary); background: var(--bg-hover); }
+    .linked-doc-icon {
+      width: 36px; height: 36px; border-radius: var(--radius); display: flex;
+      align-items: center; justify-content: center; font-size: 16px;
+      background: var(--primary-50, #eef2ff); color: var(--primary);
+    }
+    .linked-doc-info { flex: 1; }
+    .linked-doc-info .title { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
+    .linked-doc-info .meta { font-size: var(--text-xs); color: var(--text-muted); }
+
+    /* Lost reason */
+    .lost-reason-box {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius);
+      padding: 12px 16px; margin-top: 8px;
+    }
+    .lost-reason-box .label { font-size: 10px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .lost-reason-box .text { font-size: var(--text-sm); color: #7f1d1d; }
+
+    /* Status bar */
+    .status-bar {
+      padding: 8px 20px; display: flex; align-items: center; justify-content: space-between;
+      font-size: var(--text-xs); color: var(--text-muted); border-top: 1px solid var(--border-light);
+    }
+
+    @media (max-width: 768px) {
+      .erp-fields { grid-template-columns: 1fr 1fr; }
+      .erp-field.span2 { grid-column: span 2; }
+      .erp-field.span4 { grid-column: span 2; }
+      .doc-flow-body { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <!-- ERP Toolbar -->
+    <div class="erp-toolbar" id="toolbar">
+      <div class="erp-toolbar-left">
+        <button class="erp-btn" onclick="window.location='leads.html'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back
+        </button>
+        <div class="erp-nav">
+          <button onclick="navDoc(-1)" title="Previous">&#9664;</button>
+          <span id="nav-info">1 / 1</span>
+          <button onclick="navDoc(1)" title="Next">&#9654;</button>
+        </div>
+      </div>
+      <div class="erp-toolbar-right" id="action-buttons"></div>
+    </div>
+
+    <!-- Document Header -->
+    <div class="erp-header" id="erp-header">
+      <div class="erp-header-top">
+        <div>
+          <div class="doc-type" id="h-doc-type">CRM -- CUSTOMER</div>
+          <div class="doc-number" id="h-doc-number">---</div>
+        </div>
+        <div id="h-status"></div>
+      </div>
+      <div class="erp-fields" id="h-fields">Loading...</div>
+    </div>
+
+    <!-- Document Flow -->
+    <div class="doc-flow" id="doc-flow-section">
+      <div class="doc-flow-header">
+        <span>Document Flow</span>
+      </div>
+      <div class="doc-flow-body" id="doc-flow-body"></div>
+    </div>
+
+    <!-- Bottom Tabs -->
+    <div class="erp-bottom-tabs" id="bottom-tabs"></div>
+    <div class="erp-bottom-content" id="bottom-content"></div>
+
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    // ═══ CRM Detail Page ═══
+
+    const params = new URLSearchParams(window.location.search);
+    const leadId = params.get('id');
+    let doc = null;
+    let allLeads = [];
+    let currentIdx = 0;
+    let isNew = params.get('mode') === 'new';
+    let isEditing = isNew;
+
+    // Source & interest type options
+    const SOURCE_OPTIONS = [
+      { value: 'phone', label: 'Phone' },
+      { value: 'line', label: 'LINE' },
+      { value: 'website', label: 'Website' },
+      { value: 'walk_in', label: 'Walk-in' },
+      { value: 'referral', label: 'Referral' }
+    ];
+    const INTEREST_OPTIONS = [
+      { value: 'on_grid', label: 'On-Grid' },
+      { value: 'off_grid', label: 'Off-Grid' },
+      { value: 'hybrid', label: 'Hybrid' },
+      { value: 'survey', label: 'Survey Only' },
+      { value: 'other', label: 'Other' }
+    ];
+    const STATUS_OPTIONS = [
+      { value: 'new', label: 'New' },
+      { value: 'contacted', label: 'Contacted' },
+      { value: 'qualified', label: 'Qualified' },
+      { value: 'quoted', label: 'Quoted' },
+      { value: 'won', label: 'Won' },
+      { value: 'lost', label: 'Lost' }
+    ];
+
+    // ── CRM Status Badge ──
+    function crmStatusBadge(status) {
+      const s = status || 'new';
+      return '<span class="crm-status ' + s + '">' + s.replace(/_/g, ' ') + '</span>';
+    }
+
+    // ── Init ──
+    async function init() {
+      try {
+        // Load all leads for navigation
+        const res = await API.get('/leads');
+        allLeads = Array.isArray(res) ? res : (res.data || res.leads || []);
+
+        if (isNew) {
+          // Get next number preview
+          let nextNum = 'New';
+          try {
+            const next = await API.get('/leads/next-number');
+            nextNum = next.preview || next.next_number || 'LD-NEW';
+          } catch(e) {}
+
+          doc = {
+            lead_number: nextNum,
+            customer_name: '', customer_phone: '', customer_email: '', customer_address: '',
+            source: 'phone', interest_type: 'on_grid',
+            estimated_kwp: '', monthly_bill: '', roof_type: '', location: '',
+            status: 'new', assigned_to: '', lost_reason: '', notes: '',
+            project_id: null, quotation_id: null,
+            created_by: '', created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+          };
+        } else {
+          if (leadId) {
+            doc = await API.get('/leads/' + leadId);
+          } else {
+            doc = allLeads[0] || null;
+          }
+          if (!doc) {
+            document.getElementById('h-doc-number').textContent = 'Not found';
+            return;
+          }
+          currentIdx = allLeads.findIndex(l => String(l.id) === String(doc.id));
+          if (currentIdx < 0) currentIdx = 0;
+        }
+
+        render();
+      } catch(e) {
+        document.getElementById('h-doc-number').textContent = 'Error: ' + e.message;
+        console.error('Init error:', e);
+      }
+    }
+
+    // ── Render ──
+    function render() {
+      if (!doc) return;
+      document.title = 'SDA -- ' + (doc.lead_number || 'CRM');
+
+      const readonly = !isEditing;
+      const ro = readonly ? 'readonly' : '';
+      const dis = readonly ? 'disabled' : '';
+
+      // Header top
+      document.getElementById('h-doc-type').textContent = 'CRM -- CUSTOMER';
+      document.getElementById('h-doc-number').textContent = doc.lead_number || '---';
+      document.getElementById('h-status').innerHTML = crmStatusBadge(doc.status);
+
+      // Nav info
+      document.getElementById('nav-info').textContent = (currentIdx + 1) + ' / ' + allLeads.length;
+
+      // Action buttons
+      renderActionButtons();
+
+      // Header fields
+      renderFields();
+
+      // Document flow
+      renderDocFlow();
+
+      // Bottom tabs
+      renderBottomTabs();
+    }
+
+    function renderActionButtons() {
+      const s = doc.status || 'new';
+      const isWonOrLost = s === 'won' || s === 'lost';
+
+      let html = '';
+
+      // Add New
+      html += '<button class="erp-btn primary" onclick="addNew()">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>' +
+        'Add New</button>';
+
+      // Edit (only in view mode)
+      if (!isEditing && !isNew) {
+        html += '<button class="erp-btn" onclick="toggleEdit()">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>' +
+          'Edit</button>';
+      }
+
+      // Save & Cancel (edit mode)
+      if (isEditing) {
+        html += '<button class="erp-btn primary" onclick="saveDoc()">Save</button>';
+        html += '<button class="erp-btn" onclick="cancelEdit()">Cancel</button>';
+      }
+
+      // Submit (new leads in view mode)
+      if (!isEditing && !isNew && s === 'new') {
+        html += '<button class="erp-btn primary" onclick="updateStatus(\'contacted\')">Mark Contacted</button>';
+      }
+
+      // Convert to Quotation (only qualified/quoted leads)
+      if (!isNew && !isEditing && (s === 'qualified' || s === 'contacted')) {
+        html += '<button class="erp-btn success" onclick="convertToQuotation()">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>' +
+          'Convert to Quotation</button>';
+      }
+
+      // Mark Won / Lost (for contacted / qualified / quoted)
+      if (!isNew && !isEditing && !isWonOrLost && s !== 'new') {
+        html += '<button class="erp-btn success" onclick="markWon()">Won</button>';
+        html += '<button class="erp-btn danger" onclick="markLost()">Lost</button>';
+      }
+
+      // Delete (only draft / new)
+      if (!isNew && !isEditing && s === 'new') {
+        html += '<button class="erp-btn danger" onclick="deleteLead()">Delete</button>';
+      }
+
+      document.getElementById('action-buttons').innerHTML = html;
+    }
+
+    function renderFields() {
+      const readonly = !isEditing;
+      const ro = readonly ? 'readonly' : '';
+      const dis = readonly ? 'disabled' : '';
+
+      // Build select options helpers
+      function selectOpts(options, selected, disabled) {
+        return options.map(o =>
+          '<option value="' + o.value + '"' + (o.value === selected ? ' selected' : '') + '>' + o.label + '</option>'
+        ).join('');
+      }
+
+      let html = '';
+
+      // Row 1: Customer Name, Phone, Email, Source
+      html += '<div class="erp-field"><label>Customer Name</label>' +
+        '<input id="f-customer_name" value="' + esc(doc.customer_name) + '" ' + ro + ' placeholder="Company / Individual name"></div>';
+      html += '<div class="erp-field"><label>Phone</label>' +
+        '<input id="f-customer_phone" type="tel" value="' + esc(doc.customer_phone) + '" ' + ro + ' placeholder="08x-xxx-xxxx"></div>';
+      html += '<div class="erp-field"><label>Email</label>' +
+        '<input id="f-customer_email" type="email" value="' + esc(doc.customer_email) + '" ' + ro + ' placeholder="email@example.com"></div>';
+      html += '<div class="erp-field"><label>Source</label>' +
+        '<select id="f-source" ' + dis + '>' + selectOpts(SOURCE_OPTIONS, doc.source) + '</select></div>';
+
+      // Row 2: Address (span2), Interest Type, Estimated kWp
+      html += '<div class="erp-field span2"><label>Address</label>' +
+        '<input id="f-customer_address" value="' + esc(doc.customer_address) + '" ' + ro + ' placeholder="Address / Location"></div>';
+      html += '<div class="erp-field"><label>Interest Type</label>' +
+        '<select id="f-interest_type" ' + dis + '>' + selectOpts(INTEREST_OPTIONS, doc.interest_type) + '</select></div>';
+      html += '<div class="erp-field"><label>Estimated kWp</label>' +
+        '<input id="f-estimated_kwp" type="number" value="' + (doc.estimated_kwp || '') + '" ' + ro + ' step="0.1" min="0" placeholder="e.g. 10.5"></div>';
+
+      // Row 3: Monthly Bill, Roof Type, Location, Assigned To
+      html += '<div class="erp-field"><label>Monthly Bill (THB)</label>' +
+        '<input id="f-monthly_bill" type="number" value="' + (doc.monthly_bill || '') + '" ' + ro + ' step="100" min="0" placeholder="e.g. 5000"></div>';
+      html += '<div class="erp-field"><label>Roof Type</label>' +
+        '<input id="f-roof_type" value="' + esc(doc.roof_type) + '" ' + ro + ' placeholder="e.g. Metal Sheet, Concrete"></div>';
+      html += '<div class="erp-field"><label>Location</label>' +
+        '<input id="f-location" value="' + esc(doc.location) + '" ' + ro + ' placeholder="Province / District"></div>';
+      html += '<div class="erp-field"><label>Assigned To</label>' +
+        '<input id="f-assigned_to" value="' + esc(doc.assigned_to) + '" ' + ro + ' placeholder="Sales person"></div>';
+
+      // Row 4: Status, Notes (span3 via span2 + empty)
+      html += '<div class="erp-field"><label>Status</label>' +
+        '<select id="f-status" ' + dis + '>' + selectOpts(STATUS_OPTIONS, doc.status) + '</select></div>';
+      html += '<div class="erp-field span2"><label>Notes</label>' +
+        '<textarea id="f-notes" rows="2" ' + ro + ' placeholder="Notes / Remarks...">' + esc(doc.notes) + '</textarea></div>';
+      html += '<div class="erp-field"><label>Lead Number</label>' +
+        '<input value="' + esc(doc.lead_number) + '" readonly></div>';
+
+      // Lost reason (show only if status is lost)
+      if (doc.status === 'lost' && doc.lost_reason) {
+        html += '<div class="erp-field span4"><div class="lost-reason-box">' +
+          '<div class="label">Lost Reason</div>' +
+          '<div class="text">' + esc(doc.lost_reason) + '</div>' +
+          '</div></div>';
+      }
+
+      // Row 5: Created, Updated (readonly)
+      html += '<div class="erp-field"><label>Created</label>' +
+        '<input value="' + fmtDate(doc.created_at) + '" readonly></div>';
+      html += '<div class="erp-field"><label>Updated</label>' +
+        '<input value="' + fmtDate(doc.updated_at) + '" readonly></div>';
+      html += '<div class="erp-field"><label>Created By</label>' +
+        '<input value="' + esc(doc.created_by || '-') + '" readonly></div>';
+      html += '<div class="erp-field"><label>Monthly Bill Display</label>' +
+        '<div class="field-val" style="font-size:var(--text-xl);color:var(--primary);font-family:var(--font-mono);">' +
+        (doc.monthly_bill ? moneyBaht(doc.monthly_bill) : '-') + '</div></div>';
+
+      document.getElementById('h-fields').innerHTML = html;
+    }
+
+    function renderDocFlow() {
+      const s = doc.status || 'new';
+      const statusOrder = ['new', 'contacted', 'qualified', 'quoted', 'won'];
+      const currentStepIdx = statusOrder.indexOf(s);
+      const isLost = s === 'lost';
+
+      const steps = [
+        { key: 'crm', label: 'CRM', icon: '&#128100;', link: null },
+        { key: 'quotation', label: 'ใบประมาณการราคา', icon: '&#128196;', link: doc.quotation_id ? 'sq-detail.html?id=' + doc.quotation_id : null },
+        { key: 'survey', label: 'Booking ช่างสำรวจ', icon: '&#128269;', link: doc.project_id ? 'booking.html?project=' + doc.project_id + '&type=survey' : null },
+        { key: 'install', label: 'Booking ช่างติดตั้ง', icon: '&#128295;', link: doc.project_id ? 'booking.html?project=' + doc.project_id + '&type=install' : null },
+        { key: 'guarantee', label: 'ใบประกันราคา', icon: '&#128203;', link: doc.project_id ? 'guarantees.html?project=' + doc.project_id : null }
+      ];
+
+      let html = '';
+      steps.forEach((step, i) => {
+        // Determine step state
+        let cls = '';
+        if (step.key === 'crm') {
+          cls = isLost ? '' : 'active';
+        } else if (step.key === 'quotation' && doc.quotation_id) {
+          cls = 'completed linked';
+        } else if (step.link && doc.project_id) {
+          cls = 'linked';
+        }
+
+        // For CRM step, always mark as completed if past new
+        if (step.key === 'crm' && currentStepIdx > 0 && !isLost) {
+          cls = 'completed';
+        }
+        if (step.key === 'crm' && currentStepIdx === 0 && !isLost) {
+          cls = 'active';
+        }
+
+        const onclick = step.link ? ' onclick="window.location=\'' + step.link + '\'"' : '';
+
+        html += '<div class="flow-step ' + cls + '"' + onclick + '>';
+        html += '<div class="flow-step-icon">' + step.icon + '</div>';
+        html += '<div class="flow-step-label">' + step.label + '</div>';
+        if (step.key === 'crm') {
+          html += '<div class="flow-step-sub">' + esc(doc.lead_number || '') + '</div>';
+        } else if (step.key === 'quotation' && doc.quotation_id) {
+          html += '<div class="flow-step-sub">QT-' + doc.quotation_id + '</div>';
+        } else if (step.link && doc.project_id) {
+          html += '<div class="flow-step-sub">PJ-' + doc.project_id + '</div>';
+        }
+        html += '</div>';
+
+        // Arrow between steps
+        if (i < steps.length - 1) {
+          const arrowDone = (step.key === 'crm' && doc.quotation_id) ? ' done' : '';
+          html += '<div class="flow-arrow' + arrowDone + '">&#9654;</div>';
+        }
+      });
+
+      // If lost, show lost indicator
+      if (isLost) {
+        html = '<div class="flow-step" style="border-color:var(--danger);background:#fef2f2;">' +
+          '<div class="flow-step-icon" style="background:var(--danger);color:white;">&#10006;</div>' +
+          '<div class="flow-step-label" style="color:var(--danger);">LOST</div>' +
+          '<div class="flow-step-sub">' + esc(doc.lost_reason || '') + '</div></div>' +
+          '<div class="flow-arrow" style="color:var(--danger);">&#9664;</div>' + html;
+        // Re-wrap: lost appears on the left, then arrow, then CRM...
+        // Actually let's keep CRM first and add LOST at the end
+        html = ''; // reset
+        steps.forEach((step, i) => {
+          let cls = step.key === 'crm' ? 'completed' : '';
+          if (step.key === 'quotation' && doc.quotation_id) cls = 'completed linked';
+          const onclick = step.link ? ' onclick="window.location=\'' + step.link + '\'"' : '';
+          html += '<div class="flow-step ' + cls + '"' + onclick + '>';
+          html += '<div class="flow-step-icon">' + step.icon + '</div>';
+          html += '<div class="flow-step-label">' + step.label + '</div>';
+          if (step.key === 'crm') html += '<div class="flow-step-sub">' + esc(doc.lead_number || '') + '</div>';
+          html += '</div>';
+          if (i < steps.length - 1) {
+            html += '<div class="flow-arrow">&#9654;</div>';
+          }
+        });
+        // Add LOST step at end
+        html += '<div class="flow-arrow" style="color:var(--danger);">&#9654;</div>';
+        html += '<div class="flow-step" style="border-color:var(--danger);background:#fef2f2;">' +
+          '<div class="flow-step-icon" style="background:var(--danger);color:white;">&#10006;</div>' +
+          '<div class="flow-step-label" style="color:var(--danger);">LOST</div>' +
+          '<div class="flow-step-sub">' + esc(doc.lost_reason || '-') + '</div></div>';
+      }
+
+      document.getElementById('doc-flow-body').innerHTML = html;
+    }
+
+    function renderBottomTabs() {
+      document.getElementById('bottom-tabs').innerHTML = '' +
+        '<div class="erp-btab active" onclick="switchBTab(\'info\',this)">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Info</div>' +
+        '<div class="erp-btab" onclick="switchBTab(\'activity\',this)">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Activity</div>' +
+        '<div class="erp-btab" onclick="switchBTab(\'linked\',this)">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Linked Docs</div>';
+
+      document.getElementById('bottom-content').innerHTML = '' +
+        // Info tab
+        '<div class="erp-tab-panel active" id="btab-info">' +
+          '<div style="font-size:var(--text-base);font-weight:600;margin-bottom:12px;">Document Information</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">' +
+            infoCard('Lead Number', doc.lead_number || '-', 'var(--primary)') +
+            infoCard('Status', (doc.status || 'new').replace(/_/g, ' ').toUpperCase(), statusColor(doc.status)) +
+            infoCard('Source', (doc.source || '-').replace(/_/g, ' '), '#6366f1') +
+            infoCard('Interest', (doc.interest_type || '-').replace(/_/g, ' '), '#0ea5e9') +
+            infoCard('Est. kWp', doc.estimated_kwp ? doc.estimated_kwp + ' kWp' : '-', '#f59e0b') +
+            infoCard('Monthly Bill', doc.monthly_bill ? moneyBaht(doc.monthly_bill) : '-', '#10b981') +
+          '</div>' +
+          '<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
+            '<div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Created By</span><div style="font-size:var(--text-sm);font-weight:500;margin-top:2px;">' + esc(doc.created_by || '-') + '</div></div>' +
+            '<div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Created At</span><div style="font-size:var(--text-sm);font-weight:500;margin-top:2px;">' + fmtDate(doc.created_at) + '</div></div>' +
+            '<div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Last Updated</span><div style="font-size:var(--text-sm);font-weight:500;margin-top:2px;">' + fmtDate(doc.updated_at) + '</div></div>' +
+          '</div>' +
+        '</div>' +
+
+        // Activity tab
+        '<div class="erp-tab-panel" id="btab-activity">' +
+          '<div style="font-size:var(--text-base);font-weight:600;margin-bottom:12px;">Status History</div>' +
+          renderActivityTimeline() +
+        '</div>' +
+
+        // Linked Docs tab
+        '<div class="erp-tab-panel" id="btab-linked">' +
+          '<div style="font-size:var(--text-base);font-weight:600;margin-bottom:12px;">Linked Documents</div>' +
+          renderLinkedDocs() +
+        '</div>';
+    }
+
+    function infoCard(label, value, color) {
+      return '<div style="background:var(--bg-light);border-radius:var(--radius);padding:12px;text-align:center;">' +
+        '<div style="font-size:var(--text-2xs);color:var(--text-muted);text-transform:uppercase;font-weight:600;">' + label + '</div>' +
+        '<div style="font-size:var(--text-lg);font-weight:800;margin-top:4px;color:' + (color || 'var(--text-primary)') + ';">' + value + '</div>' +
+      '</div>';
+    }
+
+    function statusColor(s) {
+      const map = { new:'#1d4ed8', contacted:'#4338ca', qualified:'#92400e', quoted:'#9d174d', won:'#065f46', lost:'#991b1b' };
+      return map[s] || 'var(--text-primary)';
+    }
+
+    function renderActivityTimeline() {
+      // Build timeline from status progression
+      const statusFlow = ['new', 'contacted', 'qualified', 'quoted', 'won'];
+      const currentIdx = statusFlow.indexOf(doc.status);
+      const isLost = doc.status === 'lost';
+
+      let html = '';
+      statusFlow.forEach((s, i) => {
+        let st = 'pending';
+        if (isLost) {
+          st = i === 0 ? 'done' : 'pending';
+        } else if (i < currentIdx) {
+          st = 'done';
+        } else if (i === currentIdx) {
+          st = 'current';
+        }
+
+        const labels = {
+          new: 'Lead Created',
+          contacted: 'Customer Contacted',
+          qualified: 'Lead Qualified',
+          quoted: 'Quotation Sent',
+          won: 'Deal Won'
+        };
+        const subs = {
+          new: 'Created by ' + esc(doc.created_by || 'System') + ' on ' + fmtDate(doc.created_at),
+          contacted: 'First contact made',
+          qualified: 'Customer requirements confirmed',
+          quoted: 'Quotation document created',
+          won: 'Project converted successfully'
+        };
+
+        const dotIcon = st === 'done'
+          ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+          : st === 'current'
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+            : '&bull;';
+
+        html += '<div class="atl-item">' +
+          '<div class="atl-dot ' + st + '">' + dotIcon + '</div>' +
+          '<div class="atl-info"><h4>' + labels[s] + '</h4><div class="sub">' + subs[s] + '</div></div>' +
+        '</div>';
+      });
+
+      // If lost, add lost step
+      if (isLost) {
+        html += '<div class="atl-item">' +
+          '<div class="atl-dot" style="background:#fee2e2;color:#991b1b;">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></div>' +
+          '<div class="atl-info"><h4 style="color:#991b1b;">Deal Lost</h4><div class="sub">' + esc(doc.lost_reason || 'No reason provided') + '</div></div>' +
+        '</div>';
+      }
+
+      return html;
+    }
+
+    function renderLinkedDocs() {
+      let html = '';
+
+      if (doc.quotation_id) {
+        html += '<div class="linked-doc" onclick="window.location=\'sq-detail.html?id=' + doc.quotation_id + '\'">' +
+          '<div class="linked-doc-icon">&#128196;</div>' +
+          '<div class="linked-doc-info">' +
+            '<div class="title">Quotation #' + doc.quotation_id + '</div>' +
+            '<div class="meta">ใบประมาณการราคา</div>' +
+          '</div>' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.75"><path d="m9 18 6-6-6-6"/></svg>' +
+        '</div>';
+      }
+
+      if (doc.project_id) {
+        html += '<div class="linked-doc" onclick="window.location=\'projects.html?id=' + doc.project_id + '\'">' +
+          '<div class="linked-doc-icon" style="background:#ecfdf5;color:#059669;">&#128197;</div>' +
+          '<div class="linked-doc-info">' +
+            '<div class="title">Project #' + doc.project_id + '</div>' +
+            '<div class="meta">Installation Project</div>' +
+          '</div>' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.75"><path d="m9 18 6-6-6-6"/></svg>' +
+        '</div>';
+      }
+
+      if (!doc.quotation_id && !doc.project_id) {
+        html += '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:var(--text-sm);">' +
+          'No linked documents yet. Convert this lead to create a quotation.' +
+        '</div>';
+      }
+
+      return html;
+    }
+
+    // ── Escape HTML ──
+    function esc(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Tab Switching ──
+    function switchBTab(tab, el) {
+      document.querySelectorAll('.erp-btab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.erp-tab-panel').forEach(function(t) { t.classList.remove('active'); });
+      el.classList.add('active');
+      document.getElementById('btab-' + tab).classList.add('active');
+    }
+
+    // ── Navigation ──
+    function navDoc(dir) {
+      currentIdx = Math.max(0, Math.min(allLeads.length - 1, currentIdx + dir));
+      const target = allLeads[currentIdx];
+      if (!target) return;
+
+      // Update URL
+      var url = new URL(window.location);
+      url.searchParams.set('id', target.id);
+      url.searchParams.delete('mode');
+      history.replaceState(null, '', url);
+
+      isNew = false;
+      isEditing = false;
+
+      // Load the lead
+      API.get('/leads/' + target.id).then(function(data) {
+        doc = data;
+        render();
+      }).catch(function(e) {
+        showToast('Error loading lead: ' + e.message, 'error');
+      });
+    }
+
+    // ── Edit / Cancel / Save ──
+    function toggleEdit() {
+      isEditing = true;
+      render();
+    }
+
+    function cancelEdit() {
+      if (isNew) {
+        window.location = 'leads.html';
+        return;
+      }
+      isEditing = false;
+      render();
+    }
+
+    function readFormData() {
+      return {
+        customer_name: document.getElementById('f-customer_name')?.value || '',
+        customer_phone: document.getElementById('f-customer_phone')?.value || '',
+        customer_email: document.getElementById('f-customer_email')?.value || '',
+        customer_address: document.getElementById('f-customer_address')?.value || '',
+        source: document.getElementById('f-source')?.value || 'phone',
+        interest_type: document.getElementById('f-interest_type')?.value || 'on_grid',
+        estimated_kwp: parseFloat(document.getElementById('f-estimated_kwp')?.value) || null,
+        monthly_bill: parseFloat(document.getElementById('f-monthly_bill')?.value) || null,
+        roof_type: document.getElementById('f-roof_type')?.value || '',
+        location: document.getElementById('f-location')?.value || '',
+        assigned_to: document.getElementById('f-assigned_to')?.value || '',
+        status: document.getElementById('f-status')?.value || 'new',
+        notes: document.getElementById('f-notes')?.value || ''
+      };
+    }
+
+    async function saveDoc() {
+      try {
+        const data = readFormData();
+
+        // Validation
+        if (!data.customer_name.trim()) {
+          showToast('Customer name is required', 'error');
+          return;
+        }
+
+        let result;
+        if (isNew) {
+          result = await API.post('/leads', data);
+          showToast('Lead created: ' + (result.lead_number || 'OK'), 'success');
+          window.location = 'crm-detail.html?id=' + result.id;
+        } else {
+          result = await API.put('/leads/' + doc.id, data);
+          showToast('Lead updated', 'success');
+          // Refresh doc
+          doc = await API.get('/leads/' + doc.id);
+          isEditing = false;
+          render();
+        }
+      } catch(e) {
+        showToast('Error saving: ' + e.message, 'error');
+      }
+    }
+
+    // ── Status Actions ──
+    async function updateStatus(newStatus) {
+      try {
+        await API.put('/leads/' + doc.id, { status: newStatus });
+        showToast('Status updated to ' + newStatus, 'success');
+        doc = await API.get('/leads/' + doc.id);
+        render();
+      } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function markWon() {
+      if (!confirm('Mark this lead as WON?')) return;
+      await updateStatus('won');
+    }
+
+    async function markLost() {
+      var reason = prompt('Reason for losing this lead:');
+      if (reason === null) return;
+      try {
+        await API.put('/leads/' + doc.id, { status: 'lost', lost_reason: reason });
+        showToast('Lead marked as lost', 'warning');
+        doc = await API.get('/leads/' + doc.id);
+        render();
+      } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    // ── Convert to Quotation ──
+    async function convertToQuotation() {
+      if (!confirm('Convert this lead to a Quotation?\n\nThis will create a new quotation document linked to this lead.')) return;
+      try {
+        var result = await API.post('/leads/' + doc.id + '/convert');
+        showToast('Quotation created successfully!', 'success');
+        // Reload lead to get updated quotation_id
+        doc = await API.get('/leads/' + doc.id);
+        render();
+        // Optionally navigate to quotation
+        if (result.quotation_id) {
+          setTimeout(function() {
+            if (confirm('Open the new quotation?')) {
+              window.location = 'sq-detail.html?id=' + result.quotation_id;
+            }
+          }, 500);
+        }
+      } catch(e) {
+        showToast('Error converting: ' + e.message, 'error');
+      }
+    }
+
+    // ── Delete ──
+    async function deleteLead() {
+      if (!confirm('Delete this lead? This action cannot be undone.')) return;
+      try {
+        await API.delete('/leads/' + doc.id);
+        showToast('Lead deleted', 'success');
+        window.location = 'leads.html';
+      } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    // ── Add New ──
+    function addNew() {
+      window.location = 'crm-detail.html?mode=new';
+    }
+
+    // ── Start ──
+    init();
+  </script>
+</body>
+</html>

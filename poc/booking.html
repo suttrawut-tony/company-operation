@@ -3639,6 +3639,8 @@
       if (ev.booked_by_name || ev.booked_by) {
         body += `<div class="qp-row"><span class="qp-label">ผู้จอง</span><span class="qp-val">${ev.booked_by_name || ev.booked_by}</span></div>`;
       }
+      // View Detail button
+      body += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border-light);text-align:center"><a href="booking-detail.html?id=${ev.id}" style="font-size:12px;font-weight:600;color:var(--primary);text-decoration:none;">ดูรายละเอียด &rarr;</a></div>`;
       document.getElementById('qpDetailBody').innerHTML = body;
 
       // Position & show

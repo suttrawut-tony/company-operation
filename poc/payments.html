@@ -222,7 +222,7 @@
       let h='<table class="sq-table"><thead><tr><th style="width:120px">Payment No.</th><th style="width:140px">Project</th><th style="min-width:140px">Customer</th><th style="width:90px;text-align:center">Type</th><th style="width:100px;text-align:right">Amount</th><th style="width:80px;text-align:right">VAT</th><th style="width:110px;text-align:right">Total</th><th style="width:90px">Method</th><th style="width:80px;text-align:center">Status</th><th style="width:100px">Date</th><th style="width:200px;text-align:center">Actions</th></tr></thead><tbody>';
       filteredPayments.forEach(p=>{
         const projName = projects.find(pr=>pr.id===p.project_id);
-        h+=`<tr>
+        h+=`<tr onclick="window.location='payment-detail.html?id=${p.id}'">
           <td><span style="font-weight:700;color:var(--primary);font-size:12px;">${p.payment_number||'-'}</span></td>
           <td style="font-size:12px;color:var(--text-secondary);">${projName?projName.code||projName.name:'-'}</td>
           <td><div style="font-weight:500;color:var(--text-primary);">${p.customer_name||'-'}</div></td>

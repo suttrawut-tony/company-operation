@@ -208,7 +208,7 @@
       allGuarantees.forEach(g => {
         const days = calcDaysLeft(g.expiry_date);
         const effStatus = getEffectiveStatus(g);
-        h += `<tr>
+        h += `<tr onclick="window.location='guarantee-detail.html?id=${g.id}'">
           <td style="font-weight:600;color:var(--primary)">${g.guarantee_number || '-'}</td>
           <td>${g.project_name || g.project_code || '-'}</td>
           <td>${g.contract_number || '-'}</td>

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Booking Detail</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ── ERP Document Form ── */
+    .erp-toolbar {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 10px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-xs);
+    }
+    .erp-toolbar-left { display: flex; align-items: center; gap: 6px; }
+    .erp-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .erp-btn {
+      padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      font-family: var(--font); color: var(--text-secondary); display: flex;
+      align-items: center; gap: 5px; transition: all 0.15s;
+    }
+    .erp-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .erp-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .erp-btn.primary:hover { background: var(--primary-hover); }
+    .erp-btn.success { background: var(--success,#0f9d58); color: white; border-color: var(--success,#0f9d58); }
+    .erp-btn.success:hover { filter: brightness(0.9); }
+    .erp-btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+    .erp-btn.danger:hover { filter: brightness(0.9); }
+    .erp-btn.warning { background: #f59e0b; color: white; border-color: #f59e0b; }
+    .erp-btn.warning:hover { filter: brightness(0.9); }
+    .erp-btn svg { width: 14px; height: 14px; }
+    .erp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .erp-nav { display: flex; align-items: center; gap: 4px; margin-left: 12px; }
+    .erp-nav button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-white); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: var(--text-md); }
+    .erp-nav button:hover { background: var(--bg-hover); }
+    .erp-nav span { font-size: var(--text-xs); color: var(--text-muted); min-width: 60px; text-align: center; }
+
+    /* Header Form */
+    .erp-header {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .erp-header-top {
+      padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 100%);
+    }
+    .erp-header-top .doc-type {
+      font-size: var(--text-2xs); font-weight: 700; color: var(--primary); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 2px;
+    }
+    .erp-header-top .doc-number {
+      font-size: var(--text-3xl); font-weight: 800; color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+    .erp-fields {
+      padding: 20px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .erp-field { position: relative; }
+    .erp-field label {
+      display: block; font-size: var(--text-2xs); font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+    }
+    .erp-field input, .erp-field select, .erp-field textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: var(--text-base); font-family: var(--font);
+      color: var(--text-primary); background: var(--bg-white); outline: none;
+      transition: all 0.15s; box-sizing: border-box;
+    }
+    .erp-field textarea { resize: vertical; min-height: 60px; }
+    .erp-field input:focus, .erp-field select:focus, .erp-field textarea:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+    .erp-field input[readonly], .erp-field textarea[readonly] {
+      background: var(--bg-light); color: var(--text-secondary); border-color: transparent;
+    }
+    .erp-field select[disabled] {
+      background: var(--bg-light); color: var(--text-secondary); border-color: transparent;
+      -webkit-appearance: none; appearance: none;
+    }
+    .erp-field .field-val {
+      font-size: var(--text-md); font-weight: 700; padding: 8px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .erp-field.span2 { grid-column: span 2; }
+    .erp-field.span4 { grid-column: span 4; }
+
+    /* Status Badge */
+    .sq-badge {
+      font-size: 10px; padding: 3px 10px; border-radius: var(--radius-full);
+      font-weight: 600; display: inline-block; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+
+    /* Job Status Stepper */
+    .job-stepper {
+      display: flex; align-items: center; gap: 0; margin: 20px 0; padding: 16px 24px;
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+    }
+    .step {
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+      border-radius: var(--radius); font-size: 13px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .step.done { color: #065f46; background: #d1fae5; }
+    .step.active { color: #1e40af; background: #dbeafe; border: 2px solid #3b82f6; }
+    .step.pending { color: var(--text-muted); background: var(--bg-light); }
+    .step-icon {
+      width: 22px; height: 22px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step.done .step-icon { background: #065f46; color: white; }
+    .step.active .step-icon { background: #3b82f6; color: white; }
+    .step.pending .step-icon { background: var(--border); color: var(--text-muted); }
+    .step-arrow { color: var(--border); font-size: 20px; margin: 0 4px; }
+
+    /* Bottom Tabs */
+    .erp-bottom-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      background: var(--bg-white); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+    }
+    .erp-btab {
+      padding: 10px 20px; font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      color: var(--text-secondary); border-bottom: 2px solid transparent;
+      transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+      background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .erp-btab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .erp-btab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .erp-btab svg { width: 14px; height: 14px; }
+    .erp-bottom-content {
+      background: var(--bg-white); border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg); box-shadow: var(--shadow-xs);
+      min-height: 200px;
+    }
+    .erp-tab-panel { display: none; padding: 16px 20px; }
+    .erp-tab-panel.active { display: block; }
+
+    /* Info table in tabs */
+    .info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .info-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-light); }
+    .info-table td:first-child { font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 11px; width: 160px; letter-spacing: 0.3px; }
+    .info-table td:last-child { color: var(--text-primary); }
+
+    /* Linked doc card */
+    .linked-doc {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px;
+      background: var(--bg-white); cursor: pointer; transition: all 0.15s;
+    }
+    .linked-doc:hover { background: var(--bg-hover); border-color: var(--primary); }
+    .linked-doc .ld-icon { width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .linked-doc .ld-info { flex: 1; }
+    .linked-doc .ld-info .ld-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .linked-doc .ld-info .ld-val { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+    /* Toast */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; color: white; box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease; min-width: 240px; }
+    .toast.success { background: #059669; }
+    .toast.error { background: #dc2626; }
+    .toast.info { background: #2563eb; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    @media (max-width: 768px) {
+      .erp-fields { grid-template-columns: 1fr 1fr; }
+      .erp-field.span2 { grid-column: span 2; }
+      .erp-field.span4 { grid-column: span 2; }
+      .job-stepper { flex-wrap: wrap; padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <!-- ERP Toolbar -->
+    <div class="erp-toolbar" id="toolbar">
+      <div class="erp-toolbar-left">
+        <button class="erp-btn" onclick="location.href='booking.html'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back
+        </button>
+        <div class="erp-nav">
+          <button onclick="navDoc(-1)" title="Previous">&#9664;</button>
+          <span id="nav-info">1 / 1</span>
+          <button onclick="navDoc(1)" title="Next">&#9654;</button>
+        </div>
+      </div>
+      <div class="erp-toolbar-right" id="action-buttons"></div>
+    </div>
+
+    <!-- Document Header -->
+    <div class="erp-header" id="erp-header">
+      <div class="erp-header-top">
+        <div>
+          <div class="doc-type" id="h-doc-type">Loading...</div>
+          <div class="doc-number" id="h-doc-number">---</div>
+        </div>
+        <div id="h-status" style="display:flex;gap:8px;align-items:center;"></div>
+      </div>
+      <div class="erp-fields" id="h-fields">Loading...</div>
+    </div>
+
+    <!-- Job Status Stepper -->
+    <div class="job-stepper" id="job-stepper"></div>
+
+    <!-- Bottom Tabs -->
+    <div class="erp-bottom-tabs" id="bottom-tabs">
+      <button class="erp-btab active" onclick="switchTab('report')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+        Job Report
+      </button>
+      <button class="erp-btab" onclick="switchTab('info')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Info
+      </button>
+      <button class="erp-btab" onclick="switchTab('linked')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Linked Docs
+      </button>
+    </div>
+    <div class="erp-bottom-content">
+      <div class="erp-tab-panel active" id="tab-report">
+        <h4 style="font-size:13px;font-weight:700;margin:0 0 12px;color:var(--text-secondary);">JOB REPORT / รายงานผลงาน</h4>
+        <textarea id="field-job_report" rows="6" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);resize:vertical;box-sizing:border-box;background:var(--bg-white);" placeholder="กรอกรายงานหลังทำงานเสร็จ..." readonly></textarea>
+      </div>
+      <div class="erp-tab-panel" id="tab-info">
+        <table class="info-table" id="info-table"></table>
+      </div>
+      <div class="erp-tab-panel" id="tab-linked">
+        <div id="linked-docs">
+          <div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center;">No linked documents</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    // ════════════════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════════════════
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get('id');
+    const isNew = params.get('mode') === 'new';
+    let doc = null;
+    let allDocs = [];
+    let currentIdx = 0;
+    let isEditing = isNew;
+    let projectsCache = [];
+
+    // ════════════════════════════════════════════════════════
+    //  HELPERS
+    // ════════════════════════════════════════════════════════
+    function fmtDate(d) {
+      if (!d) return '-';
+      return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    function fmtDateTime(d) {
+      if (!d) return '-';
+      return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function statusBadge(status) {
+      const styles = {
+        pending:    'background:#fef3c7;color:#92400e',
+        approved:   'background:#d1fae5;color:#065f46',
+        checked_out:'background:#dbeafe;color:#1e40af',
+        checked_in: 'background:#e0e7ff;color:#3730a3',
+        cancelled:  'background:#fee2e2;color:#991b1b',
+        draft:      'background:#e2e3e5;color:#383d41'
+      };
+      const labels = {
+        pending: 'Pending', approved: 'Approved', checked_out: 'Checked Out',
+        checked_in: 'Checked In', cancelled: 'Cancelled', draft: 'Draft'
+      };
+      const s = status || 'draft';
+      return `<span class="sq-badge" style="${styles[s] || styles.draft}">${labels[s] || s}</span>`;
+    }
+
+    function jobStatusBadge(jobStatus) {
+      const styles = {
+        scheduled:   'background:#e0e7ff;color:#3730a3',
+        in_progress: 'background:#fef3c7;color:#92400e',
+        completed:   'background:#d1fae5;color:#065f46',
+        cancelled:   'background:#fee2e2;color:#991b1b'
+      };
+      const s = jobStatus || 'scheduled';
+      const label = getJobStatusLabel(doc ? doc.job_type : 'survey', s);
+      return `<span class="sq-badge" style="${styles[s] || styles.scheduled}">${label}</span>`;
+    }
+
+    function getJobStatusLabel(jobType, status) {
+      const labels = {
+        survey: {
+          scheduled: 'นัดสำรวจ',
+          in_progress: 'กำลังสำรวจ',
+          completed: 'สำรวจเสร็จ',
+          cancelled: 'ยกเลิก'
+        },
+        installation: {
+          scheduled: 'นัดติดตั้ง',
+          in_progress: 'กำลังติดตั้ง',
+          completed: 'ติดตั้งเสร็จ',
+          cancelled: 'ยกเลิก'
+        },
+        maintenance: {
+          scheduled: 'นัดซ่อมบำรุง',
+          in_progress: 'กำลังซ่อมบำรุง',
+          completed: 'ซ่อมบำรุงเสร็จ',
+          cancelled: 'ยกเลิก'
+        }
+      };
+      const typeLabels = labels[jobType] || labels.survey;
+      return typeLabels[status] || status || '-';
+    }
+
+    function getDocTypeLabel(jobType) {
+      const map = {
+        survey: 'BOOKING \u2014 ช่างสำรวจ',
+        installation: 'BOOKING \u2014 ช่างติดตั้ง',
+        maintenance: 'BOOKING \u2014 ช่างซ่อมบำรุง'
+      };
+      return map[jobType] || 'BOOKING';
+    }
+
+    function showToast(msg, type) {
+      type = type || 'info';
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; setTimeout(() => toast.remove(), 300); }, 3500);
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════════════════════
+    async function init() {
+      try {
+        // Load projects for dropdown
+        try { projectsCache = await API.getProjects(); } catch(e) { projectsCache = []; }
+
+        // Load all bookings for navigation
+        try { allDocs = await API.get('/bookings'); } catch(e) { allDocs = []; }
+
+        if (isNew) {
+          const presetJobType = params.get('job_type') || 'survey';
+          doc = {
+            id: null,
+            booking_type: 'technician',
+            job_type: presetJobType,
+            title: '',
+            project_id: '',
+            technician_id: '',
+            site_name: '',
+            system_capacity: '',
+            start_date: new Date().toISOString().split('T')[0],
+            start_time: '09:00',
+            end_date: new Date().toISOString().split('T')[0],
+            end_time: '17:00',
+            all_day: false,
+            location: '',
+            purpose: '',
+            job_description: '',
+            tools_required: '',
+            safety_notes: '',
+            remarks: '',
+            color: '#3b82f6',
+            status: 'pending',
+            job_status: 'scheduled',
+            job_report: '',
+            booked_by: '',
+            approved_by: null,
+            approved_at: null,
+            created_at: null,
+            updated_at: null
+          };
+        } else {
+          if (!bookingId) { location.href = 'booking.html'; return; }
+          doc = await API.get('/bookings/' + bookingId);
+          if (!doc) { showToast('Booking not found', 'error'); return; }
+          currentIdx = allDocs.findIndex(d => d.id === doc.id);
+          if (currentIdx < 0) currentIdx = 0;
+        }
+
+        render();
+      } catch(e) {
+        showToast('Error loading: ' + e.message, 'error');
+      }
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  RENDER
+    // ════════════════════════════════════════════════════════
+    function render() {
+      document.title = 'SDA \u2014 Booking ' + (doc.title || (isNew ? 'New' : ''));
+      const readonly = !isEditing;
+      const ro = readonly ? 'readonly' : '';
+      const dis = readonly ? 'disabled' : '';
+
+      // --- Doc Type Header ---
+      document.getElementById('h-doc-type').textContent = getDocTypeLabel(doc.job_type);
+      document.getElementById('h-doc-number').textContent = doc.title || (isNew ? 'New Booking' : '-');
+
+      // --- Status badges ---
+      document.getElementById('h-status').innerHTML =
+        statusBadge(doc.status) + ' ' + jobStatusBadge(doc.job_status);
+
+      // --- Nav ---
+      document.getElementById('nav-info').textContent = allDocs.length > 0
+        ? `${currentIdx + 1} / ${allDocs.length}` : '- / -';
+
+      // --- Action Buttons ---
+      renderActionButtons();
+
+      // --- Header Fields ---
+      renderFields(readonly, ro, dis);
+
+      // --- Job Stepper ---
+      renderStepper();
+
+      // --- Bottom Tabs ---
+      renderInfoTab();
+      renderLinkedDocs();
+
+      // --- Job Report ---
+      const reportEl = document.getElementById('field-job_report');
+      reportEl.value = doc.job_report || '';
+      reportEl.readOnly = readonly;
+    }
+
+    function renderActionButtons() {
+      const isDraft = doc.status === 'pending' || doc.status === 'draft';
+      const isApproved = doc.status === 'approved';
+      const isCancelled = doc.status === 'cancelled';
+      const isCompleted = doc.job_status === 'completed';
+      let html = '';
+
+      // Add New
+      html += `<button class="erp-btn primary" onclick="addNew()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        Add New</button>`;
+
+      if (!isEditing && !isNew && !isCancelled) {
+        html += `<button class="erp-btn" onclick="toggleEdit()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          Edit</button>`;
+      }
+
+      if (isEditing) {
+        html += `<button class="erp-btn primary" onclick="saveDoc()">Save</button>`;
+        html += `<button class="erp-btn" onclick="cancelEdit()">Cancel</button>`;
+      }
+
+      // Approve button
+      if (isDraft && !isEditing && !isNew) {
+        html += `<button class="erp-btn success" onclick="approveDoc()">Approve</button>`;
+      }
+
+      // Job Status update button (only when approved and not cancelled)
+      if (!isNew && !isEditing && isApproved && !isCancelled && !isCompleted) {
+        const nextStatus = getNextJobStatus(doc.job_status);
+        if (nextStatus) {
+          const nextLabel = getNextJobStatusButtonLabel(doc.job_type, doc.job_status);
+          const btnClass = nextStatus === 'completed' ? 'success' : 'warning';
+          html += `<button class="erp-btn ${btnClass}" onclick="updateJobStatus('${nextStatus}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            ${nextLabel}</button>`;
+        }
+      }
+
+      // Cancel booking
+      if (!isNew && !isCancelled && !isCompleted && !isEditing) {
+        html += `<button class="erp-btn danger" onclick="cancelBooking()">Cancel Booking</button>`;
+      }
+
+      document.getElementById('action-buttons').innerHTML = html;
+    }
+
+    function getNextJobStatus(current) {
+      const flow = { scheduled: 'in_progress', in_progress: 'completed' };
+      return flow[current] || null;
+    }
+
+    function getNextJobStatusButtonLabel(jobType, current) {
+      const labels = {
+        survey: { scheduled: 'เริ่มสำรวจ', in_progress: 'สำรวจเสร็จ' },
+        installation: { scheduled: 'เริ่มติดตั้ง', in_progress: 'ติดตั้งเสร็จ' },
+        maintenance: { scheduled: 'เริ่มซ่อมบำรุง', in_progress: 'ซ่อมบำรุงเสร็จ' }
+      };
+      const typeLabels = labels[jobType] || labels.survey;
+      return typeLabels[current] || 'Update Status';
+    }
+
+    function renderFields(readonly, ro, dis) {
+      const projOpts = projectsCache.map(p =>
+        `<option value="${p.id}" ${String(doc.project_id) === String(p.id) ? 'selected' : ''}>${p.code || ''} \u2014 ${p.name || ''}</option>`
+      ).join('');
+
+      const jobTypeOpts = `
+        <option value="survey" ${doc.job_type === 'survey' ? 'selected' : ''}>Survey / สำรวจ</option>
+        <option value="installation" ${doc.job_type === 'installation' ? 'selected' : ''}>Installation / ติดตั้ง</option>
+        <option value="maintenance" ${doc.job_type === 'maintenance' ? 'selected' : ''}>Maintenance / ซ่อมบำรุง</option>
+      `;
+
+      document.getElementById('h-fields').innerHTML = `
+        <div class="erp-field span2">
+          <label>Title / หัวข้อ</label>
+          <input id="field-title" value="${esc(doc.title)}" ${ro} placeholder="ชื่องาน เช่น สำรวจหน้างาน คอนโด ABC">
+        </div>
+        <div class="erp-field">
+          <label>Booking Type</label>
+          <input value="Technician / ช่าง" readonly>
+        </div>
+        <div class="erp-field">
+          <label>Job Type / ประเภทงาน</label>
+          <select id="field-job_type" ${dis} onchange="onJobTypeChange(this.value)">${jobTypeOpts}</select>
+        </div>
+
+        <div class="erp-field">
+          <label>Project / โปรเจกต์</label>
+          <select id="field-project_id" ${dis}><option value="">-- Select Project --</option>${projOpts}</select>
+        </div>
+        <div class="erp-field">
+          <label>Technician / ช่าง</label>
+          <input id="field-technician_id" value="${esc(doc.technician_id || doc.technician_name || '')}" ${ro} placeholder="ชื่อช่าง">
+        </div>
+        <div class="erp-field">
+          <label>Site Name / ชื่อไซต์</label>
+          <input id="field-site_name" value="${esc(doc.site_name)}" ${ro} placeholder="ชื่อไซต์งาน">
+        </div>
+        <div class="erp-field">
+          <label>System Capacity / ขนาดระบบ</label>
+          <input id="field-system_capacity" value="${esc(doc.system_capacity)}" ${ro} placeholder="เช่น 10 kW">
+        </div>
+
+        <div class="erp-field">
+          <label>Start Date / วันเริ่ม</label>
+          <input type="date" id="field-start_date" value="${(doc.start_date || '').split('T')[0]}" ${ro}>
+        </div>
+        <div class="erp-field">
+          <label>Start Time / เวลาเริ่ม</label>
+          <input type="time" id="field-start_time" value="${doc.start_time || '09:00'}" ${ro}>
+        </div>
+        <div class="erp-field">
+          <label>End Date / วันสิ้นสุด</label>
+          <input type="date" id="field-end_date" value="${(doc.end_date || '').split('T')[0]}" ${ro}>
+        </div>
+        <div class="erp-field">
+          <label>End Time / เวลาสิ้นสุด</label>
+          <input type="time" id="field-end_time" value="${doc.end_time || '17:00'}" ${ro}>
+        </div>
+
+        <div class="erp-field span2">
+          <label>Location / สถานที่</label>
+          <input id="field-location" value="${esc(doc.location)}" ${ro} placeholder="ที่อยู่หรือพิกัด GPS">
+        </div>
+        <div class="erp-field span2">
+          <label>Purpose / วัตถุประสงค์</label>
+          <input id="field-purpose" value="${esc(doc.purpose)}" ${ro} placeholder="วัตถุประสงค์ของการจอง">
+        </div>
+
+        <div class="erp-field span2">
+          <label>Job Description / รายละเอียดงาน</label>
+          <textarea id="field-job_description" ${ro} rows="2" placeholder="รายละเอียดขอบเขตงาน...">${esc(doc.job_description)}</textarea>
+        </div>
+        <div class="erp-field">
+          <label>Tools Required / เครื่องมือ</label>
+          <input id="field-tools_required" value="${esc(doc.tools_required)}" ${ro} placeholder="เครื่องมือที่ต้องใช้">
+        </div>
+        <div class="erp-field">
+          <label>Safety Notes / ข้อควรระวัง</label>
+          <input id="field-safety_notes" value="${esc(doc.safety_notes)}" ${ro} placeholder="ข้อควรระวังด้านความปลอดภัย">
+        </div>
+
+        <div class="erp-field">
+          <label>Status / สถานะ</label>
+          <div class="field-val">${statusBadge(doc.status)}</div>
+        </div>
+        <div class="erp-field">
+          <label>Job Status / สถานะงาน</label>
+          <div class="field-val">${jobStatusBadge(doc.job_status)}</div>
+        </div>
+        <div class="erp-field span2">
+          <label>Remarks / หมายเหตุ</label>
+          <textarea id="field-remarks" ${ro} rows="2" placeholder="หมายเหตุเพิ่มเติม...">${esc(doc.remarks)}</textarea>
+        </div>
+      `;
+    }
+
+    function renderStepper() {
+      const jobType = doc.job_type || 'survey';
+      const jobStatus = doc.job_status || 'scheduled';
+      const steps = ['scheduled', 'in_progress', 'completed'];
+      const statusOrder = { scheduled: 0, in_progress: 1, completed: 2 };
+      const currentOrder = statusOrder[jobStatus] !== undefined ? statusOrder[jobStatus] : -1;
+
+      let html = '';
+      steps.forEach((step, idx) => {
+        let cls = 'pending';
+        let icon = idx + 1;
+        if (idx < currentOrder) { cls = 'done'; icon = '\u2713'; }
+        else if (idx === currentOrder) { cls = 'active'; icon = idx + 1; }
+
+        if (idx > 0) html += '<span class="step-arrow">\u25B6</span>';
+        html += `<div class="step ${cls}">
+          <span class="step-icon">${icon}</span>
+          ${getJobStatusLabel(jobType, step)}
+        </div>`;
+      });
+
+      document.getElementById('job-stepper').innerHTML = html;
+    }
+
+    function renderInfoTab() {
+      document.getElementById('info-table').innerHTML = `
+        <tr><td>Booked By</td><td>${esc(doc.booked_by || '-')}</td></tr>
+        <tr><td>Created At</td><td>${fmtDateTime(doc.created_at)}</td></tr>
+        <tr><td>Updated At</td><td>${fmtDateTime(doc.updated_at)}</td></tr>
+        <tr><td>Approved By</td><td>${esc(doc.approved_by || '-')}</td></tr>
+        <tr><td>Approved At</td><td>${fmtDateTime(doc.approved_at)}</td></tr>
+        <tr><td>Job Completed At</td><td>${fmtDateTime(doc.job_completed_at)}</td></tr>
+      `;
+    }
+
+    function renderLinkedDocs() {
+      let html = '';
+
+      // Link to project
+      if (doc.project_id) {
+        const proj = projectsCache.find(p => String(p.id) === String(doc.project_id));
+        html += `<div class="linked-doc" onclick="location.href='phases.html?id=${doc.project_id}'">
+          <div class="ld-icon" style="background:#dbeafe;color:#1e40af;">P</div>
+          <div class="ld-info">
+            <div class="ld-label">Project</div>
+            <div class="ld-val">${proj ? (proj.code + ' \u2014 ' + proj.name) : doc.project_id}</div>
+          </div>
+        </div>`;
+      }
+
+      // Link to CRM lead (if available)
+      if (doc.lead_id) {
+        html += `<div class="linked-doc" onclick="location.href='leads.html?id=${doc.lead_id}'">
+          <div class="ld-icon" style="background:#fef3c7;color:#92400e;">L</div>
+          <div class="ld-info">
+            <div class="ld-label">CRM Lead</div>
+            <div class="ld-val">${esc(doc.lead_name || doc.lead_id)}</div>
+          </div>
+        </div>`;
+      }
+
+      // Link to quotation (if available)
+      if (doc.quotation_id) {
+        html += `<div class="linked-doc" onclick="location.href='sq-detail.html?type=sq&doc=${doc.quotation_number || doc.quotation_id}'">
+          <div class="ld-icon" style="background:#d1fae5;color:#065f46;">Q</div>
+          <div class="ld-info">
+            <div class="ld-label">Quotation</div>
+            <div class="ld-val">${esc(doc.quotation_number || doc.quotation_id)}</div>
+          </div>
+        </div>`;
+      }
+
+      // Link to related survey booking (for installation type)
+      if (doc.job_type === 'installation' && doc.related_survey_id) {
+        html += `<div class="linked-doc" onclick="location.href='booking-detail.html?id=${doc.related_survey_id}'">
+          <div class="ld-icon" style="background:#e0e7ff;color:#3730a3;">S</div>
+          <div class="ld-info">
+            <div class="ld-label">Survey Booking</div>
+            <div class="ld-val">${esc(doc.related_survey_title || 'Survey #' + doc.related_survey_id)}</div>
+          </div>
+        </div>`;
+      }
+
+      if (!html) {
+        html = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center;">No linked documents</div>';
+      }
+
+      document.getElementById('linked-docs').innerHTML = html;
+    }
+
+    function esc(s) { return (s || '').toString().replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    // ════════════════════════════════════════════════════════
+    //  TABS
+    // ════════════════════════════════════════════════════════
+    function switchTab(tab) {
+      document.querySelectorAll('.erp-btab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.erp-tab-panel').forEach(p => p.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  ACTIONS
+    // ════════════════════════════════════════════════════════
+    function addNew() {
+      location.href = 'booking-detail.html?mode=new';
+    }
+
+    function toggleEdit() {
+      isEditing = true;
+      render();
+    }
+
+    function cancelEdit() {
+      if (isNew) { location.href = 'booking.html'; return; }
+      isEditing = false;
+      render();
+    }
+
+    function navDoc(dir) {
+      if (!allDocs.length) return;
+      let idx = currentIdx + dir;
+      if (idx < 0) idx = allDocs.length - 1;
+      if (idx >= allDocs.length) idx = 0;
+      const target = allDocs[idx];
+      if (target && target.id) {
+        location.href = 'booking-detail.html?id=' + target.id;
+      }
+    }
+
+    function onJobTypeChange(newType) {
+      doc.job_type = newType;
+      document.getElementById('h-doc-type').textContent = getDocTypeLabel(newType);
+      renderStepper();
+    }
+
+    function collectFormData() {
+      return {
+        title: document.getElementById('field-title').value.trim(),
+        booking_type: 'technician',
+        job_type: document.getElementById('field-job_type').value,
+        project_id: document.getElementById('field-project_id').value || null,
+        technician_id: document.getElementById('field-technician_id').value.trim(),
+        site_name: document.getElementById('field-site_name').value.trim(),
+        system_capacity: document.getElementById('field-system_capacity').value.trim(),
+        start_date: document.getElementById('field-start_date').value,
+        start_time: document.getElementById('field-start_time').value,
+        end_date: document.getElementById('field-end_date').value,
+        end_time: document.getElementById('field-end_time').value,
+        location: document.getElementById('field-location').value.trim(),
+        purpose: document.getElementById('field-purpose').value.trim(),
+        job_description: document.getElementById('field-job_description').value.trim(),
+        tools_required: document.getElementById('field-tools_required').value.trim(),
+        safety_notes: document.getElementById('field-safety_notes').value.trim(),
+        remarks: document.getElementById('field-remarks').value.trim(),
+        job_report: document.getElementById('field-job_report').value.trim()
+      };
+    }
+
+    async function saveDoc() {
+      const data = collectFormData();
+
+      // Validation
+      if (!data.title) { showToast('กรุณาระบุ Title', 'error'); return; }
+      if (!data.start_date) { showToast('กรุณาระบุ Start Date', 'error'); return; }
+
+      try {
+        if (isNew) {
+          const result = await API.post('/bookings', data);
+          showToast('สร้าง Booking สำเร็จ', 'success');
+          location.href = 'booking-detail.html?id=' + result.id;
+        } else {
+          await API.put('/bookings/' + doc.id, data);
+          doc = await API.get('/bookings/' + doc.id);
+          isEditing = false;
+          showToast('บันทึกสำเร็จ', 'success');
+          render();
+        }
+      } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function approveDoc() {
+      if (!confirm('ต้องการ Approve booking นี้?')) return;
+      try {
+        await API.post('/bookings/' + doc.id + '/approve', {});
+        doc = await API.get('/bookings/' + doc.id);
+        showToast('Approved!', 'success');
+        render();
+      } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function updateJobStatus(newStatus) {
+      const label = getJobStatusLabel(doc.job_type, newStatus);
+      if (!confirm('เปลี่ยนสถานะงานเป็น "' + label + '"?')) return;
+
+      // If completing, prompt for report
+      if (newStatus === 'completed') {
+        const report = document.getElementById('field-job_report').value.trim();
+        if (!report) {
+          // Switch to report tab
+          document.querySelectorAll('.erp-btab').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.erp-tab-panel').forEach(p => p.classList.remove('active'));
+          document.querySelectorAll('.erp-btab')[0].classList.add('active');
+          document.getElementById('tab-report').classList.add('active');
+          showToast('กรุณากรอก Job Report ก่อนปิดงาน', 'error');
+          document.getElementById('field-job_report').focus();
+          return;
+        }
+      }
+
+      try {
+        const body = { job_status: newStatus };
+        if (newStatus === 'completed') {
+          body.job_report = document.getElementById('field-job_report').value.trim();
+        }
+        await API.put('/bookings/' + doc.id + '/job-status', body);
+        doc = await API.get('/bookings/' + doc.id);
+        showToast('อัพเดทสถานะงาน: ' + label, 'success');
+        render();
+      } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function cancelBooking() {
+      if (!confirm('ต้องการยกเลิก Booking นี้?')) return;
+      try {
+        await API.delete('/bookings/' + doc.id);
+        showToast('ยกเลิก Booking สำเร็จ', 'success');
+        location.href = 'booking.html';
+      } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  BOOTSTRAP
+    // ════════════════════════════════════════════════════════
+    init();
+  </script>
+</body>
+</html>

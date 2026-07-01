@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Payment Receipt</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ── ERP Document Form (same as doc-detail) ── */
+    .erp-toolbar {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 10px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-xs);
+    }
+    .erp-toolbar-left { display: flex; align-items: center; gap: 6px; }
+    .erp-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .erp-btn {
+      padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      font-family: var(--font); color: var(--text-secondary); display: flex;
+      align-items: center; gap: 5px; transition: all 0.15s;
+    }
+    .erp-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .erp-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .erp-btn.primary:hover { background: var(--primary-hover); }
+    .erp-btn.success { background: var(--success); color: white; border-color: var(--success); }
+    .erp-btn.success:hover { filter: brightness(0.9); }
+    .erp-btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+    .erp-btn.danger:hover { filter: brightness(0.9); }
+    .erp-btn.warning { background: #f59e0b; color: white; border-color: #f59e0b; }
+    .erp-btn svg { width: 14px; height: 14px; }
+    .erp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .erp-nav { display: flex; align-items: center; gap: 4px; margin-left: 12px; }
+    .erp-nav button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-white); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: var(--text-md); }
+    .erp-nav button:hover { background: var(--bg-hover); }
+    .erp-nav span { font-size: var(--text-xs); color: var(--text-muted); min-width: 60px; text-align: center; }
+
+    /* Header Form */
+    .erp-header {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .erp-header-top {
+      padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 100%);
+    }
+    .erp-header-top .doc-type {
+      font-size: var(--text-2xs); font-weight: 700; color: var(--primary); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 2px;
+    }
+    .erp-header-top .doc-number {
+      font-size: var(--text-3xl); font-weight: 800; color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+    .erp-fields {
+      padding: 20px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .erp-field { position: relative; }
+    .erp-field label {
+      display: block; font-size: var(--text-2xs); font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+    }
+    .erp-field input, .erp-field select, .erp-field textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: var(--text-base); font-family: var(--font);
+      color: var(--text-primary); background: var(--bg-white); outline: none;
+      transition: all 0.15s; box-sizing: border-box;
+    }
+    .erp-field textarea { min-height: 60px; resize: vertical; }
+    .erp-field input:focus, .erp-field select:focus, .erp-field textarea:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+    .erp-field input[readonly] {
+      background: var(--bg-light); color: var(--text-secondary); border-color: transparent;
+    }
+    .erp-field .field-val {
+      font-size: var(--text-md); font-weight: 700; padding: 8px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .erp-field.span2 { grid-column: span 2; }
+    .erp-field.span4 { grid-column: span 4; }
+
+    /* Bottom Tabs */
+    .erp-bottom-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      background: var(--bg-white); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+    }
+    .erp-btab {
+      padding: 10px 20px; font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      color: var(--text-secondary); border-bottom: 2px solid transparent;
+      transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .erp-btab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .erp-btab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .erp-btab svg { width: 14px; height: 14px; }
+    .erp-bottom-content {
+      background: var(--bg-white); border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg); box-shadow: var(--shadow-xs);
+      min-height: 200px;
+    }
+    .erp-tab-panel { display: none; padding: 16px 20px; }
+    .erp-tab-panel.active { display: block; }
+
+    /* Payment Calculator */
+    .pay-calc { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
+    .pay-calc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .pay-calc-header h3 { font-size: 14px; font-weight: 700; }
+    .pay-calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .pay-calc-item { text-align: center; }
+    .pay-calc-item .label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .pay-calc-item .value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 4px; }
+    .pay-calc-item .value.primary { color: var(--primary); }
+    .pay-calc-item .value.success { color: #059669; }
+    .pay-calc-item .value.warning { color: #d97706; }
+    .pay-calc-item .value.danger { color: var(--danger); }
+    .pay-progress { height: 8px; background: var(--bg-light); border-radius: var(--radius-full); overflow: hidden; margin-top: 16px; }
+    .pay-progress-bar { height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); border-radius: var(--radius-full); transition: width 0.5s; }
+    .pay-mode-toggle { display: flex; gap: 8px; }
+    .pay-mode-btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 12px; font-weight: 600; background: var(--bg-white); transition: all 0.15s; font-family: var(--font); }
+    .pay-mode-btn:hover { background: var(--bg-hover); }
+    .pay-mode-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .pay-calc-input-row { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+    .pay-calc-input-row label { font-size: 12px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+    .pay-calc-input-row input { width: 120px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-weight: 700; text-align: right; font-family: var(--font-mono); }
+    .pay-calc-input-row input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,0.1); outline: none; }
+    .pay-calc-input-row .suffix { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+
+    /* History table */
+    .hist-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .hist-table th { background: var(--bg-light); padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+    .hist-table th.num { text-align: right; }
+    .hist-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+    .hist-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+    .hist-table tbody tr:hover td { background: var(--bg-hover); }
+
+    /* Print receipt */
+    .receipt-preview { max-width: 700px; margin: 0 auto; padding: 20px; }
+    .receipt-preview h2 { text-align: center; margin-bottom: 4px; }
+    .receipt-preview .subtitle { text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 20px; }
+    .receipt-preview table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .receipt-preview table td { padding: 6px 8px; font-size: 13px; vertical-align: top; }
+    .receipt-preview table td:first-child { font-weight: 600; color: var(--text-secondary); width: 140px; }
+    .receipt-preview .total-line { font-size: 18px; font-weight: 800; text-align: center; padding: 16px; border-top: 2px solid var(--border); border-bottom: 2px solid var(--border); margin: 16px 0; }
+    .receipt-preview .sig-area { display: flex; justify-content: space-between; margin-top: 60px; }
+    .receipt-preview .sig-box { text-align: center; width: 200px; }
+    .receipt-preview .sig-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 6px; font-size: 12px; }
+
+    @media print {
+      body > *:not(.print-area) { display: none !important; }
+      .print-area { display: block !important; }
+    }
+
+    @media (max-width: 768px) {
+      .erp-fields { grid-template-columns: 1fr 1fr; }
+      .erp-field.span2 { grid-column: span 2; }
+      .erp-field.span4 { grid-column: span 2; }
+      .pay-calc-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <!-- ERP Toolbar -->
+    <div class="erp-toolbar" id="toolbar">
+      <div class="erp-toolbar-left">
+        <button class="erp-btn" onclick="location.href='payments.html'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back
+        </button>
+        <div class="erp-nav">
+          <button onclick="navDoc(-1)" title="Previous">&#9664;</button>
+          <span id="nav-info">1 / 1</span>
+          <button onclick="navDoc(1)" title="Next">&#9654;</button>
+        </div>
+      </div>
+      <div class="erp-toolbar-right" id="action-buttons"></div>
+    </div>
+
+    <!-- Document Header -->
+    <div class="erp-header" id="erp-header">
+      <div class="erp-header-top">
+        <div>
+          <div class="doc-type">PAYMENT RECEIPT &mdash; ใบรับเงิน</div>
+          <div class="doc-number" id="h-doc-number">---</div>
+        </div>
+        <div id="h-status"></div>
+      </div>
+      <div class="erp-fields" id="h-fields">Loading...</div>
+    </div>
+
+    <!-- Payment Calculator -->
+    <div class="pay-calc" id="pay-calc" style="display:none;">
+      <div class="pay-calc-header">
+        <h3>Payment Calculator &mdash; คำนวณยอดรับเงิน</h3>
+        <div class="pay-mode-toggle">
+          <button class="pay-mode-btn active" id="mode-pct" onclick="togglePayMode('percent')">รับเป็นเปอร์เซ็น</button>
+          <button class="pay-mode-btn" id="mode-full" onclick="togglePayMode('full')">รับเต็มจำนวน</button>
+        </div>
+      </div>
+      <div class="pay-calc-grid">
+        <div class="pay-calc-item">
+          <div class="label">ยอดใบเสนอราคา</div>
+          <div class="value primary" id="calc-qt-total">0.00</div>
+        </div>
+        <div class="pay-calc-item">
+          <div class="label">รับแล้ว</div>
+          <div class="value success" id="calc-received">0.00</div>
+        </div>
+        <div class="pay-calc-item">
+          <div class="label">คงเหลือ</div>
+          <div class="value warning" id="calc-remaining">0.00</div>
+        </div>
+        <div class="pay-calc-item">
+          <div class="label">รับครั้งนี้</div>
+          <div class="value danger" id="calc-this-pay">0.00</div>
+        </div>
+      </div>
+      <div class="pay-progress">
+        <div class="pay-progress-bar" id="pay-progress-bar" style="width:0%"></div>
+      </div>
+      <div class="pay-calc-input-row" id="pct-input-row">
+        <label>เปอร์เซ็นที่รับ:</label>
+        <input type="number" id="calc-pct" value="0" min="0" max="100" step="0.01" oninput="calcFromPercent(this.value)">
+        <span class="suffix">%</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--text-muted);" id="calc-pct-hint"></span>
+      </div>
+    </div>
+
+    <!-- Bottom Tabs -->
+    <div class="erp-bottom-tabs" id="bottom-tabs">
+      <div class="erp-btab active" onclick="switchTab('info',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Info
+      </div>
+      <div class="erp-btab" onclick="switchTab('history',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Payment History
+      </div>
+      <div class="erp-btab" onclick="switchTab('print',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+        Print Preview
+      </div>
+    </div>
+    <div class="erp-bottom-content">
+      <div class="erp-tab-panel active" id="tab-info"></div>
+      <div class="erp-tab-panel" id="tab-history"></div>
+      <div class="erp-tab-panel" id="tab-print"></div>
+    </div>
+
+  </main>
+  </div>
+
+  <div class="print-area" id="printArea" style="display:none"></div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    /* ── State ── */
+    var doc = null, allDocs = [], currentIdx = 0;
+    var isEditing = false, isNew = false;
+    var allProjects = [], allQuotations = [];
+    var payMode = 'percent'; // 'percent' | 'full'
+    var quotationTotal = 0, totalReceived = 0;
+
+    var params = new URLSearchParams(location.search);
+    var docId = params.get('id'), mode = params.get('mode');
+
+    /* ── Helpers ── */
+    function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+    var STATUS_COLORS = {
+      pending:   'background:#fffbeb;color:#92400e;border:1px solid #fde68a',
+      received:  'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0',
+      cancelled: 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca'
+    };
+    var STATUS_LABELS = { pending: 'Pending', received: 'Received', cancelled: 'Cancelled' };
+    var TYPE_LABELS = { deposit: 'มัดจำ (Deposit)', installment: 'งวด (Installment)', final: 'งวดสุดท้าย (Final)', full: 'เต็มจำนวน (Full)' };
+    var METHOD_LABELS = { cash: 'เงินสด (Cash)', transfer: 'โอน (Transfer)', cheque: 'เช็ค (Cheque)', credit_card: 'บัตรเครดิต (Credit Card)' };
+
+    function renderStatusBadge(s) {
+      var style = STATUS_COLORS[s] || STATUS_COLORS.pending;
+      var label = STATUS_LABELS[s] || s;
+      return '<span style="' + style + ';padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">' + label + '</span>';
+    }
+
+    /* ── Init ── */
+    async function init() {
+      try {
+        await Promise.all([loadProjects(), loadQuotations()]);
+        allDocs = await API.get('/payments').catch(function() { return []; });
+        if (!Array.isArray(allDocs)) allDocs = [];
+
+        if (mode === 'new') {
+          isNew = true; isEditing = true;
+          doc = { status: 'pending', payment_type: 'deposit', payment_method: 'transfer', vat_amount: 0, amount: 0, total_amount: 0 };
+          currentIdx = allDocs.length;
+        } else if (docId) {
+          doc = await API.get('/payments/' + docId);
+          currentIdx = allDocs.findIndex(function(d) { return String(d.id) === String(docId); });
+          if (currentIdx < 0) currentIdx = 0;
+        } else if (allDocs.length) {
+          await loadDocByIdx(0);
+        }
+        render();
+      } catch (err) {
+        showToast('โหลดข้อมูลไม่สำเร็จ: ' + ((err && err.message) || err), 'error');
+        document.getElementById('h-fields').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">ไม่สามารถโหลดข้อมูลได้</div>';
+      }
+    }
+
+    async function loadProjects() {
+      try { allProjects = await API.get('/projects'); if (!Array.isArray(allProjects)) allProjects = []; }
+      catch(e) { allProjects = []; }
+    }
+
+    async function loadQuotations() {
+      try { allQuotations = await API.get('/quotations'); if (!Array.isArray(allQuotations)) allQuotations = []; }
+      catch(e) { allQuotations = []; }
+    }
+
+    async function loadDocByIdx(idx) {
+      if (idx < 0 || idx >= allDocs.length) return;
+      try {
+        currentIdx = idx;
+        doc = await API.get('/payments/' + allDocs[idx].id);
+        isNew = false; isEditing = false;
+      } catch (err) {
+        showToast('โหลดข้อมูลไม่สำเร็จ', 'error');
+      }
+    }
+
+    function navDoc(dir) {
+      var newIdx = currentIdx + dir;
+      if (newIdx < 0 || newIdx >= allDocs.length) return;
+      loadDocByIdx(newIdx).then(function() {
+        var url = new URL(window.location);
+        url.searchParams.set('id', allDocs[newIdx].id);
+        url.searchParams.delete('mode');
+        history.replaceState(null, '', url);
+        render();
+      });
+    }
+
+    /* ── Render ── */
+    function render() {
+      if (!doc) return;
+
+      // Nav info
+      document.getElementById('nav-info').textContent = (currentIdx + 1) + ' / ' + (isNew ? allDocs.length + 1 : allDocs.length);
+
+      // Header
+      document.getElementById('h-doc-number').textContent = doc.payment_number || (isNew ? 'NEW' : '---');
+      document.getElementById('h-status').innerHTML = renderStatusBadge(doc.status || 'pending');
+
+      // Fields
+      renderFormFields();
+      renderTopActions();
+      renderPayCalc();
+      renderBottomInfo();
+
+      // Load history if quotation is linked
+      if (doc.quotation_id) {
+        loadPaymentHistory(doc.quotation_id);
+      } else {
+        document.getElementById('tab-history').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:24px;">ยังไม่ได้เชื่อมกับใบเสนอราคา</div>';
+      }
+
+      renderReceipt();
+    }
+
+    function renderFormFields() {
+      var h = '';
+      if (isEditing) {
+        // Row 1
+        h += readOnlyField('Payment Number', doc.payment_number || 'Auto');
+        h += editField('Payment Date', 'date', 'fPayDate', (doc.payment_date || new Date().toISOString()).substring(0, 10));
+        h += editField('Customer Name', 'text', 'fCustomer', doc.customer_name || '');
+        h += editField('Receipt Number', 'text', 'fReceipt', doc.receipt_number || '');
+
+        // Row 2
+        h += selectField('Project', 'fProject', buildProjectOptions(doc.project_id));
+        h += selectField('Quotation', 'fQuotation', buildQuotationOptions(doc.quotation_id), 'onchange="onQuotationChange(this.value)"');
+        h += selectField('Payment Type', 'fPayType', buildTypeOptions(doc.payment_type));
+        h += selectField('Payment Method', 'fPayMethod', buildMethodOptions(doc.payment_method));
+
+        // Row 3
+        h += editField('Amount', 'number', 'fAmount', doc.amount || 0, 'step="0.01" oninput="calcVAT()"');
+        h += readOnlyField('VAT 7%', money(doc.vat_amount || 0), 'fVatDisplay');
+        h += readOnlyField('Total Amount', money(doc.total_amount || 0), 'fTotalDisplay');
+        h += editField('Reference No', 'text', 'fRefNo', doc.reference_no || '');
+
+        // Row 4
+        h += editField('Bank Account', 'text', 'fBank', doc.bank_account || '');
+        h += readOnlyField('Status', STATUS_LABELS[doc.status] || doc.status || 'pending');
+        h += '<div class="erp-field span2"></div>';
+
+        // Row 5
+        h += '<div class="erp-field span4"><label>Remarks</label><textarea id="fRemarks">' + esc(doc.remarks || '') + '</textarea></div>';
+
+        // Row 6
+        h += readOnlyField('Created', doc.created_at ? new Date(doc.created_at).toLocaleString('th-TH') : '-');
+        h += readOnlyField('Updated', doc.updated_at ? new Date(doc.updated_at).toLocaleString('th-TH') : '-');
+      } else {
+        // View mode
+        h += viewField('Payment Number', doc.payment_number || '-');
+        h += viewField('Payment Date', doc.payment_date ? fmtDate(doc.payment_date) : '-');
+        h += viewField('Customer Name', doc.customer_name || '-');
+        h += viewField('Receipt Number', doc.receipt_number || '-');
+
+        h += viewField('Project', doc.project_name || doc.project_code || '-');
+        h += viewField('Quotation', doc.quotation_number || (doc.quotation_id ? 'SQ-' + doc.quotation_id : '-'));
+        h += viewField('Payment Type', TYPE_LABELS[doc.payment_type] || doc.payment_type || '-');
+        h += viewField('Payment Method', METHOD_LABELS[doc.payment_method] || doc.payment_method || '-');
+
+        h += viewField('Amount', moneyBaht(doc.amount || 0));
+        h += viewField('VAT 7%', moneyBaht(doc.vat_amount || 0));
+        h += viewField('Total Amount', '<span style="color:var(--primary);font-size:15px;font-weight:800;">' + moneyBaht(doc.total_amount || 0) + '</span>');
+        h += viewField('Reference No', doc.reference_no || '-');
+
+        h += viewField('Bank Account', doc.bank_account || '-');
+        h += viewField('Status', renderStatusBadge(doc.status || 'pending'));
+        h += '<div class="erp-field span2"></div>';
+
+        h += viewField('Remarks', doc.remarks || '-', 4);
+
+        h += viewField('Created', doc.created_at ? new Date(doc.created_at).toLocaleString('th-TH') : '-');
+        h += viewField('Updated', doc.updated_at ? new Date(doc.updated_at).toLocaleString('th-TH') : '-');
+        h += viewField('Created By', doc.created_by || '-');
+      }
+      document.getElementById('h-fields').innerHTML = h;
+    }
+
+    /* ── Field builders ── */
+    function viewField(label, val, span) {
+      return '<div class="erp-field' + (span ? ' span' + span : '') + '"><label>' + label + '</label><div class="field-val">' + (val || '-') + '</div></div>';
+    }
+    function readOnlyField(label, val, id) {
+      return '<div class="erp-field"><label>' + label + '</label><input type="text" value="' + esc(String(val)) + '" readonly' + (id ? ' id="' + id + '"' : '') + '></div>';
+    }
+    function editField(label, type, id, val, extra) {
+      return '<div class="erp-field"><label>' + label + '</label><input type="' + type + '" id="' + id + '" value="' + (val === null || val === undefined ? '' : esc(String(val))) + '" ' + (extra || '') + '></div>';
+    }
+    function selectField(label, id, options, extra) {
+      return '<div class="erp-field"><label>' + label + '</label><select id="' + id + '" ' + (extra || '') + '>' + options + '</select></div>';
+    }
+
+    function buildProjectOptions(selected) {
+      var h = '<option value="">-- เลือก Project --</option>';
+      allProjects.forEach(function(p) {
+        h += '<option value="' + p.id + '"' + (selected == p.id ? ' selected' : '') + '>' + (p.code || '') + ' - ' + (p.name || '') + '</option>';
+      });
+      return h;
+    }
+    function buildQuotationOptions(selected) {
+      var h = '<option value="">-- เลือก Quotation --</option>';
+      allQuotations.forEach(function(q) {
+        h += '<option value="' + q.id + '"' + (selected == q.id ? ' selected' : '') + '>' + (q.sq_number || 'SQ-' + q.id) + ' - ' + (q.customer_name || '') + '</option>';
+      });
+      return h;
+    }
+    function buildTypeOptions(selected) {
+      var types = [
+        { v: 'deposit', l: 'มัดจำ (Deposit)' },
+        { v: 'installment', l: 'งวด (Installment)' },
+        { v: 'final', l: 'งวดสุดท้าย (Final)' },
+        { v: 'full', l: 'เต็มจำนวน (Full)' }
+      ];
+      return types.map(function(t) {
+        return '<option value="' + t.v + '"' + (selected === t.v ? ' selected' : '') + '>' + t.l + '</option>';
+      }).join('');
+    }
+    function buildMethodOptions(selected) {
+      var methods = [
+        { v: 'cash', l: 'เงินสด (Cash)' },
+        { v: 'transfer', l: 'โอน (Transfer)' },
+        { v: 'cheque', l: 'เช็ค (Cheque)' },
+        { v: 'credit_card', l: 'บัตรเครดิต (Credit Card)' }
+      ];
+      return methods.map(function(m) {
+        return '<option value="' + m.v + '"' + (selected === m.v ? ' selected' : '') + '>' + m.l + '</option>';
+      }).join('');
+    }
+
+    /* ── Top Actions ── */
+    function renderTopActions() {
+      var st = doc.status || 'pending';
+      var h = '';
+      if (isEditing) {
+        h += '<button class="erp-btn primary" onclick="saveDoc()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save</button>';
+        if (!isNew) h += '<button class="erp-btn" onclick="cancelEdit()">Cancel</button>';
+      } else {
+        h += '<button class="erp-btn" onclick="location.href=\'payment-detail.html?mode=new\'"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add New</button>';
+        h += '<button class="erp-btn" onclick="toggleEdit()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> Edit</button>';
+        if (st === 'pending') {
+          h += '<button class="erp-btn success" onclick="receivePayment()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Receive Payment</button>';
+          h += '<button class="erp-btn danger" onclick="cancelPayment()">Cancel Payment</button>';
+        }
+        h += '<button class="erp-btn" onclick="printReceipt()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg> Print Receipt</button>';
+      }
+      document.getElementById('action-buttons').innerHTML = h;
+    }
+
+    /* ── Payment Calculator ── */
+    function renderPayCalc() {
+      var calcEl = document.getElementById('pay-calc');
+      // Show calculator only when editing or when there is a linked quotation
+      if (!isEditing && !doc.quotation_id) {
+        calcEl.style.display = 'none';
+        return;
+      }
+      calcEl.style.display = 'block';
+
+      // Find quotation total
+      var qt = allQuotations.find(function(q) { return q.id == doc.quotation_id; });
+      quotationTotal = qt ? (parseFloat(qt.grand_total) || 0) : 0;
+
+      // Calculate total received (excluding current doc if editing existing)
+      totalReceived = 0;
+      // We'll fill this from payment history; for now use doc info if available
+      if (doc._total_received !== undefined) {
+        totalReceived = parseFloat(doc._total_received) || 0;
+      }
+
+      var remaining = Math.max(0, quotationTotal - totalReceived);
+      var thisPay = parseFloat(doc.amount) || 0;
+      var progressPct = quotationTotal > 0 ? Math.min(100, ((totalReceived + thisPay) / quotationTotal * 100)) : 0;
+
+      document.getElementById('calc-qt-total').textContent = money(quotationTotal);
+      document.getElementById('calc-received').textContent = money(totalReceived);
+      document.getElementById('calc-remaining').textContent = money(remaining);
+      document.getElementById('calc-this-pay').textContent = money(thisPay);
+      document.getElementById('pay-progress-bar').style.width = progressPct.toFixed(1) + '%';
+
+      // Show/hide percent input row
+      var pctRow = document.getElementById('pct-input-row');
+      pctRow.style.display = (isEditing && payMode === 'percent') ? 'flex' : 'none';
+    }
+
+    function togglePayMode(m) {
+      payMode = m;
+      document.getElementById('mode-pct').classList.toggle('active', m === 'percent');
+      document.getElementById('mode-full').classList.toggle('active', m === 'full');
+
+      if (m === 'full' && isEditing) {
+        // Fill remaining balance
+        var remaining = Math.max(0, quotationTotal - totalReceived);
+        var amtInput = document.getElementById('fAmount');
+        if (amtInput) {
+          amtInput.value = remaining.toFixed(2);
+          calcVAT();
+        }
+      }
+
+      var pctRow = document.getElementById('pct-input-row');
+      pctRow.style.display = (isEditing && m === 'percent') ? 'flex' : 'none';
+      renderPayCalc();
+    }
+
+    function calcFromPercent(pct) {
+      pct = parseFloat(pct) || 0;
+      if (pct < 0) pct = 0;
+      if (pct > 100) pct = 100;
+      var amount = quotationTotal * pct / 100;
+      var amtInput = document.getElementById('fAmount');
+      if (amtInput) {
+        amtInput.value = amount.toFixed(2);
+        calcVAT();
+      }
+      var hint = document.getElementById('calc-pct-hint');
+      if (hint) hint.textContent = '= ' + moneyBaht(amount);
+      renderPayCalc();
+    }
+
+    function calcVAT() {
+      var amtInput = document.getElementById('fAmount');
+      if (!amtInput) return;
+      var amount = parseFloat(amtInput.value) || 0;
+      var vat = Math.round(amount * 0.07 * 100) / 100;
+      var total = amount + vat;
+
+      doc.amount = amount;
+      doc.vat_amount = vat;
+      doc.total_amount = total;
+
+      var vatDisp = document.getElementById('fVatDisplay');
+      var totalDisp = document.getElementById('fTotalDisplay');
+      if (vatDisp) vatDisp.value = money(vat);
+      if (totalDisp) totalDisp.value = money(total);
+
+      renderPayCalc();
+    }
+
+    function onQuotationChange(qId) {
+      doc.quotation_id = qId || null;
+      // Auto-fill customer name from quotation
+      var qt = allQuotations.find(function(q) { return String(q.id) === String(qId); });
+      if (qt) {
+        var custInput = document.getElementById('fCustomer');
+        if (custInput && !custInput.value) custInput.value = qt.customer_name || '';
+        // Auto-fill project if quotation has one
+        if (qt.project_id) {
+          var projSelect = document.getElementById('fProject');
+          if (projSelect) projSelect.value = qt.project_id;
+        }
+      }
+      renderPayCalc();
+      loadPaymentHistory(qId);
+    }
+
+    /* ── Payment History ── */
+    async function loadPaymentHistory(quotationId) {
+      var panel = document.getElementById('tab-history');
+      if (!quotationId) {
+        panel.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:24px;">ยังไม่ได้เชื่อมกับใบเสนอราคา</div>';
+        return;
+      }
+
+      try {
+        var payments = await API.get('/payments?quotation_id=' + quotationId).catch(function() { return []; });
+        if (!Array.isArray(payments)) payments = [];
+
+        // Update total received for calculator (exclude current doc if not yet received)
+        totalReceived = 0;
+        payments.forEach(function(p) {
+          if (p.status === 'received' && String(p.id) !== String(doc.id)) {
+            totalReceived += parseFloat(p.total_amount) || 0;
+          }
+        });
+        if (doc._total_received === undefined) {
+          doc._total_received = totalReceived;
+          renderPayCalc();
+        }
+
+        if (!payments.length) {
+          panel.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:24px;">ยังไม่มีประวัติการรับเงิน</div>';
+          return;
+        }
+
+        var h = '<table class="hist-table"><thead><tr>';
+        h += '<th>#</th><th>Payment No.</th><th>Date</th><th>Type</th><th>Method</th><th>Status</th><th class="num">Amount</th><th class="num">Total</th>';
+        h += '</tr></thead><tbody>';
+        payments.forEach(function(p, i) {
+          var isCurrent = String(p.id) === String(doc.id);
+          h += '<tr style="' + (isCurrent ? 'background:var(--primary-50);' : '') + '">';
+          h += '<td>' + (i + 1) + '</td>';
+          h += '<td style="font-family:var(--font-mono);font-weight:600;' + (isCurrent ? 'color:var(--primary);' : '') + '">' + (p.payment_number || '-') + (isCurrent ? ' <span style="font-size:10px;color:var(--primary);">(current)</span>' : '') + '</td>';
+          h += '<td>' + fmtDate(p.payment_date) + '</td>';
+          h += '<td>' + (TYPE_LABELS[p.payment_type] || p.payment_type || '-') + '</td>';
+          h += '<td>' + (METHOD_LABELS[p.payment_method] || p.payment_method || '-') + '</td>';
+          h += '<td>' + renderStatusBadge(p.status || 'pending') + '</td>';
+          h += '<td class="num">' + money(p.amount) + '</td>';
+          h += '<td class="num" style="font-weight:700;">' + money(p.total_amount) + '</td>';
+          h += '</tr>';
+        });
+        h += '</tbody></table>';
+
+        // Summary
+        var totalPaid = payments.reduce(function(s, p) { return s + (p.status === 'received' ? (parseFloat(p.total_amount) || 0) : 0); }, 0);
+        var qt = allQuotations.find(function(q) { return String(q.id) === String(quotationId); });
+        var qtTotal = qt ? (parseFloat(qt.grand_total) || 0) : 0;
+        var rem = Math.max(0, qtTotal - totalPaid);
+        var pct = qtTotal > 0 ? (totalPaid / qtTotal * 100) : 0;
+
+        h += '<div style="display:flex;gap:20px;padding:12px 0;margin-top:8px;border-top:1px solid var(--border-light);">';
+        h += '<span style="font-size:12px;color:var(--text-muted);">ยอดรวมที่รับแล้ว: <strong style="color:#059669;">' + moneyBaht(totalPaid) + '</strong></span>';
+        h += '<span style="font-size:12px;color:var(--text-muted);">คงเหลือ: <strong style="color:#d97706;">' + moneyBaht(rem) + '</strong></span>';
+        h += '<span style="font-size:12px;color:var(--text-muted);">ชำระแล้ว: <strong style="color:var(--primary);">' + pct.toFixed(1) + '%</strong></span>';
+        h += '</div>';
+
+        panel.innerHTML = h;
+      } catch (err) {
+        panel.innerHTML = '<div style="color:var(--danger);text-align:center;padding:24px;">โหลดประวัติไม่สำเร็จ</div>';
+      }
+    }
+
+    /* ── Bottom Tabs ── */
+    function renderBottomInfo() {
+      document.getElementById('tab-info').innerHTML = '<div style="line-height:2.2;color:var(--text-secondary);font-size:13px;">' +
+        '<strong>Created By:</strong> ' + (doc.created_by || '-') + '<br>' +
+        '<strong>Created:</strong> ' + (doc.created_at ? new Date(doc.created_at).toLocaleString('th-TH') : '-') + '<br>' +
+        '<strong>Updated:</strong> ' + (doc.updated_at ? new Date(doc.updated_at).toLocaleString('th-TH') : '-') + '<br>' +
+        '<strong>Payment Number:</strong> ' + (doc.payment_number || '-') + '<br>' +
+        '<strong>Status:</strong> ' + renderStatusBadge(doc.status || 'pending') + '<br>' +
+        '<strong>Company ID:</strong> ' + (doc.company_id || '-') +
+        '</div>';
+    }
+
+    function switchTab(tab, el) {
+      document.querySelectorAll('.erp-btab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.erp-tab-panel').forEach(function(t) { t.classList.remove('active'); });
+      el.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    /* ── Print Receipt ── */
+    function renderReceipt() {
+      var h = '<div class="receipt-preview">';
+      h += '<h2>PAYMENT RECEIPT</h2>';
+      h += '<div class="subtitle">ใบรับเงิน</div>';
+      h += '<table>';
+      h += '<tr><td>เลขที่ / No.</td><td>' + (doc.payment_number || '-') + '</td></tr>';
+      h += '<tr><td>วันที่ / Date</td><td>' + (doc.payment_date ? fmtDate(doc.payment_date) : '-') + '</td></tr>';
+      h += '<tr><td>ลูกค้า / Customer</td><td>' + (doc.customer_name || '-') + '</td></tr>';
+      h += '<tr><td>เลขที่ใบเสร็จ / Receipt</td><td>' + (doc.receipt_number || '-') + '</td></tr>';
+      h += '<tr><td>ประเภท / Type</td><td>' + (TYPE_LABELS[doc.payment_type] || doc.payment_type || '-') + '</td></tr>';
+      h += '<tr><td>วิธีชำระ / Method</td><td>' + (METHOD_LABELS[doc.payment_method] || doc.payment_method || '-') + '</td></tr>';
+      h += '<tr><td>อ้างอิง / Reference</td><td>' + (doc.reference_no || '-') + '</td></tr>';
+      h += '<tr><td>บัญชีธนาคาร / Bank</td><td>' + (doc.bank_account || '-') + '</td></tr>';
+      h += '</table>';
+
+      h += '<table style="width:300px;margin-left:auto;">';
+      h += '<tr><td>จำนวนเงิน / Amount</td><td style="text-align:right;font-weight:600;">' + money(doc.amount || 0) + '</td></tr>';
+      h += '<tr><td>VAT 7%</td><td style="text-align:right;font-weight:600;">' + money(doc.vat_amount || 0) + '</td></tr>';
+      h += '</table>';
+
+      h += '<div class="total-line">' + moneyBaht(doc.total_amount || 0) + '</div>';
+
+      if (doc.remarks) {
+        h += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;"><strong>หมายเหตุ:</strong> ' + esc(doc.remarks) + '</div>';
+      }
+
+      h += '<div class="sig-area">';
+      h += '<div class="sig-box"><div class="sig-line">ผู้รับเงิน / Received By</div></div>';
+      h += '<div class="sig-box"><div class="sig-line">ผู้จ่ายเงิน / Paid By</div></div>';
+      h += '</div>';
+      h += '</div>';
+
+      document.getElementById('tab-print').innerHTML = h +
+        '<div style="text-align:center;padding:12px;"><button class="erp-btn primary" onclick="printReceipt()">Print</button></div>';
+    }
+
+    function printReceipt() {
+      var printArea = document.getElementById('printArea');
+      // Build standalone print content
+      var h = '<div style="padding:40px;font-family:sans-serif;max-width:700px;margin:0 auto;">';
+      h += '<h2 style="text-align:center;margin-bottom:4px;">PAYMENT RECEIPT</h2>';
+      h += '<div style="text-align:center;color:#666;font-size:12px;margin-bottom:24px;">ใบรับเงิน</div>';
+      h += '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;width:140px;">เลขที่</td><td style="padding:6px 8px;">' + (doc.payment_number || '-') + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;">วันที่</td><td style="padding:6px 8px;">' + (doc.payment_date ? fmtDate(doc.payment_date) : '-') + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;">ลูกค้า</td><td style="padding:6px 8px;">' + (doc.customer_name || '-') + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;">ใบเสร็จ</td><td style="padding:6px 8px;">' + (doc.receipt_number || '-') + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;">ประเภท</td><td style="padding:6px 8px;">' + (TYPE_LABELS[doc.payment_type] || '-') + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;">วิธีชำระ</td><td style="padding:6px 8px;">' + (METHOD_LABELS[doc.payment_method] || '-') + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;">อ้างอิง</td><td style="padding:6px 8px;">' + (doc.reference_no || '-') + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;font-weight:600;">บัญชี</td><td style="padding:6px 8px;">' + (doc.bank_account || '-') + '</td></tr>';
+      h += '</table>';
+
+      h += '<table style="width:280px;margin-left:auto;border-collapse:collapse;">';
+      h += '<tr><td style="padding:6px 8px;">จำนวนเงิน</td><td style="padding:6px 8px;text-align:right;font-weight:600;">' + money(doc.amount || 0) + '</td></tr>';
+      h += '<tr><td style="padding:6px 8px;">VAT 7%</td><td style="padding:6px 8px;text-align:right;font-weight:600;">' + money(doc.vat_amount || 0) + '</td></tr>';
+      h += '</table>';
+
+      h += '<div style="font-size:20px;font-weight:800;text-align:center;padding:16px;border-top:2px solid #333;border-bottom:2px solid #333;margin:16px 0;">' + moneyBaht(doc.total_amount || 0) + '</div>';
+
+      if (doc.remarks) {
+        h += '<div style="font-size:12px;color:#666;margin-bottom:16px;"><strong>หมายเหตุ:</strong> ' + esc(doc.remarks) + '</div>';
+      }
+
+      h += '<div style="display:flex;justify-content:space-between;margin-top:80px;">';
+      h += '<div style="text-align:center;width:200px;"><div style="border-top:1px solid #333;padding-top:6px;font-size:12px;">ผู้รับเงิน</div></div>';
+      h += '<div style="text-align:center;width:200px;"><div style="border-top:1px solid #333;padding-top:6px;font-size:12px;">ผู้จ่ายเงิน</div></div>';
+      h += '</div>';
+      h += '</div>';
+
+      printArea.innerHTML = h;
+      printArea.style.display = 'block';
+      window.print();
+      setTimeout(function() { printArea.style.display = 'none'; }, 500);
+    }
+
+    /* ── CRUD Operations ── */
+    async function saveDoc() {
+      var payload = {
+        payment_date: val('fPayDate'),
+        customer_name: val('fCustomer'),
+        receipt_number: val('fReceipt'),
+        project_id: val('fProject') || null,
+        quotation_id: val('fQuotation') || null,
+        payment_type: val('fPayType'),
+        payment_method: val('fPayMethod'),
+        amount: parseFloat(val('fAmount')) || 0,
+        vat_amount: doc.vat_amount || 0,
+        total_amount: doc.total_amount || 0,
+        reference_no: val('fRefNo'),
+        bank_account: val('fBank'),
+        remarks: val('fRemarks')
+      };
+
+      // Validation
+      if (!payload.customer_name) {
+        showToast('กรุณาระบุชื่อลูกค้า', 'warning');
+        return;
+      }
+      if (payload.amount <= 0) {
+        showToast('กรุณาระบุจำนวนเงิน', 'warning');
+        return;
+      }
+
+      try {
+        if (isNew) {
+          var created = await API.post('/payments', payload);
+          showToast('สร้างใบรับเงินสำเร็จ', 'success');
+          // Redirect to view mode
+          window.location.href = 'payment-detail.html?id=' + created.id;
+        } else {
+          await API.put('/payments/' + doc.id, payload);
+          showToast('บันทึกสำเร็จ', 'success');
+          // Reload
+          doc = await API.get('/payments/' + doc.id);
+          isEditing = false;
+          render();
+        }
+      } catch (err) {
+        showToast('บันทึกไม่สำเร็จ: ' + ((err && err.message) || err), 'error');
+      }
+    }
+
+    function val(id) {
+      var el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    }
+
+    function toggleEdit() {
+      isEditing = true;
+      render();
+    }
+
+    function cancelEdit() {
+      if (isNew) {
+        location.href = 'payments.html';
+        return;
+      }
+      isEditing = false;
+      render();
+    }
+
+    async function receivePayment() {
+      if (!doc || !doc.id) return;
+      if (!confirm('ยืนยันการรับเงินใบนี้?')) return;
+
+      try {
+        await API.post('/payments/' + doc.id + '/receive', {});
+        showToast('รับเงินสำเร็จ', 'success');
+        doc = await API.get('/payments/' + doc.id);
+        render();
+      } catch (err) {
+        showToast('รับเงินไม่สำเร็จ: ' + ((err && err.message) || err), 'error');
+      }
+    }
+
+    async function cancelPayment() {
+      if (!doc || !doc.id) return;
+      if (!confirm('ยืนยันยกเลิกใบรับเงินนี้?')) return;
+
+      try {
+        await API.put('/payments/' + doc.id, { status: 'cancelled' });
+        showToast('ยกเลิกสำเร็จ', 'success');
+        doc = await API.get('/payments/' + doc.id);
+        render();
+      } catch (err) {
+        showToast('ยกเลิกไม่สำเร็จ: ' + ((err && err.message) || err), 'error');
+      }
+    }
+
+    /* ── Bootstrap ── */
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Operation — Guarantee Detail</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    /* ── ERP Document Form (same as doc-detail) ── */
+    .erp-toolbar {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 10px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-xs);
+    }
+    .erp-toolbar-left { display: flex; align-items: center; gap: 6px; }
+    .erp-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .erp-btn {
+      padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg-white); font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      font-family: var(--font); color: var(--text-secondary); display: flex;
+      align-items: center; gap: 5px; transition: all 0.15s;
+    }
+    .erp-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .erp-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .erp-btn.primary:hover { background: var(--primary-hover); }
+    .erp-btn.success { background: var(--success); color: white; border-color: var(--success); }
+    .erp-btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+    .erp-btn svg { width: 14px; height: 14px; }
+    .erp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .erp-nav { display: flex; align-items: center; gap: 4px; margin-left: 12px; }
+    .erp-nav button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-white); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: var(--text-md); }
+    .erp-nav button:hover { background: var(--bg-hover); }
+    .erp-nav span { font-size: var(--text-xs); color: var(--text-muted); min-width: 60px; text-align: center; }
+
+    /* Header Form */
+    .erp-header {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .erp-header-top {
+      padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 100%);
+    }
+    .erp-header-top .doc-type {
+      font-size: var(--text-2xs); font-weight: 700; color: var(--primary); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 2px;
+    }
+    .erp-header-top .doc-number {
+      font-size: var(--text-3xl); font-weight: 800; color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+    .erp-fields {
+      padding: 20px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .erp-field { position: relative; }
+    .erp-field label {
+      display: block; font-size: var(--text-2xs); font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+    }
+    .erp-field input, .erp-field select, .erp-field textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: var(--text-base); font-family: var(--font);
+      color: var(--text-primary); background: var(--bg-white); outline: none;
+      transition: all 0.15s; box-sizing: border-box;
+    }
+    .erp-field textarea { resize: vertical; min-height: 60px; }
+    .erp-field input:focus, .erp-field select:focus, .erp-field textarea:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+    .erp-field input[readonly], .erp-field textarea[readonly] {
+      background: var(--bg-light); color: var(--text-secondary); border-color: transparent;
+    }
+    .erp-field .field-val {
+      font-size: var(--text-md); font-weight: 700; padding: 8px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .erp-field.span2 { grid-column: span 2; }
+    .erp-field.span4 { grid-column: span 4; }
+
+    /* Bottom Tabs */
+    .erp-bottom-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      background: var(--bg-white); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+    }
+    .erp-btab {
+      padding: 10px 20px; font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      color: var(--text-secondary); border-bottom: 2px solid transparent;
+      transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .erp-btab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .erp-btab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .erp-btab svg { width: 14px; height: 14px; }
+    .erp-bottom-content {
+      background: var(--bg-white); border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg); box-shadow: var(--shadow-xs);
+      min-height: 200px;
+    }
+    .erp-tab-panel { display: none; padding: 16px 20px; }
+    .erp-tab-panel.active { display: block; }
+
+    /* Days remaining badge */
+    .days-badge { font-size: 11px; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700; }
+    .days-red { background: #fee2e2; color: #991b1b; }
+    .days-yellow { background: #fef3c7; color: #92400e; }
+    .days-green { background: #d1fae5; color: #065f46; }
+
+    /* Warranty action cards */
+    .warranty-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .warranty-action-card {
+      background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s;
+    }
+    .warranty-action-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(79,110,247,0.1); transform: translateY(-2px); }
+    .warranty-action-card h3 { font-size: 14px; margin-bottom: 8px; }
+    .warranty-action-card p { font-size: 12px; color: var(--text-muted); }
+    .warranty-action-card .action-icon { font-size: 28px; margin-bottom: 8px; }
+
+    /* Warranty section */
+    .warranty-section {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .warranty-section-header {
+      padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: var(--bg-light);
+      font-size: var(--text-base); font-weight: 600; color: var(--text-primary);
+    }
+    .warranty-section-body { padding: 20px; }
+
+    /* Log table */
+    .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .log-table th { background: var(--bg-light); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+    .log-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+    .log-table tr:hover td { background: var(--bg-hover); }
+
+    /* Expiry alert */
+    .expiry-alert-card {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: var(--radius-lg); padding: 24px; text-align: center; margin: 8px 0;
+    }
+    .expiry-alert-card.alert-red { background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%); }
+    .expiry-alert-card.alert-green { background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%); }
+    .expiry-countdown { font-size: 48px; font-weight: 800; font-family: var(--font-mono); }
+    .expiry-label { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* Linked doc card */
+    .linked-doc { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: var(--radius); margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+    .linked-doc:hover { background: var(--bg-hover); border-color: var(--primary); }
+    .linked-doc .doc-icon { width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; background: var(--primary-50); color: var(--primary); font-weight: 700; font-size: 14px; }
+    .linked-doc .doc-info { flex: 1; }
+    .linked-doc .doc-info h4 { font-size: 13px; font-weight: 600; }
+    .linked-doc .doc-info p { font-size: 11px; color: var(--text-muted); }
+
+    @media (max-width: 768px) {
+      .erp-fields { grid-template-columns: 1fr 1fr; }
+      .erp-field.span2 { grid-column: span 2; }
+      .erp-field.span4 { grid-column: span 2; }
+      .warranty-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <div class="main-wrapper">
+  <nav id="topnav"></nav>
+  <div id="tabbar"></div>
+
+  <main class="page fade-in">
+    <!-- ERP Toolbar -->
+    <div class="erp-toolbar" id="toolbar">
+      <div class="erp-toolbar-left">
+        <button class="erp-btn" onclick="location.href='guarantees.html'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back
+        </button>
+        <div class="erp-nav">
+          <button onclick="navDoc(-1)" title="Previous">&#9664;</button>
+          <span id="nav-info">1 / 1</span>
+          <button onclick="navDoc(1)" title="Next">&#9654;</button>
+        </div>
+      </div>
+      <div class="erp-toolbar-right" id="action-buttons"></div>
+    </div>
+
+    <!-- Document Header -->
+    <div class="erp-header" id="erp-header">
+      <div class="erp-header-top">
+        <div>
+          <div class="doc-type" id="h-doc-type">GUARANTEE / WARRANTY</div>
+          <div class="doc-number" id="h-doc-number">---</div>
+        </div>
+        <div id="h-status" style="display:flex;align-items:center;gap:8px;"></div>
+      </div>
+      <div class="erp-fields" id="h-fields">Loading...</div>
+    </div>
+
+    <!-- Warranty Actions Section (shown only for type=warranty) -->
+    <div class="warranty-section" id="warranty-section" style="display:none;">
+      <div class="warranty-section-header">
+        <span>Warranty Actions -- การดำเนินการตามประกัน</span>
+      </div>
+      <div class="warranty-section-body">
+        <div class="warranty-actions">
+          <div class="warranty-action-card" onclick="toggleWarrantyLog('maintenance')">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </div>
+            <h3>Maintenance / Repair</h3>
+            <p>บันทึกการซ่อมบำรุงภายใต้ประกัน</p>
+          </div>
+          <div class="warranty-action-card" onclick="toggleWarrantyLog('parts')">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            </div>
+            <h3>Request New Parts</h3>
+            <p>เบิกของใหม่ทดแทนตามเงื่อนไขประกัน</p>
+          </div>
+        </div>
+
+        <!-- Maintenance Log -->
+        <div id="log-maintenance" style="display:none; margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h4 style="font-size:14px;font-weight:600;">Maintenance Log -- บันทึกซ่อมบำรุง</h4>
+            <button class="erp-btn" onclick="addLogEntry('maintenance')" id="btn-add-maint">+ Add Entry</button>
+          </div>
+          <table class="log-table">
+            <thead>
+              <tr><th>#</th><th>Date</th><th>Description</th><th>Technician</th><th>Status</th><th>Cost</th></tr>
+            </thead>
+            <tbody id="maint-log-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No maintenance records</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Parts Request Log -->
+        <div id="log-parts" style="display:none; margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h4 style="font-size:14px;font-weight:600;">Parts Request Log -- บันทึกเบิกของใหม่</h4>
+            <button class="erp-btn" onclick="addLogEntry('parts')" id="btn-add-parts">+ Add Entry</button>
+          </div>
+          <table class="log-table">
+            <thead>
+              <tr><th>#</th><th>Date</th><th>Item</th><th>Qty</th><th>Reason</th><th>Status</th></tr>
+            </thead>
+            <tbody id="parts-log-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No parts requests</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Tabs -->
+    <div class="erp-bottom-tabs" id="bottom-tabs">
+      <div class="erp-btab active" onclick="switchTab('info')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Info
+      </div>
+      <div class="erp-btab" onclick="switchTab('expiry')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Expiry Alert
+      </div>
+      <div class="erp-btab" onclick="switchTab('linked')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Linked Docs
+      </div>
+    </div>
+    <div class="erp-bottom-content">
+      <div class="erp-tab-panel active" id="tab-info"></div>
+      <div class="erp-tab-panel" id="tab-expiry"></div>
+      <div class="erp-tab-panel" id="tab-linked"></div>
+    </div>
+
+  </main>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/helpers.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/highlight.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    /* ── State ── */
+    const params = new URLSearchParams(window.location.search);
+    const docId = params.get('id') || '';
+    let isNew = params.get('mode') === 'new';
+    let isEditing = isNew;
+    let doc = null;
+    let allDocs = [];
+    let currentIdx = 0;
+
+    // Maintenance / parts logs (local state for POC)
+    let maintenanceLogs = [];
+    let partsLogs = [];
+
+    /* ── Guarantee Type & Status Maps ── */
+    const TYPE_LABELS = {
+      bid_bond: 'Bid Bond -- หนังสือค้ำประกันการยื่นซอง',
+      performance_bond: 'Performance Bond -- หนังสือค้ำประกันผลงาน',
+      advance_payment: 'Advance Payment -- หนังสือค้ำประกันเงินล่วงหน้า',
+      retention_bond: 'Retention Bond -- หนังสือค้ำประกันเงินหัก ณ ที่จ่าย',
+      warranty: 'Warranty -- ใบประกันราคา / ประกันสินค้า'
+    };
+
+    const STATUS_COLORS = {
+      pending: 'warning',
+      submitted: 'primary',
+      approved: 'success',
+      active: 'success',
+      expiring: 'warning',
+      released: 'gray',
+      claimed: 'danger',
+      cancelled: 'danger'
+    };
+
+    /* ── Init ── */
+    async function init() {
+      try {
+        const res = await API.get('/api/guarantees');
+        allDocs = Array.isArray(res) ? res : (res.data || []);
+
+        if (isNew) {
+          doc = {
+            id: null,
+            guarantee_number: 'GR-NEW',
+            guarantee_type: 'performance_bond',
+            status: 'pending',
+            project_id: '',
+            contract_id: '',
+            bank_name: '',
+            bank_branch: '',
+            amount: 0,
+            premium_rate: 0,
+            premium_amount: 0,
+            issue_date: new Date().toISOString().split('T')[0],
+            expiry_date: '',
+            release_date: '',
+            warranty_subtype: '',
+            remarks: '',
+            created_by: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+        } else if (docId) {
+          try {
+            doc = await API.get('/api/guarantees/' + docId);
+          } catch (e) {
+            doc = allDocs.find(function(d) { return d.id === docId; });
+          }
+          if (!doc) {
+            document.getElementById('h-doc-number').textContent = 'Not Found';
+            return;
+          }
+          currentIdx = allDocs.findIndex(function(d) { return d.id === doc.id; });
+          if (currentIdx < 0) currentIdx = 0;
+        } else {
+          doc = allDocs[0];
+          if (!doc) {
+            document.getElementById('h-doc-number').textContent = 'No guarantees found';
+            return;
+          }
+          currentIdx = 0;
+        }
+
+        render();
+      } catch (e) {
+        document.getElementById('h-doc-number').textContent = 'Error: ' + e.message;
+        console.error(e);
+      }
+    }
+
+    /* ── Render ── */
+    function render() {
+      if (!doc) return;
+      document.title = 'SDA -- ' + doc.guarantee_number;
+
+      const readonly = !isEditing;
+      const ro = readonly ? 'readonly' : '';
+      const dis = readonly ? 'disabled' : '';
+
+      // Header top
+      document.getElementById('h-doc-type').textContent = 'GUARANTEE / WARRANTY -- \u0E43\u0E1A\u0E1B\u0E23\u0E30\u0E01\u0E31\u0E19\u0E23\u0E32\u0E04\u0E32';
+      document.getElementById('h-doc-number').textContent = doc.guarantee_number || 'GR-NEW';
+
+      // Status + days remaining
+      var days = calcDaysRemaining(doc.expiry_date);
+      var statusHtml = guaranteeStatusBadge(doc.status);
+      if (days !== null && doc.status !== 'released' && doc.status !== 'cancelled') {
+        statusHtml += ' <span class="days-badge ' + days.colorClass + '">' + days.text + '</span>';
+      }
+      document.getElementById('h-status').innerHTML = statusHtml;
+
+      // Nav
+      document.getElementById('nav-info').textContent = (currentIdx + 1) + ' / ' + allDocs.length;
+
+      // Action buttons
+      renderActionButtons();
+
+      // Fields
+      renderFields();
+
+      // Warranty section visibility
+      document.getElementById('warranty-section').style.display = doc.guarantee_type === 'warranty' ? 'block' : 'none';
+
+      // Bottom tabs
+      renderBottomTabs();
+    }
+
+    function renderActionButtons() {
+      var s = doc.status || 'pending';
+      var html = '';
+
+      // Add New
+      html += '<button class="erp-btn primary" onclick="addNew()">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add New</button>';
+
+      if (!isEditing && !isNew) {
+        html += '<button class="erp-btn" onclick="toggleEdit()">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit</button>';
+      }
+
+      if (isEditing) {
+        html += '<button class="erp-btn primary" onclick="saveDoc()">Save</button>';
+        html += '<button class="erp-btn" onclick="cancelEdit()">Cancel</button>';
+      }
+
+      // Release (only if active/approved)
+      if (!isNew && !isEditing && (s === 'active' || s === 'approved')) {
+        html += '<button class="erp-btn success" onclick="releaseGuarantee()">Release</button>';
+      }
+
+      // Claim (only if active)
+      if (!isNew && !isEditing && s === 'active') {
+        html += '<button class="erp-btn danger" onclick="claimGuarantee()">Claim</button>';
+      }
+
+      // Cancel
+      if (!isNew && !isEditing && s !== 'released' && s !== 'cancelled' && s !== 'claimed') {
+        html += '<button class="erp-btn danger" onclick="cancelGuarantee()">Cancel</button>';
+      }
+
+      document.getElementById('action-buttons').innerHTML = html;
+    }
+
+    function renderFields() {
+      var readonly = !isEditing;
+      var ro = readonly ? 'readonly' : '';
+      var dis = readonly ? 'disabled' : '';
+
+      var typeOptions = Object.keys(TYPE_LABELS).map(function(k) {
+        return '<option value="' + k + '"' + (doc.guarantee_type === k ? ' selected' : '') + '>' + TYPE_LABELS[k] + '</option>';
+      }).join('');
+
+      var statusOptions = ['pending','submitted','approved','active','expiring','released','claimed','cancelled'].map(function(s) {
+        return '<option value="' + s + '"' + (doc.status === s ? ' selected' : '') + '>' + s.replace(/_/g, ' ') + '</option>';
+      }).join('');
+
+      var warrantySubtypeRow = '';
+      if (doc.guarantee_type === 'warranty') {
+        warrantySubtypeRow = '<div class="erp-field"><label>Warranty Sub-type</label>' +
+          '<select id="f-warranty-subtype" ' + dis + ' onchange="onFieldChange()">' +
+            '<option value="">-- Select --</option>' +
+            '<option value="maintenance"' + (doc.warranty_subtype === 'maintenance' ? ' selected' : '') + '>\u0E0B\u0E48\u0E2D\u0E21\u0E1A\u0E33\u0E23\u0E38\u0E07 (Maintenance)</option>' +
+            '<option value="parts"' + (doc.warranty_subtype === 'parts' ? ' selected' : '') + '>\u0E40\u0E1A\u0E34\u0E01\u0E02\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48 (New Parts)</option>' +
+          '</select></div>';
+      }
+
+      var premiumAmt = calcPremium();
+
+      document.getElementById('h-fields').innerHTML =
+        '<div class="erp-field"><label>Guarantee Number</label><input id="f-number" value="' + (doc.guarantee_number || '') + '" readonly></div>' +
+        '<div class="erp-field"><label>Type</label><select id="f-type" ' + dis + ' onchange="onTypeChange()">' + typeOptions + '</select></div>' +
+        '<div class="erp-field"><label>Project</label><input id="f-project" value="' + (doc.project_id || '') + '" ' + ro + ' placeholder="Project ID..."></div>' +
+        '<div class="erp-field"><label>Contract</label><input id="f-contract" value="' + (doc.contract_id || '') + '" ' + ro + ' placeholder="Contract ID..."></div>' +
+
+        '<div class="erp-field"><label>Bank Name</label><input id="f-bank" value="' + (doc.bank_name || '') + '" ' + ro + ' placeholder="Bank name..."></div>' +
+        '<div class="erp-field"><label>Bank Branch</label><input id="f-branch" value="' + (doc.bank_branch || '') + '" ' + ro + ' placeholder="Branch..."></div>' +
+        '<div class="erp-field"><label>Amount (\u0E3F)</label><input id="f-amount" type="number" value="' + (doc.amount || 0) + '" ' + ro + ' step="0.01" min="0" onchange="calcPremiumAndUpdate()" style="font-family:var(--font-mono);font-weight:700;"></div>' +
+        '<div class="erp-field"><label>Premium Rate (%)</label><input id="f-rate" type="number" value="' + (doc.premium_rate || 0) + '" ' + ro + ' step="0.01" min="0" max="100" onchange="calcPremiumAndUpdate()"></div>' +
+
+        '<div class="erp-field"><label>Premium Amount (\u0E3F)</label><input id="f-premium" value="' + money(premiumAmt) + '" readonly style="font-family:var(--font-mono);font-weight:700;color:var(--primary);"></div>' +
+        '<div class="erp-field"><label>Issue Date</label><input id="f-issue" type="date" value="' + datePart(doc.issue_date) + '" ' + ro + '></div>' +
+        '<div class="erp-field"><label>Expiry Date</label><input id="f-expiry" type="date" value="' + datePart(doc.expiry_date) + '" ' + ro + '></div>' +
+        '<div class="erp-field"><label>Release Date</label><input id="f-release" type="date" value="' + datePart(doc.release_date) + '" ' + (doc.status === 'released' ? 'readonly' : ro) + '></div>' +
+
+        '<div class="erp-field"><label>Status</label><div class="field-val">' + guaranteeStatusBadge(doc.status) + '</div></div>' +
+        '<div class="erp-field"><label>Days Remaining</label><div class="field-val" id="f-days-display">' + daysRemainingDisplay() + '</div></div>' +
+        warrantySubtypeRow +
+        (doc.guarantee_type !== 'warranty' ? '<div class="erp-field span2"></div>' : '<div class="erp-field"></div>') +
+
+        '<div class="erp-field span4"><label>Remarks</label><textarea id="f-remarks" ' + ro + ' placeholder="Remarks / \u0E2B\u0E21\u0E32\u0E22\u0E40\u0E2B\u0E15\u0E38...">' + (doc.remarks || '') + '</textarea></div>' +
+        '<div class="erp-field"><label>Created By</label><input value="' + (doc.created_by || '-') + '" readonly></div>' +
+        '<div class="erp-field"><label>Created</label><input value="' + fmtDate(doc.created_at) + '" readonly></div>' +
+        '<div class="erp-field"><label>Updated</label><input value="' + fmtDate(doc.updated_at) + '" readonly></div>' +
+        '<div class="erp-field"></div>';
+    }
+
+    function renderBottomTabs() {
+      // Info tab
+      document.getElementById('tab-info').innerHTML =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+          '<div>' +
+            '<h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">Document Information</h4>' +
+            '<table style="font-size:12px;width:100%;">' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);width:120px;">Created By</td><td style="padding:6px 0;font-weight:600;">' + (doc.created_by || '-') + '</td></tr>' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);">Created At</td><td style="padding:6px 0;">' + fmtDate(doc.created_at) + '</td></tr>' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);">Updated At</td><td style="padding:6px 0;">' + fmtDate(doc.updated_at) + '</td></tr>' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);">Document ID</td><td style="padding:6px 0;font-family:var(--font-mono);font-size:11px;">' + (doc.id || '-') + '</td></tr>' +
+            '</table>' +
+          '</div>' +
+          '<div>' +
+            '<h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">Financial Summary</h4>' +
+            '<table style="font-size:12px;width:100%;">' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);width:120px;">Guarantee Amount</td><td style="padding:6px 0;font-weight:700;font-family:var(--font-mono);">\u0E3F' + money(doc.amount) + '</td></tr>' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);">Premium Rate</td><td style="padding:6px 0;">' + (doc.premium_rate || 0) + '%</td></tr>' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);">Premium Amount</td><td style="padding:6px 0;font-weight:700;font-family:var(--font-mono);color:var(--primary);">\u0E3F' + money(calcPremium()) + '</td></tr>' +
+              '<tr><td style="padding:6px 0;color:var(--text-muted);">Type</td><td style="padding:6px 0;">' + (TYPE_LABELS[doc.guarantee_type] || doc.guarantee_type) + '</td></tr>' +
+            '</table>' +
+          '</div>' +
+        '</div>';
+
+      // Expiry tab
+      var days = calcDaysRemaining(doc.expiry_date);
+      var expiryHtml = '';
+      if (!doc.expiry_date) {
+        expiryHtml = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No expiry date set</div>';
+      } else if (doc.status === 'released' || doc.status === 'cancelled') {
+        expiryHtml = '<div class="expiry-alert-card alert-green">' +
+          '<div class="expiry-countdown">--</div>' +
+          '<div class="expiry-label">Guarantee has been ' + doc.status + '</div>' +
+          '</div>';
+      } else {
+        var alertClass = days.days <= 0 ? 'alert-red' : (days.days < 30 ? 'alert-red' : (days.days < 90 ? '' : 'alert-green'));
+        expiryHtml = '<div class="expiry-alert-card ' + alertClass + '">' +
+          '<div class="expiry-countdown">' + Math.abs(days.days) + '</div>' +
+          '<div class="expiry-label">' + (days.days <= 0 ? 'Days OVERDUE' : 'Days Remaining') + '</div>' +
+          '<div style="margin-top:12px;font-size:12px;">' +
+            '<span style="margin-right:16px;">Issue: ' + fmtDate(doc.issue_date) + '</span>' +
+            '<span>Expiry: ' + fmtDate(doc.expiry_date) + '</span>' +
+          '</div>' +
+          '</div>';
+      }
+      document.getElementById('tab-expiry').innerHTML = expiryHtml;
+
+      // Linked docs tab
+      var linkedHtml = '';
+      if (doc.contract_id) {
+        linkedHtml += '<div class="linked-doc" onclick="location.href=\'contracts.html?id=' + doc.contract_id + '\'">' +
+          '<div class="doc-icon">CT</div>' +
+          '<div class="doc-info"><h4>Contract</h4><p>' + doc.contract_id + '</p></div>' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>' +
+          '</div>';
+      }
+      if (doc.project_id) {
+        linkedHtml += '<div class="linked-doc" onclick="location.href=\'projects.html?id=' + doc.project_id + '\'">' +
+          '<div class="doc-icon">PJ</div>' +
+          '<div class="doc-info"><h4>Project</h4><p>' + doc.project_id + '</p></div>' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>' +
+          '</div>';
+      }
+      if (!linkedHtml) {
+        linkedHtml = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No linked documents</div>';
+      }
+      document.getElementById('tab-linked').innerHTML = linkedHtml;
+    }
+
+    /* ── Helpers ── */
+    function datePart(d) {
+      if (!d) return '';
+      return d.split('T')[0];
+    }
+
+    function calcDaysRemaining(expiryDate) {
+      if (!expiryDate) return null;
+      var exp = new Date(expiryDate);
+      var now = new Date();
+      now.setHours(0, 0, 0, 0);
+      exp.setHours(0, 0, 0, 0);
+      var diff = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+      var colorClass = 'days-green';
+      var text = diff + ' days';
+      if (diff <= 0) {
+        colorClass = 'days-red';
+        text = Math.abs(diff) + ' days overdue';
+      } else if (diff < 30) {
+        colorClass = 'days-red';
+      } else if (diff < 90) {
+        colorClass = 'days-yellow';
+      }
+      return { days: diff, colorClass: colorClass, text: text };
+    }
+
+    function daysRemainingDisplay() {
+      var days = calcDaysRemaining(doc.expiry_date);
+      if (!days) return '<span style="color:var(--text-muted);">N/A</span>';
+      return '<span class="days-badge ' + days.colorClass + '">' + days.text + '</span>';
+    }
+
+    function calcPremium() {
+      var amt = parseFloat(doc.amount) || 0;
+      var rate = parseFloat(doc.premium_rate) || 0;
+      return Math.round(amt * rate / 100 * 100) / 100;
+    }
+
+    function calcPremiumAndUpdate() {
+      var amt = parseFloat(document.getElementById('f-amount').value) || 0;
+      var rate = parseFloat(document.getElementById('f-rate').value) || 0;
+      var premium = Math.round(amt * rate / 100 * 100) / 100;
+      document.getElementById('f-premium').value = money(premium);
+    }
+
+    function guaranteeStatusBadge(s) {
+      if (!s) s = 'pending';
+      var cls = STATUS_COLORS[s] || 'gray';
+      return '<span class="badge badge-' + cls + '" style="font-size:10px;">' + s.replace(/_/g, ' ') + '</span>';
+    }
+
+    /* ── Tab switching ── */
+    function switchTab(tab) {
+      document.querySelectorAll('.erp-btab').forEach(function(el, i) {
+        var tabs = ['info', 'expiry', 'linked'];
+        el.classList.toggle('active', tabs[i] === tab);
+      });
+      document.querySelectorAll('.erp-tab-panel').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    /* ── Warranty log toggles ── */
+    function toggleWarrantyLog(type) {
+      var el = document.getElementById('log-' + type);
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addLogEntry(type) {
+      if (type === 'maintenance') {
+        maintenanceLogs.push({
+          date: new Date().toISOString().split('T')[0],
+          description: 'Maintenance work',
+          technician: '',
+          status: 'pending',
+          cost: 0
+        });
+        renderMaintenanceLog();
+      } else {
+        partsLogs.push({
+          date: new Date().toISOString().split('T')[0],
+          item: 'New Part',
+          qty: 1,
+          reason: '',
+          status: 'pending'
+        });
+        renderPartsLog();
+      }
+    }
+
+    function renderMaintenanceLog() {
+      if (!maintenanceLogs.length) {
+        document.getElementById('maint-log-body').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No maintenance records</td></tr>';
+        return;
+      }
+      document.getElementById('maint-log-body').innerHTML = maintenanceLogs.map(function(l, i) {
+        return '<tr>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td>' + l.date + '</td>' +
+          '<td>' + l.description + '</td>' +
+          '<td>' + (l.technician || '-') + '</td>' +
+          '<td>' + guaranteeStatusBadge(l.status) + '</td>' +
+          '<td style="font-family:var(--font-mono);font-weight:600;">\u0E3F' + money(l.cost) + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function renderPartsLog() {
+      if (!partsLogs.length) {
+        document.getElementById('parts-log-body').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No parts requests</td></tr>';
+        return;
+      }
+      document.getElementById('parts-log-body').innerHTML = partsLogs.map(function(l, i) {
+        return '<tr>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td>' + l.date + '</td>' +
+          '<td>' + l.item + '</td>' +
+          '<td>' + l.qty + '</td>' +
+          '<td>' + (l.reason || '-') + '</td>' +
+          '<td>' + guaranteeStatusBadge(l.status) + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    /* ── Type change (show/hide warranty section) ── */
+    function onTypeChange() {
+      var type = document.getElementById('f-type').value;
+      doc.guarantee_type = type;
+      document.getElementById('warranty-section').style.display = type === 'warranty' ? 'block' : 'none';
+      // Re-render fields to add/remove warranty subtype
+      renderFields();
+    }
+
+    function onFieldChange() {
+      // placeholder for live field change handling
+    }
+
+    /* ── Document Actions ── */
+    function addNew() {
+      window.location.href = 'guarantee-detail.html?mode=new';
+    }
+
+    function toggleEdit() {
+      isEditing = true;
+      render();
+    }
+
+    function cancelEdit() {
+      if (isNew) {
+        window.location.href = 'guarantees.html';
+        return;
+      }
+      isEditing = false;
+      render();
+    }
+
+    function gatherFormData() {
+      return {
+        guarantee_type: document.getElementById('f-type').value,
+        project_id: document.getElementById('f-project').value || null,
+        contract_id: document.getElementById('f-contract').value || null,
+        bank_name: document.getElementById('f-bank').value,
+        bank_branch: document.getElementById('f-branch').value,
+        amount: parseFloat(document.getElementById('f-amount').value) || 0,
+        premium_rate: parseFloat(document.getElementById('f-rate').value) || 0,
+        premium_amount: calcPremium(),
+        issue_date: document.getElementById('f-issue').value || null,
+        expiry_date: document.getElementById('f-expiry').value || null,
+        release_date: document.getElementById('f-release').value || null,
+        warranty_subtype: document.getElementById('f-warranty-subtype') ? document.getElementById('f-warranty-subtype').value : null,
+        remarks: document.getElementById('f-remarks').value
+      };
+    }
+
+    async function saveDoc() {
+      var data = gatherFormData();
+
+      // Validation
+      if (!data.bank_name) {
+        showToast('Please enter bank name', 'error');
+        return;
+      }
+      if (!data.amount || data.amount <= 0) {
+        showToast('Please enter a valid amount', 'error');
+        return;
+      }
+
+      try {
+        if (isNew) {
+          var result = await API.post('/api/guarantees', data);
+          showToast('Guarantee created successfully', 'success');
+          window.location.href = 'guarantee-detail.html?id=' + result.id;
+        } else {
+          await API.put('/api/guarantees/' + doc.id, data);
+          // Refresh
+          doc = Object.assign(doc, data);
+          doc.updated_at = new Date().toISOString();
+          doc.premium_amount = calcPremium();
+          isEditing = false;
+          render();
+          showToast('Guarantee updated successfully', 'success');
+        }
+      } catch (e) {
+        showToast('Save failed: ' + e.message, 'error');
+        console.error(e);
+      }
+    }
+
+    async function releaseGuarantee() {
+      if (!confirm('Release this guarantee?\n\nThis will mark the guarantee as released and set the release date to today.')) return;
+      try {
+        await API.post('/api/guarantees/' + doc.id + '/release', {});
+        doc.status = 'released';
+        doc.release_date = new Date().toISOString().split('T')[0];
+        doc.updated_at = new Date().toISOString();
+        render();
+        showToast('Guarantee released successfully', 'success');
+      } catch (e) {
+        showToast('Release failed: ' + e.message, 'error');
+      }
+    }
+
+    async function claimGuarantee() {
+      if (!confirm('Claim this guarantee?\n\nThis action indicates the guarantee has been called/claimed.')) return;
+      try {
+        await API.put('/api/guarantees/' + doc.id, { status: 'claimed' });
+        doc.status = 'claimed';
+        doc.updated_at = new Date().toISOString();
+        render();
+        showToast('Guarantee marked as claimed', 'warning');
+      } catch (e) {
+        showToast('Claim failed: ' + e.message, 'error');
+      }
+    }
+
+    async function cancelGuarantee() {
+      if (!confirm('Cancel this guarantee?\n\nThis action cannot be undone.')) return;
+      try {
+        await API.put('/api/guarantees/' + doc.id, { status: 'cancelled' });
+        doc.status = 'cancelled';
+        doc.updated_at = new Date().toISOString();
+        render();
+        showToast('Guarantee cancelled', 'warning');
+      } catch (e) {
+        showToast('Cancel failed: ' + e.message, 'error');
+      }
+    }
+
+    /* ── Navigation ── */
+    function navDoc(dir) {
+      if (!allDocs.length) return;
+      var newIdx = currentIdx + dir;
+      if (newIdx < 0) newIdx = allDocs.length - 1;
+      if (newIdx >= allDocs.length) newIdx = 0;
+      var targetDoc = allDocs[newIdx];
+      if (targetDoc && targetDoc.id) {
+        window.location.href = 'guarantee-detail.html?id=' + targetDoc.id;
+      }
+    }
+
+    /* ── Bootstrap ── */
+    init();
+  </script>
+</body>
+</html>
